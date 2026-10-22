@@ -1,4 +1,12 @@
 import type {DynamicFormFieldOfType, DynamicFormValues} from '@components/DynamicForm/types';
+import getAddressInputKeys, {getAddressCountry, isStateAsked} from '@components/DynamicForm/utils/getAddressInputKeys';
+import getAnswerKeys from '@components/DynamicForm/utils/getAnswerKeys';
+import getFieldOptions from '@components/DynamicForm/utils/getFieldOptions';
+import {getFieldLabel} from '@components/DynamicForm/utils/getLocalizedText';
+import {getShownFields} from '@components/DynamicForm/utils/isShown';
+import {getListItems, getListItemSensitiveAnswers} from '@components/DynamicForm/utils/listItems';
+import logSchemaProblem from '@components/DynamicForm/utils/logSchemaProblem';
+import summarizeListItem, {getListItemFallbackTitle} from '@components/DynamicForm/utils/summarizeListItem';
 import type {FormValue} from '@components/Form/types';
 import type {LocalizedTranslate} from '@components/LocaleContextProvider';
 
@@ -21,19 +29,11 @@ import type {
     DynamicFormFieldType,
     DynamicFormListField,
     DynamicFormNumberField,
-    DynamicFormSchemaField,
     DynamicFormTextField,
 } from '@src/types/onyx';
 
-import getAddressInputKeys, {getAddressCountry, isStateAsked} from './getAddressInputKeys';
-import getAnswerKeys from './getAnswerKeys';
-import getFieldOptions from './getFieldOptions';
-import {getFieldLabel} from './getLocalizedText';
-import getVisibleFields from './getVisibleFields';
-import isSupportedField from './isSupportedField';
-import {getListItems, getListItemSensitiveAnswers} from './listItems';
-import logSchemaProblem from './logSchemaProblem';
-import summarizeListItem, {getListItemFallbackTitle} from './summarizeListItem';
+/** A message for one input, keyed by the draft key FormProvider shows it under */
+type FieldError = [inputID: string, message: string];
 
 /** Checks a field the user has answered. Unanswered fields only get the required check. */
 type FieldValidator<TType extends DynamicFormFieldType> = (field: DynamicFormFieldOfType<TType>, values: DynamicFormValues, translate: LocalizedTranslate) => string[];
@@ -105,6 +105,15 @@ function getMultiChoiceErrors(field: DynamicFormFieldOfType<'multiselect' | 'cou
     return !hasNonStringEntry && keys.every((key) => offeredKeys.has(key)) ? [] : [translate('dynamicForm.error.invalidOption')];
 }
 
+/** Errors in the shape FormProvider's `validate` returns. Messages for the same input are joined, one per line. */
+function toFormErrors(errors: FieldError[]): Record<string, string> {
+    const formErrors: Record<string, string> = {};
+    for (const [inputID, message] of errors) {
+        addErrorMessage(formErrors, inputID, message);
+    }
+    return formErrors;
+}
+
 /** The list shows one error, so the first entry with a problem gives it, prefixed by the entry title and the field so the user knows what to fix. The flow keeps sensitive answers in memory apart from their entry, so one lost with the memory is asked for again. */
 function getListErrors(field: DynamicFormListField, values: DynamicFormValues, translate: LocalizedTranslate): string[] {
     const items = getListItems(values[field.key]);
@@ -116,7 +125,9 @@ function getListErrors(field: DynamicFormListField, values: DynamicFormValues, t
         messages.push(translate('dynamicForm.error.tooManyItems', {max: field.maxItems}));
     }
     for (const [index, item] of items.entries()) {
-        const [errorKey, error] = Object.entries(getDynamicFieldErrors(field.itemFields, {...item, ...getListItemSensitiveAnswers(field, item.id, values)}, translate)).at(0) ?? [];
+        const itemValues = {...item, ...getListItemSensitiveAnswers(field, item.id, values)};
+        const itemErrors = getShownFields(field.itemFields, itemValues).flatMap((itemField) => getFieldErrors(itemField, itemValues, translate));
+        const [errorKey, error] = Object.entries(toFormErrors(itemErrors)).at(0) ?? [];
         const erroredField = field.itemFields.find((itemField) => errorKey !== undefined && getAnswerKeys(itemField).includes(errorKey));
         if (error && erroredField) {
             const itemTitle = summarizeListItem(item, field.itemFields, translate, getListItemFallbackTitle(field, index, translate)).title;
@@ -190,12 +201,12 @@ function isAddressRequired(field: DynamicFormAddressField, values: DynamicFormVa
 }
 
 /** Each address part has its own input, so its errors go under its own draft key */
-function getAddressPartErrors(field: DynamicFormAddressField, values: DynamicFormValues, translate: LocalizedTranslate): Array<[inputID: string, message: string]> {
+function getAddressPartErrors(field: DynamicFormAddressField, values: DynamicFormValues, translate: LocalizedTranslate): FieldError[] {
     const addressKeys = getAddressInputKeys(field.key);
     const country = getAddressCountry(field.key, values);
     // A country whose zip format accepts an empty zip does not require one
     const isZipAsked = !country || !isValidZipCodeForCountry('', country);
-    const partErrors: Array<[string, string]> = [];
+    const partErrors: FieldError[] = [];
     if (isAddressRequired(field, values)) {
         const requiredPartKeys = [addressKeys.city, addressKeys.country, ...(isZipAsked ? [addressKeys.zipCode] : []), ...(isStateAsked(country) ? [addressKeys.state] : [])];
         for (const partKey of requiredPartKeys) {
@@ -219,33 +230,18 @@ function validateField<TType extends DynamicFormFieldType>(field: DynamicFormFie
     return validate(field, values, translate);
 }
 
-/**
- * Errors for the fields the user can see, keyed by draft key, in the shape FormProvider's `validate` returns.
- * Pass the whole form as `allFields` when a `showWhen` can name a field on another page.
- */
-function getDynamicFieldErrors(fields: DynamicFormSchemaField[], values: DynamicFormValues, translate: LocalizedTranslate, allFields?: DynamicFormField[]): Record<string, string> {
-    const errors: Record<string, string> = {};
-    const visibleFields = getVisibleFields(fields.filter(isSupportedField), values, allFields);
-    for (const field of visibleFields) {
-        if (field.readonly) {
-            continue;
-        }
-        if (field.type === 'address') {
-            for (const [inputID, message] of getAddressPartErrors(field, values, translate)) {
-                addErrorMessage(errors, inputID, message);
-            }
-        }
-        if (!isAnswered(values[field.key], field.type === 'boolean' && field.presentation !== 'checkbox')) {
-            if (field.type === 'address' ? isAddressRequired(field, values) : field.required) {
-                addErrorMessage(errors, field.key, translate('common.error.fieldRequired'));
-            }
-            continue;
-        }
-        for (const message of validateField(field, values, translate)) {
-            addErrorMessage(errors, field.key, message);
-        }
+/** Errors of one field the user can see, in the order FormProvider shows them. A readonly field is never checked. */
+function getFieldErrors(field: DynamicFormField, values: DynamicFormValues, translate: LocalizedTranslate): FieldError[] {
+    if (field.readonly) {
+        return [];
     }
-    return errors;
+    const errors = field.type === 'address' ? getAddressPartErrors(field, values, translate) : [];
+    if (!isAnswered(values[field.key], field.type === 'boolean' && field.presentation !== 'checkbox')) {
+        const isRequired = field.type === 'address' ? isAddressRequired(field, values) : field.required;
+        return isRequired ? [...errors, [field.key, translate('common.error.fieldRequired')]] : errors;
+    }
+    return [...errors, ...validateField(field, values, translate).map((message): FieldError => [field.key, message])];
 }
 
-export default getDynamicFieldErrors;
+export {getFieldErrors, isAnswered, toFormErrors};
+export type {FieldError};

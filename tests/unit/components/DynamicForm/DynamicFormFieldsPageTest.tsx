@@ -1,6 +1,7 @@
 import {render} from '@testing-library/react-native';
 
-import DynamicFormFieldsPage from '@components/DynamicForm/components/DynamicFormFieldsPage';
+import {getPages} from '@components/DynamicForm/flow/pages';
+import DynamicFormFieldsPage from '@components/DynamicForm/flow/subPages/DynamicFormFieldsPage';
 import FormProvider from '@components/Form/FormProvider';
 
 import ONYXKEYS from '@src/ONYXKEYS';
@@ -23,7 +24,7 @@ function renderPage(isLastPage: boolean) {
             onNext={jest.fn()}
             onMove={jest.fn()}
             formID={ONYXKEYS.FORMS.INTERNATIONAL_BANK_ACCOUNT_FORM}
-            pages={[page]}
+            pages={getPages({pages: [page]})}
             allFields={[]}
             values={{}}
             onPageSubmit={jest.fn()}

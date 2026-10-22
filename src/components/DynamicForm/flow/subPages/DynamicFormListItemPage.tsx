@@ -1,9 +1,11 @@
 import ActivityIndicator from '@components/ActivityIndicator';
+import DynamicFormFields from '@components/DynamicForm/components/DynamicFormFields';
+import {getContentErrors, getFieldsContent} from '@components/DynamicForm/content/content';
+import {parseListItemPageName} from '@components/DynamicForm/flow/listItemEditor';
 import type {DynamicFormSubPageProps} from '@components/DynamicForm/types';
-import getDynamicFieldErrors from '@components/DynamicForm/utils/getDynamicFieldErrors';
 import getLocalizedText from '@components/DynamicForm/utils/getLocalizedText';
 import isSensitiveField from '@components/DynamicForm/utils/isSensitiveField';
-import {getListItems, getListItemSensitiveAnswers, parseListItemPageName} from '@components/DynamicForm/utils/listItems';
+import {getListItems, getListItemSensitiveAnswers} from '@components/DynamicForm/utils/listItems';
 import summarizeListItem, {getListItemFallbackTitle} from '@components/DynamicForm/utils/summarizeListItem';
 import toDynamicFormValues from '@components/DynamicForm/utils/toDynamicFormValues';
 import FormProvider from '@components/Form/FormProvider';
@@ -20,8 +22,6 @@ import type {DynamicFormListField} from '@src/types/onyx';
 
 import React, {useEffect, useState} from 'react';
 import {View} from 'react-native';
-
-import DynamicFormFields from './DynamicFormFields';
 
 /** The editor of one list entry, or of a new one: the entry's fields and a Save button */
 function DynamicFormListItemPage({currentPageName, allFields, values, currency, maxFileSize, onRefreshRequirements, onListItemSave}: DynamicFormSubPageProps) {
@@ -65,6 +65,7 @@ function DynamicFormListItemPage({currentPageName, allFields, values, currency, 
     const sensitiveAnswers = item ? getListItemSensitiveAnswers(listField, item.id, values) : {};
     const keptAnswers = isSensitiveList ? {...item, ...sensitiveAnswers} : sensitiveAnswers;
     const withInputValues = (inputValues: unknown) => ({...keptAnswers, ...toDynamicFormValues(inputValues)});
+    const itemContent = getFieldsContent(listField.itemFields);
     const itemLabel = getLocalizedText(translate, listField.itemLabelKey, listField.itemLabel);
     const addTitle = itemLabel ? translate('dynamicForm.addItem', {item: itemLabel}) : translate('common.add');
     const title = item ? summarizeListItem(item, listField.itemFields, translate, getListItemFallbackTitle(listField, items.indexOf(item), translate)).title : addTitle;
@@ -74,7 +75,7 @@ function DynamicFormListItemPage({currentPageName, allFields, values, currency, 
             formID={ONYXKEYS.FORMS.DYNAMIC_FORM_LIST_ITEM_FORM}
             forwardedFSClass={CONST.FULLSTORY.CLASS.MASK}
             submitButtonText={translate('common.save')}
-            validate={(inputValues) => getDynamicFieldErrors(listField.itemFields, withInputValues(inputValues), translate)}
+            validate={(inputValues) => getContentErrors(itemContent, withInputValues(inputValues), translate)}
             onSubmit={(inputValues) => onListItemSave(listField.key, item?.id, withInputValues(inputValues))}
             style={[styles.mh5, styles.flexGrow1]}
             submitButtonStyles={styles.mb0}
@@ -91,7 +92,7 @@ function DynamicFormListItemPage({currentPageName, allFields, values, currency, 
                         {title}
                     </Text>
                     <DynamicFormFields
-                        content={listField.itemFields}
+                        content={itemContent}
                         values={withInputValues(inputValues)}
                         isSensitive={isSensitiveList}
                         currency={currency}

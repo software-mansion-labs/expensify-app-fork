@@ -13,6 +13,7 @@ import ListFieldAdapter from '@components/DynamicForm/adapters/ListFieldAdapter'
 import TabsAdapter from '@components/DynamicForm/adapters/TabsAdapter';
 import YesNoAdapter from '@components/DynamicForm/adapters/YesNoAdapter';
 import DynamicFormFields from '@components/DynamicForm/components/DynamicFormFields';
+import {parseContent} from '@components/DynamicForm/content/content';
 import type {DynamicFormValues} from '@components/DynamicForm/types';
 import getAddressInputKeys from '@components/DynamicForm/utils/getAddressInputKeys';
 import type {FormValue} from '@components/Form/types';
@@ -106,7 +107,7 @@ function renderFields(content: DynamicFormContentItem[], values: DynamicFormValu
     mockInputWrapper.mockClear();
     render(
         <DynamicFormFields
-            content={content}
+            content={parseContent(content)}
             values={values}
             currency={currency}
             maxFileSize={maxFileSize}
@@ -832,7 +833,7 @@ describe('DynamicFormFields', () => {
         ];
         const {rerender} = render(
             <DynamicFormFields
-                content={content}
+                content={parseContent(content)}
                 values={{type: 'PRIVATE'}}
             />,
         );
@@ -842,7 +843,7 @@ describe('DynamicFormFields', () => {
         // When the answer changes to a business, which shows the business number
         rerender(
             <DynamicFormFields
-                content={content}
+                content={parseContent(content)}
                 values={{type: 'BUSINESS'}}
             />,
         );

@@ -1,4 +1,4 @@
-import {isFieldVisible} from '@components/DynamicForm/utils/getVisibleFields';
+import isShown from '@components/DynamicForm/utils/isShown';
 
 import type {DynamicFormField, DynamicFormHeading} from '@src/types/onyx';
 
@@ -23,12 +23,12 @@ const companyNumber: DynamicFormField = {
     showWhen: {key: 'companyName', equals: ['Acme']},
 };
 
-describe('isFieldVisible', () => {
+describe('isShown', () => {
     it('shows a field without showWhen', () => {
         // Given a field that does not depend on any answer
         // When its visibility is checked with no answers
         // Then it is visible, since nothing can hide it
-        expect(isFieldVisible(legalType, {}, [legalType])).toBe(true);
+        expect(isShown(legalType.showWhen, {}, [legalType])).toBe(true);
     });
 
     it('shows a field only while the controlling answer matches', () => {
@@ -37,8 +37,8 @@ describe('isFieldVisible', () => {
 
         // When the recipient type is business, then private
         // Then the field is visible only for business
-        expect(isFieldVisible(companyName, {legalType: 'BUSINESS'}, fields)).toBe(true);
-        expect(isFieldVisible(companyName, {legalType: 'PRIVATE'}, fields)).toBe(false);
+        expect(isShown(companyName.showWhen, {legalType: 'BUSINESS'}, fields)).toBe(true);
+        expect(isShown(companyName.showWhen, {legalType: 'PRIVATE'}, fields)).toBe(false);
     });
 
     it('hides a field while its controlling field is hidden, even if the hidden field still has a matching answer', () => {
@@ -49,7 +49,7 @@ describe('isFieldVisible', () => {
         const values = {legalType: 'PRIVATE', companyName: 'Acme'};
 
         // Then companyNumber stays hidden, because the question it depends on is hidden
-        expect(isFieldVisible(companyNumber, values, fields)).toBe(false);
+        expect(isShown(companyNumber.showWhen, values, fields)).toBe(false);
     });
 
     it('hides a heading while its controlling field is hidden', () => {
@@ -61,7 +61,7 @@ describe('isFieldVisible', () => {
         const values = {legalType: 'PRIVATE', companyName: 'Acme'};
 
         // Then the heading follows the same rule as a field and stays hidden
-        expect(isFieldVisible(companyDetails, values, fields)).toBe(false);
+        expect(isShown(companyDetails.showWhen, values, fields)).toBe(false);
     });
 
     it('checks the whole controller chain of a heading that shares its key with a field', () => {
@@ -74,7 +74,7 @@ describe('isFieldVisible', () => {
         const values = {legalType: 'PRIVATE', address: '1 Main St', country: 'GB'};
 
         // Then the heading is hidden, since the shared key must not stop the check of whether the address field is hidden
-        expect(isFieldVisible(addressHeading, values, [legalType, address, country])).toBe(false);
+        expect(isShown(addressHeading.showWhen, values, [legalType, address, country])).toBe(false);
     });
 
     it('stops on a showWhen cycle instead of recursing forever', () => {
@@ -94,7 +94,7 @@ describe('isFieldVisible', () => {
 
         // When visibility is checked
         // Then it falls back to the controlling answer alone
-        expect(isFieldVisible(first, {first: 'yes', second: 'yes'}, [first, second])).toBe(true);
+        expect(isShown(first.showWhen, {first: 'yes', second: 'yes'}, [first, second])).toBe(true);
     });
 
     it('shows a field controlled by a multiselect when any chosen value matches', () => {
@@ -104,8 +104,8 @@ describe('isFieldVisible', () => {
         const fields = [industries, sourceOfWealth];
 
         // When the chosen industries include a high risk one, and when they do not
-        const isShownWithHighRisk = isFieldVisible(sourceOfWealth, {industries: ['RETAIL', 'GAMBLING']}, fields);
-        const isShownWithoutHighRisk = isFieldVisible(sourceOfWealth, {industries: ['RETAIL']}, fields);
+        const isShownWithHighRisk = isShown(sourceOfWealth.showWhen, {industries: ['RETAIL', 'GAMBLING']}, fields);
+        const isShownWithoutHighRisk = isShown(sourceOfWealth.showWhen, {industries: ['RETAIL']}, fields);
 
         // Then the question shows only in the first case
         expect(isShownWithHighRisk).toBe(true);

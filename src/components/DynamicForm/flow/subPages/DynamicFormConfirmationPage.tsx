@@ -1,5 +1,5 @@
+import getConfirmationItems from '@components/DynamicForm/flow/getConfirmationItems';
 import type {DynamicFormSubPageProps} from '@components/DynamicForm/types';
-import getConfirmationItems from '@components/DynamicForm/utils/getConfirmationItems';
 import ConfirmationStep from '@components/SubStepForms/ConfirmationStep';
 
 import useLocalize from '@hooks/useLocalize';

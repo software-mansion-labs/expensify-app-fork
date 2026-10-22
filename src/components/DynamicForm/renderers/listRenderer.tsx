@@ -1,7 +1,6 @@
 import ListFieldAdapter from '@components/DynamicForm/adapters/ListFieldAdapter';
 import getLocalizedText, {getFieldLabel} from '@components/DynamicForm/utils/getLocalizedText';
-import hasSensitiveAnswer from '@components/DynamicForm/utils/hasSensitiveAnswer';
-import isSensitiveField from '@components/DynamicForm/utils/isSensitiveField';
+import isSensitiveField, {hasSensitiveAnswer} from '@components/DynamicForm/utils/isSensitiveField';
 import {getListItems} from '@components/DynamicForm/utils/listItems';
 import InputWrapper from '@components/Form/InputWrapper';
 

@@ -1,4 +1,4 @@
-import {getVisibleContent} from '@components/DynamicForm/utils/getVisibleFields';
+import {getVisibleContent, parseContent} from '@components/DynamicForm/content/content';
 
 import type {DynamicFormField, DynamicFormHeading} from '@src/types/onyx';
 
@@ -11,7 +11,7 @@ describe('getVisibleContent', () => {
         const business: DynamicFormHeading = {key: 'business', title: 'Business', showWhen: {key: 'legalType', equals: ['BUSINESS']}};
 
         // When the content is checked for a private recipient
-        const visibleContent = getVisibleContent([details, business, email], {legalType: 'PRIVATE'});
+        const visibleContent = getVisibleContent(parseContent([details, business, email]), {legalType: 'PRIVATE'});
 
         // Then the first heading titles the field, since a hidden heading is skipped and does not end the block above it
         expect(visibleContent).toEqual([details, email]);
@@ -23,7 +23,7 @@ describe('getVisibleContent', () => {
         const contact: DynamicFormHeading = {key: 'contact', title: 'Contact'};
 
         // When the content is checked
-        const visibleContent = getVisibleContent([details, contact, email], {});
+        const visibleContent = getVisibleContent(parseContent([details, contact, email]), {});
 
         // Then only the heading right above the field is kept, since the first one titles nothing
         expect(visibleContent).toEqual([contact, email]);
@@ -34,7 +34,7 @@ describe('getVisibleContent', () => {
         const empty: DynamicFormHeading = {key: 'empty'};
 
         // When the content is checked
-        const visibleContent = getVisibleContent([empty, email], {});
+        const visibleContent = getVisibleContent(parseContent([empty, email]), {});
 
         // Then only the field is left
         expect(visibleContent).toEqual([email]);
@@ -46,7 +46,7 @@ describe('getVisibleContent', () => {
         const companyNumber: DynamicFormField = {key: 'companyNumber', type: 'text', required: true, showWhen: {key: 'companyName', equals: ['Acme']}};
 
         // When the page is checked with the whole form, and companyName keeps an answer from before the user switched to a private recipient
-        const visibleContent = getVisibleContent([companyNumber], {legalType: 'PRIVATE', companyName: 'Acme'}, [companyName, companyNumber]);
+        const visibleContent = getVisibleContent(parseContent([companyNumber]), {legalType: 'PRIVATE', companyName: 'Acme'}, [companyName, companyNumber]);
 
         // Then companyNumber stays hidden, because the question it depends on is hidden
         expect(visibleContent).toEqual([]);

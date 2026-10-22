@@ -1,9 +1,8 @@
 import DynamicFormFlow from '@components/DynamicForm';
 import DynamicFormFields from '@components/DynamicForm/components/DynamicFormFields';
+import {getContentErrors, getFieldsContent} from '@components/DynamicForm/content/content';
+import {getAllFields, getPages, getPageTitle} from '@components/DynamicForm/flow/pages';
 import type {DynamicFormLayout} from '@components/DynamicForm/types';
-import getDynamicFieldErrors from '@components/DynamicForm/utils/getDynamicFieldErrors';
-import getPageTitle from '@components/DynamicForm/utils/getPageTitle';
-import {getAllFields, getPages} from '@components/DynamicForm/utils/paginate';
 import FormProvider from '@components/Form/FormProvider';
 import Text from '@components/Text';
 
@@ -399,7 +398,7 @@ function SinglePage({fields, draftValues, isFlat}: Preset) {
         <FormProvider
             formID={STORYBOOK_FORM_ID}
             submitButtonText="Submit"
-            validate={(values) => getDynamicFieldErrors(allFields, values, translate)}
+            validate={(values) => getContentErrors(getFieldsContent(allFields), values, translate)}
             onSubmit={(values) => alert(JSON.stringify(values, null, 4))}
             style={defaultStyles.ph5}
         >

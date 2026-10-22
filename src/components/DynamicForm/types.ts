@@ -3,7 +3,7 @@ import type {FormValue} from '@components/Form/types';
 import type {SubPageProps, UseSubPageProps} from '@hooks/useSubPage/types';
 
 import type {OnyxFormKey} from '@src/ONYXKEYS';
-import type {DynamicFormField, DynamicFormFieldType, DynamicFormPage, DynamicFormSchema} from '@src/types/onyx';
+import type {DynamicFormField, DynamicFormFieldType, DynamicFormHeading, DynamicFormPage, DynamicFormSchema} from '@src/types/onyx';
 
 import type {DynamicFormFieldsProps} from './components/DynamicFormFields';
 
@@ -13,11 +13,31 @@ type DynamicFormValues = Partial<Record<string, FormValue>>;
 /** The variant of one type. An intersection rather than Extract, since one variant can cover several types, such as select and radio. */
 type DynamicFormFieldOfType<TType extends DynamicFormFieldType> = DynamicFormField & {type: TType};
 
+/** Met while the answer to its `key` is one of its `equals`. Fields, headings and pages share it. */
+type DynamicFormCondition = NonNullable<DynamicFormHeading['showWhen']>;
+
+/** A heading or a field this App version can draw */
+type ParsedContentItem = DynamicFormHeading | DynamicFormField;
+
+/** Content as this App version can draw it: fields of an unknown type, fields without a key and headings without text are left out, in list entries too */
+type ParsedContent = {
+    /** Headings and fields, in screen order */
+    items: ParsedContentItem[];
+
+    /** The fields among the items */
+    fields: DynamicFormField[];
+};
+
+/** A page whose content is parsed once, when the flow reads the schema */
+type DynamicFormFlowPage = Omit<DynamicFormPage, 'content'> & {
+    content: ParsedContent;
+};
+
 /** `auto` shows a step indicator at three or more pages, `stepper` always, `pages` never */
 type DynamicFormLayout = 'auto' | 'pages' | 'stepper';
 
 type DynamicFormFlowProps = Pick<DynamicFormFieldsProps, 'currency' | 'maxFileSize' | 'onRefreshRequirements'> & {
-    /** The pages as the server groups them, or a flat list of fields the App paginates. Fields of a type this App version does not know are left out. */
+    /** The pages as the server groups them, or a flat list of fields the App paginates. Fields of a type this App version does not know are left out, in list entries too. */
     schema: DynamicFormSchema;
 
     /** The form whose draft holds the answers. Sensitive answers stay in memory instead. */
@@ -41,7 +61,7 @@ type DynamicFormFlowProps = Pick<DynamicFormFieldsProps, 'currency' | 'maxFileSi
     /** Receives the answers to every visible field, sensitive ones included. The flow drops sensitive answers once `isSubmitting` turns false without `submitError`, or right away when `isSubmitting` is not passed. */
     onSubmit: (answers: DynamicFormValues) => void;
 
-    /** Receives a page and its draft answers when the user leaves it with Next, for flows that save each page. Sensitive answers are not passed, since a page save would persist them in the request queue. */
+    /** Receives a page, as parsed, and its draft answers when the user leaves it with Next, for flows that save each page. Sensitive answers are not passed, since a page save would persist them in the request queue. */
     onPageSubmit?: (page: DynamicFormPage, answers: DynamicFormValues) => void;
 
     /** Leaves the flow from its first page */
@@ -63,7 +83,7 @@ type DynamicFormFlowProps = Pick<DynamicFormFieldsProps, 'currency' | 'maxFileSi
 /** Props of every page in the flow: useSubPage's routing props plus the form's data */
 type DynamicFormSubPageProps = SubPageProps &
     Pick<DynamicFormFlowProps, 'formID' | 'currency' | 'maxFileSize' | 'onRefreshRequirements' | 'confirmationTitle' | 'isSubmitting' | 'submitError'> & {
-        pages: DynamicFormPage[];
+        pages: DynamicFormFlowPage[];
 
         /** Every supported field of the form, which is where a `showWhen` finds its controller */
         allFields: DynamicFormField[];
@@ -71,7 +91,7 @@ type DynamicFormSubPageProps = SubPageProps &
         /** Draft answers merged with the sensitive answers kept in memory */
         values: DynamicFormValues;
 
-        onPageSubmit: (page: DynamicFormPage, pageValues: DynamicFormValues) => void;
+        onPageSubmit: (page: DynamicFormFlowPage, pageValues: DynamicFormValues) => void;
 
         onOpenListItemEditor: NonNullable<DynamicFormFieldsProps['onOpenListItemEditor']>;
 
@@ -84,4 +104,14 @@ type DynamicFormSubPageProps = SubPageProps &
         onListItemSave: (listKey: string, itemID: string | undefined, answers: DynamicFormValues) => void;
     };
 
-export type {DynamicFormFieldOfType, DynamicFormFlowProps, DynamicFormLayout, DynamicFormSubPageProps, DynamicFormValues};
+export type {
+    DynamicFormCondition,
+    DynamicFormFieldOfType,
+    DynamicFormFlowPage,
+    DynamicFormFlowProps,
+    DynamicFormLayout,
+    DynamicFormSubPageProps,
+    DynamicFormValues,
+    ParsedContent,
+    ParsedContentItem,
+};

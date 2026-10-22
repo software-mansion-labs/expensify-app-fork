@@ -1,6 +1,6 @@
 import {DialogLabelProvider, useDialogLabelData} from '@components/DialogLabelContext';
+import {getContentErrors, getFieldsContent} from '@components/DynamicForm/content/content';
 import type {DynamicFormValues} from '@components/DynamicForm/types';
-import getDynamicFieldErrors from '@components/DynamicForm/utils/getDynamicFieldErrors';
 import toDynamicFormValues from '@components/DynamicForm/utils/toDynamicFormValues';
 import FormProvider from '@components/Form/FormProvider';
 import HeaderWithBackButtonAndTitle from '@components/Header/composed/HeaderWithBackButtonAndTitle';
@@ -116,7 +116,7 @@ function DynamicFormListItemModal({isVisible, title, itemFields, keptAnswers, is
                             <FormProvider
                                 formID={ONYXKEYS.FORMS.DYNAMIC_FORM_LIST_ITEM_FORM}
                                 submitButtonText={translate('common.save')}
-                                validate={(inputValues) => getDynamicFieldErrors(itemFields, withInputValues(inputValues), translate)}
+                                validate={(inputValues) => getContentErrors(getFieldsContent(itemFields), withInputValues(inputValues), translate)}
                                 onSubmit={(inputValues) => onSave(withInputValues(inputValues))}
                                 style={[styles.mh5, styles.flexGrow1]}
                                 submitButtonStyles={styles.mb0}

@@ -1,9 +1,9 @@
 import DotIndicatorMessage from '@components/DotIndicatorMessage';
+import DynamicFormFields from '@components/DynamicForm/components/DynamicFormFields';
+import {getContentErrors} from '@components/DynamicForm/content/content';
+import {getPageTitle} from '@components/DynamicForm/flow/pages';
 import type {DynamicFormSubPageProps} from '@components/DynamicForm/types';
-import getContentFields from '@components/DynamicForm/utils/getContentFields';
-import getDynamicFieldErrors from '@components/DynamicForm/utils/getDynamicFieldErrors';
 import getLocalizedText from '@components/DynamicForm/utils/getLocalizedText';
-import getPageTitle from '@components/DynamicForm/utils/getPageTitle';
 import isSensitiveField from '@components/DynamicForm/utils/isSensitiveField';
 import toDynamicFormValues from '@components/DynamicForm/utils/toDynamicFormValues';
 import FormProvider from '@components/Form/FormProvider';
@@ -16,8 +16,6 @@ import useThemeStyles from '@hooks/useThemeStyles';
 import CONST from '@src/CONST';
 
 import React from 'react';
-
-import DynamicFormFields from './DynamicFormFields';
 
 /** One page of a dynamic form flow: its title and description, its fields and a Next button */
 function DynamicFormFieldsPage({
@@ -47,17 +45,14 @@ function DynamicFormFieldsPage({
         return null;
     }
     // A sensitive list lives in memory, which the editor page and a removal update, so the form's own copy of it may be stale
-    const pageKeys = new Set(getContentFields(page.content).map((field) => field.key));
-    const memoryListValues = Object.fromEntries(
-        allFields.filter((field) => field.type === 'list' && isSensitiveField(field) && pageKeys.has(field.key)).map((field) => [field.key, values[field.key]]),
-    );
+    const memoryListValues = Object.fromEntries(page.content.fields.filter((field) => field.type === 'list' && isSensitiveField(field)).map((field) => [field.key, values[field.key]]));
     const withInputValues = (inputValues: unknown) => ({...values, ...toDynamicFormValues(inputValues), ...memoryListValues});
 
     return (
         <FormProvider
             formID={formID}
             submitButtonText={translate(isEditing || isLastPage ? 'common.confirm' : 'common.next')}
-            validate={(inputValues) => getDynamicFieldErrors(getContentFields(page.content), withInputValues(inputValues), translate, allFields)}
+            validate={(inputValues) => getContentErrors(page.content, withInputValues(inputValues), translate, allFields)}
             onSubmit={(inputValues) => {
                 const pageValues = toDynamicFormValues(inputValues);
                 onPageSubmit(page, pageValues);

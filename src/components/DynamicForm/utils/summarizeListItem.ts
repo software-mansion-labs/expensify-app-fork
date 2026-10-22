@@ -6,8 +6,8 @@ import {Str} from 'expensify-common';
 
 import formatDynamicFieldValue from './formatDynamicFieldValue';
 import getLocalizedText, {getFieldLabel} from './getLocalizedText';
-import getVisibleFields from './getVisibleFields';
 import isSensitiveField from './isSensitiveField';
+import {getShownFields} from './isShown';
 
 const DESCRIPTION_ANSWER_LIMIT = 2;
 
@@ -26,7 +26,7 @@ function getListItemFallbackTitle(field: DynamicFormListField, index: number, tr
 
 /** The leading run of text answers names the row, as first and last name do. Up to two short remaining answers describe it. Hidden answers are left out, and an entry with no shown answer is named by `fallbackTitle`. */
 function summarizeListItem(item: DynamicFormListItem, itemFields: DynamicFormField[], translate: LocalizedTranslate, fallbackTitle: string): {title: string; description: string} {
-    const shownFields = getVisibleFields(itemFields, item).filter((field) => !isSensitiveField(field) && formatDynamicFieldValue(field, item, translate) !== '');
+    const shownFields = getShownFields(itemFields, item).filter((field) => !isSensitiveField(field) && formatDynamicFieldValue(field, item, translate) !== '');
     const firstTextIndex = shownFields.findIndex((field) => field.type === 'text');
     const titleFields: DynamicFormField[] = [];
     for (const field of shownFields.slice(Math.max(firstTextIndex, 0))) {

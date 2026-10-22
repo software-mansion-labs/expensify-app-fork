@@ -27,7 +27,7 @@ import DynamicFormFlow from "@components/DynamicForm";
 
 - `schema` is either `{pages}`, the pages as the server groups them, or `{fields}`, a flat list the App splits into pages (see [Pages](#pages)).
 - The current page is kept in the route, through `useSubPage`. Pass `shouldReplaceRoute` for flows on dynamic routes.
-- A new visit resumes on the first page its draft leaves incomplete, or on the last page when nothing is missing.
+- A new visit resumes on the first page its draft leaves incomplete, or on the last page when nothing is missing. A draft whose answers are all blank, such as text of only spaces, starts on the first page.
 - `hasConfirmation` decides whether a confirmation page follows the last page. It is on by default; without it the last page's Confirm button submits.
 - `layout` decides the step indicator: `auto` shows it at three or more shown pages, `stepper` always, `pages` never.
 - Answers are saved to the form draft as the user types, and again, cleaned, when they leave a page with Next.
@@ -39,24 +39,31 @@ import DynamicFormFlow from "@components/DynamicForm";
 
 ### One page: `DynamicFormFields`
 
-Render `DynamicFormFields` inside a `FormProvider` and validate the same content with `getDynamicFieldErrors`:
+Parse the schema's content once with `parseContent`, then render `DynamicFormFields` inside a `FormProvider` and validate the same content with `getContentErrors`:
 
 ```tsx
 import DynamicFormFields from "@components/DynamicForm/components/DynamicFormFields";
-import getContentFields from "@components/DynamicForm/utils/getContentFields";
-import getDynamicFieldErrors from "@components/DynamicForm/utils/getDynamicFieldErrors";
+import { getContentErrors, parseContent } from "@components/DynamicForm/content/content";
+
+const parsedContent = parseContent(content);
 
 <FormProvider
   formID={ONYXKEYS.FORMS.SOME_FORM}
   submitButtonText={translate("common.save")}
-  validate={(values) => getDynamicFieldErrors(getContentFields(content), values, translate)}
+  validate={(values) => getContentErrors(parsedContent, values, translate)}
   onSubmit={onSubmit}
 >
-  {({ inputValues }) => <DynamicFormFields content={content} values={inputValues} />}
+  {({ inputValues }) => <DynamicFormFields content={parsedContent} values={inputValues} />}
 </FormProvider>;
 ```
 
 Pass `inputValues` from the render prop, so `showWhen` and `dependsOn` react to the user's answers as they type. When `content` is one page of a bigger form, pass the whole form as `allFields`, since a field can depend on an answer asked on another page. Outside `DynamicFormFlow`, list entries are edited in a modal.
+
+## How the code is laid out
+
+- `content/` reads a page's content. `parseContent` checks the schema once, and everything after it reads `ParsedContent`: the headings and fields this App version can draw, and the page's fields. `definitions.ts` says what a heading and a field mean to the form: how each is parsed and shown, and for a field how its answer is checked, submitted, kept out of the draft and shown on the confirmation page. `getFieldErrors.ts` holds the checks of each field type.
+- `flow/` is `DynamicFormFlow`'s own logic: the pages and where a visit starts (`pages.ts`), the sub-pages `useSubPage` routes to (`getFlowPages.ts`), where answers are kept (`answerStorage.ts`), the list entry editors (`listItemEditor.ts`), the redirect away from pages the flow cannot show, the step indicator, and the pages themselves in `subPages/`.
+- `components/` and `renderers/` draw the fields, `adapters/` fit existing inputs to `FormProvider`, and `utils/` holds helpers for single fields and answers. `utils/isShown.ts` is the one `showWhen` rule for fields, headings and pages.
 
 ## Pages
 
@@ -107,7 +114,7 @@ A choice or list field that is the only question on its page is drawn as the pag
 
 `maxFileSize` comes from the field when the schema sets it, else from the `maxFileSize` the screen passes. With neither, files of any size are taken.
 
-The server can send a type this App version does not know. The schema is typed `DynamicFormSchemaField` for that reason: such a field is left out and logged once, so a newer schema never blocks the form.
+The server can send a type this App version does not know. The schema is typed `DynamicFormSchemaField` for that reason: such a field is left out when the content is parsed, in list entries at any depth too, and logged once, so a newer schema never blocks the form and its answers are neither shown nor submitted.
 
 ## Privacy and accessibility
 
@@ -138,5 +145,5 @@ A `list` field holds repeated entries, such as a company's owners. Its value is 
 ## Adding a field type
 
 1. Add a variant to `DynamicFormField`.
-2. Typecheck then points at every place that has to handle it: the renderers in `renderers/`, the validators in `utils/getDynamicFieldErrors.ts`, the supported types in `utils/isSupportedField.ts` and the input map in `DynamicFormFieldsTest.tsx`.
+2. Typecheck then points at every place that has to handle it: the renderers in `renderers/`, the validators in `content/getFieldErrors.ts`, the supported types in `content/definitions.ts`, the answer guards in `renderDynamicField.tsx` and the input map in `DynamicFormFieldsTest.tsx`.
 3. Map the field onto an existing input component. If the component's props do not fit a form input, add a thin adapter in `adapters/`: it takes `value`, `onInputChange` and `errorText`, renders one existing component, reads no Onyx and navigates nowhere, and passes `forwardedFSClass` on so the answer stays masked. If no component fits, add the input outside `DynamicForm` first, so other forms can use it too.

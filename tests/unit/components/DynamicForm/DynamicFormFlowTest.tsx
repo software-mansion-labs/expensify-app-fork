@@ -18,12 +18,17 @@ import {clearSensitiveAnswers, forgetSensitiveAnswers, saveDraftAnswers, saveSen
 import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';
 import ROUTES from '@src/ROUTES';
-import type {DynamicFormPage, DynamicFormSchema} from '@src/types/onyx';
+import type {DynamicFormField, DynamicFormPage, DynamicFormSchema} from '@src/types/onyx';
 
 import React from 'react';
 import Onyx from 'react-native-onyx';
 
 import waitForBatchedUpdatesWithAct from '../../../utils/waitForBatchedUpdatesWithAct';
+
+/** The schema types list only the field types this App version knows, so a newer server's type is set on a known field */
+function withUnknownType(field: DynamicFormField, type: string): DynamicFormField {
+    return Object.assign(field, {type});
+}
 
 /** useSubPage types its page as taking SubPageProps alone, so the flow's props are checked for at run time */
 function hasDynamicFormProps(props: SubPageProps | undefined): props is DynamicFormSubPageProps {
@@ -330,6 +335,18 @@ describe('DynamicFormFlow', () => {
         expect(subPageOptions.startFrom).toBe(1);
     });
 
+    it('starts from the first page when the draft holds only blank answers', async () => {
+        // Given a form whose first page asks an optional nickname, and a draft holding only spaces for it, as a user who typed and cleared it would leave
+        const nickname: DynamicFormPage = {key: 'nickname', title: 'Nickname', content: [{key: 'nickname', type: 'text', required: false}]};
+        const flowSchema: DynamicFormSchema = {pages: [nickname, recipient]};
+
+        // When the flow renders
+        const {subPageOptions} = await renderFlow({flowSchema, draft: {nickname: '   '}, currentPageName: 'nickname'});
+
+        // Then it starts on the first page, since spaces are not an answer and the user has not started the form
+        expect(subPageOptions.startFrom).toBe(0);
+    });
+
     it('resumes a complete form without a confirmation page on its last page', async () => {
         // Given a complete form without sensitive fields or a confirmation page
         // When the flow renders
@@ -404,7 +421,7 @@ describe('DynamicFormFlow', () => {
         // Then only this page's name is drafted, the SSN goes to memory only, and the screen never sees the SSN, since a page save would queue it
         expect(saveDraftAnswers).toHaveBeenCalledWith(FORM_ID, {firstName: 'Jane'});
         expect(saveSensitiveAnswers).toHaveBeenCalledWith(FORM_ID, {ssn: '123456789'});
-        expect(onPageSubmit).toHaveBeenCalledWith(page, {firstName: 'Jane'});
+        expect(onPageSubmit).toHaveBeenCalledWith(personalDetails, {firstName: 'Jane'});
     });
 
     it('submits the visible answers, sensitive ones included, from the confirmation page', async () => {
@@ -672,7 +689,7 @@ describe('DynamicFormFlow', () => {
             pageProps.onPageSubmit(page, {directors: [jane]});
 
             // Then a screen saving page by page gets the director, while the SSN stays in memory, out of the request queue
-            expect(onPageSubmit).toHaveBeenCalledWith(page, {directors: [jane]});
+            expect(onPageSubmit).toHaveBeenCalledWith(directorsSchema.pages.at(0), {directors: [jane]});
         });
 
         it('keeps a sensitive list in memory instead of the draft', async () => {
@@ -736,6 +753,31 @@ describe('DynamicFormFlow', () => {
             // Then the list page opens, rather than the page before the editor or the screen before the flow
             expect(Navigation.goBack).toHaveBeenCalledWith(buildRoute('directors'));
             expect(onBack).not.toHaveBeenCalled();
+        });
+
+        it('leaves an entry answer to a field of an unknown type out of the submission', async () => {
+            // Given a list whose entries have a field of a type this App version does not know, and a drafted entry holding an answer to it
+            const signature = withUnknownType({key: 'signature', type: 'text', required: false}, 'hologram');
+            const unknownItemFieldSchema: DynamicFormSchema = {
+                pages: [
+                    {
+                        key: 'directors',
+                        content: [{key: 'directors', type: 'list', required: true, itemFields: [{key: 'firstName', type: 'text', required: true}, signature]}],
+                    },
+                ],
+            };
+            const {subPageOptions, onSubmit} = await renderFlow({
+                flowSchema: unknownItemFieldSchema,
+                draft: {directors: [{id: 'jane', firstName: 'Jane', signature: 'scribble'}]},
+                currentPageName: CONST.DYNAMIC_FORM.CONFIRMATION_PAGE_KEY,
+                hasConfirmation: true,
+            });
+
+            // When the user confirms
+            subPageOptions.onFinished();
+
+            // Then the entry is submitted without that answer, as a top-level field of an unknown type is
+            expect(onSubmit).toHaveBeenCalledWith({directors: [{id: 'jane', firstName: 'Jane'}]});
         });
 
         it('submits each entry with its sensitive answers', async () => {

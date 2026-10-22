@@ -1,5 +1,5 @@
-import getPageTitle, {getPageSectionName, isPageShown} from '@components/DynamicForm/utils/getPageTitle';
-import paginate, {getAllFields, getPages} from '@components/DynamicForm/utils/paginate';
+import {getAllFields, getPages, getPageSectionName, getPageTitle, isPageShown, paginate} from '@components/DynamicForm/flow/pages';
+import type {DynamicFormFlowPage, ParsedContent} from '@components/DynamicForm/types';
 
 import type {DynamicFormField, DynamicFormPage, DynamicFormSchemaField, DynamicFormTextField} from '@src/types/onyx';
 
@@ -13,8 +13,14 @@ function options(count: number) {
     return Array.from({length: count}, (_, index) => ({key: `o${index}`, label: `o${index}`}));
 }
 
-function keysOf(pages: DynamicFormPage[]): string[][] {
-    return pages.map((page) => page.content.map((item) => item.key));
+function keysOf(pages: ParsedContent[]): string[][] {
+    return pages.map((page) => page.items.map((item) => item.key));
+}
+
+/** The page as the flow reads it from the schema */
+function parsePage(page: DynamicFormPage): DynamicFormFlowPage {
+    const [parsedPage] = getPages({pages: [page]});
+    return parsedPage;
 }
 
 describe('paginate', () => {
@@ -84,11 +90,11 @@ describe('paginate', () => {
         // Given a field of a type this App version does not know
         const unknown = {key: 'x', type: 'hologram', required: true};
 
-        // When paginated
-        const pages = paginate([unknown, text('a')]);
+        // When the flat schema is split into pages
+        const pages = getPages({fields: [unknown, text('a')]});
 
         // Then it does not produce an empty page
-        expect(keysOf(pages)).toEqual([['a']]);
+        expect(keysOf(pages.map((page) => page.content))).toEqual([['a']]);
     });
 });
 
@@ -128,7 +134,7 @@ describe('getPageTitle', () => {
         const page = {key: 'p', titleKey: 'common.next', content: [text('a')]} as DynamicFormPage;
 
         // When its title is read
-        const title = getPageTitle(page, {}, translateLocal);
+        const title = getPageTitle(parsePage(page), {}, translateLocal);
 
         // Then the translation is used
         expect(title).toBe(translateLocal('common.next'));
@@ -139,7 +145,7 @@ describe('getPageTitle', () => {
         const page: DynamicFormPage = {key: 'p', content: [text('a', {label: 'Alpha'}), text('b', {label: 'Beta', showWhen: {key: 'a', equals: ['x']}})]};
 
         // When the revealed field shows
-        const title = getPageTitle(page, {a: 'x'}, translateLocal);
+        const title = getPageTitle(parsePage(page), {a: 'x'}, translateLocal);
 
         // Then the title is still the question's label
         expect(title).toBe('Alpha');
@@ -150,7 +156,7 @@ describe('getPageTitle', () => {
         const page: DynamicFormPage = {key: 'p', content: [text('a', {label: 'Account number', question: "What's your account number?"})]};
 
         // When its title is read
-        const title = getPageTitle(page, {}, translateLocal);
+        const title = getPageTitle(parsePage(page), {}, translateLocal);
 
         // Then the headline asks the question, so it does not repeat the input's label
         expect(title).toBe("What's your account number?");
@@ -161,7 +167,7 @@ describe('getPageTitle', () => {
         const page: DynamicFormPage = {key: 'p', content: [text('a', {label: 'Alpha', showWhen: {key: 'z', equals: ['1']}}), text('b', {label: 'Beta'}), text('c', {label: 'Gamma'})]};
 
         // When its title is read
-        const title = getPageTitle(page, {}, translateLocal);
+        const title = getPageTitle(parsePage(page), {}, translateLocal);
 
         // Then it is blank, since no one question names the page
         expect(title).toBe('');
@@ -174,7 +180,7 @@ describe('getPageSectionName', () => {
         const page: DynamicFormPage = {key: 'p', title: 'Bank details', content: [text('a', {label: 'Alpha'})]};
 
         // When its section name is read
-        const name = getPageSectionName(page, {}, translateLocal);
+        const name = getPageSectionName(parsePage(page), {}, translateLocal);
 
         // Then it is the page title
         expect(name).toBe('Bank details');
@@ -185,7 +191,7 @@ describe('getPageSectionName', () => {
         const page: DynamicFormPage = {key: 'p', content: [text('a', {label: 'Account number', question: "What's your account number?"})]};
 
         // When its section name is read
-        const name = getPageSectionName(page, {}, translateLocal);
+        const name = getPageSectionName(parsePage(page), {}, translateLocal);
 
         // Then it is that wording
         expect(name).toBe("What's your account number?");
@@ -197,7 +203,7 @@ describe('getPageSectionName', () => {
         const sharedPage: DynamicFormPage = {key: 'q', content: [text('a', {label: 'Account number'}), text('b', {label: 'Settlement currency'})]};
 
         // When their section names are read
-        const names = [getPageSectionName(lonePage, {}, translateLocal), getPageSectionName(sharedPage, {}, translateLocal)];
+        const names = [getPageSectionName(parsePage(lonePage), {}, translateLocal), getPageSectionName(parsePage(sharedPage), {}, translateLocal)];
 
         // Then both are blank, since the label is already on the row below and would only name one of several rows
         expect(names).toEqual(['', '']);
@@ -209,11 +215,13 @@ describe('isPageShown', () => {
         // Given a page shown only for business, controlled from another page
         const type = text('type');
         const page: DynamicFormPage = {key: 'biz', showWhen: {key: 'type', equals: ['BUSINESS']}, content: [text('ein')]};
-        const allFields = getAllFields([{key: 'first', content: [type]}, page]);
+        const pages = getPages({pages: [{key: 'first', content: [type]}, page]});
+        const allFields = getAllFields(pages);
+        const [, businessPage] = pages;
 
         // When the user answers private, and then business
-        const isShownForPrivate = isPageShown(page, {type: 'PRIVATE'}, allFields);
-        const isShownForBusiness = isPageShown(page, {type: 'BUSINESS'}, allFields);
+        const isShownForPrivate = isPageShown(businessPage, {type: 'PRIVATE'}, allFields);
+        const isShownForBusiness = isPageShown(businessPage, {type: 'BUSINESS'}, allFields);
 
         // Then it follows the answer
         expect(isShownForPrivate).toBe(false);
@@ -225,7 +233,8 @@ describe('isPageShown', () => {
         const page: DynamicFormPage = {key: 'p', content: [text('a', {showWhen: {key: 'z', equals: ['1']}})]};
 
         // When the flow checks whether to show it
-        const isShown = isPageShown(page, {}, getAllFields([page]));
+        const parsedPage = parsePage(page);
+        const isShown = isPageShown(parsedPage, {}, getAllFields([parsedPage]));
 
         // Then the page is skipped
         expect(isShown).toBe(false);

@@ -1,7 +1,6 @@
 import DynamicFormListItemModal from '@components/DynamicForm/components/DynamicFormListItemModal';
 import type {DynamicFormValues} from '@components/DynamicForm/types';
-import getAnswerKeys from '@components/DynamicForm/utils/getAnswerKeys';
-import hasSensitiveAnswer from '@components/DynamicForm/utils/hasSensitiveAnswer';
+import {getListItemSensitiveAnswerKeys} from '@components/DynamicForm/utils/listItems';
 import summarizeListItem, {getNumberedItemTitle} from '@components/DynamicForm/utils/summarizeListItem';
 import ListField from '@components/ListField';
 import type {ListFieldHandle} from '@components/ListField';
@@ -98,7 +97,7 @@ function ListFieldAdapter({
     const editingItem = items.find((item) => item.id === editingID);
     const summarize = (item: DynamicFormListItem) => summarizeListItem(item, itemFields, translate, getNumberedItemTitle(itemLabel ?? label, items.indexOf(item), translate));
     const modalTitle = editingItem ? summarize(editingItem).title : addTitle;
-    const sensitiveKeys = new Set(itemFields.filter(hasSensitiveAnswer).flatMap(getAnswerKeys));
+    const sensitiveKeys = new Set(getListItemSensitiveAnswerKeys(itemFields));
     const isKeptOutOfDraft = (key: string) => key !== 'id' && (isSensitive || sensitiveKeys.has(key));
 
     // Sensitive answers are not drafted, so the modal's inputs start from the stored entry instead. Every answer of a sensitive list is.

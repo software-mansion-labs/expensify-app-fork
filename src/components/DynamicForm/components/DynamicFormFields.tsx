@@ -1,14 +1,13 @@
-import type {DynamicFormValues} from '@components/DynamicForm/types';
-import getContentFields from '@components/DynamicForm/utils/getContentFields';
-import {getLoneField, getVisibleContent} from '@components/DynamicForm/utils/getVisibleFields';
-import isHeading from '@components/DynamicForm/utils/isHeading';
+import {getFieldsContent, getLoneField, getVisibleContent, getVisibleFields} from '@components/DynamicForm/content/content';
+import {isField} from '@components/DynamicForm/content/definitions';
+import type {DynamicFormValues, ParsedContent} from '@components/DynamicForm/types';
 import type {FormValue} from '@components/Form/types';
 
 import useAccessibilityAnnouncement from '@hooks/useAccessibilityAnnouncement';
 import useLocalize from '@hooks/useLocalize';
 
 import CONST from '@src/CONST';
-import type {DynamicFormContentItem, DynamicFormField, DynamicFormListItem} from '@src/types/onyx';
+import type {DynamicFormField, DynamicFormListItem} from '@src/types/onyx';
 
 import React, {useState} from 'react';
 
@@ -16,8 +15,8 @@ import DynamicFormFieldRow from './DynamicFormFieldRow';
 import DynamicFormHeadingRow from './DynamicFormHeadingRow';
 
 type DynamicFormFieldsProps = {
-    /** Headings and fields to render, in order. Fields of a type this App version does not know are left out. */
-    content: DynamicFormContentItem[];
+    /** Headings and fields to render, in order, as parseContent reads them from the schema */
+    content: ParsedContent;
 
     /** Current answers, from FormProvider's render-prop `inputValues`, so showWhen and dependsOn follow the user's typing */
     values: DynamicFormValues;
@@ -47,7 +46,7 @@ type DynamicFormFieldsProps = {
     isSensitive?: boolean;
 };
 
-/** The inputs of a schema-driven form. Render it inside a FormProvider and validate the fields of the same content with getDynamicFieldErrors. */
+/** The inputs of a schema-driven form. Render it inside a FormProvider and validate the same content with getContentErrors. */
 function DynamicFormFields({
     content,
     values,
@@ -62,7 +61,7 @@ function DynamicFormFields({
 }: DynamicFormFieldsProps) {
     const {translate} = useLocalize();
     const visibleContent = getVisibleContent(content, values, allFields);
-    const visibleFields = getContentFields(visibleContent);
+    const visibleFields = getVisibleFields(content, values, allFields);
     const loneField = getLoneField(visibleFields);
 
     // Questions appear and disappear as answers or refreshed requirements change, which a screen reader user can't see, so each change is announced
@@ -81,7 +80,7 @@ function DynamicFormFields({
     });
     const renderFields = (itemFields: DynamicFormField[], itemValues: DynamicFormValues, isItemSensitive: boolean) => (
         <DynamicFormFields
-            content={itemFields}
+            content={getFieldsContent(itemFields)}
             values={itemValues}
             isSensitive={isItemSensitive}
             currency={currency}
@@ -91,7 +90,7 @@ function DynamicFormFields({
     );
 
     return visibleContent.map((item, index) =>
-        isHeading(item) ? (
+        !isField(item) ? (
             <DynamicFormHeadingRow
                 key={`heading-${item.key}`}
                 heading={item}

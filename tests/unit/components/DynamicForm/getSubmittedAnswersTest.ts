@@ -1,12 +1,19 @@
+import {getContentAnswers, parseContent} from '@components/DynamicForm/content/content';
+import type {DynamicFormValues} from '@components/DynamicForm/types';
 import getAddressInputKeys from '@components/DynamicForm/utils/getAddressInputKeys';
-import getSubmittedAnswers, {getAnswerKeys} from '@components/DynamicForm/utils/getSubmittedAnswers';
+import getAnswerKeys from '@components/DynamicForm/utils/getAnswerKeys';
 import {getListItemSensitiveKey} from '@components/DynamicForm/utils/listItems';
 
 import type {DynamicFormField} from '@src/types/onyx';
 
 const cityKey = getAddressInputKeys('home').city;
 
-describe('getSubmittedAnswers', () => {
+/** The answers a page holding these fields submits, parsed the way the flow parses its schema */
+function getSubmittedAnswers(fields: DynamicFormField[], values: DynamicFormValues, allFields?: DynamicFormField[]): DynamicFormValues {
+    return getContentAnswers(parseContent(fields), values, allFields);
+}
+
+describe('getContentAnswers', () => {
     it('leaves out the answer of a field hidden by its controller', () => {
         // Given a text field shown only for business, with an answer left over from an earlier choice
         const fields: DynamicFormField[] = [
