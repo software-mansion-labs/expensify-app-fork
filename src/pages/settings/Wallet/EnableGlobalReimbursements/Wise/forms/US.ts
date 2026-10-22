@@ -1,10 +1,10 @@
 import CONST from '@src/CONST';
-import type {DynamicFormSchema} from '@src/types/onyx';
+import type {DynamicFormPage} from '@src/types/onyx';
 
 import getIndustryCategoryOptions from './getIndustryCategoryOptions';
 
 /** The US business onboarding form. Each page's key names the onboarding step its answers belong to. */
-const US: DynamicFormSchema = {
+const US: {pages: DynamicFormPage[]} = {
     pages: [
         {
             key: 'representative',

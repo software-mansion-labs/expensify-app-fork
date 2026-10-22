@@ -18,6 +18,7 @@ const ADDRESS_KEYS = getAddressInputKeys('address');
 const ERROR_KEY = 1;
 const FIRST_ID_FILE_PARAMETER = 'idDocument_0';
 const SECOND_ID_FILE_PARAMETER = 'idDocument_1';
+const FIRST_PROOF_FILE_PARAMETER = 'proofFile_0';
 const ID_FRONT = {uri: 'file:///id-front.png', name: 'id-front.png', type: 'image/png'};
 const ID_BACK = {uri: 'file:///id-back.png', name: 'id-back.png', type: 'image/png'};
 
@@ -84,7 +85,7 @@ describe('actions/Wise', () => {
             };
 
             // When the page is saved
-            updateWiseOnboardingAdditionalData(BANK_ACCOUNT_ID, representativePage, answers);
+            updateWiseOnboardingAdditionalData(BANK_ACCOUNT_ID, representativePage.key, representativePage, answers);
             await waitForBatchedUpdates();
 
             // Then the server gets the bank account and the page, the address as one answer, and the files beside the JSON, since a request carries only files and plain values
@@ -102,6 +103,39 @@ describe('actions/Wise', () => {
             TestHelper.expectAPICommandToHaveBeenCalled(WRITE_COMMANDS.UPDATE_WISE_ONBOARDING_ADDITIONAL_DATA, 1);
         });
 
+        it("saves a requirement page under Wise's requirement type, with its proof files", async () => {
+            // Given the source of wealth proof page, which the flow names by a URL-safe key
+            const writeSpy = spyOnWrite();
+            const proofPage: DynamicFormPage = {
+                key: 'business-source-of-wealth-proof',
+                content: [
+                    {key: 'sourceOfWealthType', type: 'select', required: true},
+                    {key: 'documentType', type: 'select', required: true},
+                    {key: 'proofFile', type: 'file', required: true, maxFiles: 2},
+                ],
+            };
+
+            // When the page is saved under its requirement type
+            updateWiseOnboardingAdditionalData(BANK_ACCOUNT_ID, 'BUSINESS_SOURCE_OF_WEALTH_PROOF', proofPage, {
+                sourceOfWealthType: 'REVENUE',
+                documentType: 'BANK_STATEMENT',
+                proofFile: [ID_FRONT],
+            });
+            await waitForBatchedUpdates();
+
+            // Then the server gets the requirement type as the step, so it stores the answers under that requirement, and the file beside the JSON
+            expect(writeSpy).toHaveBeenCalledWith(
+                WRITE_COMMANDS.UPDATE_WISE_ONBOARDING_ADDITIONAL_DATA,
+                {
+                    bankAccountID: BANK_ACCOUNT_ID,
+                    step: 'BUSINESS_SOURCE_OF_WEALTH_PROOF',
+                    inputs: JSON.stringify({sourceOfWealthType: 'REVENUE', documentType: 'BANK_STATEMENT'}),
+                    [FIRST_PROOF_FILE_PARAMETER]: ID_FRONT,
+                },
+                expect.anything(),
+            );
+        });
+
         it.each([
             [
                 'the read-only legal name, which stays with the bank account it came from',
@@ -113,7 +147,7 @@ describe('actions/Wise', () => {
         ])('leaves out %s', async (_label, page, answers, expectedInputs) => {
             // Given a page whose answers hold something the page save must not send
             // When the page is saved
-            updateWiseOnboardingAdditionalData(BANK_ACCOUNT_ID, page, answers);
+            updateWiseOnboardingAdditionalData(BANK_ACCOUNT_ID, page.key, page, answers);
             await waitForBatchedUpdates();
 
             // Then only the answers the server stores for that page are sent
@@ -129,7 +163,7 @@ describe('actions/Wise', () => {
             const writeSpy = spyOnWrite();
 
             // When the page is saved
-            updateWiseOnboardingAdditionalData(BANK_ACCOUNT_ID, representativePage, {idDocument: [ID_FRONT, {uri: ''}]});
+            updateWiseOnboardingAdditionalData(BANK_ACCOUNT_ID, representativePage.key, representativePage, {idDocument: [ID_FRONT, {uri: ''}]});
             await waitForBatchedUpdates();
 
             // Then only the file that can be read is sent
@@ -145,7 +179,7 @@ describe('actions/Wise', () => {
             const pickedFile = new File(['id'], 'id-front.png', {type: 'image/png'});
 
             // When the page is saved
-            updateWiseOnboardingAdditionalData(BANK_ACCOUNT_ID, representativePage, {idDocument: [new Blob([]), pickedFile]});
+            updateWiseOnboardingAdditionalData(BANK_ACCOUNT_ID, representativePage.key, representativePage, {idDocument: [new Blob([]), pickedFile]});
             await waitForBatchedUpdates();
 
             // Then only the picked file is sent, as the first ID file
@@ -164,7 +198,7 @@ describe('actions/Wise', () => {
             mockFetch.pause();
 
             // When the representative page is saved again
-            updateWiseOnboardingAdditionalData(BANK_ACCOUNT_ID, representativePage, {firstName: 'Alice'});
+            updateWiseOnboardingAdditionalData(BANK_ACCOUNT_ID, representativePage.key, representativePage, {firstName: 'Alice'});
             await waitForBatchedUpdates();
 
             // Then the errors on this page clear right away, and the business page still shows its own
@@ -183,7 +217,7 @@ describe('actions/Wise', () => {
             }));
 
             // When the page is saved
-            updateWiseOnboardingAdditionalData(BANK_ACCOUNT_ID, representativePage, {firstName: 'Alice'});
+            updateWiseOnboardingAdditionalData(BANK_ACCOUNT_ID, representativePage.key, representativePage, {firstName: 'Alice'});
             await waitForBatchedUpdates();
 
             // Then the form holds the field's error for its page to show, and a general error so a failure without field errors is not silent

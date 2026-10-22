@@ -3,7 +3,7 @@ import type {FileObject} from '@src/types/utils/Attachment';
 type UpdateWiseOnboardingAdditionalDataParams = {
     bankAccountID: number;
 
-    /** The onboarding page being saved */
+    /** The onboarding step or Wise's requirement type the page saves under */
     step: string;
 
     /** That page's answers as JSON, keyed by field */

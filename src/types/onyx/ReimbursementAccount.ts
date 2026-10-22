@@ -294,6 +294,16 @@ type WiseBusinessOnboarding = {
 
     /** KYC requirement answers, by requirement then by Wise's field name */
     requirements?: {
+        BUSINESS_SOURCE_OF_WEALTH_INFO?: {
+            businessSourceOfWealthInfo: string;
+        };
+
+        /** The proof's files are under documents */
+        BUSINESS_SOURCE_OF_WEALTH_PROOF?: {
+            sourceOfWealthType: string;
+            documentType: string;
+        };
+
         ID_DOCUMENT?: {
             issuingCountry: string;
             documentType: string;

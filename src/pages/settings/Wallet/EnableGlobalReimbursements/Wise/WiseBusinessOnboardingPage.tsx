@@ -34,9 +34,9 @@ import type {OnyxEntry} from 'react-native-onyx';
 import {useIsFocused} from '@react-navigation/native';
 import React, {useEffect, useState} from 'react';
 
-import US from './forms/US';
 import getPageWithServerError from './getPageWithServerError';
 import getWiseBusinessOnboardingPrefill, {getMissingPrefill} from './getWiseBusinessOnboardingPrefill';
+import getWiseOnboardingForm, {getFirstUnansweredRequirementPage, getOnboardingStep} from './getWiseOnboardingForm';
 import getWiseSavedAnswers, {getOutdatedDraftAnswers} from './getWiseSavedAnswers';
 
 type WiseBusinessOnboardingPageProps = PlatformStackScreenProps<SettingsNavigatorParamList, typeof SCREENS.SETTINGS.WALLET.DYNAMIC_WISE_BUSINESS_ONBOARDING>;
@@ -47,7 +47,7 @@ const savedOnboardingSelector = (reimbursementAccount: OnyxEntry<ReimbursementAc
     wise: reimbursementAccount?.achData?.wise,
 });
 
-/** The business details we collect before Wise's own page: the representative, the business, and a confirmation of both */
+/** The business details we collect before Wise's own page: the representative, the business, any requirement the server asks for before Submit, and a confirmation of them all */
 function WiseBusinessOnboardingPage({route}: WiseBusinessOnboardingPageProps) {
     const bankAccountID = Number(route.params.bankAccountID);
     const introPath = useDynamicBackPath(DYNAMIC_ROUTES.WISE_BUSINESS_ONBOARDING.path);
@@ -107,8 +107,11 @@ function WiseBusinessOnboardingPage({route}: WiseBusinessOnboardingPageProps) {
         setHasSavedAnswersReadStarted(true);
     }
     const isWaitingForSavedAnswers = shouldReadSavedAnswers && (!hasSavedAnswersReadStarted || !!savedOnboarding?.isLoading);
+    const isSavedOnboardingOfThisAccount = savedOnboarding?.bankAccountID === bankAccountID;
     // Offline, the answers in Onyx can be older than the draft, whose page saves are still queued
-    const savedAnswers = shouldReadSavedAnswers && savedOnboarding?.bankAccountID === bankAccountID ? getWiseSavedAnswers(savedOnboarding.wise) : {};
+    const savedAnswers = shouldReadSavedAnswers && isSavedOnboardingOfThisAccount ? getWiseSavedAnswers(savedOnboarding.wise) : {};
+    // The business page's save answers with the requirements to collect before Submit, such as enhanced due diligence for a high-risk industry
+    const form = getWiseOnboardingForm(isSavedOnboardingOfThisAccount ? savedOnboarding.wise?.kycRequirements : undefined);
 
     // On a cold direct link the account list can be empty until the payment-method fetch finishes, so wait for it
     const isWaitingForBankAccount = !bankAccount && !!isLoadingPaymentMethods;
@@ -130,14 +133,17 @@ function WiseBusinessOnboardingPage({route}: WiseBusinessOnboardingPageProps) {
         saveDraftAnswers(ONYXKEYS.FORMS.WISE_BUSINESS_ONBOARDING_FORM, pendingAnswers);
     }, [hasPendingAnswers, pendingAnswers]);
 
-    // The server rejects a page save after the user has moved on, so the flow goes back to the page holding the rejected answers
-    const pageWithServerError = getPageWithServerError(serverErrorFields);
+    // The server answers a page save after the flow has moved on. A rejected answer takes the user back to its page, and requirements added by the business
+    // page's save open in place of the confirmation page the flow moved to.
+    const isOnConfirmationPage = route.params.subPage === CONST.DYNAMIC_FORM.CONFIRMATION_PAGE_KEY;
+    const pageToOpen = getPageWithServerError(form, serverErrorFields) ?? (isOnConfirmationPage ? getFirstUnansweredRequirementPage(form, draftValues) : undefined);
+    const pageKeyToOpen = pageToOpen?.key;
     useEffect(() => {
-        if (!isFocused || !isPrefillDone || !pageWithServerError || pageWithServerError.key === route.params.subPage) {
+        if (!isFocused || !isPrefillDone || !pageKeyToOpen || pageKeyToOpen === route.params.subPage) {
             return;
         }
-        Navigation.navigate(buildRoute(pageWithServerError.key), {forceReplace: true});
-    }, [isFocused, isPrefillDone, pageWithServerError, route.params.subPage, buildRoute]);
+        Navigation.navigate(buildRoute(pageKeyToOpen), {forceReplace: true});
+    }, [isFocused, isPrefillDone, pageKeyToOpen, route.params.subPage, buildRoute]);
 
     if (!isPrefillDone || !isWiseReimbursementsBetaEnabled) {
         return <FullScreenLoadingIndicator shouldUseGoBackButton />;
@@ -149,7 +155,7 @@ function WiseBusinessOnboardingPage({route}: WiseBusinessOnboardingPageProps) {
 
     return (
         <DynamicFormFlow
-            schema={US}
+            schema={form}
             formID={ONYXKEYS.FORMS.WISE_BUSINESS_ONBOARDING_FORM}
             headerTitle={translate('walletPage.wiseGlobalReimbursementsIntro.headerTitle')}
             confirmationTitle={translate('walletPage.wiseOnboarding.confirmationTitle')}
@@ -159,7 +165,7 @@ function WiseBusinessOnboardingPage({route}: WiseBusinessOnboardingPageProps) {
             buildRoute={buildRoute}
             shouldReplaceRoute
             onBack={goBackToIntro}
-            onPageSubmit={(page, answers) => updateWiseOnboardingAdditionalData(bankAccountID, page, answers)}
+            onPageSubmit={(page, answers) => updateWiseOnboardingAdditionalData(bankAccountID, getOnboardingStep(form, page.key), page, answers)}
             // The terms page comes after the confirmation page, so the SSN stays in memory until the terms page is done with it
             isSubmitting={false}
             onSubmit={() => Navigation.navigate(createDynamicRoute(DYNAMIC_ROUTES.WISE_ACCEPT_TERMS.path))}

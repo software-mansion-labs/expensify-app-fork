@@ -60,6 +60,14 @@ const BANK_ACCOUNT = {
     },
 };
 
+const ENHANCED_DUE_DILIGENCE = [CONST.WISE.KYC_REQUIREMENT.BUSINESS_SOURCE_OF_WEALTH_INFO, CONST.WISE.KYC_REQUIREMENT.BUSINESS_SOURCE_OF_WEALTH_PROOF].map((key) => ({
+    key,
+    state: CONST.WISE.KYC_REQUIREMENT_STATE.NOT_PROVIDED,
+    isHostedOnly: false,
+    requestedBy: CONST.WISE.KYC_REQUIREMENT_REQUESTED_BY.EXPENSIFY,
+}));
+const INFO_PAGE_KEY = 'business-source-of-wealth-info';
+
 const SAVED_BUSINESS = {
     companyType: CONST.WISE.COMPANY_TYPE.LIMITED_LIABILITY_COMPANY,
     companyRole: CONST.WISE.COMPANY_ROLE.DIRECTOR,
@@ -234,7 +242,7 @@ describe('WiseBusinessOnboardingPage with the server', () => {
         getFlowProps()?.onPageSubmit?.(page, {companyRole: CONST.WISE.COMPANY_ROLE.OWNER});
 
         // Then that page is saved for this bank account
-        expect(updateWiseOnboardingAdditionalData).toHaveBeenCalledWith(BANK_ACCOUNT_ID, page, {companyRole: CONST.WISE.COMPANY_ROLE.OWNER});
+        expect(updateWiseOnboardingAdditionalData).toHaveBeenCalledWith(BANK_ACCOUNT_ID, 'business', page, {companyRole: CONST.WISE.COMPANY_ROLE.OWNER});
     });
 
     it("drops an earlier visit's failed save and keeps the server's field errors", async () => {
@@ -294,5 +302,92 @@ describe('WiseBusinessOnboardingPage with the server', () => {
 
         // Then the flow opens the business page, which holds the rejected answer
         expect(Navigation.navigate).toHaveBeenCalledWith(`${INTRO_PATH}/business-onboarding/business`, {forceReplace: true});
+    });
+
+    describe('with requirements to collect before Submit', () => {
+        /** The keys of the pages the flow was last rendered with */
+        const getFlowPageKeys = () => {
+            const schema = getFlowProps()?.schema;
+            return schema && 'pages' in schema ? schema.pages.map((page) => page.key) : [];
+        };
+
+        it("adds the requirement pages once the business page's save returns them", async () => {
+            // Given the flow on the confirmation page, where Next on the business page took it before the save returned
+            await Onyx.merge(ONYXKEYS.REIMBURSEMENT_ACCOUNT, {achData: {bankAccountID: BANK_ACCOUNT_ID}});
+            renderPage(CONST.DYNAMIC_FORM.CONFIRMATION_PAGE_KEY);
+            await waitForBatchedUpdatesWithAct();
+            expect(getFlowPageKeys()).toEqual(['representative', 'business']);
+
+            // When the save returns the enhanced due diligence requirements for a high-risk industry
+            await applyInAct(() => Onyx.merge(ONYXKEYS.REIMBURSEMENT_ACCOUNT, {achData: {wise: {kycRequirements: ENHANCED_DUE_DILIGENCE}}}));
+
+            // Then the flow asks for them after the business page, and takes the user from the confirmation page to the first one
+            expect(getFlowPageKeys()).toEqual(['representative', 'business', ...ENHANCED_DUE_DILIGENCE.map((requirement) => requirement.key)]);
+            expect(Navigation.navigate).toHaveBeenCalledWith(`${INTRO_PATH}/business-onboarding/${INFO_PAGE_KEY}`, {forceReplace: true});
+        });
+
+        it('leaves the user on the confirmation page once the requirement pages are answered', async () => {
+            // Given requirement pages the user has answered
+            await Onyx.set(ONYXKEYS.FORMS.WISE_BUSINESS_ONBOARDING_FORM_DRAFT, {
+                businessSourceOfWealthInfo: CONST.WISE.SOURCE_OF_WEALTH.REVENUE,
+                sourceOfWealthType: CONST.WISE.SOURCE_OF_WEALTH.REVENUE,
+            });
+            await Onyx.merge(ONYXKEYS.REIMBURSEMENT_ACCOUNT, {achData: {bankAccountID: BANK_ACCOUNT_ID, wise: {kycRequirements: ENHANCED_DUE_DILIGENCE}}});
+
+            // When the confirmation page opens
+            renderPage(CONST.DYNAMIC_FORM.CONFIRMATION_PAGE_KEY);
+            await waitForBatchedUpdatesWithAct();
+
+            // Then nothing moves the user, since the confirmation page lists the answers
+            expect(Navigation.navigate).not.toHaveBeenCalled();
+        });
+
+        it("ignores another bank account's requirements", async () => {
+            // Given requirements the reimbursement account holds for a different bank account
+            await Onyx.merge(ONYXKEYS.REIMBURSEMENT_ACCOUNT, {achData: {bankAccountID: 1, wise: {kycRequirements: ENHANCED_DUE_DILIGENCE}}});
+
+            // When the flow opens on a page
+            renderPage('business');
+            await waitForBatchedUpdatesWithAct();
+
+            // Then only the profile pages are asked
+            expect(getFlowPageKeys()).toEqual(['representative', 'business']);
+        });
+
+        it("saves a requirement page under Wise's requirement type", async () => {
+            // Given the flow with the requirement pages
+            await Onyx.merge(ONYXKEYS.REIMBURSEMENT_ACCOUNT, {achData: {bankAccountID: BANK_ACCOUNT_ID, wise: {kycRequirements: ENHANCED_DUE_DILIGENCE}}});
+            renderPage(INFO_PAGE_KEY);
+            await waitForBatchedUpdatesWithAct();
+
+            // When the flow reports the source of wealth page, under the key it uses in the URL
+            const page: DynamicFormPage = {key: INFO_PAGE_KEY, content: []};
+            getFlowProps()?.onPageSubmit?.(page, {businessSourceOfWealthInfo: CONST.WISE.SOURCE_OF_WEALTH.GRANTS});
+
+            // Then the page is saved under the requirement type, where the server keeps the answer for Submit
+            expect(updateWiseOnboardingAdditionalData).toHaveBeenCalledWith(BANK_ACCOUNT_ID, CONST.WISE.KYC_REQUIREMENT.BUSINESS_SOURCE_OF_WEALTH_INFO, page, {
+                businessSourceOfWealthInfo: CONST.WISE.SOURCE_OF_WEALTH.GRANTS,
+            });
+        });
+
+        it('fills the draft with the requirement answers the server saved', async () => {
+            // Given a source of wealth saved on another device
+            const finishRead = answerReadWith({
+                bankAccountID: BANK_ACCOUNT_ID,
+                wise: {
+                    kycRequirements: ENHANCED_DUE_DILIGENCE,
+                    requirements: {[CONST.WISE.KYC_REQUIREMENT.BUSINESS_SOURCE_OF_WEALTH_INFO]: {businessSourceOfWealthInfo: CONST.WISE.SOURCE_OF_WEALTH.DONATIONS}},
+                },
+            });
+
+            // When the page opens and the read returns
+            renderPage();
+            await waitForBatchedUpdatesWithAct();
+            await applyInAct(finishRead);
+
+            // Then the flow shows the requirement pages, with the saved answer in the draft
+            expect(getFlowPageKeys()).toContain(CONST.WISE.KYC_REQUIREMENT.BUSINESS_SOURCE_OF_WEALTH_INFO);
+            expect(await getOnyxValue(ONYXKEYS.FORMS.WISE_BUSINESS_ONBOARDING_FORM_DRAFT)).toMatchObject({businessSourceOfWealthInfo: CONST.WISE.SOURCE_OF_WEALTH.DONATIONS});
+        });
     });
 });

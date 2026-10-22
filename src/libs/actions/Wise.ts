@@ -56,12 +56,12 @@ function getOnboardingPageRequest(page: DynamicFormPage, answers: DynamicFormVal
 }
 
 /**
- * Saves one page of the business onboarding on the server, so the answers are never asked twice and another device resumes from them.
+ * Saves one page of the business onboarding on the server under `step`, the page's onboarding step or Wise's requirement type, so the answers are never asked twice and another device resumes from them.
  * A queued write, so a page saved offline syncs once the connection returns. Field errors from the server land on the form under each field's key.
  */
-function updateWiseOnboardingAdditionalData(bankAccountID: number, page: DynamicFormPage, answers: DynamicFormValues) {
+function updateWiseOnboardingAdditionalData(bankAccountID: number, step: string, page: DynamicFormPage, answers: DynamicFormValues) {
     const {inputs, files} = getOnboardingPageRequest(page, answers);
-    const parameters: UpdateWiseOnboardingAdditionalDataParams = {...files, bankAccountID, step: page.key, inputs: JSON.stringify(inputs)};
+    const parameters: UpdateWiseOnboardingAdditionalDataParams = {...files, bankAccountID, step, inputs: JSON.stringify(inputs)};
     const pageAnswerKeys = getContentFields(page.content).filter(isSupportedField).flatMap(getAnswerKeys);
 
     const onyxData: OnyxData<typeof ONYXKEYS.FORMS.WISE_BUSINESS_ONBOARDING_FORM> = {
