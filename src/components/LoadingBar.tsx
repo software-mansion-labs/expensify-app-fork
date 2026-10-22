@@ -2,78 +2,42 @@ import useThemeStyles from '@hooks/useThemeStyles';
 
 import CONST from '@src/CONST';
 
-import React, {useEffect} from 'react';
-import Animated, {cancelAnimation, Easing, useAnimatedStyle, useSharedValue, withDelay, withRepeat, withSequence, withTiming} from 'react-native-reanimated';
+import React from 'react';
+import Animated, {css, cubicBezier} from 'react-native-reanimated';
 
 type LoadingBarProps = {
     shouldShow: boolean;
 };
 
+const EASING = cubicBezier(0.65, 0, 0.35, 1);
+const MIDPOINT = '50%';
+
+const animations = css.create({
+    indicator: {
+        animationName: css.keyframes({
+            from: {left: '0%', width: '0%', animationTimingFunction: EASING},
+            [MIDPOINT]: {left: '0%', width: '100%', animationTimingFunction: EASING},
+            to: {left: '100%', width: '0%'},
+        }),
+        animationDuration: `${CONST.ANIMATED_PROGRESS_BAR_DURATION * 2}ms`,
+        animationDelay: `${CONST.ANIMATED_PROGRESS_BAR_DELAY}ms`,
+        // Apply the first keyframe during the initial delay so the bar doesn't flash at full width before the animation starts
+        animationFillMode: 'backwards',
+        animationIterationCount: 'infinite',
+    },
+    // Dimming the whole bar in and out when it is shown / hidden
+    containerVisible: {opacity: 1, transitionProperty: 'opacity', transitionDuration: `${CONST.ANIMATED_PROGRESS_BAR_OPACITY_DURATION}ms`},
+    containerHidden: {opacity: 0, transitionProperty: 'opacity', transitionDuration: `${CONST.ANIMATED_PROGRESS_BAR_OPACITY_DURATION}ms`},
+    running: {animationPlayState: 'running'},
+    paused: {animationPlayState: 'paused'},
+});
+
 function LoadingBar({shouldShow}: LoadingBarProps) {
-    const left = useSharedValue(0);
-    const width = useSharedValue(0);
-    const opacity = useSharedValue(0);
     const styles = useThemeStyles();
 
-    useEffect(() => {
-        if (shouldShow) {
-            left.set(0);
-            width.set(0);
-            opacity.set(withTiming(1, {duration: CONST.ANIMATED_PROGRESS_BAR_OPACITY_DURATION}));
-
-            left.set(
-                withDelay(
-                    CONST.ANIMATED_PROGRESS_BAR_DELAY,
-                    withRepeat(
-                        withSequence(
-                            withTiming(0, {duration: 0}),
-                            withTiming(0, {duration: CONST.ANIMATED_PROGRESS_BAR_DURATION, easing: Easing.bezier(0.65, 0, 0.35, 1)}),
-                            withTiming(100, {duration: CONST.ANIMATED_PROGRESS_BAR_DURATION, easing: Easing.bezier(0.65, 0, 0.35, 1)}),
-                        ),
-                        -1,
-                        false,
-                    ),
-                ),
-            );
-
-            width.set(
-                withDelay(
-                    CONST.ANIMATED_PROGRESS_BAR_DELAY,
-                    withRepeat(
-                        withSequence(
-                            withTiming(0, {duration: 0}),
-                            withTiming(100, {duration: CONST.ANIMATED_PROGRESS_BAR_DURATION, easing: Easing.bezier(0.65, 0, 0.35, 1)}),
-                            withTiming(0, {duration: CONST.ANIMATED_PROGRESS_BAR_DURATION, easing: Easing.bezier(0.65, 0, 0.35, 1)}),
-                        ),
-                        -1,
-                        false,
-                    ),
-                ),
-            );
-        } else {
-            opacity.set(
-                withTiming(0, {duration: CONST.ANIMATED_PROGRESS_BAR_OPACITY_DURATION}, () => {
-                    cancelAnimation(left);
-                    cancelAnimation(width);
-                }),
-            );
-        }
-        // we want to update only when shouldShow changes
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [shouldShow]);
-
-    const animatedIndicatorStyle = useAnimatedStyle(() => ({
-        left: `${left.get()}%`,
-        width: `${width.get()}%`,
-    }));
-
-    const animatedContainerStyle = useAnimatedStyle(() => ({
-        opacity: opacity.get(),
-    }));
-
     return (
-        <Animated.View style={[styles.progressBarWrapper, animatedContainerStyle]}>
-            <Animated.View style={[styles.progressBar, animatedIndicatorStyle]} />
+        <Animated.View style={[styles.progressBarWrapper, shouldShow ? animations.containerVisible : animations.containerHidden]}>
+            <Animated.View style={[styles.progressBar, animations.indicator, shouldShow ? animations.running : animations.paused]} />
         </Animated.View>
     );
 }
