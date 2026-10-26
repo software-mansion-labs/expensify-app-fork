@@ -79,20 +79,17 @@ type MfaContext = {
     /** Whether this flow completed a fresh credential registration (`creatingCredential` succeeded) before authorizing. */
     isRegistrationComplete: boolean;
 
-    /** Exit attempts while the scenario action or its `onCancel` request is in flight. Reset on entering `executingScenarioAction` and `cancelling`. */
-    cancelAttemptsDuringRequest: number;
-
     /**
      * Whether the user confirmed a cancel in this flow. The screen behind the dialog reads it to stay busy
-     * while the cancel settles. Like the presentation phases, it is kept until the modal fully closes, so
+     * until the cancel returns. Like the presentation phases, it is kept until the modal fully closes, so
      * the screen doesn't turn interactive again while it is still mounted and animating out.
      */
     isCancelConfirmed: boolean;
 
-    /** The `onCancel` result while `denying`, held until the scenario action's result is back too. */
+    /** The `onCancel` result while `denying`, held until `denying` decides the outcome. */
     cancelError: MFAError | undefined;
 
-    /** The scenario action's result while `denying`, held until the `onCancel` result is back too. */
+    /** The scenario action's result while `denying`, held until `denying` decides the outcome. */
     scenarioActionResult: ExecuteScenarioActionOutput | undefined;
 };
 
@@ -106,12 +103,6 @@ type PromptPresentationPhase =
 type ValidateCodePresentationPhase =
     | typeof CONST.MULTIFACTOR_AUTHENTICATION.MFA_STATE.AWAITING_VALIDATE_CODE
     | typeof CONST.MULTIFACTOR_AUTHENTICATION.MFA_STATE.REQUESTING_REGISTRATION_CHALLENGE;
-
-/** Flow state reported with an exit attempt while the scenario action or its `onCancel` request is in flight. See `logCancelAttemptDuringRequest`. */
-type CancelAttemptState =
-    | typeof CONST.MULTIFACTOR_AUTHENTICATION.MFA_STATE.AWAITING_RESULT
-    | typeof CONST.MULTIFACTOR_AUTHENTICATION.MFA_STATE.DENYING
-    | typeof CONST.MULTIFACTOR_AUTHENTICATION.MFA_STATE.CANCELLING;
 
 /** Modal lifecycle state the view layer reads: the machine's three top-level states. */
 type MfaModalState =
@@ -227,13 +218,12 @@ type FinalizeOutcomeOutput = {
 };
 
 /**
- * Input the machine passes to the cancel actor: the scenario's optional cancel logic, its payload, and
- * whether the scenario action already went out. Named `payload` for the inspector masking, same as `FinalizeOutcomeInput`.
+ * Input the machine passes to the cancel actor: the scenario's optional cancel logic and its payload.
+ * Named `payload` for the inspector masking, same as `FinalizeOutcomeInput`.
  */
 type CancelScenarioInput = {
     onCancel: MultifactorAuthenticationScenarioConfig['onCancel'];
     payload: MultifactorAuthenticationScenarioAdditionalParams<MultifactorAuthenticationScenario> | undefined;
-    isScenarioActionSent: boolean;
 };
 
 /** The cancel actor's result: the error the cancelled flow fails with, which picks the outcome screen. */
@@ -242,7 +232,6 @@ type CancelScenarioOutput = MFAError;
 export type {
     AuthorizeInput,
     AuthorizeOutput,
-    CancelAttemptState,
     CancelScenarioInput,
     CancelScenarioOutput,
     CreateCredentialInput,

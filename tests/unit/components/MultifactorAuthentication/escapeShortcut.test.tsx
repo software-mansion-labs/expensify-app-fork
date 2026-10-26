@@ -207,7 +207,7 @@ describe('the MFA Escape shortcut', () => {
         // Given an MFA flow where the app's Escape handler has re-subscribed above the MFA shortcut
         await startFlow();
         await pressEscape();
-        fireEvent.press(screen.getByText(translateLocal('common.cancel')));
+        fireEvent.press(screen.getByTestId(TEST_ID.CANCEL_CONFIRM_CANCEL_BUTTON));
         await waitForBatchedUpdatesWithAct();
         expect(isCancelConfirmVisible()).toBe(false);
 

@@ -110,9 +110,8 @@ type MultifactorAuthenticationScenarioBase<T extends Record<string, unknown> = E
     /**
      * Called when the user confirms cancelling the MFA flow. The flow fails with the returned MFAError,
      * which picks the outcome screen. When absent, the flow fails with LOCAL_ERRORS.CANCELED.
-     * `isScenarioActionSent` tells whether the scenario action already went out, so its request races this cancel.
      */
-    onCancel?: (payload: MultifactorAuthenticationScenarioAdditionalParams<MultifactorAuthenticationScenario> | undefined, context: {isScenarioActionSent: boolean}) => Promise<MFAError>;
+    onCancel?: (payload: MultifactorAuthenticationScenarioAdditionalParams<MultifactorAuthenticationScenario> | undefined) => Promise<MFAError>;
 };
 
 /**

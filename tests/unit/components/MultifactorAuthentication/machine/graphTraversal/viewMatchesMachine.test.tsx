@@ -185,11 +185,11 @@ function createMfaEventExecutors(executeScenario: ExecuteScenario) {
             await waitForBatchedUpdatesWithAct();
         },
         DISMISS_CANCEL: async () => {
-            fireEvent.press(screen.getByText(translateLocal('common.cancel')));
+            fireEvent.press(screen.getByTestId(TEST_ID.CANCEL_CONFIRM_CANCEL_BUTTON));
             await waitForBatchedUpdatesWithAct();
         },
         CONFIRM_CANCEL: async () => {
-            fireEvent.press(screen.getByText(translateLocal('multifactorAuthentication.biometricsTest.rejectAuthentication')));
+            fireEvent.press(screen.getByTestId(TEST_ID.CANCEL_CONFIRM_CONFIRM_BUTTON));
             await waitForBatchedUpdatesWithAct();
         },
         [actorDoneEventType('validateDevice')]: (step) => settleActor(() => validateDeviceControl.resolve(getActorDoneOutput(step))),
@@ -300,10 +300,19 @@ const testConfig = {
                 expect(screen.getByText(translateLocal('multifactorAuthentication.verifyYourself.biometrics'))).toBeOnTheScreen();
             }
         },
-        // The screen the user cancelled from stays mounted while the scenario's cancel logic runs.
+        // The screen the user cancelled from stays mounted while the scenario's cancel logic runs, busy so it can't be used meanwhile.
         [`${MFA_STATE.OPEN}.${MFA_STATE.FLOW}.${MFA_STATE.CANCELLING}`]: () => {
             expect(screen.queryAllByTestId(TEST_ID.MODAL_BACKDROP)).toHaveLength(1);
             expect(screen.queryAllByTestId(TEST_ID.OUTCOME_SCREEN)).toHaveLength(0);
+            const routeName = mfaNavigationRef.getCurrentRoute()?.name;
+            if (routeName === SCREENS.MULTIFACTOR_AUTHENTICATION.PROMPT) {
+                expect(screen.queryByTestId(TEST_ID.PROMPT_CONFIRM_BUTTON)).not.toBeOnTheScreen();
+            }
+            if (routeName === SCREENS.MULTIFACTOR_AUTHENTICATION.VALIDATE_CODE) {
+                // A loading button is disabled, so this is how the busy submit shows up here.
+                expect(screen.getByTestId(TEST_ID.VALIDATE_CODE_SUBMIT_BUTTON)).toBeDisabled();
+                expect(screen.getByTestId(TEST_ID.VALIDATE_CODE_RESEND_BUTTON)).toBeDisabled();
+            }
         },
         [`${MFA_STATE.OPEN}.${MFA_STATE.FLOW}.${MFA_STATE.OUTCOME}.${MFA_STATE.FINALIZING_OUTCOME}`]: () => {
             expect(screen.queryAllByTestId(TEST_ID.MODAL_BACKDROP)).toHaveLength(1);

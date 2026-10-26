@@ -23,7 +23,6 @@ const REASON = {
     },
     FLOW_OUTCOMES: {
         TRANSACTION_DENIED: 'Outcome: Transaction denied successfully',
-        TRANSACTION_APPROVED: 'Outcome: Transaction already approved when the deny arrived',
     },
     /** HTTP 4xx errors from the backend (not front-end errors despite the "Client" prefix). */
     CLIENT_ERRORS: {
@@ -188,7 +187,7 @@ const ROUTINE_FAILURES = new Set<ReasonValue>([
 ]);
 
 /** Non-error flow outcomes that are not MFA successes but represent valid, expected terminal states (e.g. user-initiated deny). Logged at 'info' level. */
-const ALTERNATIVE_OUTCOMES = new Set<ReasonValue>([REASON.FLOW_OUTCOMES.TRANSACTION_DENIED, REASON.FLOW_OUTCOMES.TRANSACTION_APPROVED]);
+const ALTERNATIVE_OUTCOMES = new Set<ReasonValue>([REASON.FLOW_OUTCOMES.TRANSACTION_DENIED]);
 
 /**
  * Local credential failures that confirm the device credential is unusable, so it should be deleted
@@ -363,6 +362,8 @@ const SHARED_VALUES = {
         OUTCOME_SCREEN: 'MultifactorAuthenticationOutcomeScreen',
         OUTCOME_CONFIRM_BUTTON: 'MultifactorAuthenticationOutcomeConfirmButton',
         PROMPT_CONFIRM_BUTTON: 'MultifactorAuthenticationPromptConfirmButton',
+        CANCEL_CONFIRM_CONFIRM_BUTTON: 'MultifactorAuthenticationCancelConfirmConfirmButton',
+        CANCEL_CONFIRM_CANCEL_BUTTON: 'MultifactorAuthenticationCancelConfirmCancelButton',
         VALIDATE_CODE_INPUT: 'MultifactorAuthenticationValidateCodeInput',
         VALIDATE_CODE_SUBMIT_BUTTON: 'MultifactorAuthenticationValidateCodeSubmitButton',
         VALIDATE_CODE_RESEND_BUTTON: 'MultifactorAuthenticationValidateCodeResendButton',

@@ -108,7 +108,6 @@ const AlreadyReviewedFailureScreen = createScreenWithDefaults(
 /** Reasons that mean the server has already approved or denied the transaction, so the callback's cleanup deny could only be rejected. */
 const SETTLED_TRANSACTION_REASONS: ReadonlySet<MultifactorAuthenticationReason> = new Set([
     CONST.MULTIFACTOR_AUTHENTICATION.REASON.FLOW_OUTCOMES.TRANSACTION_DENIED,
-    CONST.MULTIFACTOR_AUTHENTICATION.REASON.FLOW_OUTCOMES.TRANSACTION_APPROVED,
     CONST.MULTIFACTOR_AUTHENTICATION.REASON.CLIENT_ERRORS.ALREADY_APPROVED_APPROVE_ATTEMPTED,
     CONST.MULTIFACTOR_AUTHENTICATION.REASON.CLIENT_ERRORS.ALREADY_APPROVED_DENY_ATTEMPTED,
     CONST.MULTIFACTOR_AUTHENTICATION.REASON.CLIENT_ERRORS.ALREADY_DENIED_APPROVE_ATTEMPTED,
@@ -125,9 +124,7 @@ export default {
     // AuthorizeTransaction's callback navigates to the outcome screen, but if it knows the user is going to see an error outcome, we explicitly deny the transaction to make sure the user can't re-approve it on another device.
     // The deny is skipped when the server has already approved or denied the transaction, since it could only be rejected.
     callback: async (isSuccessful, callbackInput, payload) => {
-        // Widened because the callback receives the reason as a string in `callbackInput.message`.
-        const settledReasons: ReadonlySet<string> = SETTLED_TRANSACTION_REASONS;
-        const isTransactionSettled = !!callbackInput.message && settledReasons.has(callbackInput.message);
+        const isTransactionSettled = !!callbackInput.reason && SETTLED_TRANSACTION_REASONS.has(callbackInput.reason);
         // isAuthorizeTransactionPayload is a type guard - we know that payload here will always be an AuthorizeTransaction Payload, but the type guard lets Typescript guarantee it
         if (!isSuccessful && !isTransactionSettled && isAuthorizeTransactionPayload(payload)) {
             fireAndForgetDenyTransaction({transactionID: payload.transactionID});
@@ -143,21 +140,15 @@ export default {
      * Unlike `callback` which fire-and-forgets the deny (because the outcome screen will be shown regardless),
      * onCancel awaits denyTransaction so the returned reason determines which outcome screen is displayed.
      */
-    onCancel: async (payload, {isScenarioActionSent}) => {
+    onCancel: async (payload) => {
         if (!isAuthorizeTransactionPayload(payload)) {
             return createLocalMFAError(CONST.MULTIFACTOR_AUTHENTICATION.REASON.LOCAL_ERRORS.CANCELED, undefined);
         }
         const {httpStatusCode, reason, message} = await denyTransaction({transactionID: payload.transactionID});
-        // The server confirmed the transaction was approved before this deny. The approve from this flow was already
-        // sent, so the transaction most likely went through on it, but the server doesn't say which approve won.
-        if (isScenarioActionSent && reason === CONST.MULTIFACTOR_AUTHENTICATION.REASON.CLIENT_ERRORS.ALREADY_APPROVED_DENY_ATTEMPTED) {
-            return createMFAErrorFromApiResponse(httpStatusCode, CONST.MULTIFACTOR_AUTHENTICATION.REASON.FLOW_OUTCOMES.TRANSACTION_APPROVED, message);
-        }
         return createMFAErrorFromApiResponse(httpStatusCode, reason ?? CONST.MULTIFACTOR_AUTHENTICATION.REASON.LOCAL_ERRORS.CANCELED, message);
     },
     failureScreens: {
         [CONST.MULTIFACTOR_AUTHENTICATION.REASON.FLOW_OUTCOMES.TRANSACTION_DENIED]: <DeniedTransactionSuccessScreen />,
-        [CONST.MULTIFACTOR_AUTHENTICATION.REASON.FLOW_OUTCOMES.TRANSACTION_APPROVED]: <ApprovedTransactionSuccessScreen />,
         [CONST.MULTIFACTOR_AUTHENTICATION.REASON.CLIENT_ERRORS.TRANSACTION_EXPIRED]: <OutOfTimeFailureScreen />,
         [CONST.MULTIFACTOR_AUTHENTICATION.REASON.CLIENT_ERRORS.ALREADY_APPROVED_APPROVE_ATTEMPTED]: <ApprovedTransactionSuccessScreen />,
         [CONST.MULTIFACTOR_AUTHENTICATION.REASON.CLIENT_ERRORS.ALREADY_DENIED_DENY_ATTEMPTED]: <DeniedTransactionSuccessScreen />,

@@ -37,6 +37,12 @@ type ConfirmModalProps = {
     /** Cancel button text */
     cancelText?: string;
 
+    /** testID of the confirm button */
+    confirmButtonTestID?: string;
+
+    /** testID of the cancel button */
+    cancelButtonTestID?: string;
+
     /** Modal content text/element */
     prompt?: string | ReactNode;
 
@@ -143,6 +149,8 @@ type ConfirmModalProps = {
 function ConfirmModal({
     confirmText = '',
     cancelText = '',
+    confirmButtonTestID,
+    cancelButtonTestID,
     prompt = '',
     success = true,
     danger = false,
@@ -218,6 +226,8 @@ function ConfirmModal({
                 onCancel={onCancel}
                 confirmText={confirmText}
                 cancelText={cancelText}
+                confirmButtonTestID={confirmButtonTestID}
+                cancelButtonTestID={cancelButtonTestID}
                 prompt={prompt}
                 success={success}
                 danger={danger}

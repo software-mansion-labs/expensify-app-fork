@@ -22,7 +22,6 @@ import type {
     ValidateDeviceInput,
 } from '@components/MultifactorAuthentication/machine/types';
 
-import Log from '@libs/Log';
 import type {MFAResult} from '@libs/MultifactorAuthentication/shared/MFAResult';
 import {createLocalMFAError, createMFAErrorFromApiResponse} from '@libs/MultifactorAuthentication/shared/MFAResult';
 import type {MultifactorAuthenticationReason} from '@libs/MultifactorAuthentication/shared/types';
@@ -72,6 +71,9 @@ const READY_TO_CREATE = {[MFA_STATE.PROMPT]: {[MFA_STATE.CREATING_CREDENTIAL]: M
 const CREATING_KEY = {[MFA_STATE.PROMPT]: {[MFA_STATE.CREATING_CREDENTIAL]: MFA_STATE.CREATING_KEY}};
 const REGISTERING_KEY = {[MFA_STATE.PROMPT]: {[MFA_STATE.CREATING_CREDENTIAL]: MFA_STATE.REGISTERING_KEY}};
 
+/** How long a confirmed cancel waits for its requests before the flow fails on its own. */
+const CANCEL_TIMEOUT_MS = 60 * 1000;
+
 /** Never settles, so the invoked actor stays running until the machine stops it. */
 const pendingCancelScenario = fromPromise<CancelScenarioOutput, CancelScenarioInput>(() => new Promise(() => {}));
 
@@ -96,11 +98,12 @@ function startRunningStepWithDialog(cancelScenario = pendingCancelScenario, cont
         value: openAt({[MFA_STATE.VALIDATE_CODE]: {[MFA_STATE.AWAITING_VALIDATE_CODE]: MFA_STATE.AWAITING_INPUT}}),
         context: createFlowContext(contextOverrides),
     });
-    const actor = createActor(machine, {snapshot});
+    const clock = new SimulatedClock();
+    const actor = createActor(machine, {snapshot, clock});
     actor.start();
     actor.send({type: 'VALIDATE_CODE_ENTERED', validateCode: '123456'});
     actor.send({type: 'REQUEST_CANCEL'});
-    return {actor, getRunningStepSignal: () => runningStepSignal};
+    return {actor, clock, getRunningStepSignal: () => runningStepSignal};
 }
 
 // The graph-traversal suites generate their expectations from the machine, so a transition pointed at
@@ -297,9 +300,9 @@ describe('MFA cancel', () => {
             // When the user confirms the cancel
             actor.send({type: 'CONFIRM_CANCEL'});
 
-            // Then the cancel actor gets the scenario's cancel inputs and learns the scenario action was never sent, so it can't report an approval
+            // Then the cancel actor gets the scenario's cancel inputs
             // BIOMETRICS_TEST defines no `onCancel`, so the actor falls back to the default cancel error.
-            expect(receivedInput).toEqual({onCancel: undefined, payload: undefined, isScenarioActionSent: false});
+            expect(receivedInput).toEqual({onCancel: undefined, payload: undefined});
 
             actor.stop();
         });
@@ -324,7 +327,6 @@ describe('MFA cancel', () => {
             // Then the cancel actor gets that scenario's onCancel and payload, so the right transaction is denied
             expect(receivedInput?.onCancel).toBe(scenario.onCancel);
             expect(receivedInput?.payload).toEqual(payload);
-            expect(receivedInput?.isScenarioActionSent).toBe(false);
 
             actor.stop();
         });
@@ -393,6 +395,60 @@ describe('MFA cancel', () => {
             const result = actor.getSnapshot();
             expect(matchesState(openAt(FINALIZING_OUTCOME), result.value)).toBe(true);
             expect(result.context.error).toEqual(createLocalMFAError(CONST.MULTIFACTOR_AUTHENTICATION.REASON.LOCAL_ERRORS.UNHANDLED_EXCEPTION, 'Cancel threw: Deny exploded'));
+
+            actor.stop();
+        });
+
+        it('keeps waiting for the cancel logic until the timeout', () => {
+            // Given a confirmed cancel whose logic hasn't returned
+            const {actor, clock} = startRunningStepWithDialog();
+            actor.send({type: 'CONFIRM_CANCEL'});
+
+            // When the wait gets close to the timeout
+            clock.increment(CANCEL_TIMEOUT_MS - 1);
+
+            // Then the flow keeps waiting
+            expect(matchesState(openAt(MFA_STATE.CANCELLING), actor.getSnapshot().value)).toBe(true);
+
+            actor.stop();
+        });
+
+        it('fails the flow as a request without a response when the cancel logic does not return in time', () => {
+            // Given a confirmed cancel whose logic never returns, e.g. a hung deny
+            const {actor, clock} = startRunningStepWithDialog();
+            actor.send({type: 'CONFIRM_CANCEL'});
+
+            // When the wait times out
+            clock.increment(CANCEL_TIMEOUT_MS);
+
+            // Then the flow fails the same way a request without a response does, so back and Escape being blocked can't strand the user
+            const result = actor.getSnapshot();
+            expect(matchesState(openAt(FINALIZING_OUTCOME), result.value)).toBe(true);
+            expect(result.context.error?.reason).toBe(CONST.MULTIFACTOR_AUTHENTICATION.REASON.LOCAL_ERRORS.UNHANDLED_API_RESPONSE);
+
+            actor.stop();
+        });
+
+        it('keeps the timed-out outcome when the cancel logic returns afterwards', async () => {
+            // Given a confirmed cancel that timed out before its logic returned
+            let resolveCancel: ((error: CancelScenarioOutput) => void) | undefined;
+            const {actor, clock} = startRunningStepWithDialog(
+                fromPromise<CancelScenarioOutput, CancelScenarioInput>(
+                    () =>
+                        new Promise((resolve) => {
+                            resolveCancel = resolve;
+                        }),
+                ),
+            );
+            actor.send({type: 'CONFIRM_CANCEL'});
+            clock.increment(CANCEL_TIMEOUT_MS);
+
+            // When the cancel logic returns late
+            resolveCancel?.(MFA_TEST_CANCEL_ERROR);
+            await waitForBatchedUpdates();
+
+            // Then the outcome stays the same, because leaving for the outcome stopped the cancel actor
+            expect(actor.getSnapshot().context.error?.reason).toBe(CONST.MULTIFACTOR_AUTHENTICATION.REASON.LOCAL_ERRORS.UNHANDLED_API_RESPONSE);
 
             actor.stop();
         });
@@ -869,20 +925,6 @@ describe('MFA cancel', () => {
             await waitForBatchedUpdates();
         }
 
-        let logInfoSpy: jest.SpyInstance<void, Parameters<typeof Log.info>>;
-
-        beforeEach(() => {
-            logInfoSpy = jest.spyOn(Log, 'info').mockImplementation(() => {});
-        });
-
-        afterEach(() => {
-            logInfoSpy.mockRestore();
-        });
-
-        function getLogData(message: string) {
-            return logInfoSpy.mock.calls.filter(([logMessage]) => logMessage === message).map(([, , parameters]) => parameters);
-        }
-
         it('opens the dialog while the request is in flight', async () => {
             // Given the scenario action was sent and is awaiting its result
             // When the user asks to cancel
@@ -908,7 +950,6 @@ describe('MFA cancel', () => {
                 expect(result.children).toHaveProperty('executeScenarioAction');
                 expect(result.children).toHaveProperty('cancelScenario');
                 expect(cancelInputs).toHaveLength(1);
-                expect(cancelInputs.at(0)?.isScenarioActionSent).toBe(true);
 
                 actor.stop();
             });
@@ -940,16 +981,17 @@ describe('MFA cancel', () => {
                 actor.stop();
             });
 
-            it('keeps waiting for the deny after the approve succeeds', async () => {
+            it('ends with the approve as soon as it succeeds, without waiting for the deny', async () => {
                 // Given the deny is racing the approve
                 const {actor, scenarioAction} = await startDenying();
 
                 // When the approve succeeds first
                 await settle(scenarioAction, APPROVED);
 
-                // Then the flow keeps waiting, because the outcome is decided once both results are back
-                expect(matchesState(openAt(DENYING), actor.getSnapshot().value)).toBe(true);
-                expect(actor.getSnapshot().context.scenarioResponse).toBeUndefined();
+                // Then the flow ends with the approval right away, because no deny result can outrank a successful approve
+                expect(matchesState(openAt(FINALIZING_OUTCOME), actor.getSnapshot().value)).toBe(true);
+                expect(actor.getSnapshot().context.scenarioResponse).toBe(MFA_TEST_SCENARIO_RESPONSE);
+                expect(actor.getSnapshot().context.error).toBeUndefined();
 
                 actor.stop();
             });
@@ -962,7 +1004,7 @@ describe('MFA cancel', () => {
                     [
                         'an approve success over the deny that found it approved',
                         APPROVED,
-                        createMFAErrorFromApiResponse(400, REASON.FLOW_OUTCOMES.TRANSACTION_APPROVED, undefined),
+                        createMFAErrorFromApiResponse(400, REASON.CLIENT_ERRORS.ALREADY_APPROVED_DENY_ATTEMPTED, undefined),
                         undefined,
                     ],
                     ['an approve success over a deny network error', APPROVED, NETWORK_ERROR, undefined],
@@ -1015,6 +1057,38 @@ describe('MFA cancel', () => {
                 actor.stop();
             });
 
+            it('shows the approve exception when the deny returns an error that leaves the transaction status unknown and the approve actor then rejects', async () => {
+                // Given the deny is racing the approve
+                const {actor, scenarioAction, cancel} = await startDenying();
+
+                // When the deny returns a network error and the approve actor then rejects unexpectedly
+                await settle(cancel, NETWORK_ERROR);
+                scenarioAction.reject(new Error('Approve exploded'));
+                await waitForBatchedUpdates();
+
+                // Then the approve's exception is shown, because a failed approve comes before a failed deny
+                expect(matchesState(openAt(FINALIZING_OUTCOME), actor.getSnapshot().value)).toBe(true);
+                expect(actor.getSnapshot().context.error).toEqual(createLocalMFAError(REASON.LOCAL_ERRORS.UNHANDLED_EXCEPTION, 'Scenario action threw: Approve exploded'));
+
+                actor.stop();
+            });
+
+            it('shows the approve error when the approve returns an error that leaves the transaction status unknown and the deny actor then rejects', async () => {
+                // Given the deny is racing the approve
+                const {actor, scenarioAction, cancel} = await startDenying();
+
+                // When the approve returns an unrecognized error and the deny actor then rejects unexpectedly
+                await settle(scenarioAction, failedApprove(REASON.CLIENT_ERRORS.UNRECOGNIZED));
+                cancel.reject(new Error('Deny exploded'));
+                await waitForBatchedUpdates();
+
+                // Then the approve's error is shown, because a failed approve comes before a failed deny
+                expect(matchesState(openAt(FINALIZING_OUTCOME), actor.getSnapshot().value)).toBe(true);
+                expect(actor.getSnapshot().context.error).toEqual(createMFAErrorFromApiResponse(400, REASON.CLIENT_ERRORS.UNRECOGNIZED, undefined));
+
+                actor.stop();
+            });
+
             it('treats a rejected deny actor as a failed deny, so a failed approve decides', async () => {
                 // Given the deny is racing the approve
                 const {actor, scenarioAction, cancel} = await startDenying();
@@ -1032,15 +1106,13 @@ describe('MFA cancel', () => {
             });
 
             describe('when a request never returns', () => {
-                const DENYING_TIMEOUT_MS = 60 * 1000;
-
                 it('keeps waiting until the timeout', async () => {
-                    // Given the deny is racing the approve and the approve succeeded
+                    // Given the deny is racing the approve and the approve failed
                     const {actor, scenarioAction, clock} = await startDenying();
-                    await settle(scenarioAction, APPROVED);
+                    await settle(scenarioAction, {success: false, error: NETWORK_ERROR});
 
                     // When the wait gets close to the timeout without the deny
-                    clock.increment(DENYING_TIMEOUT_MS - 1);
+                    clock.increment(CANCEL_TIMEOUT_MS - 1);
 
                     // Then the flow keeps waiting
                     expect(matchesState(openAt(DENYING), actor.getSnapshot().value)).toBe(true);
@@ -1049,7 +1121,6 @@ describe('MFA cancel', () => {
                 });
 
                 it.each([
-                    ['an approve success', 'scenarioAction', APPROVED, undefined],
                     ['an approve failure', 'scenarioAction', {success: false, error: NETWORK_ERROR} as const, NETWORK_ERROR],
                     ['the deny', 'cancel', DENIED, DENIED],
                 ] as const)('ends with %s when only that result is back at the timeout', async (_, settled, value, expectedError) => {
@@ -1062,7 +1133,7 @@ describe('MFA cancel', () => {
                     } else {
                         await settle(scenarioAction, value);
                     }
-                    clock.increment(DENYING_TIMEOUT_MS);
+                    clock.increment(CANCEL_TIMEOUT_MS);
 
                     // Then the flow ends once with the result that came back, so a hung request can't strand the user
                     const result = actor.getSnapshot();
@@ -1078,7 +1149,7 @@ describe('MFA cancel', () => {
                     const {actor, clock} = await startDenying();
 
                     // When neither result comes back before the timeout
-                    clock.increment(DENYING_TIMEOUT_MS);
+                    clock.increment(CANCEL_TIMEOUT_MS);
 
                     // Then the flow fails the same way a request without a response does
                     expect(matchesState(openAt(FINALIZING_OUTCOME), actor.getSnapshot().value)).toBe(true);
@@ -1091,7 +1162,7 @@ describe('MFA cancel', () => {
                     // Given the wait timed out with only the deny back
                     const {actor, scenarioAction, cancel, clock, getFinalizeRuns} = await startDenying();
                     await settle(cancel, DENIED);
-                    clock.increment(DENYING_TIMEOUT_MS);
+                    clock.increment(CANCEL_TIMEOUT_MS);
 
                     // When the approve comes back late
                     await settle(scenarioAction, APPROVED);
@@ -1118,7 +1189,7 @@ describe('MFA cancel', () => {
                 const result = actor.getSnapshot();
                 expect(matchesState(openAt(MFA_STATE.CANCELLING), result.value)).toBe(true);
                 expect(result.children).not.toHaveProperty('executeScenarioAction');
-                expect(cancelInputs.at(0)?.isScenarioActionSent).toBe(false);
+                expect(cancelInputs).toHaveLength(1);
 
                 actor.stop();
             });
@@ -1141,100 +1212,6 @@ describe('MFA cancel', () => {
                 expect(result.context.error).toBe(MFA_TEST_CANCEL_ERROR);
                 expect(result.context.scenarioResponse).toBeUndefined();
                 expect(getFinalizeRuns()).toBe(1);
-
-                actor.stop();
-            });
-        });
-
-        describe('instrumentation', () => {
-            const CANCEL_ATTEMPT_LOG = '[MFA] Cancel requested while a scenario request is in flight';
-            const PENDING_CANCEL_RESOLVED_LOG = '[MFA] Pending cancel resolved';
-
-            it('numbers every exit attempt from entering the scenario action, including ignored ones while denying', async () => {
-                // Given a stale attempt count that entering the scenario action must reset, and a first exit attempt that opened the dialog
-                const {actor} = await startScenarioActionWithDialog({withOnCancel: true, contextOverrides: {cancelAttemptsDuringRequest: 7}});
-
-                // When the user dismisses, tries again, confirms, and then presses back while denying
-                actor.send({type: 'DISMISS_CANCEL'});
-                actor.send({type: 'REQUEST_CANCEL'});
-                actor.send({type: 'CONFIRM_CANCEL'});
-                actor.send({type: 'REQUEST_CANCEL'});
-
-                // Then every attempt is numbered from the start of the request, including the ignored one, so the logs show how often users try to leave a slow request
-                expect(getLogData(CANCEL_ATTEMPT_LOG)).toEqual([
-                    {mfa: {scenario: AUTHORIZE_TRANSACTION, state: MFA_STATE.AWAITING_RESULT, attempt: 1}},
-                    {mfa: {scenario: AUTHORIZE_TRANSACTION, state: MFA_STATE.AWAITING_RESULT, attempt: 2}},
-                    {mfa: {scenario: AUTHORIZE_TRANSACTION, state: MFA_STATE.DENYING, attempt: 3}},
-                ]);
-
-                actor.stop();
-            });
-
-            it('restarts the count on entering cancelling', () => {
-                // Given the dialog is open with a stale attempt count from the request
-                const scenario = getScenarioConfig(AUTHORIZE_TRANSACTION);
-                const actor = createActorAtState(openAt(AUTHORIZING, MFA_STATE.CANCEL_CONFIRM_VISIBLE), {scenarioName: AUTHORIZE_TRANSACTION, scenario, cancelAttemptsDuringRequest: 4});
-
-                // When the user confirms and then presses back while cancelling
-                actor.start();
-                actor.send({type: 'CONFIRM_CANCEL'});
-                actor.send({type: 'REQUEST_CANCEL'});
-
-                // Then the count starts over in cancelling, so those attempts are not mixed with the ones before the cancel
-                expect(getLogData(CANCEL_ATTEMPT_LOG)).toEqual([{mfa: {scenario: AUTHORIZE_TRANSACTION, state: MFA_STATE.CANCELLING, attempt: 1}}]);
-
-                actor.stop();
-            });
-
-            it('logs nothing for a scenario without onCancel', async () => {
-                // Given a scenario without onCancel whose request is in flight with the dialog up
-                const {actor} = await startScenarioActionWithDialog({withOnCancel: false});
-
-                // When the user confirms and presses back again
-                actor.send({type: 'CONFIRM_CANCEL'});
-                actor.send({type: 'REQUEST_CANCEL'});
-
-                // Then nothing is logged, because these logs track the deny race, which only scenarios with onCancel have
-                expect(getLogData(CANCEL_ATTEMPT_LOG)).toEqual([]);
-
-                actor.stop();
-            });
-
-            it('reports both results once the pending cancel resolves', async () => {
-                // Given the deny is racing the approve
-                const {actor, scenarioAction, cancel} = await startDenying();
-
-                // When the deny and then the approve come back
-                await settle(cancel, DENIED);
-                await settle(scenarioAction, failedApprove(REASON.CLIENT_ERRORS.ALREADY_DENIED_APPROVE_ATTEMPTED));
-
-                // Then one log carries both results, so we can see how the two requests ended
-                expect(getLogData(PENDING_CANCEL_RESOLVED_LOG)).toEqual([
-                    {
-                        mfa: {
-                            scenario: AUTHORIZE_TRANSACTION,
-                            scenarioActionSucceeded: false,
-                            scenarioActionReason: REASON.CLIENT_ERRORS.ALREADY_DENIED_APPROVE_ATTEMPTED,
-                            cancelReason: REASON.FLOW_OUTCOMES.TRANSACTION_DENIED,
-                        },
-                    },
-                ]);
-
-                actor.stop();
-            });
-
-            it('reports a missing result when the wait times out', async () => {
-                // Given the deny is racing the approve
-                const {actor, scenarioAction, clock} = await startDenying();
-
-                // When only the approve comes back before the timeout
-                await settle(scenarioAction, APPROVED);
-                clock.increment(60 * 1000);
-
-                // Then the log leaves the deny's reason out, so we can see how often a request hangs
-                expect(getLogData(PENDING_CANCEL_RESOLVED_LOG)).toEqual([
-                    {mfa: {scenario: AUTHORIZE_TRANSACTION, scenarioActionSucceeded: true, scenarioActionReason: undefined, cancelReason: undefined}},
-                ]);
 
                 actor.stop();
             });

@@ -225,11 +225,14 @@ describe('MFA outcome finalization', () => {
         });
 
         it('leaves no cancel-confirmation dialog behind when CLOSE_MODAL arrives while it is up', () => {
+            // Given a flow with the cancel-confirmation dialog up
             const actor = createActorAtState({[MFA_STATE.OPEN]: {...AUTHORIZING_STATE[MFA_STATE.OPEN], ...CANCEL_CONFIRM_VISIBLE}});
 
+            // When the modal is closed, e.g. by navigating away
             actor.start();
             actor.send({type: 'CLOSE_MODAL'});
 
+            // Then the modal closes with the dialog hidden, so it can't stay on screen while the modal animates out
             const result = actor.getSnapshot();
             expect(result.matches(MFA_STATE.CLOSING)).toBe(true);
             expect(snapshotToState(result).isCancelConfirmVisible).toBe(false);

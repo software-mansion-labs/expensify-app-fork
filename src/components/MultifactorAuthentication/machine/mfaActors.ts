@@ -119,11 +119,10 @@ const authorizeActor = fromPromise<AuthorizeOutput, AuthorizeInput>(async ({inpu
 });
 
 /**
- * Sends the scenario's backend action with the signed challenge. The request can't be taken back once
- * sent, so the machine starts it only while no cancel confirmation is up. A confirmed cancel in a scenario
- * with `onCancel` keeps this actor running, and its success still ends the flow; without `onCancel` the
- * machine stops it and drops the result. Stopping it never aborts the request. No rollback happens after
- * the action fails, matching `registerCredentialActor`'s contract.
+ * Sends the scenario's backend action with the signed challenge and returns its result. The request can't
+ * be taken back once sent, so stopping this actor never aborts it. No rollback happens after the action
+ * fails, matching `registerCredentialActor`'s contract. See `denying` in `mfaMachine.ts` for how the result
+ * is used when the user confirms a cancel while the request is in flight.
  */
 const executeScenarioActionActor = fromPromise<ExecuteScenarioActionOutput, ExecuteScenarioActionInput>(async ({input}) => {
     const scenarioResult = await input.runScenarioAction({
@@ -159,6 +158,7 @@ const finalizeOutcomeActor = fromPromise<FinalizeOutcomeOutput, FinalizeOutcomeI
     const callbackInput: MultifactorAuthenticationCallbackInput = {
         httpStatusCode: input.scenarioResponse?.httpStatusCode,
         message: input.scenarioResponse?.reason ?? input.error?.reason,
+        reason: input.scenarioResponse?.reason ?? input.error?.reason,
         body: input.scenarioResponse?.body,
     };
 
@@ -207,11 +207,10 @@ const finalizeOutcomeActor = fromPromise<FinalizeOutcomeOutput, FinalizeOutcomeI
  * Runs the scenario's cancel logic and returns the error the cancelled flow fails with, so the outcome
  * path (callback, telemetry, failure screen) runs as for any other failure. The signal is ignored: a
  * cancel request already sent (e.g. `AuthorizeTransaction`'s deny) can't be taken back.
- * `isScenarioActionSent` is true when the cancel runs in `denying`, where it races the scenario action.
  */
 const cancelScenarioActor = fromPromise<CancelScenarioOutput, CancelScenarioInput>(async ({input}) => {
     if (input.onCancel) {
-        const error = await input.onCancel(input.payload, {isScenarioActionSent: input.isScenarioActionSent});
+        const error = await input.onCancel(input.payload);
         addMFABreadcrumb('Flow cancelled with onCancel', error, 'warning');
         return error;
     }

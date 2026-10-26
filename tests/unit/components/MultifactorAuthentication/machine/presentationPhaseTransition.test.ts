@@ -135,6 +135,7 @@ describe('MFA presentation phase survives outgoing screen transitions', () => {
     });
 
     it('keeps the screen behind the dialog marked busy from a confirmed cancel while the modal closes', () => {
+        // Given the validate-code screen with the cancel-confirmation dialog up
         const actor = createActorAtState({
             [MFA_STATE.OPEN]: {
                 [MFA_STATE.FLOW]: {[MFA_STATE.VALIDATE_CODE]: {[MFA_STATE.AWAITING_VALIDATE_CODE]: MFA_STATE.AWAITING_INPUT}},
@@ -142,16 +143,19 @@ describe('MFA presentation phase survives outgoing screen transitions', () => {
             },
         });
 
+        // When the user confirms the cancel
         actor.start();
         actor.send({type: 'CONFIRM_CANCEL'});
 
-        // The dialog hides as soon as the cancel starts, so the screen itself has to show it is busy
+        // Then the dialog hides as soon as the cancel starts, so the screen itself has to show it is busy
         expect(actor.getSnapshot().matches({[MFA_STATE.OPEN]: {[MFA_STATE.FLOW]: MFA_STATE.CANCELLING}})).toBe(true);
         expect(snapshotToState(actor.getSnapshot()).isCancelConfirmVisible).toBe(false);
         expect(snapshotToState(actor.getSnapshot()).isCancelConfirmed).toBe(true);
 
+        // When the modal then closes
         actor.send({type: 'CLOSE_MODAL'});
 
+        // Then the screen stays busy while it animates out, so it never turns interactive again
         const result = actor.getSnapshot();
         expect(result.matches(MFA_STATE.CLOSING)).toBe(true);
         expect(snapshotToState(result).isCancelConfirmed).toBe(true);

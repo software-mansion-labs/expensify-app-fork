@@ -6,7 +6,7 @@ import {createLocalMFAError} from '@libs/MultifactorAuthentication/shared/MFARes
 
 import CONST from '@src/CONST';
 
-import type {ActorLogic, DoneActorEvent, ErrorActorEvent, InputFrom, SnapshotFrom} from 'xstate';
+import type {ActorLogic, DoneActorEvent, ErrorActorEvent, InputFrom, SnapshotFrom, StateValue} from 'xstate';
 
 import {matchesState} from 'xstate';
 import {getShortestPaths, TestModel} from 'xstate/graph';
@@ -75,8 +75,8 @@ type DrivingJourney = {
     description: string;
     /** The event sequence the walk drives, in order. */
     events: MfaMachineEvent[];
-    /** Dot-path state value the journey must end in, compared with `matchesState`. */
-    endState: string;
+    /** State value the journey must end in, compared with `matchesState`: a dot path, or an object to pin parallel regions together. */
+    endState: StateValue;
 };
 
 /**
@@ -273,7 +273,12 @@ const DRIVING_JOURNEYS: DrivingJourney[] = [
             {type: 'REQUEST_CANCEL'},
             createActorDoneEvent('executeScenarioAction', {success: true, scenarioResponse: MFA_TEST_SCENARIO_RESPONSE}),
         ],
-        endState: `${MFA_STATE.OPEN}.${MFA_STATE.CANCEL_CONFIRM}.${MFA_STATE.CANCEL_CONFIRM_HIDDEN}`,
+        endState: {
+            [MFA_STATE.OPEN]: {
+                [MFA_STATE.FLOW]: {[MFA_STATE.OUTCOME]: MFA_STATE.FINALIZING_OUTCOME},
+                [MFA_STATE.CANCEL_CONFIRM]: MFA_STATE.CANCEL_CONFIRM_HIDDEN,
+            },
+        },
     },
     // Without `onCancel`, a confirm during the scenario action drops its result, so a late response can't
     // replace the cancel outcome.
@@ -471,8 +476,6 @@ function getMfaShortestPathsWithOnCancel() {
     const initEvent = createInitEventWithOnCancel();
     return getShortestPaths(mfaMachineWithLifecycleEvents, {
         events: (snapshot) => getTraversalEvents(snapshot).map((event) => (event.type === 'INIT' ? initEvent : event)),
-        // Every REQUEST_CANCEL during the request bumps the attempt counter, so keying states on it would never end the walk.
-        serializeState: ({value, context}) => JSON.stringify({value, context: {...context, cancelAttemptsDuringRequest: undefined}}),
     });
 }
 
