@@ -4,8 +4,22 @@ import {createLocalMFAError} from '@libs/MultifactorAuthentication/shared/MFARes
 
 import CONST from '@src/CONST';
 
-import {createActorAtState, sendAuthorizeDone, sendCreateCredentialDone, sendFinalizeOutcomeDone, sendRequestRegistrationChallengeDone} from 'tests/utils/mfa/flowActors';
-import {MFA_TEST_AUTH_METHOD, MFA_TEST_FINALIZE_OUTCOME_SHOW_SCREEN, MFA_TEST_REGISTRATION_CHALLENGE, MFA_TEST_SCENARIO_RESPONSE, MFA_TEST_VALIDATE_CODE} from 'tests/utils/mfa/flowFixtures';
+import {
+    createActorAtState,
+    sendAuthorizeDone,
+    sendCreateCredentialDone,
+    sendExecuteScenarioActionDone,
+    sendFinalizeOutcomeDone,
+    sendRequestRegistrationChallengeDone,
+} from 'tests/utils/mfa/flowActors';
+import {
+    MFA_TEST_AUTH_METHOD,
+    MFA_TEST_FINALIZE_OUTCOME_SHOW_SCREEN,
+    MFA_TEST_REGISTRATION_CHALLENGE,
+    MFA_TEST_SCENARIO_RESPONSE,
+    MFA_TEST_SIGNED_CHALLENGE,
+    MFA_TEST_VALIDATE_CODE,
+} from 'tests/utils/mfa/flowFixtures';
 
 const MFA_STATE = CONST.MULTIFACTOR_AUTHENTICATION.MFA_STATE;
 const REASON = CONST.MULTIFACTOR_AUTHENTICATION.REASON;
@@ -17,15 +31,16 @@ const REASON = CONST.MULTIFACTOR_AUTHENTICATION.REASON;
 
 describe('MFA presentation phase survives outgoing screen transitions', () => {
     it('keeps the prompt marked as authorizing after authorization succeeds', () => {
-        const actor = createActorAtState({[MFA_STATE.OPEN]: {[MFA_STATE.PROMPT]: MFA_STATE.AWAITING_SOFT_PROMPT}});
+        const actor = createActorAtState({[MFA_STATE.OPEN]: {[MFA_STATE.FLOW]: {[MFA_STATE.PROMPT]: MFA_STATE.AWAITING_SOFT_PROMPT}}});
 
         actor.start();
         actor.send({type: 'SOFT_PROMPT_APPROVED'});
-        sendAuthorizeDone(actor, {success: true, scenarioResponse: MFA_TEST_SCENARIO_RESPONSE, authenticationMethod: MFA_TEST_AUTH_METHOD});
+        sendAuthorizeDone(actor, {success: true, signedChallenge: MFA_TEST_SIGNED_CHALLENGE, authenticationMethod: MFA_TEST_AUTH_METHOD});
+        sendExecuteScenarioActionDone(actor, {success: true, scenarioResponse: MFA_TEST_SCENARIO_RESPONSE});
         sendFinalizeOutcomeDone(actor, MFA_TEST_FINALIZE_OUTCOME_SHOW_SCREEN);
 
         const result = actor.getSnapshot();
-        expect(result.matches({[MFA_STATE.OPEN]: {[MFA_STATE.OUTCOME]: MFA_STATE.SUCCESS}})).toBe(true);
+        expect(result.matches({[MFA_STATE.OPEN]: {[MFA_STATE.FLOW]: {[MFA_STATE.OUTCOME]: MFA_STATE.SUCCESS}}})).toBe(true);
         expect(snapshotToState(result).isAuthorizing).toBe(true);
         expect(snapshotToState(result).isProcessingPrompt).toBe(true);
 
@@ -33,7 +48,7 @@ describe('MFA presentation phase survives outgoing screen transitions', () => {
     });
 
     it('keeps the prompt marked as authorizing after authorization fails', () => {
-        const actor = createActorAtState({[MFA_STATE.OPEN]: {[MFA_STATE.PROMPT]: MFA_STATE.AWAITING_SOFT_PROMPT}});
+        const actor = createActorAtState({[MFA_STATE.OPEN]: {[MFA_STATE.FLOW]: {[MFA_STATE.PROMPT]: MFA_STATE.AWAITING_SOFT_PROMPT}}});
         const failureError = createLocalMFAError(REASON.LOCAL_ERRORS.HSM.CANCELED, 'Presentation phase spec authorization failure');
 
         actor.start();
@@ -42,7 +57,7 @@ describe('MFA presentation phase survives outgoing screen transitions', () => {
         sendFinalizeOutcomeDone(actor, MFA_TEST_FINALIZE_OUTCOME_SHOW_SCREEN);
 
         const result = actor.getSnapshot();
-        expect(result.matches({[MFA_STATE.OPEN]: {[MFA_STATE.OUTCOME]: MFA_STATE.FAILURE}})).toBe(true);
+        expect(result.matches({[MFA_STATE.OPEN]: {[MFA_STATE.FLOW]: {[MFA_STATE.OUTCOME]: MFA_STATE.FAILURE}}})).toBe(true);
         expect(snapshotToState(result).isAuthorizing).toBe(true);
         expect(snapshotToState(result).isProcessingPrompt).toBe(true);
 
@@ -50,7 +65,10 @@ describe('MFA presentation phase survives outgoing screen transitions', () => {
     });
 
     it('keeps the prompt marked as processing, but not authorizing, after credential creation itself fails', () => {
-        const actor = createActorAtState({[MFA_STATE.OPEN]: {[MFA_STATE.PROMPT]: MFA_STATE.AWAITING_SOFT_PROMPT}}, {registrationChallenge: MFA_TEST_REGISTRATION_CHALLENGE});
+        const actor = createActorAtState(
+            {[MFA_STATE.OPEN]: {[MFA_STATE.FLOW]: {[MFA_STATE.PROMPT]: MFA_STATE.AWAITING_SOFT_PROMPT}}},
+            {registrationChallenge: MFA_TEST_REGISTRATION_CHALLENGE},
+        );
         const failureError = createLocalMFAError(REASON.LOCAL_ERRORS.HSM.KEY_CREATION_FAILED, 'Presentation phase spec credential-creation failure');
 
         actor.start();
@@ -59,7 +77,7 @@ describe('MFA presentation phase survives outgoing screen transitions', () => {
         sendFinalizeOutcomeDone(actor, MFA_TEST_FINALIZE_OUTCOME_SHOW_SCREEN);
 
         const result = actor.getSnapshot();
-        expect(result.matches({[MFA_STATE.OPEN]: {[MFA_STATE.OUTCOME]: MFA_STATE.FAILURE}})).toBe(true);
+        expect(result.matches({[MFA_STATE.OPEN]: {[MFA_STATE.FLOW]: {[MFA_STATE.OUTCOME]: MFA_STATE.FAILURE}}})).toBe(true);
         // The prompt was never actually authorizing on this path, so its copy must stay on the
         // registration wording rather than picking up the authorization one on the way out.
         expect(snapshotToState(result).isAuthorizing).toBe(false);
@@ -69,7 +87,7 @@ describe('MFA presentation phase survives outgoing screen transitions', () => {
     });
 
     it('keeps the prompt marked as authorizing while the modal closes', () => {
-        const actor = createActorAtState({[MFA_STATE.OPEN]: {[MFA_STATE.PROMPT]: MFA_STATE.AWAITING_SOFT_PROMPT}});
+        const actor = createActorAtState({[MFA_STATE.OPEN]: {[MFA_STATE.FLOW]: {[MFA_STATE.PROMPT]: MFA_STATE.AWAITING_SOFT_PROMPT}}});
 
         actor.start();
         actor.send({type: 'SOFT_PROMPT_APPROVED'});
@@ -87,21 +105,21 @@ describe('MFA presentation phase survives outgoing screen transitions', () => {
     });
 
     it('keeps the validate-code form marked submitting after the registration challenge succeeds into the prompt', () => {
-        const actor = createActorAtState({[MFA_STATE.OPEN]: {[MFA_STATE.VALIDATE_CODE]: MFA_STATE.AWAITING_VALIDATE_CODE}});
+        const actor = createActorAtState({[MFA_STATE.OPEN]: {[MFA_STATE.FLOW]: {[MFA_STATE.VALIDATE_CODE]: MFA_STATE.AWAITING_VALIDATE_CODE}}});
 
         actor.start();
         actor.send({type: 'VALIDATE_CODE_ENTERED', validateCode: MFA_TEST_VALIDATE_CODE});
         sendRequestRegistrationChallengeDone(actor, {success: true, challenge: MFA_TEST_REGISTRATION_CHALLENGE});
 
         const result = actor.getSnapshot();
-        expect(result.matches({[MFA_STATE.OPEN]: {[MFA_STATE.PROMPT]: MFA_STATE.AWAITING_SOFT_PROMPT}})).toBe(true);
+        expect(result.matches({[MFA_STATE.OPEN]: {[MFA_STATE.FLOW]: {[MFA_STATE.PROMPT]: MFA_STATE.AWAITING_SOFT_PROMPT}}})).toBe(true);
         expect(snapshotToState(result).isValidateCodeFormSubmitting).toBe(true);
 
         actor.stop();
     });
 
     it('keeps the validate-code form marked submitting after the registration challenge fails fatally', () => {
-        const actor = createActorAtState({[MFA_STATE.OPEN]: {[MFA_STATE.VALIDATE_CODE]: MFA_STATE.AWAITING_VALIDATE_CODE}});
+        const actor = createActorAtState({[MFA_STATE.OPEN]: {[MFA_STATE.FLOW]: {[MFA_STATE.VALIDATE_CODE]: MFA_STATE.AWAITING_VALIDATE_CODE}}});
         const failureError = createLocalMFAError(REASON.SERVER_ERRORS.UNRECOGNIZED, 'Presentation phase spec registration challenge failure');
 
         actor.start();
@@ -110,14 +128,47 @@ describe('MFA presentation phase survives outgoing screen transitions', () => {
         sendFinalizeOutcomeDone(actor, MFA_TEST_FINALIZE_OUTCOME_SHOW_SCREEN);
 
         const result = actor.getSnapshot();
-        expect(result.matches({[MFA_STATE.OPEN]: {[MFA_STATE.OUTCOME]: MFA_STATE.FAILURE}})).toBe(true);
+        expect(result.matches({[MFA_STATE.OPEN]: {[MFA_STATE.FLOW]: {[MFA_STATE.OUTCOME]: MFA_STATE.FAILURE}}})).toBe(true);
         expect(snapshotToState(result).isValidateCodeFormSubmitting).toBe(true);
 
         actor.stop();
     });
 
+    it('keeps the screen behind the dialog marked busy from a confirmed cancel while the modal closes', () => {
+        // Given the validate-code screen with the cancel-confirmation dialog up
+        const actor = createActorAtState({
+            [MFA_STATE.OPEN]: {
+                [MFA_STATE.FLOW]: {[MFA_STATE.VALIDATE_CODE]: {[MFA_STATE.AWAITING_VALIDATE_CODE]: MFA_STATE.AWAITING_INPUT}},
+                [MFA_STATE.CANCEL_CONFIRM]: MFA_STATE.CANCEL_CONFIRM_VISIBLE,
+            },
+        });
+
+        // When the user confirms the cancel
+        actor.start();
+        actor.send({type: 'CONFIRM_CANCEL'});
+
+        // Then the dialog hides as soon as the cancel starts, so the screen itself has to show it is busy
+        expect(actor.getSnapshot().matches({[MFA_STATE.OPEN]: {[MFA_STATE.FLOW]: MFA_STATE.CANCELLING}})).toBe(true);
+        expect(snapshotToState(actor.getSnapshot()).isCancelConfirmVisible).toBe(false);
+        expect(snapshotToState(actor.getSnapshot()).isCancelConfirmed).toBe(true);
+
+        // When the modal then closes
+        actor.send({type: 'CLOSE_MODAL'});
+
+        // Then the screen stays busy while it animates out, so it never turns interactive again
+        const result = actor.getSnapshot();
+        expect(result.matches(MFA_STATE.CLOSING)).toBe(true);
+        expect(snapshotToState(result).isCancelConfirmed).toBe(true);
+
+        actor.stop();
+    });
+
     it('clears both frozen presentations once the modal fully closes', () => {
-        const actor = createActorAtState(MFA_STATE.CLOSING, {promptPresentationPhase: MFA_STATE.AUTHORIZING, validateCodePresentationPhase: MFA_STATE.REQUESTING_REGISTRATION_CHALLENGE});
+        const actor = createActorAtState(MFA_STATE.CLOSING, {
+            promptPresentationPhase: MFA_STATE.AUTHORIZING,
+            validateCodePresentationPhase: MFA_STATE.REQUESTING_REGISTRATION_CHALLENGE,
+            isCancelConfirmed: true,
+        });
 
         actor.start();
         actor.send({type: 'MODAL_CLOSED'});
@@ -126,6 +177,7 @@ describe('MFA presentation phase survives outgoing screen transitions', () => {
         expect(result.matches(MFA_STATE.CLOSED)).toBe(true);
         expect(result.context.promptPresentationPhase).toBeUndefined();
         expect(result.context.validateCodePresentationPhase).toBeUndefined();
+        expect(result.context.isCancelConfirmed).toBe(false);
 
         actor.stop();
     });

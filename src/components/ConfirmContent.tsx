@@ -42,6 +42,12 @@ type ConfirmContentProps = {
     /** Cancel button text */
     cancelText?: string;
 
+    /** testID of the confirm button */
+    confirmButtonTestID?: string;
+
+    /** testID of the cancel button */
+    cancelButtonTestID?: string;
+
     /** Modal content text/element */
     prompt?: string | ReactNode;
 
@@ -130,6 +136,8 @@ function ConfirmContent({
     onCancel = () => {},
     confirmText = '',
     cancelText = '',
+    confirmButtonTestID,
+    cancelButtonTestID,
     prompt = '',
     success = true,
     danger = false,
@@ -237,6 +245,7 @@ function ConfirmContent({
                                 onPress={onCancel}
                                 large
                                 text={cancelText || translate('common.no')}
+                                testID={cancelButtonTestID}
                             />
                         )}
                         <Button
@@ -248,6 +257,7 @@ function ConfirmContent({
                             isPressOnEnterActive={isVisible}
                             large
                             text={confirmText || translate('common.yes')}
+                            testID={confirmButtonTestID}
                             accessibilityLabel={confirmText || translate('common.yes')}
                             isDisabled={isOffline && shouldDisableConfirmButtonWhenOffline}
                             isLoading={isConfirmLoading}
@@ -258,6 +268,7 @@ function ConfirmContent({
                                 onPress={onCancel}
                                 large
                                 text={cancelText || translate('common.no')}
+                                testID={cancelButtonTestID}
                             />
                         )}
                     </>
@@ -268,6 +279,7 @@ function ConfirmContent({
                                 style={[styles.noSelect, styles.flex1]}
                                 onPress={onCancel}
                                 text={cancelText || translate('common.no')}
+                                testID={cancelButtonTestID}
                             />
                         )}
                         <Button
@@ -278,6 +290,7 @@ function ConfirmContent({
                             pressOnEnter
                             isPressOnEnterActive={isVisible}
                             text={confirmText || translate('common.yes')}
+                            testID={confirmButtonTestID}
                             isDisabled={isOffline && shouldDisableConfirmButtonWhenOffline}
                             isLoading={isConfirmLoading}
                         />

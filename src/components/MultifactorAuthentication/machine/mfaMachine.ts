@@ -1,7 +1,8 @@
 import {deviceVerificationType} from '@components/MultifactorAuthentication/biometrics/operations';
 import {navigate as mfaNavigate, resetMfaNavigation} from '@components/MultifactorAuthentication/mfaNavigation';
 
-import {createUnhandledExceptionMFAError, getMFAFailureError} from '@libs/MultifactorAuthentication/shared/MFAResult';
+import {isHttpSuccess} from '@libs/MultifactorAuthentication/shared/helpers';
+import {createMFAErrorFromApiResponse, createUnhandledExceptionMFAError, getMFAFailureError} from '@libs/MultifactorAuthentication/shared/MFAResult';
 import Navigation from '@libs/Navigation/Navigation';
 
 import {markHasAcceptedSoftPrompt} from '@userActions/MultifactorAuthentication';
@@ -11,9 +12,9 @@ import CONST from '@src/CONST';
 import SCREENS from '@src/SCREENS';
 
 import {CONST as COMMON_CONST} from 'expensify-common';
-import {assign, setup} from 'xstate';
+import {and, assign, not, setup, stateIn} from 'xstate';
 
-import type {MfaContext, MfaEvent} from './types';
+import type {CancelScenarioInput, MfaContext, MfaEvent} from './types';
 
 import createActors from './mfaActors';
 
@@ -28,9 +29,37 @@ const AUTHORIZING_TARGET = `#${MFA_STATE.PROMPT}.${MFA_STATE.AUTHORIZING}` as co
 // `closing` is a sibling of `open`, not of `outcome`, so the finalize actor's SKIP_OUTCOME_SCREEN exit
 // needs an absolute target the same way the branches above do.
 const CLOSING_TARGET = `#${MFA_STATE.CLOSING}` as const;
+const CANCELLING_TARGET = `#${MFA_STATE.CANCELLING}` as const;
+const DENYING_TARGET = `#${MFA_STATE.DENYING}` as const;
+const CANCEL_CONFIRM_VISIBLE_TARGET = `#${MFA_STATE.CANCEL_CONFIRM_VISIBLE}` as const;
 
 // One literal shared by both branches of an explicit soft-prompt approval, so they can't drift apart.
 const SOFT_PROMPT_ACCEPTED_ACTIONS = ['approveSoftPrompt', 'persistSoftPromptAcceptance'] as const;
+
+/** `onCancel` is optional, so only the scenarios that define it carry the key. */
+function getOnCancel(context: MfaContext): CancelScenarioInput['onCancel'] {
+    return context.scenario && 'onCancel' in context.scenario ? context.scenario.onCancel : undefined;
+}
+
+/** The error a confirmed cancel ends with when its requests don't return within `cancelTimeout`. */
+function createCancelTimeoutError() {
+    return createMFAErrorFromApiResponse(undefined, undefined, 'MFA cancel timed out');
+}
+
+/**
+ * The outcome of a confirmed cancel that raced the scenario action, taken from the first result present in
+ * this order: a successful scenario action, a successful cancel, a failed scenario action, a failed cancel.
+ * A result is missing when the wait timed out, and with neither the flow fails as if the request got no response.
+ */
+function getDenyingOutcome({scenarioActionResult, cancelError}: MfaContext): Partial<Pick<MfaContext, 'error' | 'scenarioResponse'>> {
+    if (scenarioActionResult?.success) {
+        return {scenarioResponse: scenarioActionResult.scenarioResponse};
+    }
+    if (cancelError && isHttpSuccess(cancelError.httpStatusCode)) {
+        return {error: cancelError};
+    }
+    return {error: scenarioActionResult?.error ?? cancelError ?? createCancelTimeoutError()};
+}
 
 // Which prompt variant the screen renders is a device property, resolved once per platform.
 const PROMPT_TYPE = CONST.MULTIFACTOR_AUTHENTICATION.PROMPT_TYPE_MAP[deviceVerificationType];
@@ -44,14 +73,18 @@ const DEFAULT_CONTEXT: MfaContext = {
     runScenarioAction: undefined,
     validateCode: undefined,
     registrationChallenge: undefined,
+    registrationKeyInfo: undefined,
     softPromptApproved: false,
-    isCancelConfirmVisible: false,
     authenticationMethod: undefined,
+    signedChallenge: undefined,
     scenarioResponse: undefined,
     promptPresentationPhase: undefined,
     validateCodePresentationPhase: undefined,
     registrationStateAtStart: undefined,
     isRegistrationComplete: false,
+    isCancelConfirmed: false,
+    cancelError: undefined,
+    scenarioActionResult: undefined,
 };
 
 /**
@@ -75,6 +108,13 @@ const MFAMachine = setup({
     guards: {
         hasError: ({context}) => context.error !== undefined,
         hasRegistrationChallenge: ({context}) => context.registrationChallenge !== undefined,
+        // Once the flow reaches the outcome there is nothing left to cancel, so back closes the modal
+        // instead; while the cancel itself runs (`cancelling`, or `denying` next to the scenario action),
+        // there is nothing left to ask.
+        isCancelable: and([not(stateIn(OUTCOME_TARGET)), not(stateIn(CANCELLING_TARGET)), not(stateIn(DENYING_TARGET))]),
+        hasOnCancel: ({context}) => !!getOnCancel(context),
+        // A successful scenario action decides on its own; anything else waits for both results.
+        canResolveDenying: ({context: {scenarioActionResult, cancelError}}) => !!scenarioActionResult?.success || (scenarioActionResult !== undefined && cancelError !== undefined),
     },
     actions: {
         // Seeds the flow's context from the INIT event. A named action's event is typed as the full
@@ -128,11 +168,9 @@ const MFAMachine = setup({
             }
             markHasAcceptedSoftPrompt(context.accountID);
         },
-        // Runs on entering `closing`: drops the cancel-confirmation modal so it cannot linger over the
-        // closing navigator. The context is not wiped until `closed`, so without this the flag would
-        // survive the whole close animation.
-        hideCancelConfirmModal: assign({isCancelConfirmVisible: false}),
         resetContext: assign(() => ({...DEFAULT_CONTEXT})),
+        markCancelConfirmed: assign({isCancelConfirmed: true}),
+        applyDenyingOutcome: assign(({context}) => getDenyingOutcome(context)),
         // Clears the module-level navigation buffer (pendingNavigation/hasInitialLaidOut). Owned by
         // the machine so a navigator that unmounts mid-close cannot leave a stale buffered screen
         // behind for the next flow.
@@ -142,6 +180,9 @@ const MFAMachine = setup({
         // How long `closing` waits for MODAL_CLOSED before re-entering `closed` on its own; longer
         // than any close animation can take.
         closeFallback: CONST.MAX_TRANSITION_START_WAIT_MS + CONST.MAX_TRANSITION_DURATION_MS + CONST.ANIMATED_TRANSITION,
+        // How long a confirmed cancel (`cancelling`, `denying`) waits for its requests, since back and
+        // Escape can't leave either state.
+        cancelTimeout: 60 * 1000,
     },
 }).createMachine({
     id: 'mfa',
@@ -158,245 +199,443 @@ const MFAMachine = setup({
                 INIT: {target: MFA_STATE.OPEN, actions: 'initFlow'},
             },
         },
+        // Two regions run side by side: `flow` walks the MFA steps, and `cancelConfirm` tracks the
+        // cancel-confirmation dialog, so opening the dialog never stops the step that is running.
         [MFA_STATE.OPEN]: {
-            initial: MFA_STATE.PREPARING,
+            type: 'parallel',
             on: {
                 CLOSE_MODAL: MFA_STATE.CLOSING,
             },
             states: {
-                // This is the transparent initial screen, and its child states run the pre-screen
-                // work the user waits through.
-                [MFA_STATE.PREPARING]: {
-                    initial: MFA_STATE.VALIDATING_DEVICE,
-                    states: {
-                        [MFA_STATE.VALIDATING_DEVICE]: {
-                            invoke: {
-                                id: 'validateDevice',
-                                src: 'validateDevice',
-                                input: ({context}) => {
-                                    if (!context.scenario) {
-                                        throw new Error('MFA scenario must be initialized before device validation');
-                                    }
-                                    return {allowedAuthenticationMethods: context.scenario.allowedAuthenticationMethods};
-                                },
-                                onDone: [
-                                    {guard: ({event}) => !event.output.success, target: OUTCOME_TARGET, actions: assign({error: ({event}) => getMFAFailureError(event.output)})},
-                                    {target: MFA_STATE.DECIDING_REGISTRATION},
-                                ],
-                                // Expected refusals travel as failed results through onDone, so a
-                                // rejection means the platform check itself threw unexpectedly.
-                                onError: {
-                                    target: OUTCOME_TARGET,
-                                    actions: assign({error: ({event}) => createUnhandledExceptionMFAError('Device check', event.error)}),
-                                },
-                            },
-                        },
-                        [MFA_STATE.DECIDING_REGISTRATION]: {
-                            invoke: {
-                                id: 'loadRegistrationState',
-                                src: 'loadRegistrationState',
-                                input: ({context}) => {
-                                    if (context.accountID === undefined) {
-                                        throw new Error('MFA account must be initialized before the registration decision');
-                                    }
-                                    return {accountID: context.accountID};
-                                },
-                                // A fresh (re-)registration always requires soft-prompt approval. A returning
-                                // user who already accepted it skips the soft prompt and authorizes directly
-                                // instead of re-confirming. Both signals come from the same account-scoped actor read.
-                                onDone: [
-                                    {guard: ({event}) => event.output.hasLocalCredentials && event.output.hasEverAcceptedSoftPrompt, target: AUTHORIZING_TARGET},
-                                    {guard: ({event}) => event.output.hasLocalCredentials, target: PROMPT_TARGET},
-                                    {target: VALIDATE_CODE_TARGET, actions: 'requestValidateCode'},
-                                ],
-                                onError: {
-                                    target: OUTCOME_TARGET,
-                                    actions: assign({error: ({event}) => createUnhandledExceptionMFAError('Registration state check', event.error)}),
-                                },
-                            },
-                        },
+                [MFA_STATE.FLOW]: {
+                    initial: MFA_STATE.PREPARING,
+                    on: {
+                        // Declared once for every step. Leaving the step stops its actor and aborts its signal,
+                        // so a late result is discarded. The dialog hides itself once the flow reaches `cancelling`.
+                        // `executingScenarioAction` overrides this for scenarios with `onCancel`.
+                        CONFIRM_CANCEL: {guard: stateIn(CANCEL_CONFIRM_VISIBLE_TARGET), target: `.${MFA_STATE.CANCELLING}`},
                     },
-                },
-                [MFA_STATE.VALIDATE_CODE]: {
-                    id: MFA_STATE.VALIDATE_CODE,
-                    entry: 'navigateToValidateCode',
-                    initial: MFA_STATE.AWAITING_VALIDATE_CODE,
                     states: {
-                        // Waits for the emailed code. A resend is accepted only here, so one fired
-                        // while the challenge request is in flight is dropped instead of emailing a
-                        // code the pending submission ignores.
-                        [MFA_STATE.AWAITING_VALIDATE_CODE]: {
-                            entry: assign({validateCodePresentationPhase: MFA_STATE.AWAITING_VALIDATE_CODE}),
-                            initial: MFA_STATE.AWAITING_INPUT,
-                            on: {
-                                VALIDATE_CODE_ENTERED: {target: MFA_STATE.REQUESTING_REGISTRATION_CHALLENGE, actions: 'submitValidateCode'},
-                                RESEND_VALIDATE_CODE: {target: `.${MFA_STATE.AWAITING_INPUT}`, actions: 'requestValidateCode'},
-                            },
+                        // This is the transparent initial screen, and its child states run the pre-screen
+                        // work the user waits through.
+                        [MFA_STATE.PREPARING]: {
+                            initial: MFA_STATE.VALIDATING_DEVICE,
                             states: {
-                                [MFA_STATE.AWAITING_INPUT]: {},
-                                // The backend rejected the submitted code. The screen shows the
-                                // inline error exactly while this state is active, so every way out
-                                // (typing, a resend, a new submission) drops the error by
-                                // construction and nothing stale can outlive the screen.
-                                [MFA_STATE.INVALID_CODE]: {
+                                [MFA_STATE.VALIDATING_DEVICE]: {
+                                    invoke: {
+                                        id: 'validateDevice',
+                                        src: 'validateDevice',
+                                        input: ({context}) => {
+                                            if (!context.scenario) {
+                                                throw new Error('MFA scenario must be initialized before device validation');
+                                            }
+                                            return {allowedAuthenticationMethods: context.scenario.allowedAuthenticationMethods};
+                                        },
+                                        onDone: [
+                                            {guard: ({event}) => !event.output.success, target: OUTCOME_TARGET, actions: assign({error: ({event}) => getMFAFailureError(event.output)})},
+                                            {target: MFA_STATE.DECIDING_REGISTRATION},
+                                        ],
+                                        // Expected refusals travel as failed results through onDone, so a
+                                        // rejection means the platform check itself threw unexpectedly.
+                                        onError: {
+                                            target: OUTCOME_TARGET,
+                                            actions: assign({error: ({event}) => createUnhandledExceptionMFAError('Device check', event.error)}),
+                                        },
+                                    },
+                                },
+                                [MFA_STATE.DECIDING_REGISTRATION]: {
+                                    invoke: {
+                                        id: 'loadRegistrationState',
+                                        src: 'loadRegistrationState',
+                                        input: ({context}) => {
+                                            if (context.accountID === undefined) {
+                                                throw new Error('MFA account must be initialized before the registration decision');
+                                            }
+                                            return {accountID: context.accountID};
+                                        },
+                                        // A fresh (re-)registration always requires soft-prompt approval. A returning
+                                        // user who already accepted it skips the soft prompt and authorizes directly
+                                        // instead of re-confirming. Both signals come from the same account-scoped actor read.
+                                        onDone: [
+                                            {guard: ({event}) => event.output.hasLocalCredentials && event.output.hasEverAcceptedSoftPrompt, target: AUTHORIZING_TARGET},
+                                            {guard: ({event}) => event.output.hasLocalCredentials, target: PROMPT_TARGET},
+                                            {target: VALIDATE_CODE_TARGET, actions: 'requestValidateCode'},
+                                        ],
+                                        onError: {
+                                            target: OUTCOME_TARGET,
+                                            actions: assign({error: ({event}) => createUnhandledExceptionMFAError('Registration state check', event.error)}),
+                                        },
+                                    },
+                                },
+                            },
+                        },
+                        [MFA_STATE.VALIDATE_CODE]: {
+                            id: MFA_STATE.VALIDATE_CODE,
+                            entry: 'navigateToValidateCode',
+                            initial: MFA_STATE.AWAITING_VALIDATE_CODE,
+                            states: {
+                                // Waits for the emailed code. A resend is accepted only here, so one fired
+                                // while the challenge request is in flight is dropped instead of emailing a
+                                // code the pending submission ignores.
+                                [MFA_STATE.AWAITING_VALIDATE_CODE]: {
+                                    entry: assign({validateCodePresentationPhase: MFA_STATE.AWAITING_VALIDATE_CODE}),
+                                    initial: MFA_STATE.AWAITING_INPUT,
                                     on: {
-                                        VALIDATE_CODE_CHANGED: MFA_STATE.AWAITING_INPUT,
+                                        VALIDATE_CODE_ENTERED: {target: MFA_STATE.REQUESTING_REGISTRATION_CHALLENGE, actions: 'submitValidateCode'},
+                                        RESEND_VALIDATE_CODE: {target: `.${MFA_STATE.AWAITING_INPUT}`, actions: 'requestValidateCode'},
+                                    },
+                                    states: {
+                                        [MFA_STATE.AWAITING_INPUT]: {},
+                                        // The backend rejected the submitted code. The screen shows the
+                                        // inline error exactly while this state is active, so every way out
+                                        // (typing, a resend, a new submission) drops the error by
+                                        // construction and nothing stale can outlive the screen.
+                                        [MFA_STATE.INVALID_CODE]: {
+                                            on: {
+                                                VALIDATE_CODE_CHANGED: MFA_STATE.AWAITING_INPUT,
+                                            },
+                                        },
+                                    },
+                                },
+                                [MFA_STATE.REQUESTING_REGISTRATION_CHALLENGE]: {
+                                    entry: assign({validateCodePresentationPhase: MFA_STATE.REQUESTING_REGISTRATION_CHALLENGE}),
+                                    // The submitted code is needed only while this actor starts and runs. Clear it on
+                                    // every way out so the one-time code cannot outlive the request that consumes it.
+                                    exit: 'clearValidateCode',
+                                    invoke: {
+                                        id: 'requestRegistrationChallenge',
+                                        src: 'requestRegistrationChallenge',
+                                        input: ({context}) => {
+                                            if (context.validateCode === undefined) {
+                                                throw new Error('MFA validate code must be stored before requesting a registration challenge');
+                                            }
+                                            return {validateCode: context.validateCode};
+                                        },
+                                        onDone: [
+                                            {
+                                                guard: ({event}) => event.output.success,
+                                                target: PROMPT_TARGET,
+                                                actions: assign({registrationChallenge: ({event}) => (event.output.success ? event.output.challenge : undefined)}),
+                                            },
+                                            {
+                                                guard: ({event}) =>
+                                                    !event.output.success &&
+                                                    getMFAFailureError(event.output).reason === CONST.MULTIFACTOR_AUTHENTICATION.REASON.CLIENT_ERRORS.INVALID_VALIDATE_CODE,
+                                                target: `${MFA_STATE.AWAITING_VALIDATE_CODE}.${MFA_STATE.INVALID_CODE}`,
+                                            },
+                                            {target: OUTCOME_TARGET, actions: assign({error: ({event}) => getMFAFailureError(event.output)})},
+                                        ],
+                                        onError: {
+                                            target: OUTCOME_TARGET,
+                                            actions: assign({error: ({event}) => createUnhandledExceptionMFAError('Registration challenge request', event.error)}),
+                                        },
                                     },
                                 },
                             },
                         },
-                        [MFA_STATE.REQUESTING_REGISTRATION_CHALLENGE]: {
-                            entry: assign({validateCodePresentationPhase: MFA_STATE.REQUESTING_REGISTRATION_CHALLENGE}),
-                            // The submitted code is needed only while this actor starts and runs. Clear it on
-                            // every way out so the one-time code cannot outlive the request that consumes it.
-                            exit: 'clearValidateCode',
-                            invoke: {
-                                id: 'requestRegistrationChallenge',
-                                src: 'requestRegistrationChallenge',
-                                input: ({context}) => {
-                                    if (context.validateCode === undefined) {
-                                        throw new Error('MFA validate code must be stored before requesting a registration challenge');
-                                    }
-                                    return {validateCode: context.validateCode};
+                        // Reached for a fresh/re-registration, or a returning user who hasn't accepted the soft
+                        // prompt yet - see the routing comment on `decidingRegistration`.
+                        [MFA_STATE.PROMPT]: {
+                            id: MFA_STATE.PROMPT,
+                            entry: ['navigateToPrompt'],
+                            initial: MFA_STATE.AWAITING_SOFT_PROMPT,
+                            states: {
+                                [MFA_STATE.AWAITING_SOFT_PROMPT]: {
+                                    // See `promptPresentationPhase` in types.ts for why this is set on entry.
+                                    entry: assign({promptPresentationPhase: MFA_STATE.AWAITING_SOFT_PROMPT}),
+                                    on: {
+                                        SOFT_PROMPT_APPROVED: [
+                                            {guard: 'hasRegistrationChallenge', target: MFA_STATE.CREATING_CREDENTIAL, actions: SOFT_PROMPT_ACCEPTED_ACTIONS},
+                                            {target: MFA_STATE.AUTHORIZING, actions: SOFT_PROMPT_ACCEPTED_ACTIONS},
+                                        ],
+                                    },
                                 },
-                                onDone: [
-                                    {
-                                        guard: ({event}) => event.output.success,
-                                        target: PROMPT_TARGET,
-                                        actions: assign({registrationChallenge: ({event}) => (event.output.success ? event.output.challenge : undefined)}),
+                                // Registration and authorization stay under `prompt` so the prompt screen and its
+                                // fingerprint animation remain mounted throughout.
+                                // The platform ceremony, then the backend registration of the key it created.
+                                [MFA_STATE.CREATING_CREDENTIAL]: {
+                                    entry: assign({promptPresentationPhase: MFA_STATE.CREATING_CREDENTIAL}),
+                                    exit: assign({registrationKeyInfo: undefined}),
+                                    initial: MFA_STATE.READY_TO_CREATE,
+                                    states: {
+                                        // The platform prompt would cover the cancel confirmation, so the ceremony runs only while
+                                        // no cancel is pending: dismissing starts it, confirming leaves for `cancelling`. With no
+                                        // dialog up, this passes straight through.
+                                        [MFA_STATE.READY_TO_CREATE]: {
+                                            always: {guard: not(stateIn(CANCEL_CONFIRM_VISIBLE_TARGET)), target: MFA_STATE.CREATING_KEY},
+                                        },
+                                        [MFA_STATE.CREATING_KEY]: {
+                                            // Opening the dialog stops the ceremony, so the prompt never opens over it. Nothing has
+                                            // reached the backend yet, so dismissing restarts it with the same registration challenge.
+                                            always: {guard: stateIn(CANCEL_CONFIRM_VISIBLE_TARGET), target: MFA_STATE.READY_TO_CREATE},
+                                            invoke: {
+                                                id: 'createCredential',
+                                                src: 'createCredential',
+                                                input: ({context}) => {
+                                                    if (context.accountID === undefined || context.registrationChallenge === undefined) {
+                                                        throw new Error('MFA account and registration challenge must be stored before creating a credential');
+                                                    }
+                                                    return {accountID: context.accountID, registrationChallenge: context.registrationChallenge};
+                                                },
+                                                onDone: [
+                                                    {
+                                                        guard: ({event}) => !event.output.success,
+                                                        target: OUTCOME_TARGET,
+                                                        actions: assign({error: ({event}) => getMFAFailureError(event.output)}),
+                                                    },
+                                                    {
+                                                        target: MFA_STATE.REGISTERING_KEY,
+                                                        actions: assign({registrationKeyInfo: ({event}) => (event.output.success ? event.output.keyInfo : undefined)}),
+                                                    },
+                                                ],
+                                                onError: {
+                                                    target: OUTCOME_TARGET,
+                                                    actions: assign({error: ({event}) => createUnhandledExceptionMFAError('Credential creation', event.error)}),
+                                                },
+                                            },
+                                        },
+                                        // A registration request can't be taken back once sent, so opening the dialog doesn't stop
+                                        // it. A confirmed cancel still leaves and drops its result; the server keeps the key, which is harmless.
+                                        [MFA_STATE.REGISTERING_KEY]: {
+                                            invoke: {
+                                                id: 'registerCredential',
+                                                src: 'registerCredential',
+                                                input: ({context}) => {
+                                                    if (context.registrationKeyInfo === undefined) {
+                                                        throw new Error('MFA key info must be stored before registering a credential');
+                                                    }
+                                                    return {keyInfo: context.registrationKeyInfo};
+                                                },
+                                                onDone: [
+                                                    {
+                                                        guard: ({event}) => !event.output.success,
+                                                        target: OUTCOME_TARGET,
+                                                        actions: assign({error: ({event}) => getMFAFailureError(event.output)}),
+                                                    },
+                                                    {target: AUTHORIZING_TARGET, actions: assign({isRegistrationComplete: true})},
+                                                ],
+                                                onError: {
+                                                    target: OUTCOME_TARGET,
+                                                    actions: assign({error: ({event}) => createUnhandledExceptionMFAError('Credential registration', event.error)}),
+                                                },
+                                            },
+                                        },
                                     },
-                                    {
-                                        guard: ({event}) =>
-                                            !event.output.success && getMFAFailureError(event.output).reason === CONST.MULTIFACTOR_AUTHENTICATION.REASON.CLIENT_ERRORS.INVALID_VALIDATE_CODE,
-                                        target: `${MFA_STATE.AWAITING_VALIDATE_CODE}.${MFA_STATE.INVALID_CODE}`,
+                                },
+                                // Reached once local credentials are confirmed (returning user) or freshly created.
+                                // The device-local ceremony, then the scenario's backend action.
+                                [MFA_STATE.AUTHORIZING]: {
+                                    entry: assign({promptPresentationPhase: MFA_STATE.AUTHORIZING}),
+                                    exit: assign({signedChallenge: undefined}),
+                                    initial: MFA_STATE.READY_TO_SIGN,
+                                    states: {
+                                        // The platform prompt would cover the cancel confirmation, so the ceremony runs only while
+                                        // no cancel is pending: dismissing starts it, confirming leaves for `cancelling`. With no
+                                        // dialog up, this passes straight through.
+                                        [MFA_STATE.READY_TO_SIGN]: {
+                                            always: {guard: not(stateIn(CANCEL_CONFIRM_VISIBLE_TARGET)), target: MFA_STATE.SIGNING_CHALLENGE},
+                                        },
+                                        [MFA_STATE.SIGNING_CHALLENGE]: {
+                                            // Opening the dialog stops the ceremony, so the prompt never opens over it and the scenario
+                                            // action never goes out while it is up. Dismissing restarts it with a fresh challenge.
+                                            always: {guard: stateIn(CANCEL_CONFIRM_VISIBLE_TARGET), target: MFA_STATE.READY_TO_SIGN},
+                                            invoke: {
+                                                id: 'authorize',
+                                                src: 'authorize',
+                                                input: ({context}) => {
+                                                    if (context.accountID === undefined) {
+                                                        throw new Error('MFA account must be initialized before authorization');
+                                                    }
+                                                    return {accountID: context.accountID};
+                                                },
+                                                onDone: [
+                                                    {
+                                                        guard: ({event}) => !event.output.success,
+                                                        target: OUTCOME_TARGET,
+                                                        actions: assign({error: ({event}) => getMFAFailureError(event.output)}),
+                                                    },
+                                                    // The scenario action takes the method as input, so it is stored before the request
+                                                    // and outcome telemetry reports it even when the scenario action fails.
+                                                    {
+                                                        target: MFA_STATE.EXECUTING_SCENARIO_ACTION,
+                                                        actions: assign(({event}) =>
+                                                            event.output.success
+                                                                ? {signedChallenge: event.output.signedChallenge, authenticationMethod: event.output.authenticationMethod}
+                                                                : {},
+                                                        ),
+                                                    },
+                                                ],
+                                                onError: {
+                                                    target: OUTCOME_TARGET,
+                                                    actions: assign({error: ({event}) => createUnhandledExceptionMFAError('Authorization', event.error)}),
+                                                },
+                                            },
+                                        },
+                                        [MFA_STATE.EXECUTING_SCENARIO_ACTION]: {
+                                            id: MFA_STATE.EXECUTING_SCENARIO_ACTION,
+                                            initial: MFA_STATE.AWAITING_RESULT,
+                                            on: {
+                                                // The request is already out, so a confirmed cancel sends the deny and waits for
+                                                // the results. Without `onCancel` the flow-level handler moves to `cancelling` and
+                                                // the result is dropped.
+                                                CONFIRM_CANCEL: {guard: and([stateIn(CANCEL_CONFIRM_VISIBLE_TARGET), 'hasOnCancel']), target: `.${MFA_STATE.DENYING}`},
+                                            },
+                                            // Invoked here rather than in a substate, so moving to `denying` keeps the request running.
+                                            invoke: {
+                                                id: 'executeScenarioAction',
+                                                src: 'executeScenarioAction',
+                                                input: ({context}) => {
+                                                    if (context.runScenarioAction === undefined || context.signedChallenge === undefined || context.authenticationMethod === undefined) {
+                                                        throw new Error('MFA scenario action and signed challenge must be stored before executing the scenario action');
+                                                    }
+                                                    return {
+                                                        runScenarioAction: context.runScenarioAction,
+                                                        signedChallenge: context.signedChallenge,
+                                                        authenticationMethod: context.authenticationMethod,
+                                                    };
+                                                },
+                                                onDone: [
+                                                    // A confirmed cancel holds the result until `denying` decides with both.
+                                                    {guard: stateIn(DENYING_TARGET), actions: assign({scenarioActionResult: ({event}) => event.output})},
+                                                    {
+                                                        guard: ({event}) => !event.output.success,
+                                                        target: OUTCOME_TARGET,
+                                                        actions: assign({error: ({event}) => getMFAFailureError(event.output)}),
+                                                    },
+                                                    {
+                                                        target: OUTCOME_TARGET,
+                                                        actions: assign(({event}) => (event.output.success ? {scenarioResponse: event.output.scenarioResponse} : {})),
+                                                    },
+                                                ],
+                                                onError: [
+                                                    {
+                                                        guard: stateIn(DENYING_TARGET),
+                                                        actions: assign({
+                                                            scenarioActionResult: ({event}) => ({success: false, error: createUnhandledExceptionMFAError('Scenario action', event.error)}),
+                                                        }),
+                                                    },
+                                                    {
+                                                        target: OUTCOME_TARGET,
+                                                        actions: assign({error: ({event}) => createUnhandledExceptionMFAError('Scenario action', event.error)}),
+                                                    },
+                                                ],
+                                            },
+                                            states: {
+                                                [MFA_STATE.AWAITING_RESULT]: {},
+                                                // The deny goes out while the request already sent is still running. The server handles
+                                                // them in order, so the one arriving second fails with "already ...". A successful request
+                                                // ends the flow right away; otherwise the outcome is decided once both are back, or with
+                                                // what came back when the wait times out. Leaving stops both actors, so a late result
+                                                // never changes it.
+                                                [MFA_STATE.DENYING]: {
+                                                    id: MFA_STATE.DENYING,
+                                                    entry: 'markCancelConfirmed',
+                                                    always: {guard: 'canResolveDenying', target: OUTCOME_TARGET, actions: 'applyDenyingOutcome'},
+                                                    after: {cancelTimeout: {target: OUTCOME_TARGET, actions: 'applyDenyingOutcome'}},
+                                                    invoke: {
+                                                        id: 'cancelScenario',
+                                                        src: 'cancelScenario',
+                                                        input: ({context}) => ({onCancel: getOnCancel(context), payload: context.payload}),
+                                                        onDone: {actions: assign({cancelError: ({event}) => event.output})},
+                                                        onError: {actions: assign({cancelError: ({event}) => createUnhandledExceptionMFAError('Cancel', event.error)})},
+                                                    },
+                                                },
+                                            },
+                                        },
                                     },
-                                    {target: OUTCOME_TARGET, actions: assign({error: ({event}) => getMFAFailureError(event.output)})},
-                                ],
+                                },
+                            },
+                        },
+                        // Turns a confirmed cancel into a failed flow, so the outcome path runs the callback,
+                        // telemetry and failure screen as for any other failure.
+                        [MFA_STATE.CANCELLING]: {
+                            id: MFA_STATE.CANCELLING,
+                            entry: 'markCancelConfirmed',
+                            // Leaving stops the cancel actor, so a late result never changes the outcome.
+                            after: {cancelTimeout: {target: OUTCOME_TARGET, actions: assign({error: createCancelTimeoutError})}},
+                            invoke: {
+                                id: 'cancelScenario',
+                                src: 'cancelScenario',
+                                input: ({context}) => ({onCancel: getOnCancel(context), payload: context.payload}),
+                                onDone: {target: OUTCOME_TARGET, actions: assign({error: ({event}) => event.output})},
                                 onError: {
                                     target: OUTCOME_TARGET,
-                                    actions: assign({error: ({event}) => createUnhandledExceptionMFAError('Registration challenge request', event.error)}),
+                                    actions: assign({error: ({event}) => createUnhandledExceptionMFAError('Cancel', event.error)}),
+                                },
+                            },
+                        },
+                        [MFA_STATE.OUTCOME]: {
+                            id: MFA_STATE.OUTCOME,
+                            initial: MFA_STATE.FINALIZING_OUTCOME,
+                            states: {
+                                // Runs the scenario's callback (and, when it returns SKIP_OUTCOME_SCREEN, lets the
+                                // callback own navigation instead of showing an outcome screen) before deciding
+                                // success or failure. See `finalizeOutcomeActor` for what it does.
+                                [MFA_STATE.FINALIZING_OUTCOME]: {
+                                    invoke: {
+                                        id: 'finalizeOutcome',
+                                        src: 'finalizeOutcome',
+                                        input: ({context}) => {
+                                            if (context.accountID === undefined || context.scenario === undefined || context.scenarioName === undefined) {
+                                                throw new Error('MFA account and scenario must be initialized before finalizing the outcome');
+                                            }
+                                            return {
+                                                callback: context.scenario.callback,
+                                                payload: context.payload,
+                                                accountID: context.accountID,
+                                                scenarioName: context.scenarioName,
+                                                scenarioResponse: context.scenarioResponse,
+                                                error: context.error,
+                                                authenticationMethod: context.authenticationMethod,
+                                                isRegistrationComplete: context.isRegistrationComplete,
+                                                softPromptApproved: context.softPromptApproved,
+                                                registrationStateAtStart: context.registrationStateAtStart,
+                                            };
+                                        },
+                                        onDone: [
+                                            {
+                                                guard: ({event}) => event.output.callbackResponse === CONST.MULTIFACTOR_AUTHENTICATION.CALLBACK_RESPONSE.SKIP_OUTCOME_SCREEN,
+                                                target: CLOSING_TARGET,
+                                            },
+                                            {guard: 'hasError', target: MFA_STATE.FAILURE},
+                                            {target: MFA_STATE.SUCCESS},
+                                        ],
+                                        // Neither the scenario callback nor the end-of-flow telemetry rejects the actor
+                                        // (both are contained there), so reaching here means something else in the actor
+                                        // threw unexpectedly. Route on the error state already known before this actor
+                                        // ran, rather than re-running the callback.
+                                        onError: [{guard: 'hasError', target: MFA_STATE.FAILURE}, {target: MFA_STATE.SUCCESS}],
+                                    },
+                                },
+                                [MFA_STATE.SUCCESS]: {
+                                    entry: ['navigateToSuccessOutcome'],
+                                    on: {REQUEST_CANCEL: CLOSING_TARGET},
+                                },
+                                [MFA_STATE.FAILURE]: {
+                                    entry: ['navigateToFailureOutcome'],
+                                    on: {REQUEST_CANCEL: CLOSING_TARGET},
                                 },
                             },
                         },
                     },
                 },
-                // Reached for a fresh/re-registration, or a returning user who hasn't accepted the soft
-                // prompt yet - see the routing comment on `decidingRegistration`.
-                [MFA_STATE.PROMPT]: {
-                    id: MFA_STATE.PROMPT,
-                    entry: ['navigateToPrompt'],
-                    initial: MFA_STATE.AWAITING_SOFT_PROMPT,
+                [MFA_STATE.CANCEL_CONFIRM]: {
+                    initial: MFA_STATE.CANCEL_CONFIRM_HIDDEN,
                     states: {
-                        [MFA_STATE.AWAITING_SOFT_PROMPT]: {
-                            // See `promptPresentationPhase` in types.ts for why this is set on entry.
-                            entry: assign({promptPresentationPhase: MFA_STATE.AWAITING_SOFT_PROMPT}),
+                        [MFA_STATE.CANCEL_CONFIRM_HIDDEN]: {
                             on: {
-                                SOFT_PROMPT_APPROVED: [
-                                    {guard: 'hasRegistrationChallenge', target: MFA_STATE.CREATING_CREDENTIAL, actions: SOFT_PROMPT_ACCEPTED_ACTIONS},
-                                    {target: MFA_STATE.AUTHORIZING, actions: SOFT_PROMPT_ACCEPTED_ACTIONS},
-                                ],
+                                REQUEST_CANCEL: {guard: 'isCancelable', target: MFA_STATE.CANCEL_CONFIRM_VISIBLE},
                             },
                         },
-                        // Registration and authorization stay under `prompt` so the prompt screen and its
-                        // fingerprint animation remain mounted throughout.
-                        [MFA_STATE.CREATING_CREDENTIAL]: {
-                            entry: assign({promptPresentationPhase: MFA_STATE.CREATING_CREDENTIAL}),
-                            invoke: {
-                                id: 'createCredential',
-                                src: 'createCredential',
-                                input: ({context}) => {
-                                    if (context.accountID === undefined || context.registrationChallenge === undefined) {
-                                        throw new Error('MFA account and registration challenge must be stored before creating a credential');
-                                    }
-                                    return {accountID: context.accountID, registrationChallenge: context.registrationChallenge};
-                                },
-                                onDone: [
-                                    {guard: ({event}) => !event.output.success, target: OUTCOME_TARGET, actions: assign({error: ({event}) => getMFAFailureError(event.output)})},
-                                    {target: MFA_STATE.AUTHORIZING, actions: assign({isRegistrationComplete: true})},
-                                ],
-                                onError: {
-                                    target: OUTCOME_TARGET,
-                                    actions: assign({error: ({event}) => createUnhandledExceptionMFAError('Credential registration', event.error)}),
-                                },
+                        [MFA_STATE.CANCEL_CONFIRM_VISIBLE]: {
+                            id: MFA_STATE.CANCEL_CONFIRM_VISIBLE,
+                            on: {
+                                DISMISS_CANCEL: MFA_STATE.CANCEL_CONFIRM_HIDDEN,
                             },
+                            // The flow owns CONFIRM_CANCEL. Once it moves on to the cancel, or reaches the outcome behind
+                            // the dialog, there is nothing left to cancel, so the dialog hides.
+                            always: {guard: not('isCancelable'), target: MFA_STATE.CANCEL_CONFIRM_HIDDEN},
                         },
-                        // Reached once local credentials are confirmed (returning user) or freshly created.
-                        // The device-local ceremony, then the scenario's backend action.
-                        [MFA_STATE.AUTHORIZING]: {
-                            entry: assign({promptPresentationPhase: MFA_STATE.AUTHORIZING}),
-                            invoke: {
-                                id: 'authorize',
-                                src: 'authorize',
-                                input: ({context}) => {
-                                    if (context.accountID === undefined || context.runScenarioAction === undefined) {
-                                        throw new Error('MFA account and scenario action must be initialized before authorization');
-                                    }
-                                    return {accountID: context.accountID, runScenarioAction: context.runScenarioAction};
-                                },
-                                onDone: [
-                                    {guard: ({event}) => !event.output.success, target: OUTCOME_TARGET, actions: assign({error: ({event}) => getMFAFailureError(event.output)})},
-                                    {
-                                        target: OUTCOME_TARGET,
-                                        actions: assign(({event}) =>
-                                            event.output.success ? {authenticationMethod: event.output.authenticationMethod, scenarioResponse: event.output.scenarioResponse} : {},
-                                        ),
-                                    },
-                                ],
-                                onError: {
-                                    target: OUTCOME_TARGET,
-                                    actions: assign({error: ({event}) => createUnhandledExceptionMFAError('Authorization', event.error)}),
-                                },
-                            },
-                        },
-                    },
-                },
-                [MFA_STATE.OUTCOME]: {
-                    id: MFA_STATE.OUTCOME,
-                    initial: MFA_STATE.FINALIZING_OUTCOME,
-                    states: {
-                        // Runs the scenario's callback (and, when it returns SKIP_OUTCOME_SCREEN, lets the
-                        // callback own navigation instead of showing an outcome screen) before deciding
-                        // success or failure. See `finalizeOutcomeActor` for what it does.
-                        [MFA_STATE.FINALIZING_OUTCOME]: {
-                            invoke: {
-                                id: 'finalizeOutcome',
-                                src: 'finalizeOutcome',
-                                input: ({context}) => {
-                                    if (context.accountID === undefined || context.scenario === undefined || context.scenarioName === undefined) {
-                                        throw new Error('MFA account and scenario must be initialized before finalizing the outcome');
-                                    }
-                                    return {
-                                        callback: context.scenario.callback,
-                                        payload: context.payload,
-                                        accountID: context.accountID,
-                                        scenarioName: context.scenarioName,
-                                        scenarioResponse: context.scenarioResponse,
-                                        error: context.error,
-                                        authenticationMethod: context.authenticationMethod,
-                                        isRegistrationComplete: context.isRegistrationComplete,
-                                        softPromptApproved: context.softPromptApproved,
-                                        registrationStateAtStart: context.registrationStateAtStart,
-                                    };
-                                },
-                                onDone: [
-                                    {
-                                        guard: ({event}) => event.output.callbackResponse === CONST.MULTIFACTOR_AUTHENTICATION.CALLBACK_RESPONSE.SKIP_OUTCOME_SCREEN,
-                                        target: CLOSING_TARGET,
-                                    },
-                                    {guard: 'hasError', target: MFA_STATE.FAILURE},
-                                    {target: MFA_STATE.SUCCESS},
-                                ],
-                                // Neither the scenario callback nor the end-of-flow telemetry rejects the actor
-                                // (both are contained there), so reaching here means something else in the actor
-                                // threw unexpectedly. Route on the error state already known before this actor
-                                // ran, rather than re-running the callback.
-                                onError: [{guard: 'hasError', target: MFA_STATE.FAILURE}, {target: MFA_STATE.SUCCESS}],
-                            },
-                        },
-                        [MFA_STATE.SUCCESS]: {
-                            entry: ['navigateToSuccessOutcome'],
-                        },
-                        [MFA_STATE.FAILURE]: {entry: ['navigateToFailureOutcome']},
                     },
                 },
             },
@@ -407,7 +646,6 @@ const MFAMachine = setup({
         // `closeFallback` timer re-enters `closed` instead.
         [MFA_STATE.CLOSING]: {
             id: MFA_STATE.CLOSING,
-            entry: ['hideCancelConfirmModal'],
             on: {
                 MODAL_CLOSED: MFA_STATE.CLOSED,
             },

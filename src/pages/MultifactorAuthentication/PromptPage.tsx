@@ -6,7 +6,6 @@ import LoadingIndicator from '@components/LoadingIndicator';
 import {MULTIFACTOR_AUTHENTICATION_PROMPT_UI} from '@components/MultifactorAuthentication/config';
 import {useMultifactorAuthenticationInternal} from '@components/MultifactorAuthentication/Context/MultifactorAuthenticationInternalApiContext';
 import MultifactorAuthenticationPromptContent from '@components/MultifactorAuthentication/PromptContent';
-import useMFACancelOnEscape from '@components/MultifactorAuthentication/useMFACancelOnEscape';
 import ScreenWrapper from '@components/ScreenWrapper';
 
 import useLocalize from '@hooks/useLocalize';
@@ -30,10 +29,9 @@ function MultifactorAuthenticationPromptPage({route}: MultifactorAuthenticationP
     const {translate} = useLocalize();
     const styles = useThemeStyles();
     const {requestCancel, approveSoftPrompt, state} = useMultifactorAuthenticationInternal();
-    const {isCancelConfirmVisible, isProcessingPrompt, isAuthorizing, softPromptApproved, registrationChallenge} = state;
+    const {isCancelConfirmVisible, isCancelConfirmed, isProcessingPrompt, isAuthorizing, softPromptApproved, registrationChallenge} = state;
 
     const {illustration, title: defaultTitle, subtitle: defaultSubtitle} = MULTIFACTOR_AUTHENTICATION_PROMPT_UI[route.params.promptType];
-    const interceptFocusTrapEscape = useMFACancelOnEscape();
 
     // Authorizing swaps the confirm-prompt copy for a status line, in two cases:
     // - a returning device that skipped the soft prompt entirely (never approved this session) shows
@@ -64,7 +62,8 @@ function MultifactorAuthenticationPromptPage({route}: MultifactorAuthenticationP
                 // the modal's clicks, and back on when it closes. See https://github.com/Expensify/App/issues/93193
                 active: isCancelConfirmVisible ? false : undefined,
                 focusTrapOptions: {
-                    escapeDeactivates: interceptFocusTrapEscape,
+                    // Escape is handled by the MFA modal's own shortcut.
+                    escapeDeactivates: () => false,
                 },
             }}
         >
@@ -80,7 +79,7 @@ function MultifactorAuthenticationPromptPage({route}: MultifactorAuthenticationP
                     subtitle={subtitle}
                 />
                 <FixedFooter style={[styles.flexColumn, styles.gap3]}>
-                    {isProcessingPrompt ? (
+                    {isProcessingPrompt || isCancelConfirmed ? (
                         <View style={[styles.w100, styles.justifyContentCenter, {height: variables.componentSizeLarge}]}>
                             <LoadingIndicator iconSize={28} />
                         </View>
