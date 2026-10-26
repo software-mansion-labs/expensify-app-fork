@@ -356,9 +356,18 @@ const MFAMachine = setup({
                                 [MFA_STATE.CREATING_CREDENTIAL]: {
                                     entry: assign({promptPresentationPhase: MFA_STATE.CREATING_CREDENTIAL}),
                                     exit: assign({registrationKeyInfo: undefined}),
-                                    initial: MFA_STATE.CREATING_KEY,
+                                    initial: MFA_STATE.READY_TO_CREATE,
                                     states: {
+                                        // The platform prompt would cover the cancel confirmation, so the ceremony runs only while
+                                        // no cancel is pending: dismissing starts it, confirming leaves for `cancelling`. With no
+                                        // dialog up, this passes straight through.
+                                        [MFA_STATE.READY_TO_CREATE]: {
+                                            always: {guard: not(stateIn(CANCEL_CONFIRM_VISIBLE_TARGET)), target: MFA_STATE.CREATING_KEY},
+                                        },
                                         [MFA_STATE.CREATING_KEY]: {
+                                            // Opening the dialog stops the ceremony, so the prompt never opens over it. Nothing has
+                                            // reached the backend yet, so dismissing restarts it with the same registration challenge.
+                                            always: {guard: stateIn(CANCEL_CONFIRM_VISIBLE_TARGET), target: MFA_STATE.READY_TO_CREATE},
                                             invoke: {
                                                 id: 'createCredential',
                                                 src: 'createCredential',
@@ -385,8 +394,8 @@ const MFAMachine = setup({
                                                 },
                                             },
                                         },
-                                        // A registration request can't be taken back once sent, so a confirmed cancel leaves and drops
-                                        // its result; the server keeps the key, which is harmless.
+                                        // A registration request can't be taken back once sent, so opening the dialog doesn't stop
+                                        // it. A confirmed cancel still leaves and drops its result; the server keeps the key, which is harmless.
                                         [MFA_STATE.REGISTERING_KEY]: {
                                             invoke: {
                                                 id: 'registerCredential',
@@ -418,9 +427,18 @@ const MFAMachine = setup({
                                 [MFA_STATE.AUTHORIZING]: {
                                     entry: assign({promptPresentationPhase: MFA_STATE.AUTHORIZING}),
                                     exit: assign({signedChallenge: undefined}),
-                                    initial: MFA_STATE.SIGNING_CHALLENGE,
+                                    initial: MFA_STATE.READY_TO_SIGN,
                                     states: {
+                                        // The platform prompt would cover the cancel confirmation, so the ceremony runs only while
+                                        // no cancel is pending: dismissing starts it, confirming leaves for `cancelling`. With no
+                                        // dialog up, this passes straight through.
+                                        [MFA_STATE.READY_TO_SIGN]: {
+                                            always: {guard: not(stateIn(CANCEL_CONFIRM_VISIBLE_TARGET)), target: MFA_STATE.SIGNING_CHALLENGE},
+                                        },
                                         [MFA_STATE.SIGNING_CHALLENGE]: {
+                                            // Opening the dialog stops the ceremony, so the prompt never opens over it and the scenario
+                                            // action never goes out while it is up. Dismissing restarts it with a fresh challenge.
+                                            always: {guard: stateIn(CANCEL_CONFIRM_VISIBLE_TARGET), target: MFA_STATE.READY_TO_SIGN},
                                             invoke: {
                                                 id: 'authorize',
                                                 src: 'authorize',
