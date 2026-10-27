@@ -5,15 +5,19 @@ import useLocalize from '@hooks/useLocalize';
 import useThemeStyles from '@hooks/useThemeStyles';
 
 import CONST from '@src/CONST';
+import type {DynamicFormField} from '@src/types/onyx';
 
 import type {ReactNode} from 'react';
 
 import React from 'react';
 import {View} from 'react-native';
 
-import {useDynamicFieldContext} from './DynamicFieldContext';
-
 type FieldRowProps = {
+    field: DynamicFormField;
+
+    /** The page title already names the field */
+    shouldHideLabel?: boolean;
+
     /** Spans the page edge to edge like a menu row, instead of sitting inside the page padding */
     isMenuRow?: boolean;
 
@@ -27,10 +31,9 @@ type FieldRowProps = {
 };
 
 /** The layout around one field's input: the label and description it lacks, and the page padding it sits in */
-function FieldRow({isMenuRow = false, labelAbove, isDescriptionInInput = false, children}: FieldRowProps) {
+function FieldRow({field, shouldHideLabel = false, isMenuRow = false, labelAbove, isDescriptionInInput = false, children}: FieldRowProps) {
     const {translate} = useLocalize();
     const styles = useThemeStyles();
-    const {field, shouldHideLabel} = useDynamicFieldContext();
     const description = isDescriptionInInput ? undefined : getLocalizedText(translate, field.descriptionKey, field.description);
 
     // Some inputs, such as CountryPicker, do not pass the FullStory class on, so the whole row is masked

@@ -1,5 +1,4 @@
 import CountryPicker from '@components/CountryPicker';
-import {useDynamicFieldContext} from '@components/DynamicForm/fields/DynamicFieldContext';
 import FieldRow from '@components/DynamicForm/fields/FieldRow';
 import type {DynamicFieldProps} from '@components/DynamicForm/fields/types';
 import {getFieldChoices} from '@components/DynamicForm/utils/getFieldOptions';
@@ -12,13 +11,14 @@ import React from 'react';
 
 import InlineChoice from './InlineChoice';
 
-function CountryField({field, inputProps}: DynamicFieldProps<'country'>) {
+function CountryField({field, shouldHideLabel, values, isLoneField, inputProps}: DynamicFieldProps<'country'>) {
     const {translate} = useLocalize();
-    const {values, isLoneField} = useDynamicFieldContext();
 
     if (isLoneField) {
         return (
             <InlineChoice
+                field={field}
+                shouldHideLabel={shouldHideLabel}
                 label={translate('common.country')}
                 choices={getFieldChoices(field, values, translate)}
                 inputProps={inputProps}
@@ -29,7 +29,10 @@ function CountryField({field, inputProps}: DynamicFieldProps<'country'>) {
     }
 
     return (
-        <FieldRow isMenuRow>
+        <FieldRow
+            field={field}
+            isMenuRow
+        >
             <InputWrapper
                 InputComponent={CountryPicker}
                 {...inputProps}

@@ -1,6 +1,5 @@
 import CurrencyPicker from '@components/CurrencyPicker';
 import CurrencyInlineListAdapter from '@components/DynamicForm/adapters/CurrencyInlineListAdapter';
-import {useDynamicFieldContext} from '@components/DynamicForm/fields/DynamicFieldContext';
 import FieldRow from '@components/DynamicForm/fields/FieldRow';
 import type {DynamicFieldProps} from '@components/DynamicForm/fields/types';
 import {getFieldLabel, getInputLabel} from '@components/DynamicForm/utils/getLocalizedText';
@@ -10,13 +9,14 @@ import useLocalize from '@hooks/useLocalize';
 
 import React from 'react';
 
-function CurrencyField({field, inputProps}: DynamicFieldProps<'currency'>) {
+function CurrencyField({field, shouldHideLabel, isLoneField, inputProps}: DynamicFieldProps<'currency'>) {
     const {translate} = useLocalize();
-    const {isLoneField} = useDynamicFieldContext();
 
     if (isLoneField) {
         return (
             <FieldRow
+                field={field}
+                shouldHideLabel={shouldHideLabel}
                 isMenuRow
                 labelAbove="heading"
             >
@@ -29,7 +29,10 @@ function CurrencyField({field, inputProps}: DynamicFieldProps<'currency'>) {
     }
 
     return (
-        <FieldRow isMenuRow>
+        <FieldRow
+            field={field}
+            isMenuRow
+        >
             <InputWrapper
                 InputComponent={CurrencyPicker}
                 {...inputProps}

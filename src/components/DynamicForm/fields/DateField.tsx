@@ -18,7 +18,10 @@ function DateField({field, inputProps}: DynamicFieldProps<'date'>) {
     const isDateOfBirth = field.rule === 'dateOfBirth';
 
     return (
-        <FieldRow isDescriptionInInput>
+        <FieldRow
+            field={field}
+            isDescriptionInInput
+        >
             <InputWrapper
                 InputComponent={DatePicker}
                 {...inputProps}

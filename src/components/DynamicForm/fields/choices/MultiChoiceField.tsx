@@ -1,4 +1,3 @@
-import {useDynamicFieldContext} from '@components/DynamicForm/fields/DynamicFieldContext';
 import FieldRow from '@components/DynamicForm/fields/FieldRow';
 import type {DynamicFieldProps} from '@components/DynamicForm/fields/types';
 import {getFieldChoices} from '@components/DynamicForm/utils/getFieldOptions';
@@ -16,15 +15,16 @@ import getChoiceOptionsList from './getChoiceOptionsList';
 import InlineChoice from './InlineChoice';
 
 /** Any number of options, or of countries, picked in place on a page of their own, or in a modal otherwise */
-function MultiChoiceField({field, inputProps}: DynamicFieldProps<'multiselect' | 'countryMultiselect'>) {
+function MultiChoiceField({field, shouldHideLabel, values, isLoneField, inputProps}: DynamicFieldProps<'multiselect' | 'countryMultiselect'>) {
     const {translate} = useLocalize();
-    const {values, isLoneField} = useDynamicFieldContext();
     const title = getFieldLabel(field, translate);
     const choices = getFieldChoices(field, values, translate);
 
     if (isLoneField) {
         return (
             <InlineChoice
+                field={field}
+                shouldHideLabel={shouldHideLabel}
                 label={title}
                 choices={choices}
                 inputProps={inputProps}
@@ -35,7 +35,10 @@ function MultiChoiceField({field, inputProps}: DynamicFieldProps<'multiselect' |
     }
 
     return (
-        <FieldRow isMenuRow>
+        <FieldRow
+            field={field}
+            isMenuRow
+        >
             <InputWrapper
                 InputComponent={PushRowWithModal}
                 {...inputProps}

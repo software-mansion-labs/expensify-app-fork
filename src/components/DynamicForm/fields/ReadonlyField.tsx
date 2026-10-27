@@ -1,3 +1,4 @@
+import type {DynamicFormValues} from '@components/DynamicForm/types';
 import formatDynamicFieldValue from '@components/DynamicForm/utils/formatDynamicFieldValue';
 import {getFieldLabel} from '@components/DynamicForm/utils/getLocalizedText';
 import {getListItems} from '@components/DynamicForm/utils/listItems';
@@ -13,10 +14,9 @@ import type {DynamicFormField} from '@src/types/onyx';
 import React from 'react';
 import {View} from 'react-native';
 
-import type {DynamicFieldContextValue} from './types';
-
-type ReadonlyFieldProps = Pick<DynamicFieldContextValue, 'values'> & {
+type ReadonlyFieldProps = {
     field: DynamicFormField;
+    values: DynamicFormValues;
 };
 
 /** A prefilled answer shown as a plain row, never edited */

@@ -37,7 +37,10 @@ function TextInputField({field, inputProps, inputMode, isMultiline = false}: Tex
     const {translate} = useLocalize();
 
     return (
-        <FieldRow isDescriptionInInput>
+        <FieldRow
+            field={field}
+            isDescriptionInInput
+        >
             <InputWrapper
                 InputComponent={TextInput}
                 {...inputProps}

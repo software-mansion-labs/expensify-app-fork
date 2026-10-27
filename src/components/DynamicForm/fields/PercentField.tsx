@@ -14,7 +14,10 @@ function PercentField({field, inputProps}: DynamicFieldProps<'percent'>) {
     const {translate} = useLocalize();
 
     return (
-        <FieldRow isDescriptionInInput>
+        <FieldRow
+            field={field}
+            isDescriptionInInput
+        >
             <InputWrapper
                 InputComponent={PercentageForm}
                 {...inputProps}

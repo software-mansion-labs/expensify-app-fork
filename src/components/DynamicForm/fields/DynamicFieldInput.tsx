@@ -7,7 +7,7 @@ import type {ComponentType} from 'react';
 
 import React from 'react';
 
-import type {DynamicFieldInputProps, DynamicFieldProps} from './types';
+import type {DynamicFieldInputProps, DynamicFieldProps, DynamicFieldSharedProps} from './types';
 
 import AddressField from './AddressField';
 import AmountField from './AmountField';
@@ -18,7 +18,6 @@ import MultiChoiceField from './choices/MultiChoiceField';
 import RadioField from './choices/RadioField';
 import SelectField from './choices/SelectField';
 import DateField from './DateField';
-import {useDynamicFieldContext} from './DynamicFieldContext';
 import FileField from './FileField';
 import ListField from './ListField';
 import NumberField from './NumberField';
@@ -44,20 +43,20 @@ const FIELD_COMPONENTS: {[TType in DynamicFormFieldType]: ComponentType<DynamicF
     list: ListField,
 };
 
-type DynamicFieldInputComponentProps<TType extends DynamicFormFieldType> = {
+type DynamicFieldInputComponentProps<TType extends DynamicFormFieldType> = DynamicFieldSharedProps & {
     field: DynamicFormFieldOfType<TType>;
     inputProps: DynamicFieldInputProps;
 };
 
 /** The input of one field, laid out for its type */
-function DynamicFieldInput<TType extends DynamicFormFieldType>({field, inputProps}: DynamicFieldInputComponentProps<TType>) {
-    const {values, isSensitive} = useDynamicFieldContext();
+function DynamicFieldInput<TType extends DynamicFormFieldType>({field, inputProps, ...props}: DynamicFieldInputComponentProps<TType>) {
     const FieldComponent: ComponentType<DynamicFieldProps<TType>> = FIELD_COMPONENTS[field.type];
 
     return (
         <FieldComponent
+            {...props}
             field={field}
-            inputProps={{...inputProps, defaultValue: getSensitiveDefaultValue(field, values, isSensitive)}}
+            inputProps={{...inputProps, defaultValue: getSensitiveDefaultValue(field, props.values, props.isSensitive)}}
         />
     );
 }

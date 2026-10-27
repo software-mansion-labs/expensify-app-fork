@@ -10,18 +10,20 @@ import React from 'react';
 
 import type {DynamicFieldProps} from './types';
 
-import {useDynamicFieldContext} from './DynamicFieldContext';
 import FieldRow from './FieldRow';
 
 /** Uploaded documents, one file unless the schema allows more */
-function FileField({field, inputProps}: DynamicFieldProps<'file'>) {
+function FileField({field, shouldHideLabel, maxFileSize, inputProps}: DynamicFieldProps<'file'>) {
     const {translate} = useLocalize();
-    const {maxFileSize} = useDynamicFieldContext();
     const fileLimit = field.maxFiles ?? CONST.DYNAMIC_FORM_DOCUMENT.FILE_LIMIT;
     const buttonText = translate(fileLimit > 1 ? 'common.chooseFiles' : 'common.chooseFile');
 
     return (
-        <FieldRow labelAbove="heading">
+        <FieldRow
+            field={field}
+            shouldHideLabel={shouldHideLabel}
+            labelAbove="heading"
+        >
             <InputWrapper
                 InputComponent={FileUploadAdapter}
                 {...inputProps}

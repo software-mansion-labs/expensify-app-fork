@@ -9,12 +9,9 @@ import type {FileObject} from '@src/types/utils/Attachment';
 
 import type {ReactNode} from 'react';
 
-/** What every field of one row shares, provided by DynamicFormFieldRow */
-type DynamicFieldContextValue = Pick<DynamicFormFieldsProps, 'values' | 'maxFileSize' | 'onOpenListItemEditor' | 'onListItemsChange' | 'isSensitive'> &
+/** Form data and layout options passed to each field component */
+type DynamicFieldSharedProps = Pick<DynamicFormFieldsProps, 'values' | 'maxFileSize' | 'onOpenListItemEditor' | 'onListItemsChange' | 'isSensitive'> &
     Required<Pick<DynamicFormFieldsProps, 'currency'>> & {
-        /** The field the row draws, whose label and description FieldRow shows */
-        field: DynamicFormField;
-
         /** The field is the page's only question, so a choice is drawn as the page itself instead of as a row */
         isLoneField: boolean;
 
@@ -54,9 +51,9 @@ type DynamicFieldInputProps<TAnswer extends FormValue = FormValue> = Required<Fo
         defaultValue?: TAnswer;
     };
 
-type DynamicFieldProps<TType extends DynamicFormFieldType> = {
+type DynamicFieldProps<TType extends DynamicFormFieldType> = DynamicFieldSharedProps & {
     field: DynamicFormFieldOfType<TType>;
     inputProps: DynamicFieldInputProps<DynamicFieldAnswerMap[TType]>;
 };
 
-export type {DynamicFieldAnswerMap, DynamicFieldContextValue, DynamicFieldInputProps, DynamicFieldProps};
+export type {DynamicFieldAnswerMap, DynamicFieldSharedProps, DynamicFieldInputProps, DynamicFieldProps};

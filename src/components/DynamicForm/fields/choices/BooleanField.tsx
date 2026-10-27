@@ -1,6 +1,5 @@
 import CheckboxWithLabel from '@components/CheckboxWithLabel';
 import YesNoAdapter from '@components/DynamicForm/adapters/YesNoAdapter';
-import {useDynamicFieldContext} from '@components/DynamicForm/fields/DynamicFieldContext';
 import FieldRow from '@components/DynamicForm/fields/FieldRow';
 import type {DynamicFieldProps} from '@components/DynamicForm/fields/types';
 import {getFieldLabel, getInputLabel} from '@components/DynamicForm/utils/getLocalizedText';
@@ -10,14 +9,13 @@ import useLocalize from '@hooks/useLocalize';
 
 import React from 'react';
 
-function BooleanField({field, inputProps}: DynamicFieldProps<'boolean'>) {
+function BooleanField({field, shouldHideLabel, isLoneField, inputProps}: DynamicFieldProps<'boolean'>) {
     const {translate} = useLocalize();
-    const {isLoneField} = useDynamicFieldContext();
     const label = getFieldLabel(field, translate);
 
     if (field.presentation === 'checkbox') {
         return (
-            <FieldRow>
+            <FieldRow field={field}>
                 <InputWrapper
                     InputComponent={CheckboxWithLabel}
                     {...inputProps}
@@ -31,6 +29,8 @@ function BooleanField({field, inputProps}: DynamicFieldProps<'boolean'>) {
 
     return (
         <FieldRow
+            field={field}
+            shouldHideLabel={shouldHideLabel}
             isMenuRow
             labelAbove={isLoneField ? 'heading' : 'prompt'}
         >

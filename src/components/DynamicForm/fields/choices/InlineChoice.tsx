@@ -4,9 +4,13 @@ import type {DynamicFieldInputProps} from '@components/DynamicForm/fields/types'
 import InputWrapper from '@components/Form/InputWrapper';
 import type {Choice} from '@components/RadioButtons';
 
+import type {DynamicFormField} from '@src/types/onyx';
+
 import React from 'react';
 
 type InlineChoiceProps = {
+    field: DynamicFormField;
+    shouldHideLabel: boolean;
     /** Names the search input */
     label: string;
     choices: Choice[];
@@ -16,9 +20,11 @@ type InlineChoiceProps = {
 };
 
 /** A lone choice field is the page itself: its options are listed inline under its question, which a page without its own title shows as its title instead */
-function InlineChoice({label, choices, inputProps, canSelectMultiple, isSearchable}: InlineChoiceProps) {
+function InlineChoice({field, shouldHideLabel, label, choices, inputProps, canSelectMultiple, isSearchable}: InlineChoiceProps) {
     return (
         <FieldRow
+            field={field}
+            shouldHideLabel={shouldHideLabel}
             isMenuRow
             labelAbove="heading"
         >

@@ -11,19 +11,17 @@ import {View} from 'react-native';
 
 import type {DynamicFieldProps} from './types';
 
-import {useDynamicFieldContext} from './DynamicFieldContext';
 import FieldRow from './FieldRow';
 
 /** A money amount, with a currency picker above it when the schema lets the user choose the currency */
-function AmountField({field, inputProps}: DynamicFieldProps<'amount'>) {
+function AmountField({field, values, currency, inputProps}: DynamicFieldProps<'amount'>) {
     const {translate} = useLocalize();
     const styles = useThemeStyles();
-    const {values, currency} = useDynamicFieldContext();
     const chosenCurrency = field.currencyKey ? values[field.currencyKey] : undefined;
     const amountCurrency = typeof chosenCurrency === 'string' && chosenCurrency !== '' ? chosenCurrency : currency;
 
     return (
-        <FieldRow>
+        <FieldRow field={field}>
             {!!field.currencyKey && (
                 <View style={[styles.mhn5, styles.mb2]}>
                     <InputWrapper
