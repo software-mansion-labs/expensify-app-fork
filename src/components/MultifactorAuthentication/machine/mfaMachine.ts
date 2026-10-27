@@ -37,6 +37,7 @@ const CANCELLING_IN_FLIGHT_TARGET = `#${MFA_STATE.CANCELLING_IN_FLIGHT}` as cons
 // The state is just `visible`, so its id spells out the region to stay unique across the machine.
 const CANCEL_CONFIRM_VISIBLE_ID = 'cancelConfirmVisible';
 const CANCEL_CONFIRM_VISIBLE_TARGET = `#${CANCEL_CONFIRM_VISIBLE_ID}` as const;
+const EXECUTING_SCENARIO_ACTION_TARGET = `#${MFA_STATE.EXECUTING_SCENARIO_ACTION}` as const;
 const OFFLINE_TARGET = `#${MFA_STATE.OFFLINE}` as const;
 
 // The platform ceremonies wait while the cancel confirmation is up (the prompt would cover it) or while offline.
@@ -161,6 +162,10 @@ const MFAMachine = setup({
         // Back asks for confirmation until the outcome. From there it closes the modal right away. While the
         // cancel itself runs (`cancelling`, or `cancellingInFlight` next to the scenario action), there is nothing left to ask.
         shouldConfirmCancel: and([not(stateIn(OUTCOME_TARGET)), not(stateIn(CANCELLING_TARGET)), not(stateIn(CANCELLING_IN_FLIGHT_TARGET))]),
+        // Offline, a cancel closes the modal without asking and without the scenario's cancel logic, which
+        // couldn't reach the backend anyway. A scenario action already sent still asks, so a confirm waits for
+        // its result next to the cancel.
+        canCancelOffline: and([stateIn(OFFLINE_TARGET), 'shouldConfirmCancel', not(stateIn(EXECUTING_SCENARIO_ACTION_TARGET))]),
         // A successful scenario action decides on its own; anything else waits for both results.
         canResolveInFlightCancel: ({context: {scenarioActionResult, cancelError}}) => !!scenarioActionResult?.success || (scenarioActionResult !== undefined && cancelError !== undefined),
         // A failure that a fresh key registration can fix restarts registration until the flow runs out of attempts.
@@ -250,6 +255,9 @@ const MFAMachine = setup({
         addOfflinePauseBreadcrumb: ({context}) => {
             addMFABreadcrumb('Flow paused - offline', {scenario: context.scenarioName}, 'warning');
         },
+        addOfflineCancelBreadcrumb: ({context}) => {
+            addMFABreadcrumb('Flow cancelled - closing directly', {hasScenario: !!context.scenario, isOffline: true}, 'warning');
+        },
         // Clears the module-level navigation buffer (pendingNavigation/hasInitialLaidOut). Owned by
         // the machine so a navigator that unmounts mid-close cannot leave a stale buffered screen
         // behind for the next flow.
@@ -292,7 +300,11 @@ const MFAMachine = setup({
                     on: {
                         // Declared once for every step. The dialog hides itself once the flow reaches `cancelling`.
                         // `executingScenarioAction` overrides this while its request is in flight.
-                        CONFIRM_CANCEL: {guard: stateIn(CANCEL_CONFIRM_VISIBLE_TARGET), target: `.${MFA_STATE.CANCELLING}`},
+                        // Offline the cancel logic couldn't reach the backend, so a confirm closes the modal instead.
+                        CONFIRM_CANCEL: [
+                            {guard: and([stateIn(CANCEL_CONFIRM_VISIBLE_TARGET), stateIn(OFFLINE_TARGET)]), target: CLOSING_TARGET, actions: 'addOfflineCancelBreadcrumb'},
+                            {guard: stateIn(CANCEL_CONFIRM_VISIBLE_TARGET), target: `.${MFA_STATE.CANCELLING}`},
+                        ],
                     },
                     states: {
                         // This is the transparent initial screen, and its child states run the pre-screen
@@ -567,6 +579,7 @@ const MFAMachine = setup({
                                             },
                                         },
                                         [MFA_STATE.EXECUTING_SCENARIO_ACTION]: {
+                                            id: MFA_STATE.EXECUTING_SCENARIO_ACTION,
                                             initial: MFA_STATE.AWAITING_RESULT,
                                             on: {
                                                 // The request is already out and can't be taken back, so a confirmed cancel runs `onCancel`
@@ -710,7 +723,10 @@ const MFAMachine = setup({
                     states: {
                         [MFA_STATE.CANCEL_CONFIRM_HIDDEN]: {
                             on: {
-                                REQUEST_CANCEL: {guard: 'shouldConfirmCancel', target: MFA_STATE.CANCEL_CONFIRM_VISIBLE},
+                                REQUEST_CANCEL: [
+                                    {guard: 'canCancelOffline', target: CLOSING_TARGET, actions: 'addOfflineCancelBreadcrumb'},
+                                    {guard: 'shouldConfirmCancel', target: MFA_STATE.CANCEL_CONFIRM_VISIBLE},
+                                ],
                             },
                         },
                         [MFA_STATE.CANCEL_CONFIRM_VISIBLE]: {
