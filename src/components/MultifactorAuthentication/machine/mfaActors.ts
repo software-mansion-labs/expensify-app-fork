@@ -37,6 +37,8 @@ import type {
     ValidateDeviceInput,
 } from './types';
 
+import watchNetwork from './watchNetwork';
+
 /**
  * A refused device resolves as a failed MFAResult, so the machine's onError transition for this
  * actor fires only when the platform check throws unexpectedly.
@@ -234,6 +236,7 @@ function createActors() {
         executeScenarioAction: executeScenarioActionActor,
         finalizeOutcome: finalizeOutcomeActor,
         cancelScenario: cancelScenarioActor,
+        watchNetwork,
     };
 }
 

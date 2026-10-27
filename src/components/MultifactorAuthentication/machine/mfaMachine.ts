@@ -228,6 +228,10 @@ const MFAMachine = setup({
             softPromptApproved: false,
             recoveryAttempts: ({context}) => context.recoveryAttempts + 1,
         }),
+        // Without it a flow paused offline looks the same as a stuck one in Sentry.
+        addOfflinePauseBreadcrumb: ({context}) => {
+            addMFABreadcrumb('Flow paused - offline', {scenario: context.scenarioName}, 'warning');
+        },
         // Clears the module-level navigation buffer (pendingNavigation/hasInitialLaidOut). Owned by
         // the machine so a navigator that unmounts mid-close cannot leave a stale buffered screen
         // behind for the next flow.
@@ -256,8 +260,9 @@ const MFAMachine = setup({
                 INIT: {target: MFA_STATE.OPEN, actions: 'initFlow'},
             },
         },
-        // Two regions run side by side: `flow` walks the MFA steps, and `cancelConfirm` tracks the
-        // cancel-confirmation dialog, so opening the dialog never stops the step that is running.
+        // Three regions run side by side: `flow` walks the MFA steps, `cancelConfirm` tracks the
+        // cancel-confirmation dialog, so opening the dialog never stops the step that is running, and
+        // `network` tracks whether the device is offline.
         [MFA_STATE.OPEN]: {
             type: 'parallel',
             on: {
@@ -697,6 +702,24 @@ const MFAMachine = setup({
                             // The flow owns CONFIRM_CANCEL. Once it moves on to the cancel, or reaches the outcome behind
                             // the dialog, there is nothing left to cancel, so the dialog hides.
                             always: {guard: not('isCancelable'), target: MFA_STATE.CANCEL_CONFIRM_HIDDEN},
+                        },
+                    },
+                },
+                // Invoked children start only after the INIT macrostep, so the status arrives right after it. That is
+                // early enough because `preparing` always waits on an async actor before any step can need the network.
+                // Invoked on the region rather than a leaf, so the watcher isn't restarted on every change.
+                [MFA_STATE.NETWORK]: {
+                    initial: MFA_STATE.ONLINE,
+                    invoke: {id: 'watchNetwork', src: 'watchNetwork'},
+                    states: {
+                        [MFA_STATE.ONLINE]: {
+                            on: {NETWORK_OFFLINE: MFA_STATE.OFFLINE},
+                        },
+                        // Steps already sent keep running; only the steps that would go to the network next wait for `online`.
+                        [MFA_STATE.OFFLINE]: {
+                            id: MFA_STATE.OFFLINE,
+                            entry: 'addOfflinePauseBreadcrumb',
+                            on: {NETWORK_ONLINE: MFA_STATE.ONLINE},
                         },
                     },
                 },

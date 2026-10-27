@@ -9,13 +9,17 @@ import {matchesState} from 'xstate';
 // only transient leaves that XState resolves before emitting a snapshot.
 
 // Reachability is asserted on the unfiltered shortest paths, so it also covers routes the UI walk in
-// `viewMatchesMachine.test.tsx` cannot drive (a delayed transition, for example). A failure here means
-// the machine itself lost the state, not that the UI harness broke.
+// `viewMatchesMachine.test.tsx` cannot drive (a delayed transition, for example). Every step of the driving
+// journeys counts too, because the shortest paths never go offline. A failure here means the machine itself
+// lost the state, not that the UI harness broke.
 describe('every stable MFA state is reachable in the machine chart', () => {
-    const reachableSnapshots = [...getMfaShortestPaths(), ...getMfaShortestPathsWithOnCancel()].map((path) => path.state);
+    const reachableStateValues = [
+        ...[...getMfaShortestPaths(), ...getMfaShortestPathsWithOnCancel()].map((path) => path.state.value),
+        ...getDrivingJourneyPaths().flatMap((journey) => journey.paths.flatMap((path) => path.steps.map((step) => step.state.value))),
+    ];
 
     it.each(getStableLeafStates(mfaMachine.root))('$description can be reached from the initial state', ({description}) => {
-        expect(reachableSnapshots.some((snapshot) => matchesState(description, snapshot.value))).toBe(true);
+        expect(reachableStateValues.some((value) => matchesState(description, value))).toBe(true);
     });
 });
 
