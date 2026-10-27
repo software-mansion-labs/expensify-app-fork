@@ -4,7 +4,8 @@ import type createActors from './mfaActors';
 import type {MfaEvent} from './types';
 
 type MfaActors = ReturnType<typeof createActors>;
-type MfaActorId = keyof MfaActors;
+// The network watcher never finishes, so it has no done or error events.
+type MfaActorId = Exclude<keyof MfaActors, 'watchNetwork'>;
 type MfaActorOutput<Id extends MfaActorId> = OutputFrom<MfaActors[Id]>;
 
 /** The event XState raises when an invoked actor resolves, carrying that actor's own output type. */
