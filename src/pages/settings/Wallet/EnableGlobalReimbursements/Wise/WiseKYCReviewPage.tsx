@@ -12,6 +12,7 @@ import useOnyx from '@hooks/useOnyx';
 import usePermissions from '@hooks/usePermissions';
 import useThemeStyles from '@hooks/useThemeStyles';
 
+import createDynamicRoute from '@libs/Navigation/helpers/dynamicRoutesUtils/createDynamicRoute';
 import type {PlatformStackScreenProps} from '@libs/Navigation/PlatformStackNavigation/types';
 
 import Navigation from '@navigation/Navigation';
@@ -24,7 +25,7 @@ import ONYXKEYS from '@src/ONYXKEYS';
 import {DYNAMIC_ROUTES} from '@src/ROUTES';
 import type SCREENS from '@src/SCREENS';
 
-import React, {useEffect} from 'react';
+import React, {useEffect, useState} from 'react';
 
 type WiseKYCReviewPageProps = PlatformStackScreenProps<SettingsNavigatorParamList, typeof SCREENS.SETTINGS.WALLET.DYNAMIC_WISE_KYC_REVIEW>;
 
@@ -49,6 +50,16 @@ function WiseKYCReviewPage({route}: WiseKYCReviewPageProps) {
         }
         goBackToTerms();
     }, [isWiseReimbursementsBetaEnabled, goBackToTerms]);
+
+    // Only a link asked for on this visit opens Wise's page. The embedded page drops the link when it closes, so going back does not open it again.
+    const [hasRequestedLink, setHasRequestedLink] = useState(false);
+    const url = embeddedLink?.url;
+    useEffect(() => {
+        if (!hasRequestedLink || !url) {
+            return;
+        }
+        Navigation.navigate(createDynamicRoute(DYNAMIC_ROUTES.WISE_EMBEDDED_KYC_REVIEW.path));
+    }, [hasRequestedLink, url]);
 
     // The link carries a token, so it does not outlive the page
     useEffect(() => () => clearWiseKYCReviewEmbeddedLink(), []);
@@ -75,7 +86,10 @@ function WiseKYCReviewPage({route}: WiseKYCReviewPageProps) {
                         text={translate('common.continue')}
                         isDisabled={isOffline}
                         isLoading={!!embeddedLink?.isLoading}
-                        onPress={() => getWiseKYCReviewEmbeddedLink(bankAccountID)}
+                        onPress={() => {
+                            setHasRequestedLink(true);
+                            getWiseKYCReviewEmbeddedLink(bankAccountID);
+                        }}
                     />
                 </FixedFooter>
             </ConfirmationPage>

@@ -2,7 +2,7 @@ import {act, fireEvent, render, screen} from '@testing-library/react-native';
 
 import OnyxListItemProvider from '@components/OnyxListItemProvider';
 
-import {navigationRef} from '@libs/Navigation/Navigation';
+import Navigation, {navigationRef} from '@libs/Navigation/Navigation';
 import createPlatformStackNavigator from '@libs/Navigation/PlatformStackNavigation/createPlatformStackNavigator';
 import type {SettingsNavigatorParamList} from '@libs/Navigation/types';
 import {setHasRadio} from '@libs/NetworkState';
@@ -13,6 +13,7 @@ import {clearWiseKYCReviewEmbeddedLink, getWiseKYCReviewEmbeddedLink} from '@use
 
 import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';
+import {DYNAMIC_ROUTES} from '@src/ROUTES';
 import SCREENS from '@src/SCREENS';
 
 import {NavigationContainer} from '@react-navigation/native';
@@ -55,7 +56,9 @@ describe('WiseKYCReviewPage', () => {
     });
 
     beforeEach(async () => {
+        jest.restoreAllMocks();
         jest.clearAllMocks();
+        jest.spyOn(Navigation, 'navigate').mockImplementation(() => {});
         setHasRadio(true);
         await Onyx.clear();
     });
@@ -69,6 +72,31 @@ describe('WiseKYCReviewPage', () => {
 
         // Then the link is fetched for the bank account from the route, since Wise's page is tied to it
         expect(getWiseKYCReviewEmbeddedLink).toHaveBeenCalledWith(BANK_ACCOUNT_ID);
+    });
+
+    it("opens Wise's page once the link it asked for arrives", async () => {
+        // Given the user pressed Continue and the link is on its way
+        await renderPage();
+        fireEvent.press(screen.getByTestId(CONTINUE_BUTTON_TEST_ID));
+        expect(Navigation.navigate).not.toHaveBeenCalled();
+
+        // When the link arrives
+        await act(() => Onyx.set(ONYXKEYS.RAM_ONLY_WISE_KYC_REVIEW_EMBEDDED_LINK, {url: 'https://wise.com/kyc', isLoading: false}));
+        await waitForBatchedUpdatesWithAct();
+
+        // Then Wise's page opens on top of this one
+        expect(Navigation.navigate).toHaveBeenCalledWith(expect.stringContaining(DYNAMIC_ROUTES.WISE_EMBEDDED_KYC_REVIEW.path));
+    });
+
+    it("does not open Wise's page for a link it did not ask for", async () => {
+        // Given a link left over from an earlier visit, as when a fetch returns after its page closed
+        await Onyx.set(ONYXKEYS.RAM_ONLY_WISE_KYC_REVIEW_EMBEDDED_LINK, {url: 'https://wise.com/kyc', isLoading: false});
+
+        // When the page opens
+        await renderPage();
+
+        // Then it waits for Continue, since the user has not asked to leave yet
+        expect(Navigation.navigate).not.toHaveBeenCalled();
     });
 
     it('disables Continue offline', async () => {
