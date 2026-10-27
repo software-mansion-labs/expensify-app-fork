@@ -258,6 +258,7 @@ const MFA_STATE = {
     CREATING_CREDENTIAL: 'creatingCredential',
     WAITING_TO_CREATE: 'waitingToCreate',
     CREATING_KEY: 'creatingKey',
+    READY_TO_REGISTER: 'readyToRegister',
     REGISTERING_KEY: 'registeringKey',
     AUTHORIZING: 'authorizing',
     WAITING_TO_SIGN: 'waitingToSign',
