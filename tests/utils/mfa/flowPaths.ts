@@ -367,6 +367,44 @@ const DRIVING_JOURNEYS: DrivingJourney[] = [
             },
         },
     },
+    {
+        description: 'the start-offline journey holds the ceremony until the device is back online',
+        events: [
+            createInitEvent(),
+            createActorDoneEvent('validateDevice', {success: true}),
+            {type: 'NETWORK_OFFLINE'},
+            createActorDoneEvent('loadRegistrationState', {hasServerCredentials: false, hasLocalCredentials: true, hasEverAcceptedSoftPrompt: true}),
+            {type: 'NETWORK_ONLINE'},
+        ],
+        endState: `${MFA_STATE.OPEN}.${MFA_STATE.FLOW}.${MFA_STATE.PROMPT}.${MFA_STATE.AUTHORIZING}.${MFA_STATE.SIGNING_CHALLENGE}`,
+    },
+    {
+        description: 'the offline registration journey holds the created key and registers it once back online',
+        events: [
+            createInitEvent(),
+            createActorDoneEvent('validateDevice', {success: true}),
+            createActorDoneEvent('loadRegistrationState', {hasServerCredentials: false, hasLocalCredentials: false, hasEverAcceptedSoftPrompt: false}),
+            {type: 'VALIDATE_CODE_ENTERED', validateCode: MFA_TEST_VALIDATE_CODE},
+            createActorDoneEvent('requestRegistrationChallenge', {success: true, challenge: MFA_TEST_REGISTRATION_CHALLENGE}),
+            {type: 'SOFT_PROMPT_APPROVED'},
+            {type: 'NETWORK_OFFLINE'},
+            createActorDoneEvent('createCredential', {success: true, keyInfo: MFA_TEST_KEY_INFO}),
+            {type: 'NETWORK_ONLINE'},
+        ],
+        endState: `${MFA_STATE.OPEN}.${MFA_STATE.FLOW}.${MFA_STATE.PROMPT}.${MFA_STATE.CREATING_CREDENTIAL}.${MFA_STATE.REGISTERING_KEY}`,
+    },
+    {
+        description: 'the offline signing journey drops the signature and signs again once back online',
+        events: [
+            createInitEvent(),
+            createActorDoneEvent('validateDevice', {success: true}),
+            createActorDoneEvent('loadRegistrationState', {hasServerCredentials: false, hasLocalCredentials: true, hasEverAcceptedSoftPrompt: true}),
+            {type: 'NETWORK_OFFLINE'},
+            createActorDoneEvent('authorize', {success: true, signedChallenge: MFA_TEST_SIGNED_CHALLENGE, authenticationMethod: MFA_TEST_AUTH_METHOD}),
+            {type: 'NETWORK_ONLINE'},
+        ],
+        endState: `${MFA_STATE.OPEN}.${MFA_STATE.FLOW}.${MFA_STATE.PROMPT}.${MFA_STATE.AUTHORIZING}.${MFA_STATE.SIGNING_CHALLENGE}`,
+    },
 ];
 
 /**
