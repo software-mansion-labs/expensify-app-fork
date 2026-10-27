@@ -30,7 +30,7 @@ import CONST from '@src/CONST';
 
 import type {StateValue} from 'xstate';
 
-import {createActorAtState, createFlowContext, sendExecuteScenarioActionDone, sendRegisterCredentialDone, sendRequestRegistrationChallengeDone} from 'tests/utils/mfa/flowActors';
+import {createActorAtState, createFlowContext, openAt, sendExecuteScenarioActionDone, sendRegisterCredentialDone, sendRequestRegistrationChallengeDone} from 'tests/utils/mfa/flowActors';
 import createInitEvent, {
     MFA_TEST_AUTH_METHOD,
     MFA_TEST_CANCEL_ERROR,
@@ -44,13 +44,6 @@ import waitForBatchedUpdates from 'tests/utils/waitForBatchedUpdates';
 import {createActor, fromPromise, matchesState, SimulatedClock, waitFor} from 'xstate';
 
 const MFA_STATE = CONST.MULTIFACTOR_AUTHENTICATION.MFA_STATE;
-
-type CancelConfirmState = typeof MFA_STATE.CANCEL_CONFIRM_HIDDEN | typeof MFA_STATE.CANCEL_CONFIRM_VISIBLE;
-
-/** Builds an `open` state value with both regions pinned: the flow step and the dialog. */
-function openAt(flow: StateValue, cancelConfirm: CancelConfirmState = MFA_STATE.CANCEL_CONFIRM_HIDDEN): StateValue {
-    return {[MFA_STATE.OPEN]: {[MFA_STATE.FLOW]: flow, [MFA_STATE.CANCEL_CONFIRM]: cancelConfirm}};
-}
 
 const STEP_STATES: Array<{description: string; flow: StateValue}> = [
     {description: 'validating the device', flow: {[MFA_STATE.PREPARING]: MFA_STATE.VALIDATING_DEVICE}},
