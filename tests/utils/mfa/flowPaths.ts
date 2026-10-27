@@ -405,6 +405,29 @@ const DRIVING_JOURNEYS: DrivingJourney[] = [
         ],
         endState: `${MFA_STATE.OPEN}.${MFA_STATE.FLOW}.${MFA_STATE.PROMPT}.${MFA_STATE.AUTHORIZING}.${MFA_STATE.SIGNING_CHALLENGE}`,
     },
+    {
+        description: 'the offline cancel journey closes the modal without asking',
+        events: [
+            createInitEvent(),
+            createActorDoneEvent('validateDevice', {success: true}),
+            createActorDoneEvent('loadRegistrationState', {hasServerCredentials: false, hasLocalCredentials: false, hasEverAcceptedSoftPrompt: false}),
+            {type: 'NETWORK_OFFLINE'},
+            {type: 'REQUEST_CANCEL'},
+        ],
+        endState: MFA_STATE.CLOSING,
+    },
+    {
+        description: 'the offline confirm journey closes the modal instead of running the cancel logic',
+        events: [
+            createInitEvent(),
+            createActorDoneEvent('validateDevice', {success: true}),
+            createActorDoneEvent('loadRegistrationState', {hasServerCredentials: false, hasLocalCredentials: false, hasEverAcceptedSoftPrompt: false}),
+            {type: 'REQUEST_CANCEL'},
+            {type: 'NETWORK_OFFLINE'},
+            {type: 'CONFIRM_CANCEL'},
+        ],
+        endState: MFA_STATE.CLOSING,
+    },
 ];
 
 /**
