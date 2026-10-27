@@ -5,20 +5,29 @@ import isSensitiveField from '@components/DynamicForm/utils/isSensitiveField';
 import {getListItems} from '@components/DynamicForm/utils/listItems';
 import InputWrapper from '@components/Form/InputWrapper';
 
+import useLocalize from '@hooks/useLocalize';
+
 import type {DynamicFormListItem} from '@src/types/onyx';
 
 import React from 'react';
 
-import type {DynamicFieldRenderer} from './types';
+import type {DynamicFieldProps} from './types';
 
-const renderList: DynamicFieldRenderer<'list'> = (field, {translate, values, onOpenListItemEditor, onListItemsChange, renderFields}, inputProps) => {
+import FieldRow from './FieldRow';
+
+function ListField({field, shouldHideLabel, values, onOpenListItemEditor, onListItemsChange, renderFields, inputProps}: DynamicFieldProps<'list'>) {
+    const {translate} = useLocalize();
     const itemLabel = getLocalizedText(translate, field.itemLabelKey, field.itemLabel);
     // A sensitive list is not drafted, so inside the flow its entries come from memory, which the editor page and a removal both update
     const isMemoryList = !!onOpenListItemEditor && isSensitiveField(field);
-    return {
-        isMenuRow: true,
-        labelAbove: 'heading',
-        input: (
+
+    return (
+        <FieldRow
+            field={field}
+            shouldHideLabel={shouldHideLabel}
+            isMenuRow
+            labelAbove="heading"
+        >
             <InputWrapper
                 InputComponent={ListFieldAdapter}
                 {...inputProps}
@@ -38,8 +47,8 @@ const renderList: DynamicFieldRenderer<'list'> = (field, {translate, values, onO
                 onEdit={onOpenListItemEditor && ((itemID) => onOpenListItemEditor(field.key, itemID))}
                 renderFields={renderFields}
             />
-        ),
-    };
-};
+        </FieldRow>
+    );
+}
 
-export default renderList;
+export default ListField;
