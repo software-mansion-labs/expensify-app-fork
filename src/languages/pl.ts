@@ -3082,11 +3082,6 @@ const translations: TranslationDeepObject<typeof en> = {
                 wiseTermsAccessibilityLabel: 'Akceptuję regulamin i politykę prywatności Wise.',
                 error: 'Zaakceptuj wszystkie warunki, aby kontynuować.',
             },
-            kycReview: {
-                headerTitle: 'Potrzebujemy więcej informacji',
-                title: 'Zweryfikuj dodatkowe informacje',
-                subtitle: 'Nasz partner płatniczy potrzebuje bezpośrednio dodatkowych informacji. To zajmie tylko kilka minut.',
-            },
         },
         wiseGlobalReimbursementsIntro: {
             title: 'Skonfigurować globalne zwroty kosztów?',
