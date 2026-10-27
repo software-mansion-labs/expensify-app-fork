@@ -1,4 +1,4 @@
-import type {DynamicFieldAnswerMap} from '@components/DynamicForm/renderers/types';
+import type {DynamicFieldAnswerMap} from '@components/DynamicForm/fields/types';
 import type {DynamicFormFieldOfType, DynamicFormValues} from '@components/DynamicForm/types';
 import type {FormValue} from '@components/Form/types';
 
