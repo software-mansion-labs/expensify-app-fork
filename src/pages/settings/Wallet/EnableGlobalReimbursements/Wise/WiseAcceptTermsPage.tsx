@@ -12,6 +12,8 @@ import useLocalize from '@hooks/useLocalize';
 import usePermissions from '@hooks/usePermissions';
 import useThemeStyles from '@hooks/useThemeStyles';
 
+import createDynamicRoute from '@libs/Navigation/helpers/dynamicRoutesUtils/createDynamicRoute';
+
 import Navigation from '@navigation/Navigation';
 
 import {clearSensitiveAnswers} from '@userActions/DynamicForm';
@@ -84,7 +86,7 @@ function WiseAcceptTermsPage() {
             return;
         }
         clearSensitiveAnswers(ONYXKEYS.FORMS.WISE_BUSINESS_ONBOARDING_FORM);
-        Navigation.dismissModal();
+        Navigation.navigate(createDynamicRoute(DYNAMIC_ROUTES.WISE_KYC_REVIEW.path));
     };
 
     if (!isWiseReimbursementsBetaEnabled) {

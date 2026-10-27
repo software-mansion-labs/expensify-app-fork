@@ -3038,6 +3038,11 @@ const translations: TranslationDeepObject<typeof en> = {
                 wiseTermsAccessibilityLabel: 'Concordo com os termos e condições e a política de privacidade da Wise.',
                 error: 'Aceite todos os termos para continuar.',
             },
+            kycReview: {
+                headerTitle: 'Mais informações necessárias',
+                title: 'Verifique informações adicionais',
+                subtitle: 'Nosso parceiro de pagamentos precisa de mais informações diretamente. Isso deve levar só alguns minutos.',
+            },
         },
         wiseGlobalReimbursementsIntro: {
             title: 'Configurar reembolsos globais?',

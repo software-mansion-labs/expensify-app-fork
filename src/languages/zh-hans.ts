@@ -2947,6 +2947,11 @@ const translations: TranslationDeepObject<typeof en> = {
                 wiseTermsAccessibilityLabel: '我同意 Wise 的条款和条件以及隐私政策。',
                 error: '请接受所有条款以继续。',
             },
+            kycReview: {
+                headerTitle: '需要更多信息',
+                title: '验证其他信息',
+                subtitle: '我们的支付合作伙伴需要直接向您获取更多信息。只需几分钟即可完成。',
+            },
         },
         wiseGlobalReimbursementsIntro: {title: '设置全球报销？', subtitle: '按当地货币向全球成员付款。', getStarted: '开始使用', headerTitle: '全球报销'},
         wiseGlobalReimbursementsBanner: {title: '向全球付款', subtitle: '在您的美元账户中启用全球报销。'},

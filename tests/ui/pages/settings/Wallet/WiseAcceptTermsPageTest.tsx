@@ -7,6 +7,7 @@ import WiseAcceptTermsPage from '@pages/settings/Wallet/EnableGlobalReimbursemen
 import {clearSensitiveAnswers} from '@userActions/DynamicForm';
 
 import ONYXKEYS from '@src/ONYXKEYS';
+import {DYNAMIC_ROUTES} from '@src/ROUTES';
 
 import type ReactNative from 'react-native';
 
@@ -18,7 +19,11 @@ const mockTranslate = TestHelper.translateLocal;
 
 // The real useFocusEffect throws outside a navigator
 jest.mock('@react-navigation/native', () => ({...jest.requireActual<Record<string, unknown>>('@react-navigation/native'), useFocusEffect: jest.fn()}));
-jest.mock('@navigation/Navigation', () => ({dismissModal: jest.fn(), goBack: jest.fn()}));
+jest.mock('@navigation/Navigation', () => ({navigate: jest.fn(), goBack: jest.fn()}));
+jest.mock(
+    '@libs/Navigation/helpers/dynamicRoutesUtils/createDynamicRoute',
+    () => (suffix: string) => `settings/wallet/global-reimbursements/1/business-onboarding/confirm/accept-terms/${suffix}`,
+);
 jest.mock('@userActions/DynamicForm', () => ({clearSensitiveAnswers: jest.fn()}));
 jest.mock('@hooks/useDynamicBackPath', () => () => 'settings/wallet/global-reimbursements/1/business-onboarding/confirm');
 jest.mock('@hooks/usePermissions', () => () => ({isBetaEnabledOrUnknown: () => true}));
@@ -66,7 +71,7 @@ describe('WiseAcceptTermsPage', () => {
         jest.clearAllMocks();
     });
 
-    it('keeps the page open with an error until every box is ticked, then closes the flow', () => {
+    it('keeps the page open with an error until every box is ticked, then opens the KYC review', () => {
         // Given the terms page with only two of the three boxes ticked
         render(<WiseAcceptTermsPage />);
         fireEvent.press(screen.getByLabelText(TERM_LABELS.at(0) ?? ''));
@@ -77,15 +82,15 @@ describe('WiseAcceptTermsPage', () => {
 
         // Then the page asks for every term and stays open, since the doc requires all of them
         expect(screen.getByText(ERROR)).toBeOnTheScreen();
-        expect(Navigation.dismissModal).not.toHaveBeenCalled();
+        expect(Navigation.navigate).not.toHaveBeenCalled();
 
         // When the last box is ticked and Confirm is pressed again
         fireEvent.press(screen.getByLabelText(TERM_LABELS.at(2) ?? ''));
         pressConfirm();
 
-        // Then the button still works after the error, the SSN kept in memory for this page is dropped, and the flow closes
+        // Then the button still works after the error, the SSN kept in memory for this page is dropped, and the KYC review opens on top of the terms
         expect(clearSensitiveAnswers).toHaveBeenCalledWith(ONYXKEYS.FORMS.WISE_BUSINESS_ONBOARDING_FORM);
-        expect(Navigation.dismissModal).toHaveBeenCalledTimes(1);
+        expect(Navigation.navigate).toHaveBeenCalledWith(`settings/wallet/global-reimbursements/1/business-onboarding/confirm/accept-terms/${DYNAMIC_ROUTES.WISE_KYC_REVIEW.path}`);
     });
 
     it('hides the error once the user changes a box', () => {

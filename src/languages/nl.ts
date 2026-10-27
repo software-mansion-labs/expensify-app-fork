@@ -3046,6 +3046,11 @@ const translations: TranslationDeepObject<typeof en> = {
                 wiseTermsAccessibilityLabel: 'Ik ga akkoord met de algemene voorwaarden en het privacybeleid van Wise.',
                 error: 'Accepteer alle voorwaarden om door te gaan.',
             },
+            kycReview: {
+                headerTitle: 'Meer informatie nodig',
+                title: 'Aanvullende informatie verifiëren',
+                subtitle: 'Onze betalingspartner heeft rechtstreeks meer informatie nodig. Dit duurt maar een paar minuten.',
+            },
         },
         wiseGlobalReimbursementsIntro: {
             title: 'Wereldwijde terugbetalingen instellen?',

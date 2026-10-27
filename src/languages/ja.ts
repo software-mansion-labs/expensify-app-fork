@@ -3022,6 +3022,11 @@ const translations: TranslationDeepObject<typeof en> = {
                 wiseTermsAccessibilityLabel: 'Wiseの利用規約およびプライバシーポリシーに同意します。',
                 error: '続行するにはすべての規約に同意してください。',
             },
+            kycReview: {
+                headerTitle: '追加情報が必要です',
+                title: '追加情報を確認',
+                subtitle: '決済パートナーが追加情報を直接必要としています。数分で完了します。',
+            },
         },
         wiseGlobalReimbursementsIntro: {
             title: 'グローバル払い戻しを設定しますか？',
