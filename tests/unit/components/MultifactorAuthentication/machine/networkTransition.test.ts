@@ -17,6 +17,7 @@ import type {
     RequestRegistrationChallengeOutput,
     ValidateDeviceInput,
 } from '@components/MultifactorAuthentication/machine/types';
+import addMFABreadcrumb from '@components/MultifactorAuthentication/observability/breadcrumbs';
 
 import type {MFAResult} from '@libs/MultifactorAuthentication/shared/MFAResult';
 import {setForceOffline} from '@libs/NetworkState';
@@ -36,6 +37,8 @@ import createInitEvent, {
 } from 'tests/utils/mfa/flowFixtures';
 import waitForBatchedUpdates from 'tests/utils/waitForBatchedUpdates';
 import {createActor, fromPromise, matchesState, waitFor} from 'xstate';
+
+jest.mock('@components/MultifactorAuthentication/observability/breadcrumbs', () => ({__esModule: true, default: jest.fn()}));
 
 const MFA_STATE = CONST.MULTIFACTOR_AUTHENTICATION.MFA_STATE;
 const HIDDEN = MFA_STATE.CANCEL_CONFIRM_HIDDEN;
@@ -96,6 +99,28 @@ function isAt(actor: {getSnapshot: () => {value: StateValue}}, value: StateValue
 describe('MFA offline', () => {
     afterEach(() => {
         setForceOffline(false);
+    });
+
+    describe('breadcrumbs', () => {
+        it('logs each network flip, so a flow that resumed is told apart from one that stayed offline', () => {
+            // Given the outcome screen, where nothing waits for the network
+            const actor = createActorAtState(openAt({[MFA_STATE.OUTCOME]: MFA_STATE.SUCCESS}));
+            actor.start();
+            jest.mocked(addMFABreadcrumb).mockClear();
+
+            // When the device goes offline and comes back
+            actor.send({type: 'NETWORK_OFFLINE'});
+            actor.send({type: 'NETWORK_ONLINE'});
+
+            // Then both flips are logged as network changes, not as a paused flow
+            const scenario = createFlowContext().scenarioName;
+            expect(jest.mocked(addMFABreadcrumb).mock.calls).toEqual([
+                ['Network offline', {scenario}, 'warning'],
+                ['Network online', {scenario}],
+            ]);
+
+            actor.stop();
+        });
     });
 
     describe('submitting the validate code', () => {
