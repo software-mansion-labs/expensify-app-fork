@@ -192,6 +192,7 @@ function AdditionalDetailsStep({currentUserPersonalDetails}: AdditionalDetailsSt
                         forwardedFSClass={CONST.FULLSTORY.CLASS.MASK}
                     />
                     <AddressFormFields
+                        containerStyles={styles.mt4}
                         inputKeys={{
                             street: 'addressStreet',
                             city: 'addressCity',
