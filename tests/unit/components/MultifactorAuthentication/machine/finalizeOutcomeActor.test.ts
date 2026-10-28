@@ -46,6 +46,7 @@ function buildInput(overrides: Partial<FinalizeOutcomeInput> = {}): FinalizeOutc
         isRegistrationComplete: false,
         softPromptApproved: false,
         registrationStateAtStart: START_STATE,
+        recoveryAttempts: 0,
         ...overrides,
     };
 }
@@ -114,7 +115,7 @@ describe('finalizeOutcome actor', () => {
     });
 
     it('captures the end-of-flow registration snapshot and reports telemetry exactly once', async () => {
-        const input = buildInput({error: createLocalMFAError(REASON.LOCAL_ERRORS.CANCELED, 'user canceled'), isRegistrationComplete: true, softPromptApproved: true});
+        const input = buildInput({error: createLocalMFAError(REASON.LOCAL_ERRORS.CANCELED, 'user canceled'), isRegistrationComplete: true, softPromptApproved: true, recoveryAttempts: 1});
 
         await runFinalizeOutcomeActor(input);
 
@@ -127,6 +128,7 @@ describe('finalizeOutcome actor', () => {
                 isRegistrationComplete: true,
                 isAuthorizationComplete: true,
                 softPromptApproved: true,
+                recoveryAttempts: 1,
                 startState: START_STATE,
                 endState: END_STATE,
             }),
