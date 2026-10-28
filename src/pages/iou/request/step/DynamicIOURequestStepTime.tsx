@@ -171,6 +171,7 @@ function DynamicIOURequestStepTime({
             >
                 <InputWrapper
                     InputComponent={DatePicker}
+                    containerStyles={styles.mv2}
                     inputID={INPUT_IDS.START_DATE}
                     label={translate('iou.startDate')}
                     defaultValue={currentStartDate}
@@ -186,6 +187,7 @@ function DynamicIOURequestStepTime({
                 </View>
                 <InputWrapper
                     InputComponent={DatePicker}
+                    containerStyles={styles.mv2}
                     inputID={INPUT_IDS.END_DATE}
                     label={translate('iou.endDate')}
                     defaultValue={currentEndDate}

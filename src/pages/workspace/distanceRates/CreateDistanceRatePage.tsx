@@ -145,6 +145,7 @@ function CreateDistanceRatePage({
                         <View style={styles.mt2}>
                             <InputWrapper
                                 InputComponent={DatePicker}
+                                containerStyles={styles.mv2}
                                 inputID={INPUT_IDS.START_DATE}
                                 label={translate('workspace.distanceRates.startDate')}
                                 shouldDeferShowUntilPositioned
@@ -153,6 +154,7 @@ function CreateDistanceRatePage({
                         </View>
                         <InputWrapper
                             InputComponent={DatePicker}
+                            containerStyles={styles.mv2}
                             inputID={INPUT_IDS.END_DATE}
                             label={translate('workspace.distanceRates.endDate')}
                             shouldDeferShowUntilPositioned

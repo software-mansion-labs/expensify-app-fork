@@ -380,6 +380,7 @@ function SetSpendRulesStep({policyID, stepNames, startStepIndex}: SetSpendRulesS
                                 <Text style={[styles.textLabelSupporting, styles.mb1, styles.mt2]}>{translate('workspace.card.issueNewCard.validFrom')}</Text>
                                 <InputWrapper
                                     InputComponent={DatePicker}
+                                    containerStyles={styles.mv2}
                                     inputID={INPUT_IDS.VALID_FROM}
                                     label={translate('workspace.card.issueNewCard.startDate')}
                                     maxDate={CONST.CALENDAR_PICKER.MAX_DATE}
@@ -388,6 +389,7 @@ function SetSpendRulesStep({policyID, stepNames, startStepIndex}: SetSpendRulesS
                                 />
                                 <InputWrapper
                                     InputComponent={DatePicker}
+                                    containerStyles={styles.mv2}
                                     inputID={INPUT_IDS.VALID_THRU}
                                     label={translate('workspace.card.issueNewCard.endDate')}
                                     maxDate={CONST.CALENDAR_PICKER.MAX_DATE}

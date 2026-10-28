@@ -65,6 +65,7 @@ function SearchEditMultipleDatePage() {
                 <View style={styles.mb4}>
                     <InputWrapper
                         InputComponent={DatePicker}
+                        containerStyles={styles.mv2}
                         inputID={INPUT_IDS.DATE}
                         label={translate('common.date')}
                         autoFocus

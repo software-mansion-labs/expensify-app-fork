@@ -193,6 +193,7 @@ function AdditionalDetailsStep({currentUserPersonalDetails}: AdditionalDetailsSt
                     />
                     <AddressFormFields
                         containerStyles={styles.mt4}
+                        fieldGapStyle={styles.gap4}
                         inputKeys={{
                             street: 'addressStreet',
                             city: 'addressCity',

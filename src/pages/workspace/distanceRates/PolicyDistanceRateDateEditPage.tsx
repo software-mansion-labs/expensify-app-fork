@@ -115,6 +115,7 @@ function PolicyDistanceRateDateEditPage({route}: PolicyDistanceRateDateEditPageP
                         <InputWrapper
                             autoFocus
                             InputComponent={DatePicker}
+                            containerStyles={styles.mv2}
                             inputID={inputID}
                             label={translate(titleKey)}
                             defaultValue={rate[fieldName] ?? ''}

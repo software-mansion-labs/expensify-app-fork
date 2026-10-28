@@ -73,6 +73,7 @@ function IncorporationDateBusiness({onNext, isEditing}: SubPageProps) {
             <Text style={[styles.textHeadlineLineHeightXXL, styles.mb4]}>{translate('businessInfoStep.selectYourCompanyIncorporationDate')}</Text>
             <InputWrapper
                 InputComponent={DatePicker}
+                containerStyles={styles.mv2}
                 inputID={COMPANY_INCORPORATION_DATE_KEY}
                 label={translate('businessInfoStep.incorporationDate')}
                 placeholder={translate('businessInfoStep.incorporationDatePlaceholder')}

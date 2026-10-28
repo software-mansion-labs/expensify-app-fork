@@ -139,6 +139,7 @@ function DynamicSplitExpenseCreateDateRangePage({route}: DynamicSplitExpenseCrea
                     >
                         <InputWrapper
                             InputComponent={DatePicker}
+                            containerStyles={styles.mv2}
                             inputID={INPUT_IDS.START_DATE}
                             label={translate('iou.startDate')}
                             maxDate={CONST.CALENDAR_PICKER.MAX_DATE}
@@ -146,6 +147,7 @@ function DynamicSplitExpenseCreateDateRangePage({route}: DynamicSplitExpenseCrea
                         />
                         <InputWrapper
                             InputComponent={DatePicker}
+                            containerStyles={styles.mv2}
                             inputID={INPUT_IDS.END_DATE}
                             label={translate('iou.endDate')}
                             maxDate={CONST.CALENDAR_PICKER.MAX_DATE}

@@ -52,6 +52,7 @@ function DynamicDebugDetailsDateTimePickerPage({
                 <View style={styles.ph5}>
                     <Text style={styles.headerText}>{translate('debug.date')}</Text>
                     <DatePicker
+                        containerStyles={styles.mv2}
                         inputID=""
                         value={date}
                         onInputChange={setDate}

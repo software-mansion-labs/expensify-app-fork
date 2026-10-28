@@ -54,6 +54,7 @@ function EditReportFieldDatePage({fieldName, isRequired, onSubmit, fieldValue, f
             <View style={styles.mb4}>
                 <InputWrapper
                     InputComponent={DatePicker}
+                    containerStyles={styles.mv2}
                     inputID={fieldKey}
                     name={fieldKey}
                     defaultValue={fieldValue}

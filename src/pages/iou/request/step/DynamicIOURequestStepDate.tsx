@@ -210,6 +210,7 @@ function DynamicIOURequestStepDate({
             >
                 <InputWrapper
                     InputComponent={DatePicker}
+                    containerStyles={styles.mv2}
                     inputID={INPUT_IDS.MONEY_REQUEST_CREATED}
                     label={translate('common.date')}
                     defaultValue={currentCreated}
