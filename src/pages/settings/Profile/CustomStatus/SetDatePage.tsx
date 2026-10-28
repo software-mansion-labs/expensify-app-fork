@@ -74,6 +74,7 @@ function SetDatePage() {
             >
                 <InputWrapper
                     InputComponent={DatePicker}
+                    containerStyles={styles.mv2}
                     inputID={INPUT_IDS.DATE_TIME}
                     label={translate('statusPage.date')}
                     defaultValue={DateUtils.extractDate(customStatusClearAfterDate)}

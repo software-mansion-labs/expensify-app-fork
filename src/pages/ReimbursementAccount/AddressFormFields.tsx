@@ -55,6 +55,10 @@ type AddressFormProps = ForwardedFSClassProps & {
     shouldSaveDraft?: boolean;
 
     containerStyles?: StyleProp<ViewStyle>;
+
+    /** Sets the space between the fields, for example `styles.gap4`. Defaults to `styles.gap6`. */
+    fieldGapStyle?: StyleProp<ViewStyle>;
+
     shouldDisplayCountrySelector?: boolean;
     shouldDisplayStateSelector?: boolean;
     stateSelectorLabel?: string;
@@ -92,6 +96,7 @@ function AddressFormFields({
     inputKeys,
     streetTranslationKey,
     containerStyles,
+    fieldGapStyle,
     shouldDisplayCountrySelector = false,
     shouldDisplayStateSelector = true,
     stateSelectorLabel,
@@ -117,14 +122,13 @@ function AddressFormFields({
     };
 
     return (
-        <View style={containerStyles}>
+        <View style={[styles.gap6, fieldGapStyle, containerStyles]}>
             <View>
                 <InputWrapper
                     InputComponent={AddressSearch}
                     inputID={inputKeys?.street}
                     shouldSaveDraft={shouldSaveDraft}
                     label={translate(streetTranslationKey)}
-                    containerStyles={styles.mt6}
                     value={values?.street}
                     defaultValue={defaultValues?.street}
                     errorText={errors?.street ? translate('bankAccount.error.addressStreet') : ''}
@@ -146,13 +150,13 @@ function AddressFormFields({
                 value={values?.city}
                 defaultValue={defaultValues?.city}
                 errorText={errors?.city ? translate('bankAccount.error.addressCity') : ''}
-                containerStyles={styles.mt6}
                 forwardedFSClass={forwardedFSClass}
                 autoComplete="address-line2"
             />
 
+            {/* A push row pads its text by 12px, so it pulls itself into the gap by as much, keeping the gap the same between every two fields */}
             {shouldDisplayStateSelector && (
-                <View style={[styles.mt3, styles.mhn5]}>
+                <View style={[styles.mhn5, styles.mtn3, styles.mbn3]}>
                     <InputWrapper
                         InputComponent={PushRowWithModal}
                         optionsList={shouldDisplayCountrySelector && currentlySelectedCountry === CONST.COUNTRY.CA ? PROVINCES_LIST_OPTIONS : STATES_LIST_OPTIONS}
@@ -180,12 +184,12 @@ function AddressFormFields({
                 defaultValue={defaultValues?.zipCode}
                 errorText={errors?.zipCode ? translate('bankAccount.error.zipCode') : ''}
                 hint={translate('common.zipCodeExampleFormat', zipSampleFormat)}
-                containerStyles={styles.mt3}
                 forwardedFSClass={forwardedFSClass}
                 autoComplete="postal-code"
             />
+            {/* The country row is the last field, so it keeps its bottom padding as the space below the address */}
             {shouldDisplayCountrySelector && (
-                <View style={[styles.mt3, styles.mhn5]}>
+                <View style={[styles.mhn5, styles.mtn3]}>
                     <InputWrapper
                         InputComponent={PushRowWithModal}
                         inputID={inputKeys?.country ?? 'country'}

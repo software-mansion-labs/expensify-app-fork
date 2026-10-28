@@ -397,6 +397,9 @@ const config: LinkingOptions<RootNavigatorParamList>['config'] = {
                             path: ROUTES.SETTINGS_DISPLAY_NAME,
                             exact: true,
                         },
+                        [SCREENS.SETTINGS.ADDRESS_FORMS_PREVIEW]: {
+                            path: ROUTES.SETTINGS_ADDRESS_FORMS_PREVIEW.route,
+                        },
                         [SCREENS.SETTINGS.PROFILE.TIMEZONE]: {
                             path: ROUTES.SETTINGS_TIMEZONE,
                             exact: true,

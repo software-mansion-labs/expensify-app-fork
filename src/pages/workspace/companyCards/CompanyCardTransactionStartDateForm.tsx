@@ -137,6 +137,7 @@ function CompanyCardTransactionStartDateForm({
                         dateOptionSelected === CONST.COMPANY_CARD.TRANSACTION_START_DATE_OPTIONS.CUSTOM ? (
                             <View style={styles.ph5}>
                                 <DatePicker
+                                    containerStyles={styles.mv2}
                                     inputID=""
                                     value={startDate}
                                     label={translate('iou.startDate')}

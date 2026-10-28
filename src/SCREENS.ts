@@ -79,6 +79,7 @@ const SCREENS = {
     SETTINGS: {
         ROOT: 'Settings_Root',
         SHARE_CODE: 'Settings_Share_Code',
+        ADDRESS_FORMS_PREVIEW: 'Settings_Address_Forms_Preview',
         SECURITY: 'Settings_Security',
         COPILOT: 'Settings_Copilot',
         ABOUT: 'Settings_About',

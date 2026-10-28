@@ -95,6 +95,7 @@ function DateOfBirthStepImpl({
             <Text style={[styles.textHeadlineLineHeightXXL, styles.mb5]}>{formTitle}</Text>
             <InputWrapper
                 InputComponent={DatePicker}
+                containerStyles={styles.mv2}
                 inputID={dobInputID}
                 label={translate('common.dob')}
                 placeholder={translate('common.dateFormat')}

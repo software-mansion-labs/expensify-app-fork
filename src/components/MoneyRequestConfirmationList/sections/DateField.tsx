@@ -134,6 +134,7 @@ function DateField({shouldDisplayFieldError, didConfirm, isReadOnly, formError, 
             // The bordered rows carry their own vertical margin, so an extra bottom margin here would stack with it.
             <View style={[styles.mh4, !shouldUseDropdownRows && styles.mb2]}>
                 <DatePicker
+                    containerStyles={styles.mv2}
                     inputID={INPUT_IDS.MONEY_REQUEST_CREATED}
                     value={shouldShowEmptyDate ? '' : iouCreated}
                     defaultValue={format(new Date(), CONST.DATE.FNS_FORMAT_STRING)}

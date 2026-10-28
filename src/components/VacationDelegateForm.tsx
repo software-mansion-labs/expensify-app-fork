@@ -167,6 +167,7 @@ function VacationDelegateForm({
                         The earliest day is today in the form's timezone, so it matches the validation even when the device is in another timezone. */}
                     <InputWrapper
                         InputComponent={DatePicker}
+                        containerStyles={styles.mv2}
                         inputID={INPUT_IDS.CLEAR_AFTER_DATE}
                         label={translate('statusPage.vacationDelegate.clearAfterRecommended')}
                         defaultValue={savedClearDate}

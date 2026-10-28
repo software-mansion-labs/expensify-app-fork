@@ -363,6 +363,10 @@ export default {
         marginTop: -8,
     },
 
+    mtn3: {
+        marginTop: -12,
+    },
+
     mtn6: {
         marginTop: -24,
     },

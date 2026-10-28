@@ -245,6 +245,7 @@ function ChronosScheduleOOOPage({route}: ChronosScheduleOOOPageProps) {
                     <InputWrapper
                         InputComponent={DatePicker}
                         inputID={INPUT_IDS.DATE}
+                        containerStyles={styles.mt2}
                         valueType="string"
                         label={translate('chronos.date')}
                         value={startDate}
