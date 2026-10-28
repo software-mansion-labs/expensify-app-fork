@@ -237,10 +237,14 @@ const MFAMachine = setup({
             softPromptApproved: false,
             recoveryAttempts: ({context}) => context.recoveryAttempts + 1,
         }),
-        // Without it a flow paused offline looks the same as a stuck one in Sentry.
-        addOfflinePauseBreadcrumb: ({context}) => {
-            addMFABreadcrumb('Flow paused - offline', {scenario: context.scenarioName}, 'warning');
+        // Without these a flow waiting for the network looks the same as a stuck one in Sentry.
+        addNetworkOfflineBreadcrumb: ({context}) => {
+            addMFABreadcrumb('Network offline', {scenario: context.scenarioName}, 'warning');
         },
+        addNetworkOnlineBreadcrumb: ({context}) => {
+            addMFABreadcrumb('Network online', {scenario: context.scenarioName});
+        },
+        // Same message and payload as the legacy offline cancel, so existing Sentry queries keep matching.
         addOfflineCancelBreadcrumb: ({context}) => {
             addMFABreadcrumb('Flow cancelled - closing directly', {hasScenario: !!context.scenario, isOffline: true}, 'warning');
         },
@@ -743,13 +747,12 @@ const MFAMachine = setup({
                     invoke: {id: 'watchNetwork', src: 'watchNetwork'},
                     states: {
                         [MFA_STATE.ONLINE]: {
-                            on: {NETWORK_OFFLINE: MFA_STATE.OFFLINE},
+                            on: {NETWORK_OFFLINE: {target: MFA_STATE.OFFLINE, actions: 'addNetworkOfflineBreadcrumb'}},
                         },
                         // Steps already sent keep running; only the steps that would go to the network next wait for `online`.
                         [MFA_STATE.OFFLINE]: {
                             id: MFA_STATE.OFFLINE,
-                            entry: 'addOfflinePauseBreadcrumb',
-                            on: {NETWORK_ONLINE: MFA_STATE.ONLINE},
+                            on: {NETWORK_ONLINE: {target: MFA_STATE.ONLINE, actions: 'addNetworkOnlineBreadcrumb'}},
                         },
                     },
                 },

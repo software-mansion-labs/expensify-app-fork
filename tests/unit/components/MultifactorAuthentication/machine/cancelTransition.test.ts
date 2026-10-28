@@ -1255,7 +1255,17 @@ describe('MFA cancel', () => {
             jest.mocked(addMFABreadcrumb).mockClear();
         });
 
-        it.each(STEP_STATES)('closes the modal without asking while $description', ({flow}) => {
+        // Offline these steps hold instead of passing straight through, so they are where back is pressed most.
+        // Cancelling in `readyToRegister` leaves the created key on the device, which the next flow recovers from.
+        const OFFLINE_HOLD_STATES: Array<{description: string; flow: StateValue}> = [
+            {description: 'holding the credential ceremony', flow: READY_TO_CREATE},
+            {description: 'creating the key', flow: CREATING_KEY},
+            {description: 'holding the created key for registration', flow: {[MFA_STATE.PROMPT]: {[MFA_STATE.CREATING_CREDENTIAL]: MFA_STATE.READY_TO_REGISTER}}},
+            {description: 'holding the signing ceremony', flow: READY_TO_SIGN},
+            {description: 'signing the challenge', flow: SIGNING_CHALLENGE},
+        ];
+
+        it.each([...STEP_STATES, ...OFFLINE_HOLD_STATES])('closes the modal without asking while $description', ({flow}) => {
             // Given the flow is mid-step while offline, where the scenario's cancel logic couldn't reach the backend
             const actor = createActorAtState(openAt(flow, HIDDEN, OFFLINE));
 
@@ -1300,6 +1310,22 @@ describe('MFA cancel', () => {
             actor.send({type: 'CONFIRM_CANCEL'});
 
             // Then the modal closes instead of moving to cancelling, which would wait on a request that can't go out
+            expect(actor.getSnapshot().matches(MFA_STATE.CLOSING)).toBe(true);
+            expect(addMFABreadcrumb).toHaveBeenCalledWith(...OFFLINE_CANCEL_BREADCRUMB);
+
+            actor.stop();
+        });
+
+        it('closes the modal on confirm during a scenario action without onCancel when the device went offline with the dialog up', () => {
+            // Given a scenario without onCancel whose approve is out, with the dialog opened online before the device went offline
+            const actor = createActorAtState(openAt(AWAITING_RESULT, VISIBLE));
+            actor.start();
+            actor.send({type: 'NETWORK_OFFLINE'});
+
+            // When the user confirms the cancel
+            actor.send({type: 'CONFIRM_CANCEL'});
+
+            // Then the scenario action's own confirm handler passes it on and the flow-level offline branch closes the modal
             expect(actor.getSnapshot().matches(MFA_STATE.CLOSING)).toBe(true);
             expect(addMFABreadcrumb).toHaveBeenCalledWith(...OFFLINE_CANCEL_BREADCRUMB);
 
