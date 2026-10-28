@@ -21,6 +21,7 @@ import type {
     RequestRegistrationChallengeOutput,
     ValidateDeviceInput,
 } from '@components/MultifactorAuthentication/machine/types';
+import addMFABreadcrumb from '@components/MultifactorAuthentication/observability/breadcrumbs';
 
 import type {MFAResult} from '@libs/MultifactorAuthentication/shared/MFAResult';
 import {createLocalMFAError, createMFAErrorFromApiResponse} from '@libs/MultifactorAuthentication/shared/MFAResult';
@@ -30,7 +31,7 @@ import CONST from '@src/CONST';
 
 import type {StateValue} from 'xstate';
 
-import {createActorAtState, createFlowContext, sendExecuteScenarioActionDone, sendRegisterCredentialDone, sendRequestRegistrationChallengeDone} from 'tests/utils/mfa/flowActors';
+import {createActorAtState, createFlowContext, openAt, sendExecuteScenarioActionDone, sendRegisterCredentialDone, sendRequestRegistrationChallengeDone} from 'tests/utils/mfa/flowActors';
 import createInitEvent, {
     MFA_TEST_AUTH_METHOD,
     MFA_TEST_CANCEL_ERROR,
@@ -43,14 +44,9 @@ import {createActorDoneEvent} from 'tests/utils/mfa/flowPaths';
 import waitForBatchedUpdates from 'tests/utils/waitForBatchedUpdates';
 import {createActor, fromPromise, matchesState, SimulatedClock, waitFor} from 'xstate';
 
+jest.mock('@components/MultifactorAuthentication/observability/breadcrumbs', () => ({__esModule: true, default: jest.fn()}));
+
 const MFA_STATE = CONST.MULTIFACTOR_AUTHENTICATION.MFA_STATE;
-
-type CancelConfirmState = typeof MFA_STATE.CANCEL_CONFIRM_HIDDEN | typeof MFA_STATE.CANCEL_CONFIRM_VISIBLE;
-
-/** Builds an `open` state value with both regions pinned: the flow step and the dialog. */
-function openAt(flow: StateValue, cancelConfirm: CancelConfirmState = MFA_STATE.CANCEL_CONFIRM_HIDDEN): StateValue {
-    return {[MFA_STATE.OPEN]: {[MFA_STATE.FLOW]: flow, [MFA_STATE.CANCEL_CONFIRM]: cancelConfirm}};
-}
 
 const STEP_STATES: Array<{description: string; flow: StateValue}> = [
     {description: 'validating the device', flow: {[MFA_STATE.PREPARING]: MFA_STATE.VALIDATING_DEVICE}},
@@ -1175,6 +1171,27 @@ describe('MFA cancel', () => {
                     actor.stop();
                 });
             });
+
+            it('waits for both results when the dialog was confirmed after going offline, and fails with the approve error once both fail', async () => {
+                // Given the dialog is up over an in-flight approve and the device then goes offline
+                const {actor, scenarioAction, cancel} = await startScenarioActionWithDialog({withOnCancel: true});
+                actor.send({type: 'NETWORK_OFFLINE'});
+
+                // When the user confirms, and both the deny and the approve fail without a response
+                actor.send({type: 'CONFIRM_CANCEL'});
+                expect(matchesState(openAt(DENYING, MFA_STATE.CANCEL_CONFIRM_HIDDEN, MFA_STATE.OFFLINE), actor.getSnapshot().value)).toBe(true);
+                const approveNetworkError = createMFAErrorFromApiResponse(0, REASON.LOCAL_ERRORS.UNHANDLED_API_RESPONSE, 'approve');
+                await settle(cancel, NETWORK_ERROR);
+                await settle(scenarioAction, {success: false, error: approveNetworkError});
+
+                // Then the flow fails with the approve's error, because the deny was sent next to an approve already out and neither result decides better
+                const result = actor.getSnapshot();
+                expect(matchesState(openAt(FINALIZING_OUTCOME, MFA_STATE.CANCEL_CONFIRM_HIDDEN, MFA_STATE.OFFLINE), result.value)).toBe(true);
+                expect(result.context.error).toBe(approveNetworkError);
+                expect(result.context.error?.httpStatusCode).toBe(0);
+
+                actor.stop();
+            });
         });
 
         describe('without a scenario onCancel', () => {
@@ -1215,6 +1232,170 @@ describe('MFA cancel', () => {
 
                 actor.stop();
             });
+        });
+    });
+
+    describe('offline', () => {
+        const OFFLINE = MFA_STATE.OFFLINE;
+        const HIDDEN = MFA_STATE.CANCEL_CONFIRM_HIDDEN;
+        const VISIBLE = MFA_STATE.CANCEL_CONFIRM_VISIBLE;
+        const AUTHORIZE_TRANSACTION = CONST.MULTIFACTOR_AUTHENTICATION.SCENARIO.AUTHORIZE_TRANSACTION;
+        const AWAITING_RESULT = {[MFA_STATE.PROMPT]: {[MFA_STATE.AUTHORIZING]: {[MFA_STATE.EXECUTING_SCENARIO_ACTION]: MFA_STATE.AWAITING_RESULT}}};
+        const DENYING = {[MFA_STATE.PROMPT]: {[MFA_STATE.AUTHORIZING]: {[MFA_STATE.EXECUTING_SCENARIO_ACTION]: MFA_STATE.DENYING}}};
+        const OFFLINE_CANCEL_BREADCRUMB = ['Flow cancelled - closing directly', {hasScenario: true, isOffline: true}, 'warning'];
+
+        /** A scenario whose `onCancel` sends a deny, so a test can tell the cancel logic never ran. */
+        function createOnCancelContext() {
+            const onCancel = jest.fn<Promise<CancelScenarioOutput>, []>(() => Promise.resolve(MFA_TEST_CANCEL_ERROR));
+            const scenario = {...getScenarioConfig(AUTHORIZE_TRANSACTION), onCancel};
+            return {onCancel, context: {scenarioName: AUTHORIZE_TRANSACTION, scenario, payload: {transactionID: 'txn-offline'}}};
+        }
+
+        beforeEach(() => {
+            jest.mocked(addMFABreadcrumb).mockClear();
+        });
+
+        // Offline these steps hold instead of passing straight through, so they are where back is pressed most.
+        // Cancelling in `readyToRegister` leaves the created key on the device, which the next flow recovers from.
+        const OFFLINE_HOLD_STATES: Array<{description: string; flow: StateValue}> = [
+            {description: 'holding the credential ceremony', flow: READY_TO_CREATE},
+            {description: 'creating the key', flow: CREATING_KEY},
+            {description: 'holding the created key for registration', flow: {[MFA_STATE.PROMPT]: {[MFA_STATE.CREATING_CREDENTIAL]: MFA_STATE.READY_TO_REGISTER}}},
+            {description: 'holding the signing ceremony', flow: READY_TO_SIGN},
+            {description: 'signing the challenge', flow: SIGNING_CHALLENGE},
+        ];
+
+        it.each([...STEP_STATES, ...OFFLINE_HOLD_STATES])('closes the modal without asking while $description', ({flow}) => {
+            // Given the flow is mid-step while offline, where the scenario's cancel logic couldn't reach the backend
+            const actor = createActorAtState(openAt(flow, HIDDEN, OFFLINE));
+
+            // When the user asks to cancel
+            actor.start();
+            actor.send({type: 'REQUEST_CANCEL'});
+
+            // Then the modal closes right away without the dialog, the same as before the state machine
+            const result = actor.getSnapshot();
+            expect(result.matches(MFA_STATE.CLOSING)).toBe(true);
+            expect(snapshotToState(result).isCancelConfirmVisible).toBe(false);
+            expect(addMFABreadcrumb).toHaveBeenCalledWith(...OFFLINE_CANCEL_BREADCRUMB);
+
+            actor.stop();
+        });
+
+        it("never runs the scenario's onCancel", async () => {
+            // Given a scenario with onCancel waits for the validate code while offline
+            const {onCancel, context} = createOnCancelContext();
+            const actor = createActorAtState(openAt({[MFA_STATE.VALIDATE_CODE]: {[MFA_STATE.AWAITING_VALIDATE_CODE]: MFA_STATE.AWAITING_INPUT}}, HIDDEN, OFFLINE), context);
+
+            // When the user asks to cancel
+            actor.start();
+            actor.send({type: 'REQUEST_CANCEL'});
+            await waitForBatchedUpdates();
+
+            // Then the modal closes without sending the deny, because it would fail without a network
+            expect(actor.getSnapshot().matches(MFA_STATE.CLOSING)).toBe(true);
+            expect(onCancel).not.toHaveBeenCalled();
+
+            actor.stop();
+        });
+
+        it('closes the modal on confirm when the device went offline with the dialog up', () => {
+            // Given the dialog opened online and the device then went offline
+            const flow = {[MFA_STATE.VALIDATE_CODE]: {[MFA_STATE.AWAITING_VALIDATE_CODE]: MFA_STATE.AWAITING_INPUT}};
+            const actor = createActorAtState(openAt(flow, VISIBLE));
+            actor.start();
+            actor.send({type: 'NETWORK_OFFLINE'});
+
+            // When the user confirms the cancel
+            actor.send({type: 'CONFIRM_CANCEL'});
+
+            // Then the modal closes instead of moving to cancelling, which would wait on a request that can't go out
+            expect(actor.getSnapshot().matches(MFA_STATE.CLOSING)).toBe(true);
+            expect(addMFABreadcrumb).toHaveBeenCalledWith(...OFFLINE_CANCEL_BREADCRUMB);
+
+            actor.stop();
+        });
+
+        it('closes the modal on confirm during a scenario action without onCancel when the device went offline with the dialog up', () => {
+            // Given a scenario without onCancel whose approve is out, with the dialog opened online before the device went offline
+            const actor = createActorAtState(openAt(AWAITING_RESULT, VISIBLE));
+            actor.start();
+            actor.send({type: 'NETWORK_OFFLINE'});
+
+            // When the user confirms the cancel
+            actor.send({type: 'CONFIRM_CANCEL'});
+
+            // Then the scenario action's own confirm handler passes it on and the flow-level offline branch closes the modal
+            expect(actor.getSnapshot().matches(MFA_STATE.CLOSING)).toBe(true);
+            expect(addMFABreadcrumb).toHaveBeenCalledWith(...OFFLINE_CANCEL_BREADCRUMB);
+
+            actor.stop();
+        });
+
+        it('still asks during a scenario action with onCancel and sends the deny on confirm', () => {
+            // Given an approve is already out for a scenario with onCancel, and the device is offline
+            const {context} = createOnCancelContext();
+            const actor = createActorAtState(openAt(AWAITING_RESULT, HIDDEN, OFFLINE), context);
+
+            // When the user asks to cancel
+            actor.start();
+            actor.send({type: 'REQUEST_CANCEL'});
+
+            // Then the dialog opens, because the approve may still land and only a deny can answer it
+            expect(matchesState(openAt(AWAITING_RESULT, VISIBLE, OFFLINE), actor.getSnapshot().value)).toBe(true);
+
+            // When the user confirms
+            actor.send({type: 'CONFIRM_CANCEL'});
+
+            // Then the deny goes out next to the approve, the same as online
+            expect(matchesState(openAt(DENYING, HIDDEN, OFFLINE), actor.getSnapshot().value)).toBe(true);
+            expect(addMFABreadcrumb).not.toHaveBeenCalledWith(...OFFLINE_CANCEL_BREADCRUMB);
+
+            actor.stop();
+        });
+
+        it('ignores back while cancelling', () => {
+            // Given the cancel logic is running and the device then went offline
+            const actor = createActorAtState(openAt(MFA_STATE.CANCELLING, HIDDEN, OFFLINE));
+
+            // When the user presses back
+            actor.start();
+            actor.send({type: 'REQUEST_CANCEL'});
+
+            // Then the flow keeps waiting for the cancel result (bounded by the cancel timeout), as it does online
+            expect(matchesState(openAt(MFA_STATE.CANCELLING, HIDDEN, OFFLINE), actor.getSnapshot().value)).toBe(true);
+
+            actor.stop();
+        });
+
+        it('ignores back while denying', () => {
+            // Given the deny is racing the approve and the device then went offline
+            const {context} = createOnCancelContext();
+            const actor = createActorAtState(openAt(DENYING, HIDDEN, OFFLINE), context);
+
+            // When the user presses back
+            actor.start();
+            actor.send({type: 'REQUEST_CANCEL'});
+
+            // Then the flow keeps waiting for both results, because closing would drop the answer the backend gets for the transaction
+            expect(matchesState(openAt(DENYING, HIDDEN, OFFLINE), actor.getSnapshot().value)).toBe(true);
+
+            actor.stop();
+        });
+
+        it.each([MFA_STATE.SUCCESS, MFA_STATE.FAILURE])('closes the modal from the %s outcome through the outcome back only', (outcome) => {
+            // Given the outcome screen is shown while offline
+            const actor = createActorAtState(openAt({[MFA_STATE.OUTCOME]: outcome}, HIDDEN, OFFLINE));
+
+            // When the user presses back
+            actor.start();
+            actor.send({type: 'REQUEST_CANCEL'});
+
+            // Then the outcome's own back closes the modal and the offline cancel stays out of it, since there is nothing left to cancel
+            expect(actor.getSnapshot().matches(MFA_STATE.CLOSING)).toBe(true);
+            expect(addMFABreadcrumb).not.toHaveBeenCalledWith(...OFFLINE_CANCEL_BREADCRUMB);
+
+            actor.stop();
         });
     });
 });

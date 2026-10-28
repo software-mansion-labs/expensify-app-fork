@@ -138,7 +138,9 @@ type MfaEvent =
     | {type: 'VALIDATE_CODE_CHANGED'}
     | {type: 'REQUEST_CANCEL'}
     | {type: 'DISMISS_CANCEL'}
-    | {type: 'CONFIRM_CANCEL'};
+    | {type: 'CONFIRM_CANCEL'}
+    | {type: 'NETWORK_OFFLINE'}
+    | {type: 'NETWORK_ONLINE'};
 
 /** Describes the input the machine passes to the device-check actor. */
 type ValidateDeviceInput = {allowedAuthenticationMethods: AllowedAuthenticationMethods};

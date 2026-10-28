@@ -20,9 +20,11 @@ import type {
     RequestRegistrationChallengeOutput,
     ValidateDeviceInput,
 } from '@components/MultifactorAuthentication/machine/types';
+import watchNetwork from '@components/MultifactorAuthentication/machine/watchNetwork';
 
 import type {MFAResult} from '@libs/MultifactorAuthentication/shared/MFAResult';
 import type Navigation from '@libs/Navigation/Navigation';
+import {setForceOffline} from '@libs/NetworkState';
 
 import {useEffect} from 'react';
 import {fromPromise} from 'xstate';
@@ -146,6 +148,8 @@ function resetMfaUiMocks() {
     executeScenarioActionControl.reset();
     finalizeOutcomeControl.reset();
     cancelScenarioControl.reset();
+    // A journey that ends offline would otherwise leave the next path offline.
+    setForceOffline(false);
 }
 
 /** Replaces the machine's side-effect actors with controlled test implementations. */
@@ -160,6 +164,8 @@ function mfaActorsMock() {
         executeScenarioAction: executeScenarioActionControl.actor,
         finalizeOutcome: finalizeOutcomeControl.actor,
         cancelScenario: cancelScenarioControl.actor,
+        // The real watcher, so the walk's offline toggle drives the machine and the screens' `useNetwork` alike.
+        watchNetwork,
     } satisfies ReturnType<typeof createActors>;
 
     return {
