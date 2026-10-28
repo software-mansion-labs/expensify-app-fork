@@ -10,6 +10,7 @@ import type {ValueOf} from 'type-fest';
 
 type AccountSettingsParamList = {
     [SCREENS.SETTINGS.SHARE_CODE]: undefined;
+    [SCREENS.SETTINGS.ADDRESS_FORMS_PREVIEW]: {form?: string; subPage?: string};
     [SCREENS.SETTINGS.PROFILE.PRONOUNS]: undefined;
     [SCREENS.SETTINGS.PROFILE.DISPLAY_NAME]: undefined;
     [SCREENS.SETTINGS.PROFILE.TIMEZONE]: undefined;
