@@ -1,13 +1,21 @@
 import mfaMachine from '@components/MultifactorAuthentication/machine/mfaMachine';
 import snapshotToState from '@components/MultifactorAuthentication/machine/snapshotToState';
-import type {FinalizeOutcomeInput, FinalizeOutcomeOutput, RequestRegistrationChallengeInput, RequestRegistrationChallengeOutput} from '@components/MultifactorAuthentication/machine/types';
+import type {
+    FinalizeOutcomeInput,
+    FinalizeOutcomeOutput,
+    RequestRegistrationChallengeInput,
+    RequestRegistrationChallengeOutput,
+    ValidateDeviceInput,
+} from '@components/MultifactorAuthentication/machine/types';
+
+import type {MFAResult} from '@libs/MultifactorAuthentication/shared/MFAResult';
 
 import CONST from '@src/CONST';
 
 import type {StateValue} from 'xstate';
 
 import {createActorAtState, createFlowContext, sendExecuteScenarioActionDone, sendRequestRegistrationChallengeDone} from 'tests/utils/mfa/flowActors';
-import {MFA_TEST_REGISTRATION_CHALLENGE, MFA_TEST_SCENARIO_RESPONSE} from 'tests/utils/mfa/flowFixtures';
+import createInitEvent, {MFA_TEST_REGISTRATION_CHALLENGE, MFA_TEST_SCENARIO_RESPONSE} from 'tests/utils/mfa/flowFixtures';
 import {createActor, fromPromise, matchesState} from 'xstate';
 
 const MFA_STATE = CONST.MULTIFACTOR_AUTHENTICATION.MFA_STATE;
@@ -23,6 +31,7 @@ const STEP_STATES: Array<{description: string; flow: StateValue}> = [
     {description: 'validating the device', flow: {[MFA_STATE.PREPARING]: MFA_STATE.VALIDATING_DEVICE}},
     {description: 'deciding registration', flow: {[MFA_STATE.PREPARING]: MFA_STATE.DECIDING_REGISTRATION}},
     {description: 'awaiting the validate code', flow: {[MFA_STATE.VALIDATE_CODE]: {[MFA_STATE.AWAITING_VALIDATE_CODE]: MFA_STATE.AWAITING_INPUT}}},
+    {description: 'showing the invalid-code error', flow: {[MFA_STATE.VALIDATE_CODE]: {[MFA_STATE.AWAITING_VALIDATE_CODE]: MFA_STATE.INVALID_CODE}}},
     {description: 'requesting the registration challenge', flow: {[MFA_STATE.VALIDATE_CODE]: MFA_STATE.REQUESTING_REGISTRATION_CHALLENGE}},
     {description: 'awaiting the soft prompt', flow: {[MFA_STATE.PROMPT]: MFA_STATE.AWAITING_SOFT_PROMPT}},
     {description: 'registering the credential', flow: {[MFA_STATE.PROMPT]: {[MFA_STATE.CREATING_CREDENTIAL]: MFA_STATE.REGISTERING_KEY}}},
@@ -30,7 +39,9 @@ const STEP_STATES: Array<{description: string; flow: StateValue}> = [
 ];
 
 const FINALIZING_OUTCOME = {[MFA_STATE.OUTCOME]: MFA_STATE.FINALIZING_OUTCOME};
-const AUTHORIZING = {[MFA_STATE.PROMPT]: MFA_STATE.AUTHORIZING};
+// Pinned to the leaf: `matchesState` accepts a shorter expected value, so `authorizing` alone would also
+// match a flow that moved to another child.
+const AUTHORIZING = {[MFA_STATE.PROMPT]: {[MFA_STATE.AUTHORIZING]: MFA_STATE.SIGNING_CHALLENGE}};
 const EXECUTING_SCENARIO_ACTION = {[MFA_STATE.PROMPT]: {[MFA_STATE.AUTHORIZING]: MFA_STATE.EXECUTING_SCENARIO_ACTION}};
 
 /**
@@ -102,15 +113,14 @@ describe('MFA cancel', () => {
     describe('while the dialog is visible', () => {
         it('hides the dialog on DISMISS_CANCEL without touching the flow step', () => {
             // Given the dialog is open over the authorizing step
-            const flow = {[MFA_STATE.PROMPT]: MFA_STATE.AUTHORIZING};
-            const actor = createActorAtState(openAt(flow, MFA_STATE.CANCEL_CONFIRM_VISIBLE));
+            const actor = createActorAtState(openAt(AUTHORIZING, MFA_STATE.CANCEL_CONFIRM_VISIBLE));
 
             // When the user chooses to keep going
             actor.start();
             actor.send({type: 'DISMISS_CANCEL'});
 
             // Then the dialog hides and the flow stays on its step, so the user continues without redoing any work
-            expect(matchesState(openAt(flow), actor.getSnapshot().value)).toBe(true);
+            expect(matchesState(openAt(AUTHORIZING), actor.getSnapshot().value)).toBe(true);
 
             actor.stop();
         });
@@ -162,6 +172,47 @@ describe('MFA cancel', () => {
 
             actor.stop();
         });
+
+        it('closes the modal and hides the dialog on CLOSE_MODAL', () => {
+            // Given the dialog is open over the authorizing step
+            const actor = createActorAtState(openAt(AUTHORIZING, MFA_STATE.CANCEL_CONFIRM_VISIBLE));
+
+            // When the modal is closed from outside the dialog, e.g. because the account changed
+            actor.start();
+            actor.send({type: 'CLOSE_MODAL'});
+
+            // Then the modal closes and takes the dialog with it, so it can't linger over the closing navigator
+            const result = actor.getSnapshot();
+            expect(result.matches(MFA_STATE.CLOSING)).toBe(true);
+            expect(snapshotToState(result).isCancelConfirmVisible).toBe(false);
+
+            actor.stop();
+        });
+    });
+
+    describe('starting a new flow after a cancel', () => {
+        it('opens with the dialog hidden', () => {
+            // Given a flow that was cancelled from the dialog and closed, with the next flow's first step held open
+            const machine = mfaMachine.provide({
+                actors: {validateDevice: fromPromise<MFAResult, ValidateDeviceInput>(() => new Promise(() => {}))},
+            });
+            const snapshot = machine.resolveState({value: openAt(AUTHORIZING, MFA_STATE.CANCEL_CONFIRM_VISIBLE), context: createFlowContext()});
+            const actor = createActor(machine, {snapshot});
+            actor.start();
+            actor.send({type: 'CONFIRM_CANCEL'});
+            actor.send({type: 'MODAL_CLOSED'});
+            expect(actor.getSnapshot().matches(MFA_STATE.CLOSED)).toBe(true);
+
+            // When a new flow starts
+            actor.send(createInitEvent());
+
+            // Then it opens with no dialog, so a cancel confirmed last time can't greet the user again
+            const result = actor.getSnapshot();
+            expect(matchesState(openAt({[MFA_STATE.PREPARING]: MFA_STATE.VALIDATING_DEVICE}), result.value)).toBe(true);
+            expect(snapshotToState(result).isCancelConfirmVisible).toBe(false);
+
+            actor.stop();
+        });
     });
 
     describe('confirming the cancel', () => {
@@ -173,7 +224,7 @@ describe('MFA cancel', () => {
             actor.start();
             actor.send({type: 'CONFIRM_CANCEL'});
 
-            // Then the modal closes with the dialog hidden, the same way every cancel path closed it before the dialog
+            // Then the modal closes with the dialog hidden
             const result = actor.getSnapshot();
             expect(result.matches(MFA_STATE.CLOSING)).toBe(true);
             expect(snapshotToState(result).isCancelConfirmVisible).toBe(false);

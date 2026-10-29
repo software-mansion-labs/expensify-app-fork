@@ -130,6 +130,7 @@ describe('MFA outcome finalization', () => {
             const actor = createActorAtState({[MFA_STATE.OPEN]: {...FINALIZING_OUTCOME_STATE[MFA_STATE.OPEN], ...CANCEL_CONFIRM_VISIBLE}}, {scenarioResponse: MFA_TEST_SCENARIO_RESPONSE});
 
             actor.start();
+
             // When the scenario callback asks to skip the outcome screen
             sendFinalizeOutcomeDone(actor, {callbackResponse: CALLBACK_RESPONSE.SKIP_OUTCOME_SCREEN});
 
@@ -148,6 +149,7 @@ describe('MFA outcome finalization', () => {
             const actor = createActorAtState({[MFA_STATE.OPEN]: {...FINALIZING_OUTCOME_STATE[MFA_STATE.OPEN], ...CANCEL_CONFIRM_VISIBLE}});
 
             actor.start();
+
             // When the scenario callback asks to show the outcome screen
             sendFinalizeOutcomeDone(actor, MFA_TEST_FINALIZE_OUTCOME_SHOW_SCREEN);
 
@@ -202,6 +204,7 @@ describe('MFA outcome finalization', () => {
 
             // When the ceremony and scenario action succeed
             sendAuthorizationSuccess(actor);
+
             // Then the flow is waiting on the callback
             expect(actor.getSnapshot().matches(FINALIZING_OUTCOME_STATE)).toBe(true);
             expect(resolveFinalize).toBeDefined();
