@@ -95,6 +95,27 @@ describe('useCreateMenuVisibility', () => {
         expect(result.current.isCreateMenuActive).toBe(true);
     });
 
+    it('drops an open still waiting on the measurement once the screen loses focus', async () => {
+        // Given a button that started measuring before opening the menu
+        const {result} = renderHook(() => useCreateMenuVisibility());
+        let finishMeasuring: () => void = () => {};
+        const measure = () =>
+            new Promise<void>((resolve) => {
+                finishMeasuring = resolve;
+            });
+        act(() => result.current.toggleCreateMenu(measure));
+
+        // When the screen blurs before the measurement finishes, and then it finishes
+        blurScreen();
+        await act(async () => {
+            finishMeasuring();
+            await Promise.resolve();
+        });
+
+        // Then the menu stays closed, so it never pops up over a screen the user already left
+        expect(result.current.isCreateMenuActive).toBe(false);
+    });
+
     it('does not open on a narrow layout while the screen is out of focus', () => {
         // Given a narrow layout whose screen is not focused
         mockScreen({shouldUseNarrowLayout: true, isFocused: false});

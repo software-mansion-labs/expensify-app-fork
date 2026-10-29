@@ -201,6 +201,9 @@ export default {
     // Horizontal inset every row's background sits at, inside the bar's own width.
     flatNavigationBarRowInset: 8,
     flatNavigationBarHeaderHeight: 72,
+    flatNavigationBarCreateButtonHeight: 32,
+    flatNavigationBarCreateRowInset: 14,
+    flatNavigationBarCreateRowGap: 16,
     flatNavigationBarLogoWidth,
     flatNavigationBarLogoHeight,
     popoverMargin: 18,
