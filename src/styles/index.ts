@@ -887,6 +887,23 @@ const staticStyles = (theme: ThemeColors) =>
             paddingRight: 12,
         },
 
+        flatNavigationBarCreateRow: {
+            marginHorizontal: variables.flatNavigationBarCreateRowInset,
+            marginBottom: variables.flatNavigationBarCreateRowGap,
+        },
+
+        flatNavigationBarCreateButton: {
+            height: variables.flatNavigationBarCreateButtonHeight,
+            minHeight: variables.flatNavigationBarCreateButtonHeight,
+            minWidth: variables.flatNavigationBarCreateButtonHeight,
+        },
+
+        flatNavigationBarCreateButtonCompact: {
+            width: variables.flatNavigationBarCreateButtonHeight,
+            paddingHorizontal: 0,
+            borderRadius: variables.flatNavigationBarCreateButtonHeight / 2,
+        },
+
         flatNavigationBarItem: {
             flexDirection: 'row',
             alignItems: 'center',
