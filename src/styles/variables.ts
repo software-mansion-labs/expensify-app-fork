@@ -196,6 +196,9 @@ export default {
     // Space between a row's background edge and its icon. The header and dividers line up with the icon, at the inset plus this.
     flatNavigationBarRowPadding: 12,
     flatNavigationBarHeaderHeight: 72,
+    flatNavigationBarCreateButtonHeight: 32,
+    flatNavigationBarCreateRowInset: 14,
+    flatNavigationBarCreateRowGap: 16,
     flatNavigationBarLogoWidth,
     flatNavigationBarLogoHeight,
     popoverMargin: 18,
