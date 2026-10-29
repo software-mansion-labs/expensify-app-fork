@@ -115,7 +115,7 @@ function MultifactorAuthenticationContextProvider({children}: MultifactorAuthent
     const notifyValidateCodeChanged = () => send({type: 'VALIDATE_CODE_CHANGED'});
 
     const requestCancel = () => send({type: 'REQUEST_CANCEL'});
-    const hideCancelConfirm = () => send({type: 'DISMISS_CANCEL'});
+    const dismissCancel = () => send({type: 'DISMISS_CANCEL'});
     const confirmCancel = () => send({type: 'CONFIRM_CANCEL'});
 
     useSyncMfaModalNavigatorWithHistory(state.modalState, requestCancel);
@@ -131,7 +131,7 @@ function MultifactorAuthenticationContextProvider({children}: MultifactorAuthent
         resendValidateCode,
         notifyValidateCodeChanged,
         requestCancel,
-        hideCancelConfirm,
+        dismissCancel,
         confirmCancel,
     };
 

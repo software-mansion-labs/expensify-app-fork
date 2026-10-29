@@ -184,11 +184,11 @@ function createMfaEventExecutors(executeScenario: ExecuteScenario) {
             await waitForBatchedUpdatesWithAct();
         },
         DISMISS_CANCEL: async () => {
-            fireEvent.press(screen.getByTestId(TEST_ID.CANCEL_CONFIRM_CANCEL_BUTTON));
+            fireEvent.press(screen.getByTestId(TEST_ID.CANCEL_DIALOG_DISMISS_BUTTON));
             await waitForBatchedUpdatesWithAct();
         },
         CONFIRM_CANCEL: async () => {
-            fireEvent.press(screen.getByTestId(TEST_ID.CANCEL_CONFIRM_CONFIRM_BUTTON));
+            fireEvent.press(screen.getByTestId(TEST_ID.CANCEL_DIALOG_CONFIRM_BUTTON));
             await waitForBatchedUpdatesWithAct();
         },
         [actorDoneEventType('validateDevice')]: (step) => settleActor(() => validateDeviceControl.resolve(getActorDoneOutput(step))),

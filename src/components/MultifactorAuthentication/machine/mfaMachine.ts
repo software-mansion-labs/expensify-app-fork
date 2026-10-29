@@ -28,7 +28,9 @@ const AUTHORIZING_TARGET = `#${MFA_STATE.PROMPT}.${MFA_STATE.AUTHORIZING}` as co
 // `closing` is a sibling of `open`, not of `outcome`, so the finalize actor's SKIP_OUTCOME_SCREEN exit
 // needs an absolute target the same way the branches above do.
 const CLOSING_TARGET = `#${MFA_STATE.CLOSING}` as const;
-const CANCEL_CONFIRM_VISIBLE_TARGET = `#${MFA_STATE.CANCEL_CONFIRM_VISIBLE}` as const;
+// The state is just `visible`, so its id spells out the region to stay unique across the machine.
+const CANCEL_CONFIRM_VISIBLE_ID = 'cancelConfirmVisible';
+const CANCEL_CONFIRM_VISIBLE_TARGET = `#${CANCEL_CONFIRM_VISIBLE_ID}` as const;
 
 // One literal shared by both branches of an explicit soft-prompt approval, so they can't drift apart.
 const SOFT_PROMPT_ACCEPTED_ACTIONS = ['approveSoftPrompt', 'persistSoftPromptAcceptance'] as const;
@@ -169,8 +171,8 @@ const MFAMachine = setup({
                 [MFA_STATE.FLOW]: {
                     initial: MFA_STATE.PREPARING,
                     on: {
-                        // Declared once for every step. For now a confirmed cancel closes the modal, as every cancel
-                        // path did before the dialog. Leaving `open` stops the running step and aborts its signal.
+                        // Declared once for every step. A confirmed cancel closes the modal. Leaving `open` stops the
+                        // running step and aborts its signal.
                         CONFIRM_CANCEL: {guard: stateIn(CANCEL_CONFIRM_VISIBLE_TARGET), target: CLOSING_TARGET},
                     },
                     states: {
@@ -508,7 +510,7 @@ const MFAMachine = setup({
                             },
                         },
                         [MFA_STATE.CANCEL_CONFIRM_VISIBLE]: {
-                            id: MFA_STATE.CANCEL_CONFIRM_VISIBLE,
+                            id: CANCEL_CONFIRM_VISIBLE_ID,
                             on: {
                                 DISMISS_CANCEL: MFA_STATE.CANCEL_CONFIRM_HIDDEN,
                             },

@@ -42,10 +42,7 @@ type ConfirmContentProps = {
     /** Cancel button text */
     cancelText?: string;
 
-    /** testID of the confirm button */
     confirmButtonTestID?: string;
-
-    /** testID of the cancel button */
     cancelButtonTestID?: string;
 
     /** Modal content text/element */

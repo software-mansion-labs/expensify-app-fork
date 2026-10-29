@@ -30,8 +30,9 @@ function getHistory(): readonly unknown[] {
  *
  * Back press does NOT close the modal directly — it re-pins the marker (URL
  * stays put) and delegates to `requestCancel`: the machine shows the
- * cancel-confirmation modal during a flow step and closes the modal on an
- * outcome screen.
+ * cancel-confirmation modal while a flow step can still be cancelled, closes
+ * the modal once the flow has its outcome, and ignores the request while the
+ * dialog is already up.
  *
  * Marker lifecycle and back-press subscriptions are split across two effects
  * so re-subscribing on `requestCancel` change does not toggle the history
