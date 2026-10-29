@@ -82,22 +82,8 @@ describe('MFA cancel', () => {
             actor.stop();
         });
 
-        it('is ignored while the outcome is being finalized', () => {
-            // Given the outcome is being finalized, so the scenario's callback is running and the result can no longer be taken back
-            const actor = createActorAtState(openAt(FINALIZING_OUTCOME));
-
-            // When the user asks to cancel
-            actor.start();
-            actor.send({type: 'REQUEST_CANCEL'});
-
-            // Then nothing changes, because a dialog now would ask about a decision that is already made
-            expect(matchesState(openAt(FINALIZING_OUTCOME), actor.getSnapshot().value)).toBe(true);
-
-            actor.stop();
-        });
-
-        it.each([MFA_STATE.SUCCESS, MFA_STATE.FAILURE])('closes the modal from the %s outcome', (outcome) => {
-            // Given the flow already shows its final outcome screen, so there is nothing left to cancel
+        it.each([MFA_STATE.FINALIZING_OUTCOME, MFA_STATE.SUCCESS, MFA_STATE.FAILURE])('closes the modal from the %s outcome', (outcome) => {
+            // Given the flow has its result, whether the callback is still running or the outcome screen already shows, so there is nothing left to cancel
             const actor = createActorAtState(openAt({[MFA_STATE.OUTCOME]: outcome}));
 
             // When the user presses back or cancel

@@ -450,6 +450,9 @@ const MFAMachine = setup({
                         [MFA_STATE.OUTCOME]: {
                             id: MFA_STATE.OUTCOME,
                             initial: MFA_STATE.FINALIZING_OUTCOME,
+                            // The result is decided before `outcome` is entered, so there is nothing a dialog could ask about:
+                            // back closes the modal from every outcome state, including while the callback still runs.
+                            on: {REQUEST_CANCEL: CLOSING_TARGET},
                             states: {
                                 // Runs the scenario's callback (and, when it returns SKIP_OUTCOME_SCREEN, lets the
                                 // callback own navigation instead of showing an outcome screen) before deciding
@@ -490,14 +493,8 @@ const MFAMachine = setup({
                                         onError: [{guard: 'hasError', target: MFA_STATE.FAILURE}, {target: MFA_STATE.SUCCESS}],
                                     },
                                 },
-                                [MFA_STATE.SUCCESS]: {
-                                    entry: ['navigateToSuccessOutcome'],
-                                    on: {REQUEST_CANCEL: CLOSING_TARGET},
-                                },
-                                [MFA_STATE.FAILURE]: {
-                                    entry: ['navigateToFailureOutcome'],
-                                    on: {REQUEST_CANCEL: CLOSING_TARGET},
-                                },
+                                [MFA_STATE.SUCCESS]: {entry: ['navigateToSuccessOutcome']},
+                                [MFA_STATE.FAILURE]: {entry: ['navigateToFailureOutcome']},
                             },
                         },
                     },

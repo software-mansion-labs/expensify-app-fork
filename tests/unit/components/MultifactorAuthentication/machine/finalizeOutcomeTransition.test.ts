@@ -188,7 +188,7 @@ describe('MFA outcome finalization', () => {
     });
 
     describe('closing while the actor is in flight', () => {
-        it('moves to closing on CLOSE_MODAL and ignores the late actor result', async () => {
+        it('moves to closing on REQUEST_CANCEL and ignores the late actor result', async () => {
             // Given a scenario callback that is still running when the flow reaches finalization
             let resolveFinalize: ((output: FinalizeOutcomeOutput) => void) | undefined;
             const {actor} = startFlowEnteringFinalization(
@@ -206,11 +206,13 @@ describe('MFA outcome finalization', () => {
             expect(actor.getSnapshot().matches(FINALIZING_OUTCOME_STATE)).toBe(true);
             expect(resolveFinalize).toBeDefined();
 
-            // When the user closes the modal before the callback answers
-            actor.send({type: 'CLOSE_MODAL'});
+            // When the user presses back before the callback answers
+            actor.send({type: 'REQUEST_CANCEL'});
 
-            // Then the modal closes right away rather than waiting on the callback
-            expect(actor.getSnapshot().matches(MFA_STATE.CLOSING)).toBe(true);
+            // Then the modal closes right away, with no dialog, rather than waiting on the callback
+            const closing = actor.getSnapshot();
+            expect(closing.matches(MFA_STATE.CLOSING)).toBe(true);
+            expect(snapshotToState(closing).isCancelConfirmVisible).toBe(false);
 
             // When the callback answers late
             // The callback promise cannot be cancelled and may still navigate on its own; its answer,
