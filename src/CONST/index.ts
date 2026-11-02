@@ -10205,6 +10205,9 @@ const CONST = {
         WISE_MORE_INFO_NEEDED: {
             CONTINUE: 'WiseMoreInfoNeeded-Continue',
         },
+        WISE_ACCOUNT_APPROVED: {
+            DONE: 'WiseAccountApproved-Done',
+        },
         PRODUCT_MARKETING_WINDOW: {
             CTA: 'ProductMarketingWindow-CTA',
             DISMISS: 'ProductMarketingWindow-Dismiss',

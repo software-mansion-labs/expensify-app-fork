@@ -1,5 +1,6 @@
 import createDynamicRoute from '@libs/Navigation/helpers/dynamicRoutesUtils/createDynamicRoute';
 import stripDynamicRouteSuffixFromPath from '@libs/Navigation/helpers/dynamicRoutesUtils/stripDynamicRouteSuffixFromPath';
+import getAdaptedStateFromPath from '@libs/Navigation/helpers/getAdaptedStateFromPath';
 import getStateFromPath from '@libs/Navigation/helpers/getStateFromPath';
 
 import CONST from '@src/CONST';
@@ -24,6 +25,10 @@ function getFocusedRoute(state: PartialState<NavigationState>): FocusedRoute {
     }
 
     return route;
+}
+
+function getRouteNames(state: PartialState<NavigationState> | undefined): string[] {
+    return (state?.routes ?? []).flatMap((route) => [route.name, ...getRouteNames(route.state)]);
 }
 
 const ENTRY_POINTS = [
@@ -73,6 +78,18 @@ describe('Wise business onboarding dynamic routes', () => {
         // Then the page is focused with the bank account from the intro underneath
         expect(focusedRoute.name).toBe(screen);
         expect(focusedRoute.params).toMatchObject({bankAccountID: String(BANK_ACCOUNT_ID)});
+    });
+
+    it("opens the account approval over Wallet from Wise's redirect, since the app loads fresh there on web", () => {
+        // Given the URL Wise sends the user back to once its KYC form ends
+        const route = ROUTES.WISE_KYC_COMPLETE;
+
+        // When the URL is turned into the navigation state the tab loads with after Wise's redirect
+        const state = getAdaptedStateFromPath(route);
+
+        // Then the approval is focused with Wallet underneath, so leaving it lands where the flow started
+        expect(getFocusedRoute(state).name).toBe(SCREENS.SETTINGS.WALLET.WISE_ACCOUNT_APPROVED);
+        expect(getRouteNames(state)).toContain(SCREENS.SETTINGS.WALLET.ROOT);
     });
 
     it.each(ENTRY_POINTS)('goes back from the onboarding to the intro from %s', (_label, basePath) => {

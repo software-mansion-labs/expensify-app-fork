@@ -2754,6 +2754,8 @@ const ROUTES = {
     },
     SETTINGS_WALLET_TRAVEL_CVV: 'settings/wallet/travel-cvv',
     SETTINGS_WALLET_TRAVEL_CVV_VERIFY_ACCOUNT: `settings/wallet/travel-cvv/${VERIFY_ACCOUNT}`,
+    // Wise sends the user here when its KYC form ends, so the path must match the redirect URL the backend gives Wise
+    WISE_KYC_COMPLETE: 'wise-kyc-complete',
     SETTINGS_AGENTS: 'settings/agents',
     AGENT_REPORT: {
         route: 'settings/agents/r/:reportID',

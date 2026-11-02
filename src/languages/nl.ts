@@ -3115,6 +3115,11 @@ const translations: TranslationDeepObject<typeof en> = {
                 title: 'Extra info verifiëren',
                 subtitle: 'Onze betalingspartner heeft rechtstreeks meer info nodig. Dit kost maar een paar minuten.',
             },
+            accountApproved: {
+                headerTitle: 'Account goedgekeurd',
+                title: 'Goedgekeurd om wereldwijd te betalen',
+                subtitle: 'Betaal leden waar ze ook zijn.',
+            },
         },
         wiseGlobalReimbursementsIntro: {
             title: 'Wereldwijde terugbetalingen instellen?',

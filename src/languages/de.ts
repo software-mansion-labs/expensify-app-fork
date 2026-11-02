@@ -3123,6 +3123,11 @@ const translations: TranslationDeepObject<typeof en> = {
                 title: 'Zusätzliche Informationen verifizieren',
                 subtitle: 'Unser Zahlungspartner benötigt direkt weitere Informationen. Das sollte nur ein paar Minuten dauern.',
             },
+            accountApproved: {
+                headerTitle: 'Konto genehmigt',
+                title: 'Für weltweite Zahlungen freigegeben',
+                subtitle: 'Bezahle Mitglieder, wo immer sie sind.',
+            },
         },
         wiseGlobalReimbursementsIntro: {
             title: 'Globale Rückerstattungen einrichten?',

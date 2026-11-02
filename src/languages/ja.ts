@@ -3087,6 +3087,11 @@ const translations: TranslationDeepObject<typeof en> = {
                 error: '続行するにはすべての規約に同意してください。',
             },
             moreInfoNeeded: {headerTitle: '詳細情報が必要です', title: '追加情報を確認', subtitle: '決済パートナーが直接、追加情報を必要としています。数分で完了します。'},
+            accountApproved: {
+                headerTitle: 'アカウントが承認されました',
+                title: '世界中への支払いが承認されました',
+                subtitle: 'メンバーがどこにいても支払えます。',
+            },
         },
         wiseGlobalReimbursementsIntro: {
             title: 'グローバル払い戻しを設定しますか？',

@@ -3197,6 +3197,11 @@ const translations = {
                 title: 'Verify additional info',
                 subtitle: 'Our payments partner needs more info directly. This should only take a couple of minutes.',
             },
+            accountApproved: {
+                headerTitle: 'Account approved',
+                title: 'Approved to pay worldwide',
+                subtitle: 'Pay members wherever they are.',
+            },
         },
         wiseGlobalReimbursementsIntro: {
             headerTitle: 'Global reimbursements',
