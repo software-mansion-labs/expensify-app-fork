@@ -17,7 +17,7 @@ import useThemeStyles from '@hooks/useThemeStyles';
 import {getLatestErrorMessage} from '@libs/ErrorUtils';
 import stripDynamicRouteSuffixFromPath from '@libs/Navigation/helpers/dynamicRoutesUtils/stripDynamicRouteSuffixFromPath';
 import type {PlatformStackScreenProps} from '@libs/Navigation/PlatformStackNavigation/types';
-import openExternalLink from '@libs/openExternalLink';
+import openWiseKYCReviewForm from '@libs/openWiseKYCReviewForm';
 
 import Navigation from '@navigation/Navigation';
 import type {SettingsNavigatorParamList} from '@navigation/types';
@@ -70,7 +70,7 @@ function WiseMoreInfoNeededPage({route}: WiseMoreInfoNeededPageProps) {
         if (!hasRequestedLink || !kycReviewURL) {
             return;
         }
-        openExternalLink(kycReviewURL, undefined, true);
+        openWiseKYCReviewForm(kycReviewURL);
     }, [hasRequestedLink, kycReviewURL]);
 
     // The link carries a token, so it does not outlive the page

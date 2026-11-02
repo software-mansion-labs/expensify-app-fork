@@ -11,6 +11,8 @@ import type {LinkingOptions} from '@react-navigation/native';
 import {findFocusedRoute} from '@react-navigation/native';
 import {Linking} from 'react-native';
 
+import getPathnameFromURL from './getPathnameFromURL';
+
 /**
  * Rules for dropping a deep link that would re-navigate to a screen the user is already on.
  */
@@ -28,13 +30,6 @@ const skipRules: ReadonlyArray<{urlMatcher: RegExp; focusedScreens: readonly str
         ],
     },
 ];
-
-/**
- * Returns the URL's path, without its query string or fragment.
- */
-function getPathnameFromURL(url: string): string {
-    return url.split(/[?#]/).at(0) ?? '';
-}
 
 const subscribe: LinkingOptions<RootNavigatorParamList>['subscribe'] = (listener) => {
     const subscription = Linking.addEventListener('url', ({url}: {url: string}) => {

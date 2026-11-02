@@ -1,6 +1,7 @@
 import {read} from '@libs/API';
 import {READ_COMMANDS} from '@libs/API/types';
 import {getMicroSecondOnyxErrorWithTranslationKey} from '@libs/ErrorUtils';
+import getPlatform from '@libs/getPlatform';
 
 import ONYXKEYS from '@src/ONYXKEYS';
 import type {OnyxData} from '@src/types/onyx/Request';
@@ -33,7 +34,7 @@ function getWiseKYCReviewEmbeddedLink(bankAccountID: number) {
         ],
     };
 
-    read(READ_COMMANDS.GET_WISE_KYC_REVIEW_EMBEDDED_LINK, {bankAccountID}, onyxData);
+    read(READ_COMMANDS.GET_WISE_KYC_REVIEW_EMBEDDED_LINK, {bankAccountID, platform: getPlatform()}, onyxData);
 }
 
 /** Drops the link, which carries a token */

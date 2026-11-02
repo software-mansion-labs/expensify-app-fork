@@ -5,7 +5,7 @@ import OnyxListItemProvider from '@components/OnyxListItemProvider';
 import Navigation, {navigationRef} from '@libs/Navigation/Navigation';
 import createPlatformStackNavigator from '@libs/Navigation/PlatformStackNavigation/createPlatformStackNavigator';
 import type {SettingsNavigatorParamList} from '@libs/Navigation/types';
-import openExternalLink from '@libs/openExternalLink';
+import openWiseKYCReviewForm from '@libs/openWiseKYCReviewForm';
 
 import WiseMoreInfoNeededPage from '@pages/settings/Wallet/EnableGlobalReimbursements/Wise/WiseMoreInfoNeededPage';
 
@@ -26,7 +26,7 @@ const CONTINUE_BUTTON_TEST_ID = 'confirmation-primary-button';
 const KYC_REVIEW_URL = 'https://sandbox.transferwise.tech/embedded-flows/kyc-review?token=abc';
 
 jest.mock('@userActions/Wise', () => ({getWiseKYCReviewEmbeddedLink: jest.fn(), clearWiseKYCReviewEmbeddedLink: jest.fn()}));
-jest.mock('@libs/openExternalLink', () => jest.fn());
+jest.mock('@libs/openWiseKYCReviewForm', () => jest.fn());
 jest.mock('@hooks/useDynamicBackPath', () => jest.fn(() => 'settings/wallet/global-reimbursements/9053192'));
 jest.mock('@hooks/useLocalize', () => jest.fn(() => ({translate: (key: string) => key})));
 
@@ -69,8 +69,8 @@ describe('WiseMoreInfoNeededPage', () => {
         await act(() => Onyx.set(ONYXKEYS.RAM_ONLY_WISE_KYC_REVIEW_EMBEDDED_LINK, {url: KYC_REVIEW_URL, isLoading: false}));
         await waitForBatchedUpdatesWithAct();
 
-        // Then the user leaves for Wise's form in the same tab
-        expect(openExternalLink).toHaveBeenCalledWith(KYC_REVIEW_URL, undefined, true);
+        // Then Wise's form opens with the link that arrived
+        expect(openWiseKYCReviewForm).toHaveBeenCalledWith(KYC_REVIEW_URL);
     });
 
     it('goes back to the screen the flow started from', async () => {

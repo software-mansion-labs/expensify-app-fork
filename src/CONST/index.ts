@@ -1048,6 +1048,9 @@ const CONST = {
         TERMS_URL: 'https://wise.com/terms-and-conditions',
         PRIVACY_URL: 'https://wise.com/privacy-policy',
 
+        /** Where Wise sends the mobile app back from its hosted KYC form. The in-app browser that opened the form consumes it, so no screen lives here. */
+        NATIVE_KYC_REVIEW_REDIRECT_URL: 'new-expensify://wise-kyc-complete',
+
         /** Server-derived state of the Wise onboarding */
         ONBOARDING_STATUS: {
             IN_REVIEW: 'IN_REVIEW',
