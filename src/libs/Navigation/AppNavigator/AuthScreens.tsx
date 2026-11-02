@@ -57,6 +57,7 @@ import type {StackCardInterpolationProps} from '@react-navigation/stack';
 
 import React, {useEffect} from 'react';
 
+import AppIntentsHandler from './AppIntentsHandler';
 import attachmentModalScreenOptions from './attachmentModalScreenOptions';
 import AuthScreensInitHandler from './AuthScreensInitHandler';
 import createRootStackNavigator from './createRootStackNavigator';
@@ -199,6 +200,7 @@ function AuthScreens() {
                     ]}
                 >
                     <KeyboardShortcutsHandler />
+                    <AppIntentsHandler />
                     <RootStack.Navigator persistentScreens={[NAVIGATORS.TAB_NAVIGATOR, NAVIGATORS.RIGHT_MODAL_NAVIGATOR]}>
                         {/* TAB_NAVIGATOR (containing Home and Workspaces) has to be the first navigator in auth screens. */}
                         <RootStack.Screen
