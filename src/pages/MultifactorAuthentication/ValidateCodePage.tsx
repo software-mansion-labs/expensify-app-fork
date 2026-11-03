@@ -51,7 +51,7 @@ function MultifactorAuthenticationValidateCodePage() {
     const [formError, setFormError] = useState<FormError>({});
     const [canShowError, setCanShowError] = useState<boolean>(false);
     const {requestCancel, submitValidateCode, resendValidateCode, notifyValidateCodeChanged, state} = useMultifactorAuthenticationInternal();
-    const {showsInvalidCodeError, isCancelConfirmVisible, isCancelConfirmed, canResendValidateCode, isValidateCodeFormSubmitting} = state;
+    const {showsInvalidCodeError, isCancelConfirmVisible, isCancelConfirmed, canResendValidateCode, isValidateCodeFormSubmitting, isWaitingForNetwork} = state;
 
     // Refs
     const inputRef = useRef<ValidateCodeInputHandle>(null);
@@ -185,9 +185,54 @@ function MultifactorAuthenticationValidateCodePage() {
         submitValidateCode(inputCode);
     };
 
+    const form = (
+        <>
+            <Text style={[styles.m5, styles.mt3, styles.textNormal]}>{translate('contacts.enterSecurityCode', contactMethod)}</Text>
+            <View style={[styles.mh5]}>
+                <ValidateCodeInput
+                    autoComplete="one-time-code"
+                    testID={CONST.MULTIFACTOR_AUTHENTICATION.TEST_ID.VALIDATE_CODE_INPUT}
+                    name="multifactorAuthenticationValidateCode"
+                    value={inputCode}
+                    onChangeText={onCodeInput}
+                    onFulfill={validateAndSubmitForm}
+                    errorText={canShowError && formError.inputCode ? translate(formError.inputCode) : ''}
+                    hasError={hasError}
+                    ref={inputRef}
+                    maxLength={CONST.VALIDATE_CODE_LENGTH}
+                />
+                <MultifactorAuthenticationValidateCodeResendButton
+                    ref={resendButtonRef}
+                    shouldDisableResendCode={shouldDisableResendCode}
+                    hasError={hasError}
+                    resendButtonText="validateCodeForm.securityCodeNotReceived"
+                    onResendValidationCode={resendValidationCode}
+                />
+            </View>
+            <View style={[styles.w100, styles.mtAuto]}>
+                {!!errorMessage && (
+                    <FormHelpMessage
+                        style={[styles.mh5]}
+                        message={errorMessage}
+                    />
+                )}
+                <Button
+                    success
+                    large
+                    testID={CONST.MULTIFACTOR_AUTHENTICATION.TEST_ID.VALIDATE_CODE_SUBMIT_BUTTON}
+                    style={[styles.w100, styles.ph5, styles.pb5, styles.mt4]}
+                    onPress={validateAndSubmitForm}
+                    text={translate('common.verify')}
+                    isLoading={isFormBusy}
+                />
+            </View>
+        </>
+    );
+
     return (
         <ScreenWrapper
             testID={MultifactorAuthenticationValidateCodePage.displayName}
+            shouldShowOfflineIndicator={false}
             focusTrapSettings={{
                 // Turn the trap off while the cancel confirmation modal is up so it can't swallow
                 // the modal's clicks, and back on when it closes. See https://github.com/Expensify/App/issues/93193
@@ -203,48 +248,8 @@ function MultifactorAuthenticationValidateCodePage() {
                 onBackButtonPress={requestCancel}
                 shouldShowBackButton
             />
-            <FullPageOfflineBlockingView>
-                <Text style={[styles.m5, styles.mt3, styles.textNormal]}>{translate('contacts.enterSecurityCode', contactMethod)}</Text>
-                <View style={[styles.mh5]}>
-                    <ValidateCodeInput
-                        autoComplete="one-time-code"
-                        testID={CONST.MULTIFACTOR_AUTHENTICATION.TEST_ID.VALIDATE_CODE_INPUT}
-                        name="multifactorAuthenticationValidateCode"
-                        value={inputCode}
-                        onChangeText={onCodeInput}
-                        onFulfill={validateAndSubmitForm}
-                        errorText={canShowError && formError.inputCode ? translate(formError.inputCode) : ''}
-                        hasError={hasError}
-                        ref={inputRef}
-                        maxLength={CONST.VALIDATE_CODE_LENGTH}
-                    />
-                    <MultifactorAuthenticationValidateCodeResendButton
-                        ref={resendButtonRef}
-                        shouldDisableResendCode={shouldDisableResendCode}
-                        hasError={hasError}
-                        resendButtonText="validateCodeForm.securityCodeNotReceived"
-                        onResendValidationCode={resendValidationCode}
-                    />
-                </View>
-                <View style={[styles.w100, styles.mtAuto]}>
-                    {!!errorMessage && (
-                        <FormHelpMessage
-                            style={[styles.mh5]}
-                            message={errorMessage}
-                        />
-                    )}
-                    <Button
-                        success
-                        large
-                        testID={CONST.MULTIFACTOR_AUTHENTICATION.TEST_ID.VALIDATE_CODE_SUBMIT_BUTTON}
-                        style={[styles.w100, styles.ph5, styles.pb5, styles.mt4]}
-                        onPress={validateAndSubmitForm}
-                        text={translate('common.verify')}
-                        isLoading={isFormBusy}
-                        isDisabled={isOffline}
-                    />
-                </View>
-            </FullPageOfflineBlockingView>
+            {/* The form works offline. Only a submitted code waiting to be sent swaps it for the offline view. */}
+            {isWaitingForNetwork ? <FullPageOfflineBlockingView>{form}</FullPageOfflineBlockingView> : form}
         </ScreenWrapper>
     );
 }

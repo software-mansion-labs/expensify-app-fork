@@ -48,6 +48,8 @@ const REASON = {
         CANCELED: 'Local: Flow canceled by user',
         /** No HTTP status code present — typically a network failure, JSON parse error, or unhandled exception in an action function. */
         UNHANDLED_API_RESPONSE: 'Local: Missing HTTP status in API response',
+        /** The request got no answer (the connection dropped, or Web-Expensify timed out waiting for Auth), so the server may or may not have it. */
+        NO_RESPONSE: 'Local: No response from the server',
         /** Updating the local passkey credential list failed before backend registration. */
         LOCAL_CREDENTIAL_UPDATE_FAILED: 'Local: Failed to update passkey credentials',
         WEBAUTHN: {
@@ -252,6 +254,7 @@ const MFA_STATE = {
     AWAITING_VALIDATE_CODE: 'awaitingValidateCode',
     AWAITING_INPUT: 'awaitingInput',
     INVALID_CODE: 'invalidCode',
+    READY_TO_REQUEST_REGISTRATION_CHALLENGE: 'readyToRequestRegistrationChallenge',
     REQUESTING_REGISTRATION_CHALLENGE: 'requestingRegistrationChallenge',
     PROMPT: 'prompt',
     AWAITING_SOFT_PROMPT: 'awaitingSoftPrompt',
