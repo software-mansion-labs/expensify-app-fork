@@ -13,7 +13,7 @@ import type {
     ValidateDeviceInput,
 } from '@components/MultifactorAuthentication/machine/types';
 
-import {createLocalMFAError} from '@libs/MultifactorAuthentication/shared/MFAResult';
+import {createLocalMFAError, createMFAErrorFromApiResponse} from '@libs/MultifactorAuthentication/shared/MFAResult';
 import type {MFAResult} from '@libs/MultifactorAuthentication/shared/MFAResult';
 
 import {createScenarioActionRunner} from '@userActions/MultifactorAuthentication/processing';
@@ -144,6 +144,63 @@ describe('MFA authorization', () => {
             expect(result.context.error).toBeUndefined();
 
             actor.stop();
+        });
+
+        describe('lost challenge', () => {
+            const lostChallengeError = createMFAErrorFromApiResponse(0, REASON.LOCAL_ERRORS.NO_RESPONSE);
+
+            it('requests the challenge once more when its answer was lost', () => {
+                // Given the challenge request is running
+                const actor = createActorAtState(SIGNING_CHALLENGE);
+                actor.start();
+
+                // When its answer is lost
+                sendAuthorizeDone(actor, {success: false, error: lostChallengeError});
+
+                // Then the flow asks for a fresh challenge instead of failing, because an unused one just expires on the server
+                const result = actor.getSnapshot();
+                expect(result.matches(SIGNING_CHALLENGE)).toBe(true);
+                expect(result.context.challengeRetries).toBe(1);
+                expect(result.context.error).toBeUndefined();
+
+                actor.stop();
+            });
+
+            it('reaches the failure outcome when the retried challenge is lost too', () => {
+                // Given the flow already requested a lost challenge again
+                const actor = createActorAtState(SIGNING_CHALLENGE, {challengeRetries: 1});
+                actor.start();
+
+                // When that answer is lost as well
+                sendAuthorizeDone(actor, {success: false, error: lostChallengeError});
+                sendFinalizeOutcomeDone(actor, MFA_TEST_FINALIZE_OUTCOME_SHOW_SCREEN);
+
+                // Then the flow ends with the lost-answer error
+                const result = actor.getSnapshot();
+                expect(result.matches({[MFA_STATE.OPEN]: {[MFA_STATE.FLOW]: {[MFA_STATE.OUTCOME]: MFA_STATE.FAILURE}}})).toBe(true);
+                expect(result.context.error).toBe(lostChallengeError);
+
+                actor.stop();
+            });
+
+            it('reaches the failure outcome when the server answered the challenge request with an error', () => {
+                // Given the challenge request is running
+                const actor = createActorAtState(SIGNING_CHALLENGE);
+                const serverError = createMFAErrorFromApiResponse(500, REASON.SERVER_ERRORS.UNRECOGNIZED);
+                actor.start();
+
+                // When the server answers with an error
+                sendAuthorizeDone(actor, {success: false, error: serverError});
+                sendFinalizeOutcomeDone(actor, MFA_TEST_FINALIZE_OUTCOME_SHOW_SCREEN);
+
+                // Then nothing is retried, because an answer isn't lost
+                const result = actor.getSnapshot();
+                expect(result.matches({[MFA_STATE.OPEN]: {[MFA_STATE.FLOW]: {[MFA_STATE.OUTCOME]: MFA_STATE.FAILURE}}})).toBe(true);
+                expect(result.context.error).toBe(serverError);
+                expect(result.context.challengeRetries).toBe(0);
+
+                actor.stop();
+            });
         });
 
         it('reaches the failure outcome with an unhandled-exception error when the actor rejects', async () => {
