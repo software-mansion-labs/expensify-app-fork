@@ -10166,6 +10166,7 @@ const CONST = {
             APPROVE: 'TransactionReview-Approve',
             OUTCOME_CONFIRM: 'TransactionReview-OutcomeConfirm',
             UNFREEZE_CARD: 'TransactionReview-UnfreezeCard',
+            GO_TO_CARD_DETAILS: 'TransactionReview-GoToCardDetails',
         },
         TEST_TOOL_MENU: {
             SERVER: 'TestToolMenu-Server',

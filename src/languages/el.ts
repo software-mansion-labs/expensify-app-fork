@@ -707,6 +707,13 @@ const translations: TranslationDeepObject<typeof en> = {
             yourCardHasBeenFrozen: 'Η κάρτα σας πάγωσε',
             weFrozeYourCard:
                 'Παγώσαμε την κάρτα σας για να αποτρέψουμε περαιτέρω χρεώσεις. Επικοινωνήστε με το <concierge-link>Concierge</concierge-link> αν ανησυχείτε ότι η κάρτα σας έχει παραβιαστεί.',
+            terminateCard: 'Τερματισμός κάρτας',
+            ifYouDoNotReviewWeWillTerminateCard: 'Αν δεν ελέγξετε αυτή τη συναλλαγή, θα τερματίσουμε την κάρτα σας και θα χρειαστεί να ζητήσετε αντικατάσταση.',
+            cardTerminated: 'Η κάρτα τερματίστηκε',
+            yourCardHasBeenTerminated: 'Η κάρτα σας τερματίστηκε',
+            weTerminatedYourCard:
+                'Τερματίσαμε την κάρτα σας για να προστατεύσουμε τον λογαριασμό σας. Μπορείτε να ζητήσετε αντικατάσταση οποιαδήποτε στιγμή ή να <concierge-link>επικοινωνήσετε με το Concierge</concierge-link> αν πιστεύετε ότι επρόκειτο για απάτη.',
+            goToCardDetails: 'Μετάβαση στα στοιχεία της κάρτας',
         },
         unsupportedDevice: {
             unsupportedDevice: 'Μη υποστηριζόμενη συσκευή',

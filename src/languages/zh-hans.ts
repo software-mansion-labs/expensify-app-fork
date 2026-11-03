@@ -752,6 +752,12 @@ const translations: TranslationDeepObject<typeof en> = {
             frozenCard: '已冻结的卡片',
             yourCardHasBeenFrozen: '您的卡片已被冻结',
             weFrozeYourCard: '我们已冻结您的卡片以防止进一步扣款。如果您担心卡片已被盗用，请联系 <concierge-link>Concierge</concierge-link>。',
+            terminateCard: '注销卡片',
+            ifYouDoNotReviewWeWillTerminateCard: '如果您不审核这笔交易，我们将注销您的卡片，您需要申请补发新卡。',
+            cardTerminated: '卡片已注销',
+            yourCardHasBeenTerminated: '您的卡片已被注销',
+            weTerminatedYourCard: '为保护您的账户安全，我们已注销您的卡片。您可以随时申请补发，如认为这是欺诈，请<concierge-link>联系 Concierge</concierge-link>。',
+            goToCardDetails: '前往卡片详情',
         },
         unsupportedDevice: {
             unsupportedDevice: '不支持的设备',

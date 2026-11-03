@@ -771,6 +771,13 @@ const translations: TranslationDeepObject<typeof en> = {
             yourCardHasBeenFrozen: 'Je kaart is bevroren',
             weFrozeYourCard:
                 'We hebben je kaart bevroren om verdere afschrijvingen te voorkomen. Neem contact op met <concierge-link>Concierge</concierge-link> als je denkt dat je kaart is gecompromitteerd.',
+            terminateCard: 'Kaart opheffen',
+            ifYouDoNotReviewWeWillTerminateCard: 'Als je deze transactie niet bekijkt, heffen we je kaart op en moet je een vervangende kaart aanvragen.',
+            cardTerminated: 'Kaart opgeheven',
+            yourCardHasBeenTerminated: 'Je kaart is opgeheven',
+            weTerminatedYourCard:
+                'We hebben je kaart opgeheven om je account te beschermen. Je kunt altijd een vervangende kaart aanvragen, of <concierge-link>contact opnemen met Concierge</concierge-link> als je denkt dat dit fraude was.',
+            goToCardDetails: 'Naar kaartgegevens',
         },
         unsupportedDevice: {
             unsupportedDevice: 'Niet-ondersteund apparaat',
