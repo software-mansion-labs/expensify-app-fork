@@ -52,6 +52,8 @@ function createFlowContext(overrides: Partial<MfaContext> = {}): MfaContext {
         recoveredFrom: undefined,
         challengeRetries: 0,
         resendAttempts: 0,
+        resendReasons: [],
+        userRetries: 0,
         ...overrides,
     };
 }
