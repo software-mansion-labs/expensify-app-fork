@@ -91,6 +91,9 @@ type MfaContext = {
 
     /** The scenario action's result while `cancellingInFlight`, held until `cancellingInFlight` decides the outcome. */
     scenarioActionResult: ExecuteScenarioActionOutput | undefined;
+
+    /** How many times this flow went back to re-registration after a recoverable credential failure. Once it reaches the limit, such a failure ends the flow instead. */
+    recoveryAttempts: number;
 };
 
 /** See `MfaContext.promptPresentationPhase`. */
@@ -206,6 +209,7 @@ type FinalizeOutcomeInput = {
     softPromptApproved: boolean;
     registrationStateAtStart: MFARegistrationStateSnapshot | undefined;
     isCancelConfirmed: boolean;
+    recoveryAttempts: number;
 };
 
 /**
