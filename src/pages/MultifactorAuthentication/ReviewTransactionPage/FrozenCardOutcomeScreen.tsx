@@ -5,8 +5,6 @@ import CardPreview from '@components/CardPreview';
 import useLocalize from '@hooks/useLocalize';
 import useThemeStyles from '@hooks/useThemeStyles';
 
-import variables from '@styles/variables';
-
 import CONST from '@src/CONST';
 
 import React from 'react';
@@ -19,14 +17,7 @@ type FrozenCardOutcomeScreenProps = {
     onClose: () => void;
 };
 
-const SCARF_OVERLAY_STYLE = {
-    top: 0,
-    left: (variables.cardPreviewWidth - variables.cardScarfOverlayWidth) / 2,
-    zIndex: variables.cardScarfOverlayZIndex,
-    width: variables.cardScarfOverlayWidth,
-    height: variables.cardScarfOverlayHeight,
-};
-
+/** Result of reporting fraud when the card gets frozen, with a way to unfreeze it */
 function FrozenCardOutcomeScreen({onUnfreezePress, onClose}: FrozenCardOutcomeScreenProps) {
     const styles = useThemeStyles();
     const {translate} = useLocalize();
@@ -38,7 +29,7 @@ function FrozenCardOutcomeScreen({onUnfreezePress, onClose}: FrozenCardOutcomeSc
                 <View style={styles.mb5}>
                     <CardPreview
                         overlayImage={cardScarf}
-                        overlayContainerStyle={SCARF_OVERLAY_STYLE}
+                        overlayContainerStyle={styles.cardScarfOverlay}
                     />
                 </View>
             }
