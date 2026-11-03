@@ -692,6 +692,16 @@ const translations = {
             alreadyReviewedSubtitle:
                 'You already reviewed this transaction. Please check your <transaction-history-link>transaction history</transaction-history-link> or contact <concierge-link>Concierge</concierge-link> to report any issues.',
         },
+        unconfirmed: {
+            retrying: 'Connection lost. Trying again…',
+            title: "We couldn't confirm it went through",
+            retrySubtitle: "The connection dropped before we heard back. Try again to make sure it's done.",
+            checkSubtitle: 'The connection dropped before we heard back, so it may already be done. Please check before trying again.',
+            decisionTitle: "We couldn't confirm your decision",
+            decisionSubtitle: 'The connection dropped while we were sending it, so it may already be saved. Try again to check.',
+            cardOrderTitle: "We couldn't confirm your card order",
+            cardOrderSubtitle: 'The connection dropped before we heard back, so your card may already be on its way. Check your card in Wallet before ordering again.',
+        },
         unsupportedDevice: {
             unsupportedDevice: 'Unsupported device',
             pleaseDownloadMobileApp: `This action is not supported on your device. Please download the Expensify app from the <a href="${CONST.APP_DOWNLOAD_LINKS.IOS}">App Store</a> or <a href="${CONST.APP_DOWNLOAD_LINKS.ANDROID}">Google Play Store</a> and try again.`,

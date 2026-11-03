@@ -7,6 +7,7 @@ import {MULTIFACTOR_AUTHENTICATION_PROMPT_UI} from '@components/MultifactorAuthe
 import {useMultifactorAuthenticationInternal} from '@components/MultifactorAuthentication/Context/MultifactorAuthenticationInternalApiContext';
 import MultifactorAuthenticationPromptContent from '@components/MultifactorAuthentication/PromptContent';
 import ScreenWrapper from '@components/ScreenWrapper';
+import Text from '@components/Text';
 
 import useLocalize from '@hooks/useLocalize';
 import useThemeStyles from '@hooks/useThemeStyles';
@@ -23,13 +24,16 @@ import type SCREENS from '@src/SCREENS';
 import React from 'react';
 import {View} from 'react-native';
 
+import DecisionUnconfirmedContent from './DecisionUnconfirmedContent';
+
 type MultifactorAuthenticationPromptPageProps = PlatformStackScreenProps<MultifactorAuthenticationModalNavigatorParamList, typeof SCREENS.MULTIFACTOR_AUTHENTICATION.PROMPT>;
 
 function MultifactorAuthenticationPromptPage({route}: MultifactorAuthenticationPromptPageProps) {
     const {translate} = useLocalize();
     const styles = useThemeStyles();
     const {requestCancel, approveSoftPrompt, state} = useMultifactorAuthenticationInternal();
-    const {isCancelConfirmVisible, isCancelConfirmed, isProcessingPrompt, isAuthorizing, softPromptApproved, registrationChallenge, isWaitingForNetwork} = state;
+    const {isCancelConfirmVisible, isCancelConfirmed, isProcessingPrompt, isAuthorizing, softPromptApproved, registrationChallenge, isWaitingForNetwork, isResending, isDecisionUnconfirmed} =
+        state;
 
     const {illustration, title: defaultTitle, subtitle: defaultSubtitle} = MULTIFACTOR_AUTHENTICATION_PROMPT_UI[route.params.promptType];
 
@@ -63,8 +67,15 @@ function MultifactorAuthenticationPromptPage({route}: MultifactorAuthenticationP
             />
             <FixedFooter style={[styles.flexColumn, styles.gap3]}>
                 {isProcessingPrompt || isCancelConfirmed ? (
-                    <View style={[styles.w100, styles.justifyContentCenter, {height: variables.componentSizeLarge}]}>
-                        <LoadingIndicator iconSize={28} />
+                    <View style={styles.w100}>
+                        <View style={[styles.w100, styles.justifyContentCenter, {height: variables.componentSizeLarge}]}>
+                            <LoadingIndicator iconSize={28} />
+                        </View>
+                        {isResending && (
+                            <View style={[styles.pv4, styles.alignItemsCenter]}>
+                                <Text style={styles.textAlignCenter}>{translate('multifactorAuthentication.unconfirmed.retrying')}</Text>
+                            </View>
+                        )}
                     </View>
                 ) : (
                     <Button
@@ -100,7 +111,9 @@ function MultifactorAuthenticationPromptPage({route}: MultifactorAuthenticationP
                 shouldShowBackButton
             />
             {/* The soft prompt works offline. Only a step waiting to send its request swaps the screen for the offline view. */}
-            {isWaitingForNetwork ? <FullPageOfflineBlockingView>{content}</FullPageOfflineBlockingView> : content}
+            {isWaitingForNetwork && <FullPageOfflineBlockingView>{content}</FullPageOfflineBlockingView>}
+            {!isWaitingForNetwork && isDecisionUnconfirmed && <DecisionUnconfirmedContent />}
+            {!isWaitingForNetwork && !isDecisionUnconfirmed && content}
         </ScreenWrapper>
     );
 }

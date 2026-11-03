@@ -28,6 +28,13 @@ describe('MultifactorAuthentication shared helpers', () => {
             expect(result.reason).toBe(VALUES.REASON.CLIENT_ERRORS.REGISTRATION_REQUIRED);
         });
 
+        it.each(Object.entries(VALUES.API_RESPONSE_MAP))('maps an unknown or used challenge for %s', (_, responseMap) => {
+            const result = parseHttpResponse(401, responseMap, '401 Authentication required');
+
+            expect(result.httpStatusCode).toBe(401);
+            expect(result.reason).toBe(VALUES.REASON.CLIENT_ERRORS.AUTHENTICATION_REQUIRED);
+        });
+
         it('should return LOCAL_ERROR for an unmapped HTTP code', () => {
             const responseMap = VALUES.API_RESPONSE_MAP.REQUEST_AUTHENTICATION_CHALLENGE;
             const result = parseHttpResponse(999, responseMap, 'Something is needed');

@@ -105,6 +105,9 @@ type MfaContext = {
     recoveredFrom: RecoveredFrom | undefined;
     /** How many times this flow requested the authorization challenge again after its answer was lost. Once it reaches the limit, a lost one ends the flow instead. */
     challengeRetries: number;
+
+    /** How many times the current signed request was re-sent after its answer was lost. A fresh challenge starts it over. */
+    resendAttempts: number;
 };
 
 /** The steps whose failure a fresh key registration can fix. */
@@ -157,7 +160,9 @@ type MfaEvent =
     | {type: 'DISMISS_CANCEL'}
     | {type: 'CONFIRM_CANCEL'}
     | {type: 'NETWORK_OFFLINE'}
-    | {type: 'NETWORK_ONLINE'};
+    | {type: 'NETWORK_ONLINE'}
+    // Runs the scenario action again with a fresh challenge after the app couldn't confirm the first one.
+    | {type: 'RETRY_WITH_NEW_CHALLENGE'};
 
 /** Describes the input the machine passes to the device-check actor. */
 type ValidateDeviceInput = {allowedAuthenticationMethods: AllowedAuthenticationMethods};

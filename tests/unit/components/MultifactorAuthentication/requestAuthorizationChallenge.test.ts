@@ -31,20 +31,28 @@ describe('requestAuthorizationChallenge', () => {
         expect(result.challenge).toBeUndefined();
     });
 
-    it.each([
-        {
-            description: 'an HTTP 500',
-            error: new HttpsError({message: CONST.ERROR.EXPENSIFY_SERVICE_INTERRUPTED, status: String(CONST.HTTP_STATUS.INTERNAL_SERVER_ERROR), title: 'Issue connecting to Expensify site'}),
-        },
-        {description: 'an unexpected exception', error: new Error('Unexpected')},
-    ])('keeps reporting an unhandled response for $description', async ({error}) => {
-        // Given the request fails with something other than a dropped connection
-        jest.mocked(makeRequestWithSideEffects).mockRejectedValueOnce(error);
+    it('keeps the status of an HTTP error, which is an answer', async () => {
+        // Given the server answers with a 500
+        jest.mocked(makeRequestWithSideEffects).mockRejectedValueOnce(
+            new HttpsError({message: CONST.ERROR.EXPENSIFY_SERVICE_INTERRUPTED, status: String(CONST.HTTP_STATUS.INTERNAL_SERVER_ERROR), title: 'Issue connecting to Expensify site'}),
+        );
 
         // When the challenge is requested
         const result = await requestAuthorizationChallenge();
 
-        // Then it isn't treated as lost, so the machine doesn't ask again
+        // Then it isn't treated as lost, so the machine doesn't ask again, and the failure stays a server error
+        expect(result.httpStatusCode).toBe(CONST.HTTP_STATUS.INTERNAL_SERVER_ERROR);
+        expect(result.reason).toBe(REASON.SERVER_ERRORS.UNRECOGNIZED);
+    });
+
+    it('reports an unhandled response for an unexpected exception', async () => {
+        // Given the request throws something other than a dropped connection or an HTTP error
+        jest.mocked(makeRequestWithSideEffects).mockRejectedValueOnce(new Error('Unexpected'));
+
+        // When the challenge is requested
+        const result = await requestAuthorizationChallenge();
+
+        // Then it isn't treated as lost either
         expect(result.reason).toBe(REASON.LOCAL_ERRORS.UNHANDLED_API_RESPONSE);
     });
 });

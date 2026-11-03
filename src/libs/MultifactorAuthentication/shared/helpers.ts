@@ -82,6 +82,10 @@ function parseHttpResponse(
 } {
     const httpStatusCode = Number(jsonCode ?? 0);
     const category = categorizeHttpStatus(httpStatusCode);
+    // Every scenario command rejects an unknown or used challenge with this answer, so it is mapped here once.
+    if (category === VALUES.HTTP_STATUS.CLIENT_ERROR && message?.toLowerCase().endsWith(VALUES.BACKEND_MESSAGE.AUTHENTICATION_REQUIRED.toLowerCase())) {
+        return {httpStatusCode, reason: VALUES.REASON.CLIENT_ERRORS.AUTHENTICATION_REQUIRED, message};
+    }
     const reason = resolveReason(responseMap, category, message) ?? getFallbackReason(category);
 
     return {httpStatusCode, reason, message};
