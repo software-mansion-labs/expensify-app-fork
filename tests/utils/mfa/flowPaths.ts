@@ -661,6 +661,15 @@ function getTraversalEvents(snapshot: MfaSnapshot): MfaMachineEvent[] {
 // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion
 const mfaMachineWithLifecycleEvents = mfaMachine as unknown as ActorLogic<MfaSnapshot, MfaMachineEvent, InputFrom<typeof mfaMachine>>;
 
+/**
+ * Keys a graph node by its state value and context, without the counters that only feed the outcome telemetry. No
+ * guard reads them, and every user retry grows them, so keeping them would make the graph infinite.
+ */
+function serializeMfaSnapshot({value, context}: MfaSnapshot): string {
+    const {resendReasons, userRetries, ...routingContext} = context;
+    return JSON.stringify({value, context: routingContext});
+}
+
 // `createTestModel` rejects the machine's `after` transition, so this uses the constructor directly.
 // The custom matcher lets state assertion keys use dot paths such as `open.outcome.success`.
 const mfaTestModel = new TestModel(mfaMachineWithLifecycleEvents, {
@@ -669,12 +678,13 @@ const mfaTestModel = new TestModel(mfaMachineWithLifecycleEvents, {
 
 /** Returns the shortest coverage paths over the machine graph. */
 function getMfaShortestPaths() {
-    return getShortestPaths(mfaMachineWithLifecycleEvents, {events: getTraversalEvents});
+    return getShortestPaths(mfaMachineWithLifecycleEvents, {events: getTraversalEvents, serializeState: serializeMfaSnapshot});
 }
 
 /** Returns each driving journey together with the paths the test model builds from its event sequence. */
 function getDrivingJourneyPaths() {
-    return DRIVING_JOURNEYS.map((journey) => ({...journey, paths: mfaTestModel.getPathsFromEvents(journey.events)}));
+    // The test model doesn't pass its own options here, and this builds the graph over the journey's events, so it needs the serializer too.
+    return DRIVING_JOURNEYS.map((journey) => ({...journey, paths: mfaTestModel.getPathsFromEvents(journey.events, {serializeState: serializeMfaSnapshot})}));
 }
 
 /**

@@ -13,7 +13,7 @@ import {createLocalMFAError, createMFAErrorFromApiResponse} from '@libs/Multifac
 import Navigation from '@libs/Navigation/Navigation';
 import {setRevealedPhysicalCardPin, setRevealedVirtualCardDetails} from '@libs/RevealedCardSecretsStore';
 
-import {fireAndForgetDenyTransaction} from '@userActions/MultifactorAuthentication';
+import {fireAndForgetDenyTransaction, forgetLocallyProcessed3DSTransactionReview} from '@userActions/MultifactorAuthentication';
 
 import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';
@@ -44,6 +44,7 @@ jest.mock('@libs/Navigation/Navigation', () => ({__esModule: true, default: {nav
 jest.mock('@userActions/MultifactorAuthentication', () => ({
     ...jest.requireActual<Record<string, unknown>>('@userActions/MultifactorAuthentication'),
     fireAndForgetDenyTransaction: jest.fn(),
+    forgetLocallyProcessed3DSTransactionReview: jest.fn(),
 }));
 
 const SCENARIO = CONST.MULTIFACTOR_AUTHENTICATION.SCENARIO;
@@ -99,6 +100,9 @@ async function runScenario(scenarioName: MultifactorAuthenticationScenario, {sce
         registrationStateAtStart: undefined,
         isCancelConfirmed,
         recoveryAttempts: 0,
+        challengeRetries: 0,
+        resendReasons: [],
+        userRetries: 0,
     };
     const {finalizeOutcome} = createActors();
     const actorRef = createActor(finalizeOutcome, {input});
@@ -269,6 +273,20 @@ describe('MFA scenario callbacks through the finalize-outcome actor', () => {
             await runScenario(SCENARIO.AUTHORIZE_TRANSACTION, {error: UNCONFIRMED_ERROR, payload});
 
             expect(fireAndForgetDenyTransaction).not.toHaveBeenCalled();
+        });
+
+        it.each([false, true])('lets the Review come back after an unconfirmed decision (cancel confirmed: %s)', async (isCancelConfirmed) => {
+            // When the user leaves a decision the app couldn't confirm
+            await runScenario(SCENARIO.AUTHORIZE_TRANSACTION, {error: UNCONFIRMED_ERROR, payload, isCancelConfirmed});
+
+            // Then this device forgets it decided, so the Review comes back while the server still has the transaction pending
+            expect(forgetLocallyProcessed3DSTransactionReview).toHaveBeenCalledWith(TRANSACTION_ID);
+        });
+
+        it('keeps the local decision after an answered failure', async () => {
+            await runScenario(SCENARIO.AUTHORIZE_TRANSACTION, {error: createLocalMFAError(REASON.LOCAL_ERRORS.HSM.CANCELED, undefined), payload});
+
+            expect(forgetLocallyProcessed3DSTransactionReview).not.toHaveBeenCalled();
         });
 
         it.each([
