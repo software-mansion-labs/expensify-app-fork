@@ -21,4 +21,11 @@ const FreezeCardCancelConfirmModal = createCancelConfirmModal('FreezeCardCancelC
     cancelButtonText: 'common.cancel',
 });
 
-export {DefaultCancelConfirmModal, AuthorizeTransactionCancelConfirmModal, FreezeCardCancelConfirmModal};
+const TerminateCardCancelConfirmModal = createCancelConfirmModal('TerminateCardCancelConfirmModal', {
+    title: 'multifactorAuthentication.reviewTransaction.reviewTransaction',
+    description: 'multifactorAuthentication.fraudReview.ifYouDoNotReviewWeWillTerminateCard',
+    confirmButtonText: 'multifactorAuthentication.fraudReview.terminateCard',
+    cancelButtonText: 'multifactorAuthentication.reviewTransaction.reviewTransaction',
+});
+
+export {DefaultCancelConfirmModal, AuthorizeTransactionCancelConfirmModal, FreezeCardCancelConfirmModal, TerminateCardCancelConfirmModal};

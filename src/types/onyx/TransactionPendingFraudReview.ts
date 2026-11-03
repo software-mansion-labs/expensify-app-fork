@@ -20,6 +20,9 @@ type TransactionPendingFraudReview = {
     cardID: number;
 
     transactionID: string;
+
+    /** Whether reporting this transaction as fraud terminates the card instead of freezing it */
+    willTerminateIfNotRecognized?: boolean;
 };
 
 export default TransactionPendingFraudReview;

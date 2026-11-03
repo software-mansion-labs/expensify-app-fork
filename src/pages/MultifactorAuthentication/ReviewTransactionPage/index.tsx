@@ -1,7 +1,7 @@
 import ActivityIndicator from '@components/ActivityIndicator';
 import FullPageOfflineBlockingView from '@components/BlockingViews/FullPageOfflineBlockingView';
 import Header from '@components/Header';
-import {FreezeCardCancelConfirmModal} from '@components/MultifactorAuthentication/components/Modals';
+import {FreezeCardCancelConfirmModal, TerminateCardCancelConfirmModal} from '@components/MultifactorAuthentication/components/Modals';
 import {AlreadyReviewedFailureScreen, DeniedTransactionServerFailureScreen} from '@components/MultifactorAuthentication/config/scenarios/AuthorizeTransaction';
 import {useMultifactorAuthentication} from '@components/MultifactorAuthentication/Context';
 import ScreenWrapper from '@components/ScreenWrapper';
@@ -33,6 +33,7 @@ import {View} from 'react-native';
 
 import FrozenCardOutcomeScreen from './FrozenCardOutcomeScreen';
 import ReviewTransactionContent from './ReviewTransactionContent';
+import TerminatedCardOutcomeScreen from './TerminatedCardOutcomeScreen';
 
 function addBreadcrumb(message: string, data?: Record<string, string | number | boolean | undefined>, level: SeverityLevel = 'info'): void {
     Sentry.addBreadcrumb({
@@ -66,7 +67,7 @@ function ReviewTransactionPage({route}: ReviewTransactionPageProps) {
     };
 
     // The card ID is read when the fraud is reported, since the server then removes the review from the queue
-    const showFrozenCardOutcome = (cardID: number | undefined) => {
+    const showReportedFraudOutcome = (cardID: number | undefined, isCardTerminated: boolean) => {
         const openCardDetails = () => {
             closeOutcome();
             if (cardID) {
@@ -74,10 +75,17 @@ function ReviewTransactionPage({route}: ReviewTransactionPageProps) {
             }
         };
         setOutcomeScreen(
-            <FrozenCardOutcomeScreen
-                onUnfreezePress={openCardDetails}
-                onClose={closeOutcome}
-            />,
+            isCardTerminated ? (
+                <TerminatedCardOutcomeScreen
+                    onCardDetailsPress={openCardDetails}
+                    onClose={closeOutcome}
+                />
+            ) : (
+                <FrozenCardOutcomeScreen
+                    onUnfreezePress={openCardDetails}
+                    onClose={closeOutcome}
+                />
+            ),
         );
     };
 
@@ -85,7 +93,7 @@ function ReviewTransactionPage({route}: ReviewTransactionPageProps) {
     const reportFraudAndShowOutcome = () => {
         addBreadcrumb('Back-out confirmed, reporting fraud', {transactionID}, 'warning');
         fireAndForgetReportFraudulentTransaction({transactionID});
-        showFrozenCardOutcome(transaction?.cardID);
+        showReportedFraudOutcome(transaction?.cardID, !!transaction?.willTerminateIfNotRecognized);
     };
 
     const {isConfirmModalVisible, showConfirmModal, hideConfirmModal, confirmBackOut, allowNavigatingAway} = useForcedReviewScreen({
@@ -109,10 +117,10 @@ function ReviewTransactionPage({route}: ReviewTransactionPageProps) {
         addBreadcrumb('Unrecognized tapped', {transactionID});
         const cardID = transaction?.cardID;
         setIsReportingFraud(true);
-        reportFraudulentTransaction({transactionID}).then(({reason, httpStatusCode}) => {
-            addBreadcrumb('Fraud report completed', {transactionID, reason, httpStatusCode});
+        reportFraudulentTransaction({transactionID}).then(({reason, httpStatusCode, isCardTerminated}) => {
+            addBreadcrumb('Fraud report completed', {transactionID, reason, httpStatusCode, isCardTerminated});
             if (reason === CONST.MULTIFACTOR_AUTHENTICATION.REASON.FLOW_OUTCOMES.FRAUD_REPORTED) {
-                showFrozenCardOutcome(cardID);
+                showReportedFraudOutcome(cardID, isCardTerminated);
                 return;
             }
             if (reason === CONST.MULTIFACTOR_AUTHENTICATION.REASON.CLIENT_ERRORS.ALREADY_REVIEWED) {
@@ -164,11 +172,19 @@ function ReviewTransactionPage({route}: ReviewTransactionPageProps) {
                         authorizeText={translate('multifactorAuthentication.fraudReview.recognizedButton')}
                         denyText={translate('multifactorAuthentication.fraudReview.unrecognizedButton')}
                     />
-                    <FreezeCardCancelConfirmModal
-                        isVisible={isConfirmModalVisible}
-                        onConfirm={confirmBackOut}
-                        onCancel={hideConfirmModal}
-                    />
+                    {transaction.willTerminateIfNotRecognized ? (
+                        <TerminateCardCancelConfirmModal
+                            isVisible={isConfirmModalVisible}
+                            onConfirm={confirmBackOut}
+                            onCancel={hideConfirmModal}
+                        />
+                    ) : (
+                        <FreezeCardCancelConfirmModal
+                            isVisible={isConfirmModalVisible}
+                            onConfirm={confirmBackOut}
+                            onCancel={hideConfirmModal}
+                        />
+                    )}
                 </View>
             </FullPageOfflineBlockingView>
         </ScreenWrapper>

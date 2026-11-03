@@ -762,6 +762,13 @@ const translations: TranslationDeepObject<typeof en> = {
             frozenCard: '凍結されたカード',
             yourCardHasBeenFrozen: 'カードが凍結されました',
             weFrozeYourCard: 'これ以上の請求を防ぐため、カードを凍結しました。カードが不正利用された可能性がある場合は<concierge-link>Concierge</concierge-link>にお問い合わせください。',
+            terminateCard: 'カードを無効化',
+            ifYouDoNotReviewWeWillTerminateCard: 'この取引を確認しない場合、カードを無効化します。再発行の申請が必要になります。',
+            cardTerminated: 'カードが無効化されました',
+            yourCardHasBeenTerminated: 'カードが無効化されました',
+            weTerminatedYourCard:
+                'アカウントを保護するため、カードを無効化しました。いつでも再発行を申請できます。不正利用と思われる場合は<concierge-link>Conciergeにお問い合わせ</concierge-link>ください。',
+            goToCardDetails: 'カードの詳細へ',
         },
         unsupportedDevice: {
             unsupportedDevice: '未対応のデバイス',

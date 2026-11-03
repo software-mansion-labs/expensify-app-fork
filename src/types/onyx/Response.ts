@@ -134,6 +134,9 @@ type Response<TKey extends OnyxKey> = {
     /** Transactions pending fraud review returned from GetTransactionsPendingFraudReview */
     transactionsPendingFraudReview?: TransactionsPendingFraudReview;
 
+    /** Whether RecordFraudFeedback terminated the card instead of freezing it, after a repeated fraud report */
+    cardTerminated?: boolean;
+
     /** Cache key returned from GetExpensifyCardStatementPDF */
     statementKey?: string;
 

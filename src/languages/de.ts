@@ -772,6 +772,13 @@ const translations: TranslationDeepObject<typeof en> = {
             yourCardHasBeenFrozen: 'Deine Karte wurde eingefroren',
             weFrozeYourCard:
                 'Wir haben deine Karte eingefroren, um weitere Belastungen zu verhindern. Wende dich an <concierge-link>Concierge</concierge-link>, wenn du befürchtest, dass deine Karte kompromittiert wurde.',
+            terminateCard: 'Karte kündigen',
+            ifYouDoNotReviewWeWillTerminateCard: 'Wenn du diese Transaktion nicht prüfst, kündigen wir deine Karte und du musst einen Ersatz anfordern.',
+            cardTerminated: 'Karte gekündigt',
+            yourCardHasBeenTerminated: 'Deine Karte wurde gekündigt',
+            weTerminatedYourCard:
+                'Wir haben deine Karte gekündigt, um dein Konto zu schützen. Du kannst jederzeit einen Ersatz anfordern oder dich an <concierge-link>Concierge</concierge-link> wenden, wenn du glaubst, dass es sich um Betrug handelte.',
+            goToCardDetails: 'Zu den Kartendetails',
         },
         unsupportedDevice: {
             unsupportedDevice: 'Nicht unterstütztes Gerät',

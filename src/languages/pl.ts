@@ -779,6 +779,13 @@ const translations: TranslationDeepObject<typeof en> = {
             yourCardHasBeenFrozen: 'Twoja karta została zamrożona',
             weFrozeYourCard:
                 'Zamroziliśmy Twoją kartę, aby zapobiec kolejnym obciążeniom. Skontaktuj się z <concierge-link>Concierge</concierge-link>, jeśli obawiasz się, że Twoja karta została przejęta.',
+            terminateCard: 'Zlikwiduj kartę',
+            ifYouDoNotReviewWeWillTerminateCard: 'Jeśli nie sprawdzisz tej transakcji, zlikwidujemy Twoją kartę i trzeba będzie zamówić nową.',
+            cardTerminated: 'Karta zlikwidowana',
+            yourCardHasBeenTerminated: 'Twoja karta została zlikwidowana',
+            weTerminatedYourCard:
+                'Zlikwidowaliśmy Twoją kartę, aby chronić Twoje konto. W każdej chwili możesz zamówić nową kartę lub <concierge-link>skontaktować się z Concierge</concierge-link>, jeśli uważasz, że doszło do oszustwa.',
+            goToCardDetails: 'Przejdź do szczegółów karty',
         },
         unsupportedDevice: {
             unsupportedDevice: 'Nieobsługiwane urządzenie',
