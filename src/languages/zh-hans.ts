@@ -10634,6 +10634,10 @@ ${reportName}`,
                     const amountAndMerchantText = [amount, merchant].filter((s) => !!s?.length).join(' ');
                     return `打开 Expensify 移动应用以查看你${amountAndMerchantText ? `的 ${amountAndMerchantText} ` : '的 '}交易`;
                 },
+                actionableCardFraudTransactionApproval: (amount: string, merchant: string | undefined) => {
+                    const details = [merchant, amount ? `(${amount})` : ''].filter((s) => !!s?.length).join(' ');
+                    return `${details ? `来自 ${details} 的` : '一笔'}交易因涉嫌欺诈已被拒绝。`;
+                },
             },
             error: {
                 invalidCredentials: '凭证无效，请检查您的连接配置。',

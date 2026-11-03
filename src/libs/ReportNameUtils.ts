@@ -40,7 +40,8 @@ import {getPersonalDetailsByID, temporaryGetDisplayNameOrDefault} from './Person
 import {getPolicyReimburserAccountID, wasPaidWithPolicyBankAccount} from './PolicyPaymentUtils';
 import {getCleanedTagName, isPolicyAdmin, isPolicyFieldListEmpty} from './PolicyUtils';
 import {
-    getActionableCard3DSTransactionApprovalMessage,
+    getActionableCardTransactionApprovalMessage,
+    isActionableCardTransactionApprovalAction,
     getActionableCardFraudAlertResolutionMessage,
     getAgentPromptUpdatedMessage,
     getAddedCardFeedMessage,
@@ -861,8 +862,8 @@ function computeReportNameBasedOnReportAction({
         return getActionableCardFraudAlertResolutionMessage(translate, parentReportAction);
     }
 
-    if (isActionOfType(parentReportAction, CONST.REPORT.ACTIONS.TYPE.ACTIONABLE_CARD_3DS_TRANSACTION_APPROVAL)) {
-        return getActionableCard3DSTransactionApprovalMessage(translate, parentReportAction, convertToDisplayString, convertToDisplayStringWithoutCurrency);
+    if (isActionableCardTransactionApprovalAction(parentReportAction)) {
+        return getActionableCardTransactionApprovalMessage(translate, parentReportAction, convertToDisplayString, convertToDisplayStringWithoutCurrency);
     }
 
     if (isActionOfType(parentReportAction, CONST.REPORT.ACTIONS.TYPE.POLICY_CHANGE_LOG.UPDATE_ADDRESS)) {
