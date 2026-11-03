@@ -717,6 +717,10 @@ const translations: TranslationDeepObject<typeof en> = {
             giveItAnotherTry: 'Κάντε άλλη μια προσπάθεια',
             thankYouForConfirming: 'Σας ευχαριστούμε που επιβεβαιώσατε ότι πραγματοποιήσατε εσείς τη συναλλαγή. Δοκιμάστε ξανά στον έμπορο.',
             ifYouCloseWeWillFreezeCard: 'Αν κλείσετε αυτή την οθόνη, θα πρέπει να παγώσουμε την κάρτα σας. Θα χρειαστεί να την ξεμπλοκάρετε για να τη χρησιμοποιήσετε ξανά.',
+            frozenCard: 'Παγωμένη κάρτα',
+            yourCardHasBeenFrozen: 'Η κάρτα σας έχει παγώσει',
+            weFrozeYourCard:
+                'Παγώσαμε την κάρτα σας για να αποτρέψουμε περαιτέρω χρεώσεις. Επικοινωνήστε με το <concierge-link>Concierge</concierge-link> αν ανησυχείτε ότι τα στοιχεία της κάρτας σας έχουν υποκλαπεί.',
         },
         unsupportedDevice: {
             unsupportedDevice: 'Μη υποστηριζόμενη συσκευή',

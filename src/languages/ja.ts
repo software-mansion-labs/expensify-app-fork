@@ -774,6 +774,10 @@ const translations: TranslationDeepObject<typeof en> = {
             giveItAnotherTry: 'もう一度お試しください',
             thankYouForConfirming: 'ご自身の取引であることをご確認いただきありがとうございます。加盟店でもう一度お試しください。',
             ifYouCloseWeWillFreezeCard: 'この画面を閉じると、カードを一時停止する必要があります。再び使用するには、一時停止を解除する必要があります。',
+            frozenCard: '一時停止中のカード',
+            yourCardHasBeenFrozen: 'カードが一時停止されました',
+            weFrozeYourCard:
+                'これ以上の請求を防ぐため、カードを一時停止しました。カード情報が不正に取得されたおそれがある場合は、<concierge-link>Concierge</concierge-link>にお問い合わせください。',
         },
         unsupportedDevice: {
             unsupportedDevice: '未対応のデバイス',

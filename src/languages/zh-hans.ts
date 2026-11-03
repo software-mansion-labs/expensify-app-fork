@@ -764,6 +764,9 @@ const translations: TranslationDeepObject<typeof en> = {
             giveItAnotherTry: '请再试一次',
             thankYouForConfirming: '感谢您确认这笔交易是您本人进行的。请在商户处重试。',
             ifYouCloseWeWillFreezeCard: '如果您关闭此页面，我们将不得不冻结您的卡片。您需要先解冻才能再次使用。',
+            frozenCard: '已冻结的卡片',
+            yourCardHasBeenFrozen: '您的卡片已冻结',
+            weFrozeYourCard: '我们已冻结您的卡片，以防止进一步扣款。如果您担心卡片信息已泄露，请联系 <concierge-link>Concierge</concierge-link>。',
         },
         unsupportedDevice: {
             unsupportedDevice: '不支持的设备',
