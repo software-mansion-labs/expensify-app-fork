@@ -117,6 +117,7 @@ function MultifactorAuthenticationContextProvider({children}: MultifactorAuthent
     const requestCancel = () => send({type: 'REQUEST_CANCEL'});
     const dismissCancel = () => send({type: 'DISMISS_CANCEL'});
     const confirmCancel = () => send({type: 'CONFIRM_CANCEL'});
+    const retryWithNewChallenge = () => send({type: 'RETRY_WITH_NEW_CHALLENGE'});
 
     useSyncMfaModalNavigatorWithHistory(state.modalState, requestCancel);
 
@@ -133,6 +134,7 @@ function MultifactorAuthenticationContextProvider({children}: MultifactorAuthent
         requestCancel,
         dismissCancel,
         confirmCancel,
+        retryWithNewChallenge,
     };
 
     return (
