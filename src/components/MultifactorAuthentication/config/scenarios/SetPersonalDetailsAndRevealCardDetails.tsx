@@ -74,6 +74,8 @@ const ServerFailureScreen = createScreenWithDefaults(
 export default {
     allowedAuthenticationMethods: [CONST.MULTIFACTOR_AUTHENTICATION.TYPE.BIOMETRICS_HSM, CONST.MULTIFACTOR_AUTHENTICATION.TYPE.PASSKEYS],
     action: setPersonalDetailsAndRevealExpensifyCardWithSCA,
+    // Saves the same details again and reads the card details.
+    idempotent: true,
     callback: async (isSuccessful, callbackInput, payload) => {
         if (isSuccessful && isSetPersonalDetailsAndRevealCardDetailsPayload(payload)) {
             const pan = typeof callbackInput.body?.pan === 'string' ? callbackInput.body.pan : '';

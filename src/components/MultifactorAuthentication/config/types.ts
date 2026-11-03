@@ -113,6 +113,16 @@ type MultifactorAuthenticationScenarioBase<T extends Record<string, unknown> = E
      * `callback` then runs with `isCancelConfirmed` set, so it can skip what the cancel already did.
      */
     onCancel?: (payload: MultifactorAuthenticationScenarioAdditionalParams<MultifactorAuthenticationScenario> | undefined) => Promise<MFAError>;
+
+    /**
+     * Whether running the action again with a fresh challenge is safe. A lost answer is first re-sent with the same
+     * signed challenge, which is safe for every scenario because the server accepts a challenge only once. If that
+     * doesn't settle it, an idempotent scenario offers "Try again"; any other only asks the user to check first.
+     */
+    idempotent?: true;
+
+    /** Copy for the screen shown when the app can't tell whether the action went through. Defaults to the generic copy. */
+    unconfirmedCopy?: {title: TranslationPaths; subtitle: TranslationPaths};
 };
 
 /**

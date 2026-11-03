@@ -11,6 +11,8 @@ import React from 'react';
 export default {
     allowedAuthenticationMethods: [CONST.MULTIFACTOR_AUTHENTICATION.TYPE.BIOMETRICS_HSM, CONST.MULTIFACTOR_AUTHENTICATION.TYPE.PASSKEYS],
     action: troubleshootMultifactorAuthentication,
+    // Only checks the signature.
+    idempotent: true,
     pure: true,
     successScreen: <DefaultSuccessScreen customSubtitle={<AuthenticationMethodDescription />} />,
 } as const satisfies MultifactorAuthenticationScenarioCustomConfig;
