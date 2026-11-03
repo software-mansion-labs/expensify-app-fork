@@ -22,7 +22,7 @@ import useForcedReviewScreen from '@pages/MultifactorAuthentication/useForcedRev
 
 import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';
-import {DYNAMIC_ROUTES} from '@src/ROUTES';
+import ROUTES, {DYNAMIC_ROUTES} from '@src/ROUTES';
 import type SCREENS from '@src/SCREENS';
 
 import type {SeverityLevel} from '@sentry/react-native';
@@ -70,7 +70,7 @@ function ReviewTransactionPage({route}: ReviewTransactionPageProps) {
         const openCardDetails = () => {
             closeOutcome();
             if (cardID) {
-                Navigation.navigate(createDynamicRoute(DYNAMIC_ROUTES.WALLET_DOMAIN_CARD.getRoute(String(cardID))));
+                Navigation.navigate(createDynamicRoute(DYNAMIC_ROUTES.WALLET_DOMAIN_CARD.getRoute(String(cardID)), ROUTES.SETTINGS_WALLET));
             }
         };
         setOutcomeScreen(
