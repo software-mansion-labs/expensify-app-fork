@@ -112,6 +112,9 @@ function getRecoveryActions(step: RecoverableStep) {
 // How many times one flow may go back to re-registration after a recoverable credential failure.
 const MAX_RECOVERY_ATTEMPTS = 1;
 
+// How many times one flow may request the authorization challenge again after its answer was lost.
+const MAX_CHALLENGE_RETRIES = 1;
+
 // Which prompt variant the screen renders is a device property, resolved once per platform.
 const PROMPT_TYPE = CONST.MULTIFACTOR_AUTHENTICATION.PROMPT_TYPE_MAP[deviceVerificationType];
 
@@ -137,6 +140,7 @@ const DEFAULT_CONTEXT: MfaContext = {
     cancelError: undefined,
     scenarioActionResult: undefined,
     recoveryAttempts: 0,
+    challengeRetries: 0,
 };
 
 /**
@@ -154,6 +158,8 @@ const MFAMachine = setup({
     types: {
         context: {} as MfaContext,
         events: {} as MfaEvent,
+        // Marks the steps that hold their request until the device is back online, so the screens show the offline view.
+        tags: {} as 'waitingForNetwork',
     },
     /* eslint-enable @typescript-eslint/no-unsafe-type-assertion */
     actors: createActors(),
@@ -173,6 +179,9 @@ const MFAMachine = setup({
         // A failure that a fresh key registration can fix restarts registration until the flow runs out of attempts.
         canRecover: ({context}, {error}: {error: MFAError | undefined}) =>
             !!error && CONST.MULTIFACTOR_AUTHENTICATION.RECOVERABLE_CREDENTIAL_FAILURES.has(error.reason) && context.recoveryAttempts < MAX_RECOVERY_ATTEMPTS,
+        // An unused challenge just expires on the server, so a lost one is requested again until the flow runs out of retries.
+        canRetryChallenge: ({context}, {error}: {error: MFAError | undefined}) =>
+            error?.reason === CONST.MULTIFACTOR_AUTHENTICATION.REASON.LOCAL_ERRORS.NO_RESPONSE && context.challengeRetries < MAX_CHALLENGE_RETRIES,
     },
     actions: {
         // Seeds the flow's context from the INIT event. A named action's event is typed as the full
@@ -253,6 +262,10 @@ const MFAMachine = setup({
             softPromptApproved: false,
             recoveryAttempts: ({context}) => context.recoveryAttempts + 1,
         }),
+        countChallengeRetry: assign({challengeRetries: ({context}) => context.challengeRetries + 1}),
+        addChallengeRetryBreadcrumb: ({context}) => {
+            addMFABreadcrumb('Authorization challenge lost, requesting it again', {scenario: context.scenarioName}, 'warning');
+        },
         // Without these a flow waiting for the network looks the same as a stuck one in Sentry.
         addNetworkOfflineBreadcrumb: ({context}) => {
             addMFABreadcrumb('Network offline', {scenario: context.scenarioName}, 'warning');
@@ -369,6 +382,8 @@ const MFAMachine = setup({
                         [MFA_STATE.VALIDATE_CODE]: {
                             id: MFA_STATE.VALIDATE_CODE,
                             entry: 'navigateToValidateCode',
+                            // A cancel can leave while a code entered offline is still held.
+                            exit: 'clearValidateCode',
                             initial: MFA_STATE.AWAITING_VALIDATE_CODE,
                             states: {
                                 // Waits for the emailed code. A resend is accepted only here, so one fired
@@ -378,9 +393,7 @@ const MFAMachine = setup({
                                     entry: assign({validateCodePresentationPhase: MFA_STATE.AWAITING_VALIDATE_CODE}),
                                     initial: MFA_STATE.AWAITING_INPUT,
                                     on: {
-                                        // The screen hides the form offline, so this guard only covers a submit that lands before
-                                        // the offline re-render. The code isn't kept for later because it may expire meanwhile.
-                                        VALIDATE_CODE_ENTERED: {guard: not(stateIn(OFFLINE_TARGET)), target: MFA_STATE.REQUESTING_REGISTRATION_CHALLENGE, actions: 'submitValidateCode'},
+                                        VALIDATE_CODE_ENTERED: {target: MFA_STATE.READY_TO_REQUEST_REGISTRATION_CHALLENGE, actions: 'submitValidateCode'},
                                         RESEND_VALIDATE_CODE: {target: `.${MFA_STATE.AWAITING_INPUT}`, actions: 'requestValidateCode'},
                                     },
                                     states: {
@@ -395,6 +408,13 @@ const MFAMachine = setup({
                                             },
                                         },
                                     },
+                                },
+                                // Holds a code entered offline and sends it once back online. If it expired meanwhile, the
+                                // backend rejects it like any wrong code and the user can resend one.
+                                [MFA_STATE.READY_TO_REQUEST_REGISTRATION_CHALLENGE]: {
+                                    entry: assign({validateCodePresentationPhase: MFA_STATE.REQUESTING_REGISTRATION_CHALLENGE}),
+                                    tags: ['waitingForNetwork'],
+                                    always: {guard: not(stateIn(OFFLINE_TARGET)), target: MFA_STATE.REQUESTING_REGISTRATION_CHALLENGE},
                                 },
                                 [MFA_STATE.REQUESTING_REGISTRATION_CHALLENGE]: {
                                     entry: assign({validateCodePresentationPhase: MFA_STATE.REQUESTING_REGISTRATION_CHALLENGE}),
@@ -464,6 +484,7 @@ const MFAMachine = setup({
                                         // separate state because `invoke` only starts on entry, and opening the dialog stops the
                                         // ceremony by leaving `creatingKey`.
                                         [MFA_STATE.WAITING_TO_CREATE]: {
+                                            tags: ['waitingForNetwork'],
                                             always: {guard: CAN_START_CEREMONY, target: MFA_STATE.CREATING_KEY},
                                         },
                                         [MFA_STATE.CREATING_KEY]: {
@@ -499,6 +520,7 @@ const MFAMachine = setup({
                                         // Holds the created key while offline and registers it once back online. The dialog doesn't
                                         // hold it, because registration runs behind the dialog anyway.
                                         [MFA_STATE.READY_TO_REGISTER]: {
+                                            tags: ['waitingForNetwork'],
                                             always: {guard: not(stateIn(OFFLINE_TARGET)), target: MFA_STATE.REGISTERING_KEY},
                                         },
                                         // A registration request can't be taken back once sent, so opening the dialog doesn't stop
@@ -539,6 +561,7 @@ const MFAMachine = setup({
                                     states: {
                                         // Same hold as `waitingToCreate`: the ceremony runs only while no cancel dialog is up and while online.
                                         [MFA_STATE.WAITING_TO_SIGN]: {
+                                            tags: ['waitingForNetwork'],
                                             always: {guard: CAN_START_CEREMONY, target: MFA_STATE.SIGNING_CHALLENGE},
                                         },
                                         [MFA_STATE.SIGNING_CHALLENGE]: {
@@ -559,6 +582,12 @@ const MFAMachine = setup({
                                                 },
                                                 onDone: [
                                                     {guard: RECOVERY_GUARD, target: VALIDATE_CODE_TARGET, actions: getRecoveryActions(MFA_STATE.SIGNING_CHALLENGE)},
+                                                    // Back to waiting for the network, which asks for a fresh challenge once online.
+                                                    {
+                                                        guard: {type: 'canRetryChallenge', params: getFailureParams},
+                                                        target: MFA_STATE.WAITING_TO_SIGN,
+                                                        actions: ['countChallengeRetry', 'addChallengeRetryBreadcrumb'],
+                                                    },
                                                     {
                                                         guard: ({event}) => !event.output.success,
                                                         target: OUTCOME_TARGET,
