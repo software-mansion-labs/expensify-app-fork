@@ -1685,6 +1685,9 @@ type MultifactorAuthenticationParamList = {
     [SCREENS.MULTIFACTOR_AUTHENTICATION.AUTHORIZE_TRANSACTION]: {
         transactionID: string;
     };
+    [SCREENS.MULTIFACTOR_AUTHENTICATION.REVIEW_TRANSACTION]: {
+        transactionID: string;
+    };
     [SCREENS.MULTIFACTOR_AUTHENTICATION.REVOKE]: undefined;
 };
 
