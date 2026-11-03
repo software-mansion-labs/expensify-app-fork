@@ -15,7 +15,6 @@ import shouldOpenOnAdminRoom from '@libs/Navigation/helpers/shouldOpenOnAdminRoo
 import swapBackgroundTabForRHPTarget from '@libs/Navigation/helpers/swapBackgroundTabForRHPTarget';
 import willRouteNavigateToRHP from '@libs/Navigation/helpers/willRouteNavigateToRHP';
 import isNativeOAuthCallbackURL from '@libs/Navigation/linkingConfig/isNativeOAuthCallbackURL';
-import isWiseKYCReviewRedirectURL from '@libs/Navigation/linkingConfig/isWiseKYCReviewRedirectURL';
 import Navigation from '@libs/Navigation/Navigation';
 import navigationRef from '@libs/Navigation/navigationRef';
 import REPORT_LINK_ROUTE_PARAMS from '@libs/Navigation/reportLinkRouteParams';
@@ -502,9 +501,8 @@ function openReportFromDeepLink(
     }
 
     // The native OAuth callback is consumed by the auth session that opened it. linkingConfig.filter already drops
-    // it for signed-in users, but this post-sign-in navigate runs outside react-navigation's linking. Wise's redirect
-    // out of its KYC form is consumed the same way.
-    if (isNativeOAuthCallbackURL(url) || isWiseKYCReviewRedirectURL(url)) {
+    // it for signed-in users, but this post-sign-in navigate runs outside react-navigation's linking.
+    if (isNativeOAuthCallbackURL(url)) {
         return;
     }
 

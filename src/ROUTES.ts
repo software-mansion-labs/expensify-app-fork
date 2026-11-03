@@ -2753,6 +2753,9 @@ const ROUTES = {
         getRoute: (cardID: string) => `settings/wallet/card/${cardID}/added-to-wallet` as const,
     },
     SETTINGS_WALLET_TRAVEL_CVV: 'settings/wallet/travel-cvv',
+    SETTINGS_WALLET_WISE_KYC_REVIEW_FORM: 'settings/wallet/wise-kyc-review-form',
+    // Wise sends the user here when its KYC form ends, so the path must match the redirect URL the backend gives Wise
+    WISE_KYC_COMPLETE: 'wise-kyc-complete',
     SETTINGS_WALLET_TRAVEL_CVV_VERIFY_ACCOUNT: `settings/wallet/travel-cvv/${VERIFY_ACCOUNT}`,
     SETTINGS_AGENTS: 'settings/agents',
     AGENT_REPORT: {

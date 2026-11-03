@@ -1,8 +1,6 @@
-import prefixes from '@libs/Navigation/linkingConfig/prefixes';
+import isAppLinkHostname from '@libs/Navigation/linkingConfig/isAppLinkHostname';
 
 import 'react-native-url-polyfill/auto';
-
-const appLinkHostnames = new Set(prefixes.filter((prefix) => prefix.startsWith('https://')).map((prefix) => new URL(prefix).hostname.toLowerCase()));
 
 /**
  * PDF annotations are untrusted and must not launch custom schemes or navigate back into the app.
@@ -15,7 +13,7 @@ function isAllowedPDFLink(url: string): boolean {
             return false;
         }
 
-        return !appLinkHostnames.has(hostname.toLowerCase().replace(/\.$/, ''));
+        return !isAppLinkHostname(hostname);
     } catch {
         return false;
     }

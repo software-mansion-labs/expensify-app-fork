@@ -1,7 +1,6 @@
 import {read} from '@libs/API';
 import {READ_COMMANDS} from '@libs/API/types';
 import {getMicroSecondOnyxErrorWithTranslationKey} from '@libs/ErrorUtils';
-import getPlatform from '@libs/getPlatform';
 
 import ONYXKEYS from '@src/ONYXKEYS';
 import type {OnyxData} from '@src/types/onyx/Request';
@@ -34,7 +33,7 @@ function getWiseKYCReviewEmbeddedLink(bankAccountID: number) {
         ],
     };
 
-    read(READ_COMMANDS.GET_WISE_KYC_REVIEW_EMBEDDED_LINK, {bankAccountID, platform: getPlatform()}, onyxData);
+    read(READ_COMMANDS.GET_WISE_KYC_REVIEW_EMBEDDED_LINK, {bankAccountID}, onyxData);
 }
 
 /** Drops the link, which carries a token */
@@ -42,4 +41,9 @@ function clearWiseKYCReviewEmbeddedLink() {
     Onyx.set(ONYXKEYS.RAM_ONLY_WISE_KYC_REVIEW_EMBEDDED_LINK, null);
 }
 
-export {clearWiseKYCReviewEmbeddedLink, getWiseKYCReviewEmbeddedLink};
+/** Keeps an error on the link for the page that opened Wise's form, since the form ended without finishing */
+function setWiseKYCReviewFormError() {
+    Onyx.merge(ONYXKEYS.RAM_ONLY_WISE_KYC_REVIEW_EMBEDDED_LINK, {errors: getMicroSecondOnyxErrorWithTranslationKey('common.genericErrorMessage')});
+}
+
+export {clearWiseKYCReviewEmbeddedLink, getWiseKYCReviewEmbeddedLink, setWiseKYCReviewFormError};

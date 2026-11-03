@@ -3151,6 +3151,11 @@ const translations: TranslationDeepObject<typeof en> = {
                 title: 'Zweryfikuj dodatkowe informacje',
                 subtitle: 'Nasz partner płatniczy potrzebuje bezpośrednio więcej informacji. To zajmie tylko kilka minut.',
             },
+            accountApproved: {
+                headerTitle: 'Konto zatwierdzone',
+                title: 'Zatwierdzono płatności na całym świecie',
+                subtitle: 'Płać członkom, gdziekolwiek są.',
+            },
         },
         wiseGlobalReimbursementsIntro: {
             title: 'Skonfigurować globalne zwroty kosztów?',

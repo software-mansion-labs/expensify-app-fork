@@ -3025,6 +3025,11 @@ const translations: TranslationDeepObject<typeof en> = {
                 title: 'Verifica información adicional',
                 subtitle: 'Nuestro socio de pagos necesita más información directamente. Esto solo te llevará un par de minutos.',
             },
+            accountApproved: {
+                headerTitle: 'Cuenta aprobada',
+                title: 'Aprobado para pagar en todo el mundo',
+                subtitle: 'Paga a los miembros dondequiera que estén.',
+            },
         },
         wiseGlobalReimbursementsIntro: {
             title: '¿Configurar reembolsos globales?',
