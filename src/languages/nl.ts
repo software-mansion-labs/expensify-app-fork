@@ -767,6 +767,10 @@ const translations: TranslationDeepObject<typeof en> = {
             giveItAnotherTry: 'Probeer het opnieuw',
             thankYouForConfirming: 'Bedankt voor je bevestiging dat de transactie van jou was. Probeer het opnieuw bij de verkoper.',
             ifYouCloseWeWillFreezeCard: 'Als je dit scherm sluit, moeten we je kaart bevriezen. Je moet hem ontdooien om hem weer te gebruiken.',
+            frozenCard: 'Bevroren kaart',
+            yourCardHasBeenFrozen: 'Je kaart is bevroren',
+            weFrozeYourCard:
+                'We hebben je kaart bevroren om verdere afschrijvingen te voorkomen. Neem contact op met <concierge-link>Concierge</concierge-link> als je denkt dat je kaart is gecompromitteerd.',
         },
         unsupportedDevice: {
             unsupportedDevice: 'Niet-ondersteund apparaat',

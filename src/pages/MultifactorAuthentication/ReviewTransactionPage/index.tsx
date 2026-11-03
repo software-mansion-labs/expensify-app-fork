@@ -2,6 +2,7 @@ import ActivityIndicator from '@components/ActivityIndicator';
 import FullPageOfflineBlockingView from '@components/BlockingViews/FullPageOfflineBlockingView';
 import Header from '@components/Header';
 import {FreezeCardCancelConfirmModal} from '@components/MultifactorAuthentication/components/Modals';
+import {AlreadyReviewedFailureScreen, DeniedTransactionServerFailureScreen} from '@components/MultifactorAuthentication/config/scenarios/AuthorizeTransaction';
 import {useMultifactorAuthentication} from '@components/MultifactorAuthentication/Context';
 import ScreenWrapper from '@components/ScreenWrapper';
 import ScrollView from '@components/ScrollView';
@@ -11,6 +12,7 @@ import useOnyx from '@hooks/useOnyx';
 import useThemeStyles from '@hooks/useThemeStyles';
 
 import {fireAndForgetReportFraudulentTransaction, reportFraudulentTransaction} from '@libs/actions/MultifactorAuthentication';
+import createDynamicRoute from '@libs/Navigation/helpers/dynamicRoutesUtils/createDynamicRoute';
 import Navigation from '@libs/Navigation/Navigation';
 import type {PlatformStackScreenProps} from '@libs/Navigation/PlatformStackNavigation/types';
 import type {MultifactorAuthenticationParamList} from '@libs/Navigation/types';
@@ -20,6 +22,7 @@ import useForcedReviewScreen from '@pages/MultifactorAuthentication/useForcedRev
 
 import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';
+import ROUTES, {DYNAMIC_ROUTES} from '@src/ROUTES';
 import type SCREENS from '@src/SCREENS';
 
 import type {SeverityLevel} from '@sentry/react-native';
@@ -28,6 +31,7 @@ import * as Sentry from '@sentry/react-native';
 import React, {useState} from 'react';
 import {View} from 'react-native';
 
+import FrozenCardOutcomeScreen from './FrozenCardOutcomeScreen';
 import ReviewTransactionContent from './ReviewTransactionContent';
 
 function addBreadcrumb(message: string, data?: Record<string, string | number | boolean | undefined>, level: SeverityLevel = 'info'): void {
@@ -49,24 +53,47 @@ function ReviewTransactionPage({route}: ReviewTransactionPageProps) {
     const {translate} = useLocalize();
 
     const [isReportingFraud, setIsReportingFraud] = useState(false);
+    const [outcomeScreen, setOutcomeScreen] = useState<React.ReactElement | null>(null);
 
     const [transactionQueue] = useOnyx(ONYXKEYS.TRANSACTIONS_PENDING_FRAUD_REVIEW);
     const transaction = transactionQueue?.[transactionID];
 
     const {executeScenario} = useMultifactorAuthentication();
 
-    const reportFraudAndClose = () => {
+    // Outcomes render inside this RHP page, and leaving it isn't intercepted while one is shown
+    const closeOutcome = () => {
+        Navigation.closeRHPFlow();
+    };
+
+    // The card ID is read when the fraud is reported, since the server then removes the review from the queue
+    const showFrozenCardOutcome = (cardID: number | undefined) => {
+        const openCardDetails = () => {
+            closeOutcome();
+            if (cardID) {
+                Navigation.navigate(createDynamicRoute(DYNAMIC_ROUTES.WALLET_DOMAIN_CARD.getRoute(String(cardID)), ROUTES.SETTINGS_WALLET));
+            }
+        };
+        setOutcomeScreen(
+            <FrozenCardOutcomeScreen
+                onUnfreezePress={openCardDetails}
+                onClose={closeOutcome}
+            />,
+        );
+    };
+
+    // Backing out reports fraud, and the outcome shows right away since nobody waits for the response
+    const reportFraudAndShowOutcome = () => {
         addBreadcrumb('Back-out confirmed, reporting fraud', {transactionID}, 'warning');
         fireAndForgetReportFraudulentTransaction({transactionID});
-        Navigation.closeRHPFlow();
+        showFrozenCardOutcome(transaction?.cardID);
     };
 
     const {isConfirmModalVisible, showConfirmModal, hideConfirmModal, confirmBackOut, allowNavigatingAway} = useForcedReviewScreen({
         transactionID,
         isTransactionPendingReview: !!transaction,
         isSubmitting: isReportingFraud,
-        isShowingOutcome: false,
-        onConfirmBackOut: reportFraudAndClose,
+        isShowingOutcome: !!outcomeScreen,
+        onConfirmBackOut: reportFraudAndShowOutcome,
         addBreadcrumb,
     });
 
@@ -80,13 +107,25 @@ function ReviewTransactionPage({route}: ReviewTransactionPageProps) {
 
     const reportFraud = () => {
         addBreadcrumb('Unrecognized tapped', {transactionID});
+        const cardID = transaction?.cardID;
         setIsReportingFraud(true);
         reportFraudulentTransaction({transactionID}).then(({reason, httpStatusCode}) => {
             addBreadcrumb('Fraud report completed', {transactionID, reason, httpStatusCode});
-            allowNavigatingAway();
-            Navigation.closeRHPFlow();
+            if (reason === CONST.MULTIFACTOR_AUTHENTICATION.REASON.FLOW_OUTCOMES.FRAUD_REPORTED) {
+                showFrozenCardOutcome(cardID);
+                return;
+            }
+            if (reason === CONST.MULTIFACTOR_AUTHENTICATION.REASON.CLIENT_ERRORS.ALREADY_REVIEWED) {
+                setOutcomeScreen(<AlreadyReviewedFailureScreen onClose={closeOutcome} />);
+                return;
+            }
+            setOutcomeScreen(<DeniedTransactionServerFailureScreen onClose={closeOutcome} />);
         });
     };
+
+    if (outcomeScreen) {
+        return outcomeScreen;
+    }
 
     // This will briefly be true after the fraud report has succeeded and Onyx has removed the transaction
     // from state, but reportFraudulentTransaction has not yet resolved.

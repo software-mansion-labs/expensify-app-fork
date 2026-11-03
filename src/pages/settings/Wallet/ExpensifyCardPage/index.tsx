@@ -74,8 +74,6 @@ import PendingDigitalWalletApprovalRow from '@pages/settings/Wallet/PendingDigit
 import RedDotCardSection from '@pages/settings/Wallet/RedDotCardSection';
 import CardDetails from '@pages/settings/Wallet/WalletPage/CardDetails';
 
-import variables from '@styles/variables';
-
 import {openOldDotLink} from '@userActions/Link';
 
 import CONST from '@src/CONST';
@@ -85,7 +83,6 @@ import SCREENS from '@src/SCREENS';
 import type {Policy} from '@src/types/onyx';
 import isLoadingOnyxValue from '@src/types/utils/isLoadingOnyxValue';
 
-import type {ViewStyle} from 'react-native';
 import type {OnyxCollection} from 'react-native-onyx';
 import type {ValueOf} from 'type-fest';
 
@@ -243,14 +240,6 @@ function ExpensifyCardPage({route}: ExpensifyCardPageProps) {
     const shouldShowPhysicalCardFooterButton =
         currentPhysicalCard?.state === CONST.EXPENSIFY_CARD.STATE.NOT_ACTIVATED || currentPhysicalCard?.state === CONST.EXPENSIFY_CARD.STATE.STATE_NOT_ISSUED;
 
-    const scarfOverlayStyle: ViewStyle = {
-        top: 0,
-        left: (variables.cardPreviewWidth - variables.cardScarfOverlayWidth) / 2,
-        zIndex: variables.cardScarfOverlayZIndex,
-        width: variables.cardScarfOverlayWidth,
-        height: variables.cardScarfOverlayHeight,
-    };
-
     const handleFreezePress = () => {
         showConfirmModal({
             title: `${translate('cardPage.freezeCard')}?`,
@@ -333,7 +322,7 @@ function ExpensifyCardPage({route}: ExpensifyCardPageProps) {
                         cardPreview={
                             <CardPreview
                                 overlayImage={cardScarf}
-                                overlayContainerStyle={scarfOverlayStyle}
+                                overlayContainerStyle={styles.cardScarfOverlay}
                             />
                         }
                     >

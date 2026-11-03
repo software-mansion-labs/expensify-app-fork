@@ -5923,6 +5923,14 @@ const staticStyles = (theme: ThemeColors) =>
             height: 180,
         },
 
+        cardScarfOverlay: {
+            top: 0,
+            left: (variables.cardPreviewWidth - variables.cardScarfOverlayWidth) / 2,
+            zIndex: variables.cardScarfOverlayZIndex,
+            width: variables.cardScarfOverlayWidth,
+            height: variables.cardScarfOverlayHeight,
+        },
+
         walletCardLimit: {
             color: theme.text,
             fontSize: variables.fontSizeNormal,
