@@ -718,6 +718,16 @@ const translations: TranslationDeepObject<typeof en> = {
             confirmationPromptThisDevice: '本当によろしいですか？このデバイスで次回の認証を行うには、セキュリティコードが必要になります。',
             confirmationPromptMultiple: 'よろしいですか？その端末で次回の認証を行うには、セキュリティコードが必要になります。',
         },
+        unconfirmed: {
+            retrying: '接続が切断されました。再試行しています…',
+            title: '完了したかどうかを確認できませんでした',
+            retrySubtitle: '応答を受け取る前に接続が切断されました。完了したことを確認するために、もう一度お試しください。',
+            checkSubtitle: '応答を受け取る前に接続が切断されたため、すでに完了している可能性があります。もう一度試す前にご確認ください。',
+            decisionTitle: '決定を確認できませんでした',
+            decisionSubtitle: '送信中に接続が切断されたため、すでに保存されている可能性があります。もう一度試して確認してください。',
+            cardOrderTitle: 'カードの注文を確認できませんでした',
+            cardOrderSubtitle: '応答を受け取る前に接続が切断されたため、カードはすでに発送されている可能性があります。再度注文する前に、ウォレットでカードをご確認ください。',
+        },
         unsupportedDevice: {
             unsupportedDevice: '未対応のデバイス',
             pleaseDownloadMobileApp: `この操作はお使いのデバイスではサポートされていません。<a href="${CONST.APP_DOWNLOAD_LINKS.IOS}">App Store</a> または <a href="${CONST.APP_DOWNLOAD_LINKS.ANDROID}">Google Playストア</a> からExpensifyアプリをダウンロードして、もう一度お試しください。`,

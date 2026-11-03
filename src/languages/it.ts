@@ -727,6 +727,17 @@ const translations: TranslationDeepObject<typeof en> = {
             confirmationPromptThisDevice: 'Sei sicuro? Avrai bisogno di un codice di sicurezza per la prossima verifica su questo dispositivo.',
             confirmationPromptMultiple: 'Sei sicuro? Ti servirà un codice di sicurezza per la prossima verifica su quei dispositivi.',
         },
+        unconfirmed: {
+            retrying: 'Connessione persa. Nuovo tentativo…',
+            title: 'Non siamo riusciti a confermare che sia andato a buon fine',
+            retrySubtitle: 'La connessione si è interrotta prima di ricevere una risposta. Riprova per assicurarti che sia completato.',
+            checkSubtitle: 'La connessione si è interrotta prima di ricevere una risposta, quindi potrebbe essere già completato. Controlla prima di riprovare.',
+            decisionTitle: 'Non siamo riusciti a confermare la tua decisione',
+            decisionSubtitle: "La connessione si è interrotta durante l'invio, quindi potrebbe essere già stata salvata. Riprova per verificarlo.",
+            cardOrderTitle: "Non siamo riusciti a confermare l'ordine della tua carta",
+            cardOrderSubtitle:
+                'La connessione si è interrotta prima di ricevere una risposta, quindi la tua carta potrebbe essere già in viaggio. Controlla la tua carta nel Portafoglio prima di ordinarla di nuovo.',
+        },
         unsupportedDevice: {
             unsupportedDevice: 'Dispositivo non supportato',
             pleaseDownloadMobileApp: `Questa azione non è supportata sul tuo dispositivo. Scarica l'app Expensify dall'<a href="${CONST.APP_DOWNLOAD_LINKS.IOS}">App Store</a> o da <a href="${CONST.APP_DOWNLOAD_LINKS.ANDROID}">Google Play Store</a> e riprova.`,

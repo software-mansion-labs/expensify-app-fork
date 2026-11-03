@@ -4,7 +4,7 @@ import addMFABreadcrumb from '@components/MultifactorAuthentication/observabilit
 
 import {isHttpResponse, isHttpSuccess} from '@libs/MultifactorAuthentication/shared/helpers';
 import type {MFAError, MFAResult} from '@libs/MultifactorAuthentication/shared/MFAResult';
-import {createMFAErrorFromApiResponse, createUnhandledExceptionMFAError, getMFAFailureError} from '@libs/MultifactorAuthentication/shared/MFAResult';
+import {createLocalMFAError, createMFAErrorFromApiResponse, createUnhandledExceptionMFAError, getMFAFailureError} from '@libs/MultifactorAuthentication/shared/MFAResult';
 import type {MultifactorAuthenticationReason} from '@libs/MultifactorAuthentication/shared/types';
 import Navigation from '@libs/Navigation/Navigation';
 import {refresh as refreshNetworkState} from '@libs/NetworkState';
@@ -16,7 +16,7 @@ import CONST from '@src/CONST';
 import SCREENS from '@src/SCREENS';
 
 import {CONST as COMMON_CONST} from 'expensify-common';
-import {and, assign, not, setup, stateIn} from 'xstate';
+import {and, assign, not, or, setup, stateIn} from 'xstate';
 
 import type {CancelScenarioInput, MfaContext, MfaEvent, RecoverableStep} from './types';
 
@@ -38,8 +38,10 @@ const CANCELLING_IN_FLIGHT_TARGET = `#${MFA_STATE.CANCELLING_IN_FLIGHT}` as cons
 // The state is just `visible`, so its id spells out the region to stay unique across the machine.
 const CANCEL_CONFIRM_VISIBLE_ID = 'cancelConfirmVisible';
 const CANCEL_CONFIRM_VISIBLE_TARGET = `#${CANCEL_CONFIRM_VISIBLE_ID}` as const;
-const EXECUTING_SCENARIO_ACTION_TARGET = `#${MFA_STATE.EXECUTING_SCENARIO_ACTION}` as const;
 const OFFLINE_TARGET = `#${MFA_STATE.OFFLINE}` as const;
+const AWAITING_RESULT_TARGET = `#${MFA_STATE.EXECUTING_SCENARIO_ACTION}.${MFA_STATE.AWAITING_RESULT}` as const;
+const RESEND_PENDING_TARGET = `#${MFA_STATE.RESEND_PENDING}` as const;
+const DECISION_UNCONFIRMED_TARGET = `#${MFA_STATE.DECISION_UNCONFIRMED}` as const;
 
 // The platform ceremonies wait while the cancel confirmation is up (the prompt would cover it) or while offline.
 // Creating a key needs no network itself, but offline nothing could register it, so the user isn't prompted
@@ -123,6 +125,16 @@ function getRecoveryTransition(step: RecoverableStep, cause: keyof typeof RECOVE
     } as const;
 }
 
+/** Whether the in-flight cancel ends on a scenario action whose answer was lost, so nobody knows whether it went through. */
+function isInFlightCancelUnconfirmed({context}: {context: MfaContext}) {
+    return getInFlightCancelOutcome(context).error?.reason === CONST.MULTIFACTOR_AUTHENTICATION.REASON.LOCAL_ERRORS.NO_RESPONSE;
+}
+
+/** Reads the error off a step's result. */
+function getFailureParams({event}: {event: {output: MFAResult}}): {error: MFAError | undefined} {
+    return {error: event.output.success ? undefined : event.output.error};
+}
+
 // Which prompt variant the screen renders is a device property, resolved once per platform.
 const PROMPT_TYPE = CONST.MULTIFACTOR_AUTHENTICATION.PROMPT_TYPE_MAP[deviceVerificationType];
 
@@ -150,6 +162,7 @@ const DEFAULT_CONTEXT: MfaContext = {
     recoveryAttempts: 0,
     recoveredFrom: undefined,
     challengeRetries: 0,
+    resendAttempts: 0,
 };
 
 /**
@@ -175,16 +188,31 @@ const MFAMachine = setup({
     guards: {
         hasError: ({context}) => context.error !== undefined,
         hasRegistrationChallenge: ({context}) => context.registrationChallenge !== undefined,
+        hasResent: ({context}) => context.resendAttempts > 0,
         isCancelConfirmVisible: stateIn(CANCEL_CONFIRM_VISIBLE_TARGET),
         // Back asks for confirmation until the outcome. From there it closes the modal right away. While the
         // cancel itself runs (`cancelling`, or `cancellingInFlight` next to the scenario action), there is nothing left to ask.
-        shouldConfirmCancel: and([not(stateIn(OUTCOME_TARGET)), not(stateIn(CANCELLING_TARGET)), not(stateIn(CANCELLING_IN_FLIGHT_TARGET))]),
+        // Nor while a re-sent request runs, which a cancel can't take back, or once the app can't confirm the result.
+        shouldConfirmCancel: and([
+            not(stateIn(OUTCOME_TARGET)),
+            not(stateIn(CANCELLING_TARGET)),
+            not(stateIn(CANCELLING_IN_FLIGHT_TARGET)),
+            not(and([stateIn(AWAITING_RESULT_TARGET), 'hasResent'])),
+            not(stateIn(RESEND_PENDING_TARGET)),
+            not(stateIn(DECISION_UNCONFIRMED_TARGET)),
+        ]),
         // Offline, a cancel closes the modal without asking and without the scenario's cancel logic, which
-        // couldn't reach the backend anyway. A scenario action already sent still asks, so a confirm waits for
-        // its result next to the cancel.
-        canCancelOffline: and([stateIn(OFFLINE_TARGET), 'shouldConfirmCancel', not(stateIn(EXECUTING_SCENARIO_ACTION_TARGET))]),
+        // couldn't reach the backend anyway.
+        canCancelOffline: and([stateIn(OFFLINE_TARGET), 'shouldConfirmCancel']),
         // The same rule for confirming the dialog once the device went offline while it was up.
-        canConfirmCancelOffline: and([stateIn(OFFLINE_TARGET), 'isCancelConfirmVisible', not(stateIn(EXECUTING_SCENARIO_ACTION_TARGET))]),
+        canConfirmCancelOffline: and([stateIn(OFFLINE_TARGET), 'isCancelConfirmVisible']),
+        // Once the scenario action was sent, leaving can't tell whether it went through: from the unconfirmed screen, while
+        // a lost one waits to be re-sent, or offline while it runs. Offline never sends the scenario's cancel (e.g. a deny).
+        closesUnconfirmed: or([stateIn(DECISION_UNCONFIRMED_TARGET), stateIn(RESEND_PENDING_TARGET), and([stateIn(OFFLINE_TARGET), stateIn(AWAITING_RESULT_TARGET)])]),
+        isUnconfirmed: ({context}) => context.error?.reason === CONST.MULTIFACTOR_AUTHENTICATION.REASON.LOCAL_ERRORS.UNCONFIRMED,
+        isInFlightCancelUnconfirmed,
+        // Running the action again is only safe when doing it twice does no harm, and not after the user asked to cancel it.
+        canRetryUnconfirmed: ({context}) => !!context.scenario && 'idempotent' in context.scenario && !!context.scenario.idempotent && !context.isCancelConfirmed,
         // A successful scenario action decides on its own; anything else waits for both results.
         canResolveInFlightCancel: ({context: {scenarioActionResult, cancelError}}) => !!scenarioActionResult?.success || (scenarioActionResult !== undefined && cancelError !== undefined),
         // A failure that a fresh key registration can fix restarts registration until the flow runs out of attempts.
@@ -195,6 +223,15 @@ const MFAMachine = setup({
             !result.success &&
             result.error.reason === CONST.MULTIFACTOR_AUTHENTICATION.REASON.LOCAL_ERRORS.NO_RESPONSE &&
             context.challengeRetries < CONST.MULTIFACTOR_AUTHENTICATION.MAX_CHALLENGE_RETRIES,
+        // The server accepts a signed challenge once, so re-sending the same request either runs the action (the first copy
+        // never arrived) or is refused with AUTHENTICATION_REQUIRED, and never runs it twice.
+        canResend: ({context}, {error}: {error: MFAError | undefined}) =>
+            error?.reason === CONST.MULTIFACTOR_AUTHENTICATION.REASON.LOCAL_ERRORS.NO_RESPONSE && context.resendAttempts < CONST.MULTIFACTOR_AUTHENTICATION.MAX_RESENDS,
+        // The re-sent request was lost too, or refused because the first copy already used the challenge: it reached the
+        // server, but its result is unknown.
+        isUnconfirmedResult: ({context}, {error}: {error: MFAError | undefined}) =>
+            error?.reason === CONST.MULTIFACTOR_AUTHENTICATION.REASON.LOCAL_ERRORS.NO_RESPONSE ||
+            (error?.reason === CONST.MULTIFACTOR_AUTHENTICATION.REASON.CLIENT_ERRORS.AUTHENTICATION_REQUIRED && context.resendAttempts > 0),
     },
     actions: {
         // Seeds the flow's context from the INIT event. A named action's event is typed as the full
@@ -270,6 +307,16 @@ const MFAMachine = setup({
         addChallengeRetryBreadcrumb: ({context}) => {
             addMFABreadcrumb('Authorization challenge lost, requesting it again', {scenario: context.scenarioName}, 'warning');
         },
+        countResend: assign({resendAttempts: ({context}) => context.resendAttempts + 1}),
+        addResendBreadcrumb: ({context}) => {
+            addMFABreadcrumb('Scenario action answer lost, re-sending it', {scenario: context.scenarioName}, 'warning');
+        },
+        addUnconfirmedBreadcrumb: ({context}) => {
+            addMFABreadcrumb('Scenario action result unconfirmed', {scenario: context.scenarioName, isCancelConfirmed: context.isCancelConfirmed}, 'warning');
+        },
+        markUnconfirmed: assign({
+            error: () => createLocalMFAError(CONST.MULTIFACTOR_AUTHENTICATION.REASON.LOCAL_ERRORS.UNCONFIRMED, 'Closed without knowing whether the scenario action went through'),
+        }),
         // Without these a flow waiting for the network looks the same as a stuck one in Sentry.
         addNetworkOfflineBreadcrumb: ({context}) => {
             addMFABreadcrumb('Network offline', {scenario: context.scenarioName}, 'warning');
@@ -329,6 +376,8 @@ const MFAMachine = setup({
                             {guard: 'canConfirmCancelOffline', target: CLOSING_TARGET, actions: 'addOfflineCancelBreadcrumb'},
                             {guard: stateIn(CANCEL_CONFIRM_VISIBLE_TARGET), target: `.${MFA_STATE.CANCELLING}`},
                         ],
+                        // Ends the flow without the scenario's cancel logic. The callback and telemetry still run with UNCONFIRMED.
+                        REQUEST_CANCEL: {guard: 'closesUnconfirmed', target: OUTCOME_TARGET, actions: 'markUnconfirmed'},
                     },
                     states: {
                         // This is the transparent initial screen, and its child states run the pre-screen
@@ -650,6 +699,12 @@ const MFAMachine = setup({
                                                     {guard: stateIn(CANCELLING_IN_FLIGHT_TARGET), actions: assign({scenarioActionResult: ({event}) => event.output})},
                                                     getRecoveryTransition(MFA_STATE.EXECUTING_SCENARIO_ACTION, 'keyUnknownToServer'),
                                                     {
+                                                        guard: {type: 'canResend', params: getFailureParams},
+                                                        target: MFA_STATE.RESEND_PENDING,
+                                                        actions: ['countResend', 'addResendBreadcrumb'],
+                                                    },
+                                                    {guard: {type: 'isUnconfirmedResult', params: getFailureParams}, target: MFA_STATE.DECISION_UNCONFIRMED},
+                                                    {
                                                         guard: ({event}) => !event.output.success,
                                                         target: OUTCOME_TARGET,
                                                         actions: assign({error: ({event}) => getMFAFailureError(event.output)}),
@@ -679,8 +734,17 @@ const MFAMachine = setup({
                                                 [MFA_STATE.CANCELLING_IN_FLIGHT]: {
                                                     id: MFA_STATE.CANCELLING_IN_FLIGHT,
                                                     entry: 'markCancelConfirmed',
-                                                    always: {guard: 'canResolveInFlightCancel', target: OUTCOME_TARGET, actions: 'applyInFlightCancelOutcome'},
-                                                    after: {cancelTimeout: {target: OUTCOME_TARGET, actions: 'applyInFlightCancelOutcome'}},
+                                                    // A lost scenario action isn't re-sent here, since the user asked to cancel it.
+                                                    always: [
+                                                        {guard: and(['canResolveInFlightCancel', 'isInFlightCancelUnconfirmed']), target: DECISION_UNCONFIRMED_TARGET},
+                                                        {guard: 'canResolveInFlightCancel', target: OUTCOME_TARGET, actions: 'applyInFlightCancelOutcome'},
+                                                    ],
+                                                    after: {
+                                                        cancelTimeout: [
+                                                            {guard: 'isInFlightCancelUnconfirmed', target: DECISION_UNCONFIRMED_TARGET},
+                                                            {target: OUTCOME_TARGET, actions: 'applyInFlightCancelOutcome'},
+                                                        ],
+                                                    },
                                                     invoke: {
                                                         id: 'cancelScenario',
                                                         src: 'cancelScenario',
@@ -688,6 +752,26 @@ const MFAMachine = setup({
                                                         onDone: {actions: assign({cancelError: ({event}) => event.output})},
                                                         onError: {actions: assign({cancelError: ({event}) => createCancelExceptionError(event.error)})},
                                                     },
+                                                },
+                                            },
+                                        },
+                                        // Holds a scenario action whose answer was lost and sends the same signed request again
+                                        // once online. See `canResend` for why that is safe for every scenario.
+                                        [MFA_STATE.RESEND_PENDING]: {
+                                            id: MFA_STATE.RESEND_PENDING,
+                                            tags: ['waitingForNetwork'],
+                                            always: {guard: not(stateIn(OFFLINE_TARGET)), target: MFA_STATE.EXECUTING_SCENARIO_ACTION},
+                                        },
+                                        // The app can't tell whether the scenario action went through. Trying again signs a fresh
+                                        // challenge, so it needs the user's tap. Back and Close leave without sending anything.
+                                        [MFA_STATE.DECISION_UNCONFIRMED]: {
+                                            id: MFA_STATE.DECISION_UNCONFIRMED,
+                                            entry: 'addUnconfirmedBreadcrumb',
+                                            on: {
+                                                RETRY_WITH_NEW_CHALLENGE: {
+                                                    guard: 'canRetryUnconfirmed',
+                                                    target: MFA_STATE.WAITING_TO_SIGN,
+                                                    actions: assign({signedChallenge: undefined, resendAttempts: 0}),
                                                 },
                                             },
                                         },
@@ -744,6 +828,8 @@ const MFAMachine = setup({
                                             };
                                         },
                                         onDone: [
+                                            // The user already saw the unconfirmed screen and chose to leave.
+                                            {guard: 'isUnconfirmed', target: CLOSING_TARGET},
                                             {
                                                 guard: ({event}) => event.output.callbackResponse === CONST.MULTIFACTOR_AUTHENTICATION.CALLBACK_RESPONSE.SKIP_OUTCOME_SCREEN,
                                                 target: CLOSING_TARGET,
@@ -755,7 +841,7 @@ const MFAMachine = setup({
                                         // (both are contained there), so reaching here means something else in the actor
                                         // threw unexpectedly. Route on the error state already known before this actor
                                         // ran, rather than re-running the callback.
-                                        onError: [{guard: 'hasError', target: MFA_STATE.FAILURE}, {target: MFA_STATE.SUCCESS}],
+                                        onError: [{guard: 'isUnconfirmed', target: CLOSING_TARGET}, {guard: 'hasError', target: MFA_STATE.FAILURE}, {target: MFA_STATE.SUCCESS}],
                                     },
                                 },
                                 [MFA_STATE.SUCCESS]: {entry: ['navigateToSuccessOutcome']},
@@ -770,6 +856,8 @@ const MFAMachine = setup({
                         [MFA_STATE.CANCEL_CONFIRM_HIDDEN]: {
                             on: {
                                 REQUEST_CANCEL: [
+                                    // The flow closes these itself.
+                                    {guard: 'closesUnconfirmed'},
                                     {guard: 'canCancelOffline', target: CLOSING_TARGET, actions: 'addOfflineCancelBreadcrumb'},
                                     {guard: 'shouldConfirmCancel', target: MFA_STATE.CANCEL_CONFIRM_VISIBLE},
                                 ],

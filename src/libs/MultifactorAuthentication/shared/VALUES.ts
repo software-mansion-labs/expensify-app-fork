@@ -14,6 +14,8 @@ const BACKEND_MESSAGE = {
     TRANSACTION_ALREADY_APPROVED: 'Transaction already approved',
     TRANSACTION_ALREADY_DENIED: 'Transaction already denied',
     TRANSACTION_ALREADY_REVIEWED: 'Transaction already reviewed',
+    /** The signed challenge is unknown or already used: Auth deletes it once a signature is verified. */
+    AUTHENTICATION_REQUIRED: 'Authentication required',
 } as const;
 
 const REASON = {
@@ -34,6 +36,8 @@ const REASON = {
         ALREADY_DENIED_DENY_ATTEMPTED: 'Client: Already denied, deny attempted',
         ALREADY_DENIED_APPROVE_ATTEMPTED: 'Client: Already denied, approve attempted',
         ALREADY_REVIEWED: 'Client: Transaction already reviewed',
+        /** The server doesn't know the signed challenge, e.g. because an earlier copy of the same request already used it. */
+        AUTHENTICATION_REQUIRED: 'Client: Authentication required',
         /** Unrecognized 4xx response from the backend with no specific handler. */
         UNRECOGNIZED: 'Client: Unrecognized client error',
     },
@@ -54,6 +58,8 @@ const REASON = {
          * may or may not have run the command.
          */
         NO_RESPONSE: 'Local: No response from the server',
+        /** The scenario action's answer was lost and re-sending it didn't settle it, so the user left without knowing whether it went through. */
+        UNCONFIRMED: 'Local: Scenario action result unconfirmed',
         /** Updating the local passkey credential list failed before backend registration. */
         LOCAL_CREDENTIAL_UPDATE_FAILED: 'Local: Failed to update passkey credentials',
         WEBAUTHN: {
@@ -213,6 +219,9 @@ const MAX_RECOVERY_ATTEMPTS = 1;
 /** How many times one flow may request the authorization challenge again after its answer was lost. */
 const MAX_CHALLENGE_RETRIES = 1;
 
+/** How many times one signed request may be re-sent after its answer was lost. */
+const MAX_RESENDS = 1;
+
 /** Known errors that should rarely happen and may indicate a bug or unexpected state. Logged at 'error' level. Any reason not in either set is treated as UNCLASSIFIED (e.g. missing reason). */
 const ANOMALOUS_FAILURES = new Set<ReasonValue>([
     REASON.CLIENT_ERRORS.REGISTRATION_REQUIRED,
@@ -278,6 +287,8 @@ const MFA_STATE = {
     EXECUTING_SCENARIO_ACTION: 'executingScenarioAction',
     AWAITING_RESULT: 'awaitingResult',
     CANCELLING_IN_FLIGHT: 'cancellingInFlight',
+    RESEND_PENDING: 'resendPending',
+    DECISION_UNCONFIRMED: 'decisionUnconfirmed',
     OUTCOME: 'outcome',
     FINALIZING_OUTCOME: 'finalizingOutcome',
     SUCCESS: 'success',
@@ -333,6 +344,7 @@ const SHARED_VALUES = {
     CREDENTIAL_FAILURES_REQUIRING_LOCAL_DELETION,
     MAX_RECOVERY_ATTEMPTS,
     MAX_CHALLENGE_RETRIES,
+    MAX_RESENDS,
 
     /**
      * Specifically meaningful values for `multifactorAuthenticationPublicKeyIDs` in the `account` Onyx key.
@@ -389,6 +401,9 @@ const SHARED_VALUES = {
         OUTCOME_SCREEN: 'MultifactorAuthenticationOutcomeScreen',
         OUTCOME_CONFIRM_BUTTON: 'MultifactorAuthenticationOutcomeConfirmButton',
         PROMPT_CONFIRM_BUTTON: 'MultifactorAuthenticationPromptConfirmButton',
+        UNCONFIRMED_SCREEN: 'MultifactorAuthenticationUnconfirmedScreen',
+        UNCONFIRMED_RETRY_BUTTON: 'MultifactorAuthenticationUnconfirmedRetryButton',
+        UNCONFIRMED_CLOSE_BUTTON: 'MultifactorAuthenticationUnconfirmedCloseButton',
         CANCEL_DIALOG_CONFIRM_BUTTON: 'MultifactorAuthenticationCancelDialogConfirmButton',
         CANCEL_DIALOG_DISMISS_BUTTON: 'MultifactorAuthenticationCancelDialogDismissButton',
         VALIDATE_CODE_INPUT: 'MultifactorAuthenticationValidateCodeInput',

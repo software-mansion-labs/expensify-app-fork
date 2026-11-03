@@ -726,6 +726,18 @@ const translations: TranslationDeepObject<typeof en> = {
             confirmationPromptThisDevice: 'Sind Sie sicher? Sie benötigen einen Sicherheitscode für die nächste Verifizierung auf diesem Gerät.',
             confirmationPromptMultiple: 'Sind Sie sicher? Sie benötigen einen Sicherheitscode für die nächste Verifizierung auf diesen Geräten.',
         },
+        unconfirmed: {
+            retrying: 'Verbindung unterbrochen. Neuer Versuch…',
+            title: 'Wir konnten nicht bestätigen, dass es geklappt hat',
+            retrySubtitle: 'Die Verbindung wurde unterbrochen, bevor wir eine Antwort erhalten haben. Versuche es erneut, um sicherzugehen, dass es erledigt ist.',
+            checkSubtitle:
+                'Die Verbindung wurde unterbrochen, bevor wir eine Antwort erhalten haben, daher ist es möglicherweise bereits erledigt. Bitte prüfe das, bevor du es erneut versuchst.',
+            decisionTitle: 'Wir konnten deine Entscheidung nicht bestätigen',
+            decisionSubtitle: 'Die Verbindung wurde beim Senden unterbrochen, daher ist sie möglicherweise bereits gespeichert. Versuche es erneut, um das zu prüfen.',
+            cardOrderTitle: 'Wir konnten deine Kartenbestellung nicht bestätigen',
+            cardOrderSubtitle:
+                'Die Verbindung wurde unterbrochen, bevor wir eine Antwort erhalten haben, daher ist deine Karte möglicherweise bereits unterwegs. Prüfe deine Karte im Wallet, bevor du erneut bestellst.',
+        },
         unsupportedDevice: {
             unsupportedDevice: 'Nicht unterstütztes Gerät',
             pleaseDownloadMobileApp: `Diese Aktion wird auf deinem Gerät nicht unterstützt. Bitte lade die Expensify-App aus dem <a href="${CONST.APP_DOWNLOAD_LINKS.IOS}">App Store</a> oder dem <a href="${CONST.APP_DOWNLOAD_LINKS.ANDROID}">Google Play Store</a> herunter und versuche es erneut.`,
