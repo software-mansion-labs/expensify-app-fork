@@ -10881,6 +10881,10 @@ ${reportName}`,
                 },
                 autoPayFeeDisclosure: (adminName: string, bankName: string, lastFour: string, autoPaySettingsURL: string) =>
                     `${adminName} 已在以 ${lastFour} 结尾的 ${bankName ? `${bankName} ` : ''}账户上启用了全球报销。对于自动支付的跨境报销单，无法在付款前预览准确的汇率和费用。请查看<a href="${autoPaySettingsURL}">自动支付设置</a>以了解更多费率和费用信息。`,
+                actionableCardFraudTransactionApproval: (amount: string, merchant: string | undefined) => {
+                    const details = [merchant, amount ? `(${amount})` : ''].filter((s) => !!s?.length).join(' ');
+                    return `${details ? `来自 ${details} 的` : '一笔'}交易因涉嫌欺诈已被拒绝。`;
+                },
             },
             error: {
                 invalidCredentials: '凭证无效，请检查您的连接配置。',

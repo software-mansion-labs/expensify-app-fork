@@ -11256,6 +11256,10 @@ ${reportName}`,
                     const amountAndMerchantText = [amount, merchant].filter((s) => !!s?.length).join(' ');
                     return `Abra la aplicación móvil de Expensify para revisar su transacción de${amountAndMerchantText ? ` ${amountAndMerchantText}` : ''}`;
                 },
+                actionableCardFraudTransactionApproval: (amount: string, merchant: string | undefined) => {
+                    const details = [merchant, amount ? `(${amount})` : ''].filter((s) => !!s?.length).join(' ');
+                    return `Se ha rechazado una transacción${details ? ` de ${details}` : ''} por sospecha de fraude.`;
+                },
                 integrationSyncFailed: (label, errorMessage, workspaceAccountingLink) =>
                     `hubo un problema al sincronizar con ${label}${errorMessage ? ` ("${errorMessage}")` : ''}. Por favor, soluciona el problema en la <a href="${workspaceAccountingLink}">configuración del espacio de trabajo</a>.`,
                 integrationSyncFailedRecurrence: ({count}: {count: number}) => `(Repetido ${count} veces.)`,

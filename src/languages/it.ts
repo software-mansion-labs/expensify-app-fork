@@ -11368,6 +11368,10 @@ Aggiungi altre regole di spesa per proteggere il flusso di cassa aziendale.`,
                 },
                 autoPayFeeDisclosure: (adminName: string, bankName: string, lastFour: string, autoPaySettingsURL: string) =>
                     `I Rimborsi globali sono stati abilitati da ${adminName} sul conto ${bankName ? `${bankName} ` : ''} che termina con ${lastFour}. I tassi di cambio e le commissioni esatti non possono essere visualizzati in anteprima prima del pagamento quando i report transfrontalieri vengono pagati automaticamente. Consulta le tue <a href="${autoPaySettingsURL}">impostazioni di pagamento automatico</a> per maggiori informazioni su tassi e commissioni.`,
+                actionableCardFraudTransactionApproval: (amount: string, merchant: string | undefined) => {
+                    const details = [merchant, amount ? `(${amount})` : ''].filter((s) => !!s?.length).join(' ');
+                    return `Una transazione${details ? ` da ${details}` : ''} è stata rifiutata per sospetta frode.`;
+                },
             },
             error: {
                 invalidCredentials: 'Credenziali non valide, controlla la configurazione della tua connessione.',

@@ -41,7 +41,8 @@ import Parser from './Parser';
 import {getLoginByAccountID, getPersonalDetailsByID, getPersonalDetailsForAccountIDs, getPersonalDetailsListByIDs, temporaryGetDisplayNameOrDefault} from './PersonalDetailsUtils';
 import {getCleanedTagName, hasDynamicExternalWorkflow, isPolicyAdmin} from './PolicyUtils';
 import {
-    getActionableCard3DSTransactionApprovalMessage,
+    getActionableCardTransactionApprovalMessage,
+    isActionableCardTransactionApprovalAction,
     getActionableCardFraudAlertResolutionMessage,
     getActionableMentionWhisperMessage,
     getAgentPromptUpdatedMessage,
@@ -1374,8 +1375,8 @@ function getReportAlternateText({
     let lastMessageText = Str.removeSMSDomain(lastMessageTextFromReport);
 
     // Specifically for concierge chats and expense reports, which don't meet any of the conditions in the if statement below
-    if (isActionOfType(lastAction, CONST.REPORT.ACTIONS.TYPE.ACTIONABLE_CARD_3DS_TRANSACTION_APPROVAL)) {
-        lastMessageText = getActionableCard3DSTransactionApprovalMessage(translate, lastAction, convertToDisplayString, convertToDisplayStringWithoutCurrency) ?? lastMessageText;
+    if (isActionableCardTransactionApprovalAction(lastAction)) {
+        lastMessageText = getActionableCardTransactionApprovalMessage(translate, lastAction, convertToDisplayString, convertToDisplayStringWithoutCurrency) ?? lastMessageText;
     } else if (isActionOfType(lastAction, CONST.REPORT.ACTIONS.TYPE.ACTION_DELEGATE_SUBMIT) && !!getDelegateSubmitMessage(translate, lastAction, currentUserLogin)) {
         lastMessageText = Parser.htmlToText(getDelegateSubmitMessage(translate, lastAction, currentUserLogin));
     }

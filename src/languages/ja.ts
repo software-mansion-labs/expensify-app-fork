@@ -11179,6 +11179,10 @@ ${reportName}`,
                 },
                 autoPayFeeDisclosure: (adminName: string, bankName: string, lastFour: string, autoPaySettingsURL: string) =>
                     `グローバル払い戻しは、${adminName} さんにより、末尾が ${lastFour} の ${bankName ? `${bankName} ` : ''}アカウントで有効化されました。国境を越えるレポートが自動支払いされる場合、正確な為替レートおよび手数料は支払い前にプレビューできません。レートと手数料の詳細については、<a href="${autoPaySettingsURL}">自動支払い設定</a>をご確認ください。`,
+                actionableCardFraudTransactionApproval: (amount: string, merchant: string | undefined) => {
+                    const details = [merchant, amount ? `(${amount})` : ''].filter((s) => !!s?.length).join(' ');
+                    return `${details ? `${details} の` : ''}取引が不正の疑いにより拒否されました。`;
+                },
             },
             error: {
                 invalidCredentials: '認証情報が無効です。接続の設定を確認してください。',

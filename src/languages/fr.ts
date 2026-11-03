@@ -11452,6 +11452,10 @@ Ajoutez davantage de règles de dépenses pour protéger la trésorerie de l’e
                 },
                 autoPayFeeDisclosure: (adminName: string, bankName: string, lastFour: string, autoPaySettingsURL: string) =>
                     `Les remboursements globaux ont été activés par ${adminName} sur le compte n° ${bankName ? `${bankName} ` : ''} se terminant par ${lastFour}. Les taux de change exacts et les frais ne peuvent pas être prévisualisés avant le paiement lorsque les notes de frais transfrontalières sont payées automatiquement. Consultez vos <a href="${autoPaySettingsURL}">paramètres de paiement automatique</a> pour plus d’informations sur les taux et les frais.`,
+                actionableCardFraudTransactionApproval: (amount: string, merchant: string | undefined) => {
+                    const details = [merchant, amount ? `(${amount})` : ''].filter((s) => !!s?.length).join(' ');
+                    return `Une transaction${details ? ` de ${details}` : ''} a été refusée pour suspicion de fraude.`;
+                },
             },
             error: {
                 invalidCredentials: 'Identifiants invalides, veuillez vérifier la configuration de votre connexion.',

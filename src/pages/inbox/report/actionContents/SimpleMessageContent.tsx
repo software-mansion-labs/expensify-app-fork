@@ -4,7 +4,8 @@ import {useCurrencyListActions} from '@hooks/useCurrencyList';
 import useLocalize from '@hooks/useLocalize';
 
 import {
-    getActionableCard3DSTransactionApprovalMessage,
+    getActionableCardTransactionApprovalMessage,
+    isActionableCardTransactionApprovalAction,
     getAgentPromptUpdatedMessageHTML,
     getDemotedFromWorkspaceMessage,
     getDismissedViolationMessageText,
@@ -94,8 +95,8 @@ function SimpleMessageContent({action}: SimpleMessageContentProps) {
     if (isActionOfType(action, CONST.REPORT.ACTIONS.TYPE.DEMOTED_FROM_WORKSPACE)) {
         return <ReportActionItemBasicMessage message={getDemotedFromWorkspaceMessage(translate, action)} />;
     }
-    if (isActionOfType(action, CONST.REPORT.ACTIONS.TYPE.ACTIONABLE_CARD_3DS_TRANSACTION_APPROVAL)) {
-        return <ReportActionItemBasicMessage message={getActionableCard3DSTransactionApprovalMessage(translate, action, convertToDisplayString, convertToDisplayStringWithoutCurrency)} />;
+    if (isActionableCardTransactionApprovalAction(action)) {
+        return <ReportActionItemBasicMessage message={getActionableCardTransactionApprovalMessage(translate, action, convertToDisplayString, convertToDisplayStringWithoutCurrency)} />;
     }
     if (isActionOfType(action, CONST.REPORT.ACTIONS.TYPE.MARK_REIMBURSED_FROM_INTEGRATION)) {
         return <ReportActionItemBasicMessage message={getMessageOfOldDotReportAction(translate, action)} />;
