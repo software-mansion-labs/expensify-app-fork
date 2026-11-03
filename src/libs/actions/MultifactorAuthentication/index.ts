@@ -8,6 +8,7 @@ import Log from '@libs/Log';
 import type {AuthenticationChallenge, RegistrationChallenge} from '@libs/MultifactorAuthentication/shared/challengeTypes';
 import {isAuthenticationChallenge, isRegistrationChallenge, parseHttpResponse} from '@libs/MultifactorAuthentication/shared/helpers';
 import type {MultifactorAuthenticationReason} from '@libs/MultifactorAuthentication/shared/types';
+import {getIsOffline, subscribe as subscribeToNetworkState} from '@libs/NetworkState';
 
 import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';
@@ -417,7 +418,7 @@ async function authorizeTransaction({transactionID, signedChallenge, authenticat
     }
 }
 
-async function denyTransaction({transactionID}: DenyTransactionParams) {
+async function sendDenyTransaction({transactionID}: DenyTransactionParams) {
     try {
         const response = await makeRequestWithSideEffects(
             SIDE_EFFECT_REQUEST_COMMANDS.DENY_TRANSACTION,
@@ -444,6 +445,48 @@ async function denyTransaction({transactionID}: DenyTransactionParams) {
     }
 }
 
+/** Resolves once the device is online, right away when it already is. */
+function waitUntilOnline(): Promise<void> {
+    if (!getIsOffline()) {
+        return Promise.resolve();
+    }
+    return new Promise((resolve) => {
+        const unsubscribe = subscribeToNetworkState(() => {
+            if (getIsOffline()) {
+                return;
+            }
+            unsubscribe();
+            resolve();
+        });
+    });
+}
+
+/**
+ * Forgets that this device decided on the transaction, after the decision's answer was lost. The 3DS navigation hook
+ * then asks the server again and brings the Review back only while the transaction is still pending.
+ */
+function forgetLocallyProcessed3DSTransactionReview(transactionID: string) {
+    cleanUpLocallyProcessed3DSTransactionReviews([transactionID]);
+}
+
+/**
+ * A deny needs no challenge and a repeated one answers "already denied", so a deny whose answer was lost is sent once
+ * more when the device is online. If that answer is lost too, the Review can come back while the transaction is pending.
+ */
+async function denyTransaction({transactionID}: DenyTransactionParams) {
+    const result = await sendDenyTransaction({transactionID});
+    if (result.reason !== CONST.MULTIFACTOR_AUTHENTICATION.REASON.LOCAL_ERRORS.NO_RESPONSE) {
+        return result;
+    }
+    Log.info('[MFA] Deny answer lost, re-sending it once online', false, {transactionID});
+    await waitUntilOnline();
+    const resendResult = await sendDenyTransaction({transactionID});
+    if (resendResult.reason === CONST.MULTIFACTOR_AUTHENTICATION.REASON.LOCAL_ERRORS.NO_RESPONSE) {
+        forgetLocallyProcessed3DSTransactionReview(transactionID);
+    }
+    return resendResult;
+}
+
 /** Attempt to deny the transaction without handling errors or waiting for a response. We use this to clean up after something unexpected happened trying to authorize or deny a challenge */
 async function fireAndForgetDenyTransaction({transactionID}: DenyTransactionParams) {
     makeRequestWithSideEffects(
@@ -460,7 +503,13 @@ async function fireAndForgetDenyTransaction({transactionID}: DenyTransactionPara
                 },
             ],
         },
-    );
+    ).catch((error: unknown) => {
+        Log.hmmm('[MFA] Failed to deny transaction without waiting', {error});
+        if (!isNoResponseError(error)) {
+            return;
+        }
+        forgetLocallyProcessed3DSTransactionReview(transactionID);
+    });
 }
 
 function getDeviceBiometricsOnyxKey(accountID: number): `${typeof ONYXKEYS.COLLECTION.DEVICE_BIOMETRICS}${string}` {
@@ -496,4 +545,5 @@ export {
     denyTransaction,
     authorizeTransaction,
     fireAndForgetDenyTransaction,
+    forgetLocallyProcessed3DSTransactionReview,
 };

@@ -17,7 +17,7 @@ import SCREENS from '@src/SCREENS';
 import {CONST as COMMON_CONST} from 'expensify-common';
 import {and, assign, not, or, setup, stateIn} from 'xstate';
 
-import type {CancelScenarioInput, MfaContext, MfaEvent} from './types';
+import type {CancelScenarioInput, MfaContext, MfaEvent, ResendReason} from './types';
 
 import createActors from './mfaActors';
 
@@ -123,6 +123,17 @@ const MAX_CHALLENGE_RETRIES = 1;
 // How many times one signed request may be re-sent after its answer was lost.
 const MAX_RESENDS = 1;
 
+function hasResendLeft({context}: {context: MfaContext}) {
+    return context.resendAttempts < MAX_RESENDS;
+}
+
+function getResendActions(reason: ResendReason) {
+    return [
+        {type: 'countResend', params: {reason}},
+        {type: 'addResendBreadcrumb', params: {reason}},
+    ] as const;
+}
+
 // Which prompt variant the screen renders is a device property, resolved once per platform.
 const PROMPT_TYPE = CONST.MULTIFACTOR_AUTHENTICATION.PROMPT_TYPE_MAP[deviceVerificationType];
 
@@ -150,6 +161,8 @@ const DEFAULT_CONTEXT: MfaContext = {
     recoveryAttempts: 0,
     challengeRetries: 0,
     resendAttempts: 0,
+    resendReasons: [],
+    userRetries: 0,
 };
 
 /**
@@ -176,6 +189,7 @@ const MFAMachine = setup({
         hasError: ({context}) => context.error !== undefined,
         hasRegistrationChallenge: ({context}) => context.registrationChallenge !== undefined,
         hasResent: ({context}) => context.resendAttempts > 0,
+        hasResendLeft,
         // Back asks for confirmation until the outcome. From there it closes the modal right away. While the
         // cancel itself runs (`cancelling`, or `cancellingInFlight` next to the scenario action), there is nothing left to ask.
         // Nor while a re-sent request runs, which a cancel can't take back, or once the app can't confirm the result.
@@ -207,8 +221,7 @@ const MFAMachine = setup({
             error?.reason === CONST.MULTIFACTOR_AUTHENTICATION.REASON.LOCAL_ERRORS.NO_RESPONSE && context.challengeRetries < MAX_CHALLENGE_RETRIES,
         // The server accepts a signed challenge once, so re-sending the same request either runs the action (the first copy
         // never arrived) or is refused with AUTHENTICATION_REQUIRED, and never runs it twice.
-        canResend: ({context}, {error}: {error: MFAError | undefined}) =>
-            error?.reason === CONST.MULTIFACTOR_AUTHENTICATION.REASON.LOCAL_ERRORS.NO_RESPONSE && context.resendAttempts < MAX_RESENDS,
+        canResend: ({context}, {error}: {error: MFAError | undefined}) => error?.reason === CONST.MULTIFACTOR_AUTHENTICATION.REASON.LOCAL_ERRORS.NO_RESPONSE && hasResendLeft({context}),
         // The re-sent request was lost too, or refused because the first copy already used the challenge: it reached the
         // server, but its result is unknown.
         isUnconfirmedResult: ({context}, {error}: {error: MFAError | undefined}) =>
@@ -298,9 +311,16 @@ const MFAMachine = setup({
         addChallengeRetryBreadcrumb: ({context}) => {
             addMFABreadcrumb('Authorization challenge lost, requesting it again', {scenario: context.scenarioName}, 'warning');
         },
-        countResend: assign({resendAttempts: ({context}) => context.resendAttempts + 1}),
-        addResendBreadcrumb: ({context}) => {
-            addMFABreadcrumb('Scenario action answer lost, re-sending it', {scenario: context.scenarioName}, 'warning');
+        countResend: assign(({context}, {reason}: {reason: ResendReason}) => ({
+            resendAttempts: context.resendAttempts + 1,
+            resendReasons: [...context.resendReasons, reason],
+        })),
+        addResendBreadcrumb: ({context}, {reason}: {reason: ResendReason}) => {
+            addMFABreadcrumb('Scenario action answer lost, re-sending it', {scenario: context.scenarioName, reason}, 'warning');
+        },
+        startUserRetry: assign({signedChallenge: undefined, resendAttempts: 0, userRetries: ({context}) => context.userRetries + 1}),
+        addUserRetryBreadcrumb: ({context}) => {
+            addMFABreadcrumb('Trying the scenario action again with a fresh challenge', {scenario: context.scenarioName, userRetries: context.userRetries});
         },
         addUnconfirmedBreadcrumb: ({context}) => {
             addMFABreadcrumb('Scenario action result unconfirmed', {scenario: context.scenarioName, isCancelConfirmed: context.isCancelConfirmed}, 'warning');
@@ -331,6 +351,8 @@ const MFAMachine = setup({
         // How long a confirmed cancel (`cancelling`, `cancellingInFlight`) waits for its requests, since back and
         // Escape can't leave either state.
         cancelTimeout: CONST.MULTIFACTOR_AUTHENTICATION.CANCEL_TIMEOUT_MS,
+        // How long the scenario action waits for its answer before it counts as lost.
+        requestTimeout: CONST.MULTIFACTOR_AUTHENTICATION.REQUEST_TIMEOUT_MS,
     },
 }).createMachine({
     id: 'mfa',
@@ -684,7 +706,7 @@ const MFAMachine = setup({
                                                     {
                                                         guard: {type: 'canResend', params: getFailureParams},
                                                         target: MFA_STATE.RESEND_PENDING,
-                                                        actions: ['countResend', 'addResendBreadcrumb'],
+                                                        actions: getResendActions(CONST.MULTIFACTOR_AUTHENTICATION.RESEND_REASON.NO_RESPONSE),
                                                     },
                                                     {guard: {type: 'isUnconfirmedResult', params: getFailureParams}, target: MFA_STATE.DECISION_UNCONFIRMED},
                                                     {
@@ -711,7 +733,20 @@ const MFAMachine = setup({
                                                 ],
                                             },
                                             states: {
-                                                [MFA_STATE.AWAITING_RESULT]: {},
+                                                // A hung request counts as lost. Leaving for the re-send stops the request, so its late answer is ignored.
+                                                // The timer lives here, not on the parent, so `cancellingInFlight` waits on `cancelTimeout` alone.
+                                                [MFA_STATE.AWAITING_RESULT]: {
+                                                    after: {
+                                                        requestTimeout: [
+                                                            {
+                                                                guard: 'hasResendLeft',
+                                                                target: RESEND_PENDING_TARGET,
+                                                                actions: getResendActions(CONST.MULTIFACTOR_AUTHENTICATION.RESEND_REASON.TIMEOUT),
+                                                            },
+                                                            {target: DECISION_UNCONFIRMED_TARGET},
+                                                        ],
+                                                    },
+                                                },
                                                 // The request already sent can't be taken back, so the cancel races it and `getInFlightCancelOutcome`
                                                 // picks the result.
                                                 [MFA_STATE.CANCELLING_IN_FLIGHT]: {
@@ -754,7 +789,7 @@ const MFAMachine = setup({
                                                 RETRY_WITH_NEW_CHALLENGE: {
                                                     guard: 'canRetryUnconfirmed',
                                                     target: MFA_STATE.READY_TO_SIGN,
-                                                    actions: assign({signedChallenge: undefined, resendAttempts: 0}),
+                                                    actions: ['startUserRetry', 'addUserRetryBreadcrumb'],
                                                 },
                                             },
                                         },
@@ -807,6 +842,9 @@ const MFAMachine = setup({
                                                 registrationStateAtStart: context.registrationStateAtStart,
                                                 isCancelConfirmed: context.isCancelConfirmed,
                                                 recoveryAttempts: context.recoveryAttempts,
+                                                challengeRetries: context.challengeRetries,
+                                                resendReasons: context.resendReasons,
+                                                userRetries: context.userRetries,
                                             };
                                         },
                                         onDone: [
