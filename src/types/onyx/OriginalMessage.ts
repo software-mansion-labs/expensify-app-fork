@@ -13,6 +13,7 @@ import type {PolicyChangeLogCopyReportActionNames} from './ReportAction';
 import type ReportActionName from './ReportActionName';
 import type {Reservation, TransactionCommentVendor} from './Transaction';
 import type TransactionPending3DSReview from './TransactionPending3DSReview';
+import type TransactionPendingFraudReview from './TransactionPendingFraudReview';
 
 /** Types of join workspace resolutions */
 type JoinWorkspaceResolution = ValueOf<typeof CONST.REPORT.ACTIONABLE_MENTION_JOIN_WORKSPACE_RESOLUTION>;
@@ -1718,6 +1719,11 @@ type OriginalMessageDelegateSubmit = {
 type OriginalMessageActionableCard3DSTransactionApproval = TransactionPending3DSReview;
 
 /**
+ * Declined transaction data needed to tell the user it awaits their fraud review.
+ */
+type OriginalMessageActionableCardFraudTransactionApproval = TransactionPendingFraudReview;
+
+/**
  * Model of settlement account locked report action
  */
 type OriginalMessageSettlementAccountLocked = {
@@ -1804,6 +1810,7 @@ type OriginalMessageAgentPromptUpdated = {
 type OriginalMessageMap = {
     [CONST.REPORT.ACTIONS.TYPE.ACTIONABLE_ADD_PAYMENT_CARD]: OriginalMessageAddPaymentCard;
     [CONST.REPORT.ACTIONS.TYPE.ACTIONABLE_CARD_3DS_TRANSACTION_APPROVAL]: OriginalMessageActionableCard3DSTransactionApproval;
+    [CONST.REPORT.ACTIONS.TYPE.ACTIONABLE_CARD_FRAUD_TRANSACTION_APPROVAL]: OriginalMessageActionableCardFraudTransactionApproval;
     [CONST.REPORT.ACTIONS.TYPE.ACTIONABLE_CARD_FRAUD_ALERT]: OriginalMessageCardFraudAlert;
     [CONST.REPORT.ACTIONS.TYPE.ACTIONABLE_JOIN_REQUEST]: OriginalMessageJoinPolicy;
     [CONST.REPORT.ACTIONS.TYPE.ACTIONABLE_MENTION_WHISPER]: OriginalMessageActionableMentionWhisper;

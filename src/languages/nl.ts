@@ -11340,6 +11340,10 @@ er bestedingsregels toe om de kasstroom van het bedrijf te beschermen.`,
                 },
                 autoPayFeeDisclosure: (adminName: string, bankName: string, lastFour: string, autoPaySettingsURL: string) =>
                     `Global Reimbursements is ingeschakeld door ${adminName} op de ${bankName ? `${bankName} ` : ''}rekening die eindigt op ${lastFour}. Exacte wisselkoersen en kosten kunnen niet vooraf worden bekeken wanneer grensoverschrijdende rapporten automatisch worden betaald. Bekijk je <a href="${autoPaySettingsURL}">automatische betaalinstellingen</a> voor meer informatie over tarieven en kosten.`,
+                actionableCardFraudTransactionApproval: (amount: string, merchant: string | undefined) => {
+                    const details = [merchant, amount ? `(${amount})` : ''].filter((s) => !!s?.length).join(' ');
+                    return `Een transactie${details ? ` van ${details}` : ''} is geweigerd vanwege vermoedelijke fraude.`;
+                },
             },
             error: {
                 invalidCredentials: 'Ongeldige inloggegevens, controleer de configuratie van je verbinding.',
