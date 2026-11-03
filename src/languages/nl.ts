@@ -725,6 +725,17 @@ const translations: TranslationDeepObject<typeof en> = {
             confirmationPromptThisDevice: 'Weet je het zeker? Je hebt een beveiligingscode nodig voor de volgende verificatie op dit apparaat.',
             confirmationPromptMultiple: 'Weet je het zeker? Je hebt een beveiligingscode nodig voor de volgende verificatie op die apparaten.',
         },
+        unconfirmed: {
+            retrying: 'Verbinding verbroken. Opnieuw proberen…',
+            title: 'We konden niet bevestigen dat het is gelukt',
+            retrySubtitle: 'De verbinding werd verbroken voordat we een antwoord kregen. Probeer het opnieuw om zeker te weten dat het is gelukt.',
+            checkSubtitle: 'De verbinding werd verbroken voordat we een antwoord kregen, dus het is misschien al gelukt. Controleer dit voordat je het opnieuw probeert.',
+            decisionTitle: 'We konden je beslissing niet bevestigen',
+            decisionSubtitle: 'De verbinding werd verbroken tijdens het verzenden, dus je beslissing is misschien al opgeslagen. Probeer het opnieuw om dit te controleren.',
+            cardOrderTitle: 'We konden je kaartbestelling niet bevestigen',
+            cardOrderSubtitle:
+                'De verbinding werd verbroken voordat we een antwoord kregen, dus je kaart is misschien al onderweg. Controleer je kaart in Wallet voordat je opnieuw bestelt.',
+        },
         unsupportedDevice: {
             unsupportedDevice: 'Niet-ondersteund apparaat',
             pleaseDownloadMobileApp: `Deze actie wordt niet ondersteund op jouw apparaat. Download de Expensify-app uit de <a href="${CONST.APP_DOWNLOAD_LINKS.IOS}">App Store</a> of de <a href="${CONST.APP_DOWNLOAD_LINKS.ANDROID}">Google Play Store</a> en probeer het opnieuw.`,

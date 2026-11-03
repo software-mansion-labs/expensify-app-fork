@@ -41,6 +41,9 @@ type MultifactorAuthenticationInternalApi = {
 
     /** Confirm cancellation. */
     confirmCancel: () => void;
+
+    /** Run the scenario action again with a fresh challenge after the app couldn't confirm it went through. */
+    retryWithNewChallenge: () => void;
 };
 
 const MultifactorAuthenticationInternalApiContext = createContext<MultifactorAuthenticationInternalApi | undefined>(undefined);

@@ -728,6 +728,17 @@ const translations: TranslationDeepObject<typeof en> = {
             confirmationPromptThisDevice: 'Êtes-vous sûr ? Vous aurez besoin d’un code de sécurité pour la prochaine vérification sur cet appareil.',
             confirmationPromptMultiple: 'Vous êtes sûr(e) ? Vous aurez besoin d’un code de sécurité pour la prochaine vérification sur ces appareils.',
         },
+        unconfirmed: {
+            retrying: 'Connexion perdue. Nouvelle tentative…',
+            title: "Nous n'avons pas pu confirmer que l'opération a abouti",
+            retrySubtitle: "La connexion a été interrompue avant que nous recevions une réponse. Réessayez pour vous assurer que c'est fait.",
+            checkSubtitle: "La connexion a été interrompue avant que nous recevions une réponse, l'opération a donc peut-être déjà abouti. Veuillez vérifier avant de réessayer.",
+            decisionTitle: "Nous n'avons pas pu confirmer votre décision",
+            decisionSubtitle: "La connexion a été interrompue pendant l'envoi, elle a donc peut-être déjà été enregistrée. Réessayez pour vérifier.",
+            cardOrderTitle: "Nous n'avons pas pu confirmer la commande de votre carte",
+            cardOrderSubtitle:
+                'La connexion a été interrompue avant que nous recevions une réponse, votre carte est donc peut-être déjà en route. Vérifiez votre carte dans le Portefeuille avant de la commander à nouveau.',
+        },
         unsupportedDevice: {
             unsupportedDevice: 'Appareil non pris en charge',
             pleaseDownloadMobileApp: `Cette action n'est pas prise en charge sur votre appareil. Veuillez télécharger l'application Expensify depuis l'<a href="${CONST.APP_DOWNLOAD_LINKS.IOS}">App Store</a> ou le <a href="${CONST.APP_DOWNLOAD_LINKS.ANDROID}">Google Play Store</a> et réessayer.`,
