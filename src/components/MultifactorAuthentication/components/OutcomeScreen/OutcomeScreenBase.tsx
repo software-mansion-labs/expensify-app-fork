@@ -148,3 +148,4 @@ function OutcomeScreenBase(props: OutcomeScreenBaseProps) {
 OutcomeScreenBase.displayName = 'OutcomeScreenBase';
 
 export default OutcomeScreenBase;
+export {HTMLSubtitle};

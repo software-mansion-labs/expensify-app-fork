@@ -803,6 +803,10 @@ const translations = {
             giveItAnotherTry: 'Give it another try',
             thankYouForConfirming: 'Thank you for confirming the transaction was yours. Please try again at the merchant.',
             ifYouCloseWeWillFreezeCard: "If you close this screen, we'll have to freeze your card. You'll need to unfreeze it to use it again.",
+            frozenCard: 'Frozen card',
+            yourCardHasBeenFrozen: 'Your card has been frozen',
+            weFrozeYourCard:
+                "We've frozen your card to prevent further charges. Please reach out to <concierge-link>Concierge</concierge-link> if you're concerned your card has been compromised.",
         },
         unsupportedDevice: {
             unsupportedDevice: 'Unsupported device',

@@ -781,6 +781,10 @@ const translations: TranslationDeepObject<typeof en> = {
             giveItAnotherTry: 'Tente mais uma vez',
             thankYouForConfirming: 'Agradecemos por confirmar que você realizou a transação. Tente novamente no estabelecimento.',
             ifYouCloseWeWillFreezeCard: 'Se você fechar esta tela, teremos que bloquear seu cartão. Você precisará desbloqueá-lo para usá-lo novamente.',
+            frozenCard: 'Cartão bloqueado',
+            yourCardHasBeenFrozen: 'Seu cartão foi bloqueado',
+            weFrozeYourCard:
+                'Bloqueamos seu cartão para evitar novas cobranças. Entre em contato com o <concierge-link>Concierge</concierge-link> se você suspeitar que os dados do seu cartão foram comprometidos.',
         },
         unsupportedDevice: {
             unsupportedDevice: 'Dispositivo não compatível',
