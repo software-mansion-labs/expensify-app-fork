@@ -787,6 +787,13 @@ const translations: TranslationDeepObject<typeof en> = {
             yourCardHasBeenFrozen: 'Votre carte a été gelée',
             weFrozeYourCard:
                 'Nous avons gelé votre carte pour empêcher tout nouveau débit. Veuillez contacter <concierge-link>Concierge</concierge-link> si vous craignez que les données de votre carte aient été compromises.',
+            terminateCard: 'Résilier la carte',
+            ifYouDoNotReviewWeWillTerminateCard: "Si vous n'examinez pas cette transaction, nous résilierons votre carte et vous devrez demander une carte de remplacement.",
+            cardTerminated: 'Carte résiliée',
+            yourCardHasBeenTerminated: 'Votre carte a été résiliée',
+            weTerminatedYourCard:
+                "Nous avons résilié votre carte pour protéger votre compte. Vous pouvez demander une carte de remplacement à tout moment ou <concierge-link>contacter Concierge</concierge-link> si vous pensez qu'il s'agit d'une fraude.",
+            goToCardDetails: 'Accéder aux détails de la carte',
         },
         unsupportedDevice: {
             unsupportedDevice: 'Appareil non pris en charge',

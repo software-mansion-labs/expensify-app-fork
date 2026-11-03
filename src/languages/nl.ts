@@ -786,6 +786,13 @@ const translations: TranslationDeepObject<typeof en> = {
             yourCardHasBeenFrozen: 'Je kaart is geblokkeerd',
             weFrozeYourCard:
                 'We hebben je kaart geblokkeerd om verdere afschrijvingen te voorkomen. Neem contact op met <concierge-link>Concierge</concierge-link> als je vermoedt dat je kaartgegevens in verkeerde handen zijn gevallen.',
+            terminateCard: 'Zeg kaart op',
+            ifYouDoNotReviewWeWillTerminateCard: 'Als je deze transactie niet controleert, zeggen we je kaart op en moet je een vervangende kaart aanvragen.',
+            cardTerminated: 'Kaart opgezegd',
+            yourCardHasBeenTerminated: 'Je kaart is opgezegd',
+            weTerminatedYourCard:
+                'We hebben je kaart opgezegd om je account te beschermen. Je kunt op elk moment een vervangende kaart aanvragen of <concierge-link>contact opnemen met Concierge</concierge-link> als je denkt dat er sprake was van fraude.',
+            goToCardDetails: 'Ga naar kaartgegevens',
         },
         unsupportedDevice: {
             unsupportedDevice: 'Niet-ondersteund apparaat',

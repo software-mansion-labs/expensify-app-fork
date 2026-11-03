@@ -721,6 +721,13 @@ const translations: TranslationDeepObject<typeof en> = {
             yourCardHasBeenFrozen: 'Η κάρτα σας έχει παγώσει',
             weFrozeYourCard:
                 'Παγώσαμε την κάρτα σας για να αποτρέψουμε περαιτέρω χρεώσεις. Επικοινωνήστε με το <concierge-link>Concierge</concierge-link> αν ανησυχείτε ότι τα στοιχεία της κάρτας σας έχουν υποκλαπεί.',
+            terminateCard: 'Ακυρώστε την κάρτα',
+            ifYouDoNotReviewWeWillTerminateCard: 'Αν δεν ελέγξετε αυτή τη συναλλαγή, θα ακυρώσουμε την κάρτα σας και θα χρειαστεί να ζητήσετε αντικατάσταση.',
+            cardTerminated: 'Ακυρωμένη κάρτα',
+            yourCardHasBeenTerminated: 'Η κάρτα σας έχει ακυρωθεί',
+            weTerminatedYourCard:
+                'Ακυρώσαμε την κάρτα σας για να διατηρήσουμε τον λογαριασμό σας ασφαλή. Μπορείτε να ζητήσετε αντικατάσταση ανά πάσα στιγμή ή να <concierge-link>επικοινωνήσετε με το Concierge</concierge-link> αν πιστεύετε ότι πρόκειται για απάτη.',
+            goToCardDetails: 'Μεταβείτε στα στοιχεία της κάρτας',
         },
         unsupportedDevice: {
             unsupportedDevice: 'Μη υποστηριζόμενη συσκευή',

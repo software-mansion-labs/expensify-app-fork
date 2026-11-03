@@ -767,6 +767,12 @@ const translations: TranslationDeepObject<typeof en> = {
             frozenCard: '已冻结的卡片',
             yourCardHasBeenFrozen: '您的卡片已冻结',
             weFrozeYourCard: '我们已冻结您的卡片，以防止进一步扣款。如果您担心卡片信息已泄露，请联系 <concierge-link>Concierge</concierge-link>。',
+            terminateCard: '注销卡片',
+            ifYouDoNotReviewWeWillTerminateCard: '如果您不核查这笔交易，我们将注销您的卡片，届时您需要申请补发卡片。',
+            cardTerminated: '卡片已注销',
+            yourCardHasBeenTerminated: '您的卡片已注销',
+            weTerminatedYourCard: '我们已注销您的卡片，以保障您的账户安全。您可以随时申请补发卡片，或在怀疑遭遇欺诈时<concierge-link>联系 Concierge</concierge-link>。',
+            goToCardDetails: '前往卡片详情',
         },
         unsupportedDevice: {
             unsupportedDevice: '不支持的设备',

@@ -107,6 +107,17 @@ describe('fraud review actions', () => {
             expect(result.reason).toBe(VALUES.REASON.FLOW_OUTCOMES.FRAUD_REPORTED);
         });
 
+        it('reports whether the card was terminated instead of frozen', async () => {
+            // Given the server terminates the card, because the cardholder already reported fraud on it recently
+            mockMakeRequestWithSideEffects.mockResolvedValue({jsonCode: 200, cardTerminated: true});
+
+            // When the cardholder reports another transaction as fraud
+            const result = await reportFraudulentTransaction({transactionID: TRANSACTION_ID});
+
+            // Then the screen can show the terminated card result instead of the frozen one
+            expect(result.isCardTerminated).toBe(true);
+        });
+
         it('maps an already reviewed response to the already reviewed outcome', async () => {
             // Given the transaction was already reviewed on another device
             mockMakeRequestWithSideEffects.mockResolvedValue({jsonCode: 400, message: 'Transaction already reviewed'});
