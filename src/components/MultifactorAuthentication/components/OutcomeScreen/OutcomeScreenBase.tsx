@@ -92,7 +92,10 @@ function OutcomeScreenBaseContent({
     );
 
     return (
-        <ScreenWrapper testID={CONST.MULTIFACTOR_AUTHENTICATION.TEST_ID.OUTCOME_SCREEN}>
+        <ScreenWrapper
+            testID={CONST.MULTIFACTOR_AUTHENTICATION.TEST_ID.OUTCOME_SCREEN}
+            shouldShowOfflineIndicator={false}
+        >
             <HeaderWithBackButton
                 title={headerTitle}
                 onBackButtonPress={onClose}

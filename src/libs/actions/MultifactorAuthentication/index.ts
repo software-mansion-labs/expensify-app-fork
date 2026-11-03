@@ -3,6 +3,7 @@ import type {MultifactorAuthenticationScenarioParameters} from '@components/Mult
 import {makeRequestWithSideEffects} from '@libs/API';
 import type {DenyTransactionParams, RevokeMultifactorAuthenticationCredentialsParams} from '@libs/API/parameters';
 import {SIDE_EFFECT_REQUEST_COMMANDS} from '@libs/API/types';
+import HttpsError from '@libs/Errors/HttpsError';
 import Log from '@libs/Log';
 import type {AuthenticationChallenge, RegistrationChallenge} from '@libs/MultifactorAuthentication/shared/challengeTypes';
 import {isAuthenticationChallenge, isRegistrationChallenge, parseHttpResponse} from '@libs/MultifactorAuthentication/shared/helpers';
@@ -84,6 +85,28 @@ async function registerAuthenticationKey({keyInfo}: MultifactorAuthenticationSce
         Log.hmmm('[MFA] Failed to register an authentication key', {error});
         return parseHttpResponse(undefined, CONST.MULTIFACTOR_AUTHENTICATION.API_RESPONSE_MAP.REGISTER_AUTHENTICATION_KEY, undefined);
     }
+}
+
+// What `fetch` rejects with when the connection drops, on web and on native.
+const CONNECTION_LOST_MESSAGES = new Set<string>([
+    CONST.ERROR.FAILED_TO_FETCH,
+    CONST.ERROR.NETWORK_REQUEST_FAILED,
+    CONST.ERROR.IOS_NETWORK_CONNECTION_LOST,
+    CONST.ERROR.IOS_NETWORK_CONNECTION_LOST_RUSSIAN,
+    CONST.ERROR.IOS_NETWORK_CONNECTION_LOST_SWEDISH,
+    CONST.ERROR.IOS_NETWORK_CONNECTION_LOST_SPANISH,
+]);
+
+/**
+ * Whether a request failed without an answer, so the app can't tell whether the server got it. A socket error
+ * counts too: Web-Expensify gave up waiting for Auth, which may still run the command. An HTTP error status is
+ * an answer, so it doesn't count.
+ */
+function isNoResponseError(error: unknown): boolean {
+    if (error instanceof HttpsError && error.title === CONST.ERROR_TITLE.SOCKET) {
+        return true;
+    }
+    return error instanceof Error && CONNECTION_LOST_MESSAGES.has(error.message);
 }
 
 type RegistrationChallengeResponse = {
@@ -191,8 +214,11 @@ async function requestAuthorizationChallenge(): Promise<AuthenticationChallengeR
         };
     } catch (error) {
         Log.hmmm('[MFA] Failed to request an authorization challenge', {error});
+        const parsedResponse = parseHttpResponse(undefined, CONST.MULTIFACTOR_AUTHENTICATION.API_RESPONSE_MAP.REQUEST_AUTHENTICATION_CHALLENGE, undefined);
         return {
-            ...parseHttpResponse(undefined, CONST.MULTIFACTOR_AUTHENTICATION.API_RESPONSE_MAP.REQUEST_AUTHENTICATION_CHALLENGE, undefined),
+            ...parsedResponse,
+            // The machine requests a lost challenge once more (an unused one just expires on the server).
+            reason: isNoResponseError(error) ? CONST.MULTIFACTOR_AUTHENTICATION.REASON.LOCAL_ERRORS.NO_RESPONSE : parsedResponse.reason,
             challenge: undefined,
             publicKeys: undefined,
         };

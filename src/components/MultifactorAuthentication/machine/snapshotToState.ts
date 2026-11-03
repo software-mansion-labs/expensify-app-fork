@@ -34,6 +34,9 @@ type MfaState = MfaContext & {
      * copy only for this sub-state - see `PromptPage`'s title override.
      */
     isAuthorizing: boolean;
+
+    /** Whether the flow holds its next request until the device is back online, so the screen shows the offline view. */
+    isWaitingForNetwork: boolean;
 };
 
 function getModalState(snapshot: MfaSnapshot): MfaModalState {
@@ -60,6 +63,7 @@ function snapshotToState(snapshot: MfaSnapshot): MfaState {
         isValidateCodeFormSubmitting: snapshot.context.validateCodePresentationPhase === MFA_STATE.REQUESTING_REGISTRATION_CHALLENGE,
         isProcessingPrompt: snapshot.context.promptPresentationPhase === MFA_STATE.CREATING_CREDENTIAL || snapshot.context.promptPresentationPhase === MFA_STATE.AUTHORIZING,
         isAuthorizing: snapshot.context.promptPresentationPhase === MFA_STATE.AUTHORIZING,
+        isWaitingForNetwork: snapshot.hasTag('waitingForNetwork') && snapshot.matches({[MFA_STATE.OPEN]: {[MFA_STATE.NETWORK]: MFA_STATE.OFFLINE}}),
         isCancelConfirmVisible: snapshot.matches({[MFA_STATE.OPEN]: {[MFA_STATE.CANCEL_CONFIRM]: MFA_STATE.CANCEL_CONFIRM_VISIBLE}}),
         showsInvalidCodeError: snapshot.matches({
             [MFA_STATE.OPEN]: {
