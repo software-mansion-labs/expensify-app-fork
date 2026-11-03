@@ -11637,6 +11637,10 @@ Aggiungi altre regole di spesa per proteggere il flusso di cassa aziendale.`,
                 reimbursementHeld:
                     'Pagamento in sospeso mentre il nostro partner completa una verifica. Aspetta un altro aggiornamento. Chatta con <concierge-link>Concierge</concierge-link>.',
                 reimbursementReleased: 'La revisione è stata completata e il tuo pagamento è in arrivo. Il tasso di cambio finale potrebbe modificarne l’importo.',
+                actionableCardFraudTransactionApproval: (amount: string, merchant: string | undefined) => {
+                    const details = [merchant, amount ? `(${amount})` : ''].filter((s) => !!s?.length).join(' ');
+                    return `Una transazione${details ? ` da ${details}` : ''} è stata rifiutata per sospetta frode.`;
+                },
             },
             error: {
                 invalidCredentials: 'Credenziali non valide, controlla la configurazione della tua connessione.',

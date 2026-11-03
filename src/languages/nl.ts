@@ -11609,6 +11609,10 @@ er bestedingsregels toe om de kasstroom van het bedrijf te beschermen.`,
                 reimbursementRefundedWithoutBankAccount: 'Gelden zijn teruggestort. Je kunt de betaling opnieuw proberen.',
                 reimbursementHeld: 'Betaling in de wacht terwijl onze partner een beoordeling afrondt. Wacht op een volgende update. Chat met <concierge-link>Concierge</concierge-link>.',
                 reimbursementReleased: 'De controle is voltooid en je betaling is onderweg. De definitieve wisselkoers kan het bedrag veranderen.',
+                actionableCardFraudTransactionApproval: (amount: string, merchant: string | undefined) => {
+                    const details = [merchant, amount ? `(${amount})` : ''].filter((s) => !!s?.length).join(' ');
+                    return `Een transactie${details ? ` van ${details}` : ''} is geweigerd vanwege vermoedelijke fraude.`;
+                },
             },
             error: {
                 invalidCredentials: 'Ongeldige inloggegevens, controleer de configuratie van je verbinding.',

@@ -11721,6 +11721,10 @@ Ajoutez davantage de règles de dépenses pour protéger la trésorerie de l’e
                 reimbursementHeld:
                     'Paiement en attente pendant que notre partenaire termine un examen. Attendez une autre mise à jour. Discutez avec <concierge-link>Concierge</concierge-link>.',
                 reimbursementReleased: 'L’examen est terminé et votre paiement est en cours d’acheminement. Le taux de change final peut modifier le montant.',
+                actionableCardFraudTransactionApproval: (amount: string, merchant: string | undefined) => {
+                    const details = [merchant, amount ? `(${amount})` : ''].filter((s) => !!s?.length).join(' ');
+                    return `Une transaction${details ? ` de ${details}` : ''} a été refusée pour suspicion de fraude.`;
+                },
             },
             error: {
                 invalidCredentials: 'Identifiants invalides, veuillez vérifier la configuration de votre connexion.',

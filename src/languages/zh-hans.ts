@@ -11145,6 +11145,10 @@ ${reportName}`,
                 reimbursementRefundedWithoutBankAccount: '资金已退回。您可以重试付款。',
                 reimbursementHeld: '在我们的合作伙伴完成审核期间，付款已暂时搁置。请留意后续更新。与 <concierge-link>Concierge</concierge-link> 聊天。',
                 reimbursementReleased: '审核已完成，您的付款正在汇出。最终外汇汇率可能会改变金额。',
+                actionableCardFraudTransactionApproval: (amount: string, merchant: string | undefined) => {
+                    const details = [merchant, amount ? `(${amount})` : ''].filter((s) => !!s?.length).join(' ');
+                    return `${details ? `来自 ${details} 的` : '一笔'}交易因涉嫌欺诈已被拒绝。`;
+                },
             },
             error: {
                 invalidCredentials: '凭证无效，请检查您的连接配置。',

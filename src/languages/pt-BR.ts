@@ -11615,6 +11615,10 @@ Adicione mais regras de gasto para proteger o fluxo de caixa da empresa.`,
                 reimbursementRefundedWithoutBankAccount: 'Os fundos foram devolvidos. Você pode tentar efetuar o pagamento novamente.',
                 reimbursementHeld: 'Pagamento em espera enquanto nosso parceiro conclui uma análise. Aguarde outra atualização. Converse com o <concierge-link>Concierge</concierge-link>.',
                 reimbursementReleased: 'A análise foi concluída e seu pagamento está a caminho. A taxa de câmbio final pode alterar o valor.',
+                actionableCardFraudTransactionApproval: (amount: string, merchant: string | undefined) => {
+                    const details = [merchant, amount ? `(${amount})` : ''].filter((s) => !!s?.length).join(' ');
+                    return `Uma transação${details ? ` de ${details}` : ''} foi recusada por suspeita de fraude.`;
+                },
             },
             error: {
                 invalidCredentials: 'Credenciais inválidas, verifique a configuração da sua conexão.',
