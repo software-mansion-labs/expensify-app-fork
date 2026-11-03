@@ -19,6 +19,7 @@ type TerminatedCardOutcomeScreenProps = {
     onClose: () => void;
 };
 
+/** Result of reporting fraud when a repeated report terminates the card */
 function TerminatedCardOutcomeScreen({onCardDetailsPress, onClose}: TerminatedCardOutcomeScreenProps) {
     const styles = useThemeStyles();
     const {translate} = useLocalize();
