@@ -351,20 +351,16 @@ const DRIVING_JOURNEYS: DrivingJourney[] = [
     // The generated paths never go offline (see `UNTRAVERSED_EVENT_TYPES`), so these journeys are the only UI
     // coverage of the offline leaf and of the steps that wait for the network.
     {
-        description: 'the offline journey covers the validate-code form while offline and brings it back once online',
+        description: 'the offline journey holds a code submitted offline and sends it once back online',
         events: [
             createInitEvent(),
             createActorDoneEvent('validateDevice', {success: true}),
             createActorDoneEvent('loadRegistrationState', {hasServerCredentials: false, hasLocalCredentials: false, hasEverAcceptedSoftPrompt: false}),
             {type: 'NETWORK_OFFLINE'},
+            {type: 'VALIDATE_CODE_ENTERED', validateCode: MFA_TEST_VALIDATE_CODE},
             {type: 'NETWORK_ONLINE'},
         ],
-        endState: {
-            [MFA_STATE.OPEN]: {
-                [MFA_STATE.FLOW]: {[MFA_STATE.VALIDATE_CODE]: {[MFA_STATE.AWAITING_VALIDATE_CODE]: MFA_STATE.AWAITING_INPUT}},
-                [MFA_STATE.NETWORK]: MFA_STATE.ONLINE,
-            },
-        },
+        endState: `${MFA_STATE.OPEN}.${MFA_STATE.FLOW}.${MFA_STATE.VALIDATE_CODE}.${MFA_STATE.REQUESTING_REGISTRATION_CHALLENGE}`,
     },
     {
         description: 'the start-offline journey holds the ceremony until the device is back online',

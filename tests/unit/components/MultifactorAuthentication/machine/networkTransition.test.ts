@@ -19,6 +19,7 @@ import type {
 } from '@components/MultifactorAuthentication/machine/types';
 import addMFABreadcrumb from '@components/MultifactorAuthentication/observability/breadcrumbs';
 
+import {createMFAErrorFromApiResponse} from '@libs/MultifactorAuthentication/shared/MFAResult';
 import type {MFAResult} from '@libs/MultifactorAuthentication/shared/MFAResult';
 import {setForceOffline} from '@libs/NetworkState';
 
@@ -46,6 +47,7 @@ const VISIBLE = MFA_STATE.CANCEL_CONFIRM_VISIBLE;
 const OFFLINE = MFA_STATE.OFFLINE;
 
 const AWAITING_INPUT = {[MFA_STATE.VALIDATE_CODE]: {[MFA_STATE.AWAITING_VALIDATE_CODE]: MFA_STATE.AWAITING_INPUT}};
+const READY_TO_REQUEST_REGISTRATION_CHALLENGE = {[MFA_STATE.VALIDATE_CODE]: MFA_STATE.READY_TO_REQUEST_REGISTRATION_CHALLENGE};
 const REQUESTING_REGISTRATION_CHALLENGE = {[MFA_STATE.VALIDATE_CODE]: MFA_STATE.REQUESTING_REGISTRATION_CHALLENGE};
 const AWAITING_SOFT_PROMPT = {[MFA_STATE.PROMPT]: MFA_STATE.AWAITING_SOFT_PROMPT};
 const READY_TO_CREATE = {[MFA_STATE.PROMPT]: {[MFA_STATE.CREATING_CREDENTIAL]: MFA_STATE.READY_TO_CREATE}};
@@ -125,20 +127,42 @@ describe('MFA offline', () => {
     });
 
     describe('submitting the validate code', () => {
-        it('drops a code submitted offline and sends no request', () => {
-            // Given the validate-code screen while offline, where the form is hidden but a submit can still land before the re-render
+        it('holds a code submitted offline and sends it once back online', () => {
+            // Given the validate-code screen while offline, where the form stays usable
             const requestRegistrationChallenge = createControlledStep<RequestRegistrationChallengeOutput, RequestRegistrationChallengeInput>();
             const machine = mfaMachine.provide({actors: {requestRegistrationChallenge: requestRegistrationChallenge.actor}});
             const actor = createActor(machine, {snapshot: machine.resolveState({value: openAt(AWAITING_INPUT, HIDDEN, OFFLINE), context: createFlowContext()})});
-
-            // When the code arrives
             actor.start();
+
+            // When the user submits a code
             actor.send({type: 'VALIDATE_CODE_ENTERED', validateCode: MFA_TEST_VALIDATE_CODE});
 
-            // Then nothing happens, because the request would fail without a network and the code may expire before reconnecting
-            expect(isAt(actor, openAt(AWAITING_INPUT, HIDDEN, OFFLINE))).toBe(true);
-            expect(actor.getSnapshot().context.validateCode).toBeUndefined();
+            // Then the code waits for the network, because the request would fail without one
+            expect(isAt(actor, openAt(READY_TO_REQUEST_REGISTRATION_CHALLENGE, HIDDEN, OFFLINE))).toBe(true);
+            expect(actor.getSnapshot().context.validateCode).toBe(MFA_TEST_VALIDATE_CODE);
             expect(requestRegistrationChallenge.getCalls()).toBe(0);
+
+            // When the device comes back online
+            actor.send({type: 'NETWORK_ONLINE'});
+
+            // Then the held code is sent, so the user doesn't have to type it again
+            expect(isAt(actor, openAt(REQUESTING_REGISTRATION_CHALLENGE))).toBe(true);
+            expect(requestRegistrationChallenge.getCalls()).toBe(1);
+
+            actor.stop();
+        });
+
+        it('drops a held code when the user leaves offline', () => {
+            // Given a code submitted offline is waiting for the network
+            const actor = createActorAtState(openAt(READY_TO_REQUEST_REGISTRATION_CHALLENGE, HIDDEN, OFFLINE), {validateCode: MFA_TEST_VALIDATE_CODE});
+            actor.start();
+
+            // When the user goes back
+            actor.send({type: 'REQUEST_CANCEL'});
+
+            // Then the modal closes and the one-time code doesn't outlive the flow
+            expect(actor.getSnapshot().matches(MFA_STATE.CLOSING)).toBe(true);
+            expect(actor.getSnapshot().context.validateCode).toBeUndefined();
 
             actor.stop();
         });
@@ -240,6 +264,26 @@ describe('MFA offline', () => {
             actor.send({type: 'NETWORK_ONLINE'});
 
             // Then the ceremony runs again, since the dropped challenge may have expired meanwhile
+            expect(isAt(actor, openAt(SIGNING_CHALLENGE))).toBe(true);
+
+            actor.stop();
+        });
+
+        it('waits for the network before requesting a lost challenge again', () => {
+            // Given the challenge request is running and the device goes offline before its answer arrives
+            const actor = createActorAtState(openAt(SIGNING_CHALLENGE, HIDDEN, OFFLINE));
+            actor.start();
+
+            // When the answer is lost
+            sendAuthorizeDone(actor, {success: false, error: createMFAErrorFromApiResponse(0, CONST.MULTIFACTOR_AUTHENTICATION.REASON.LOCAL_ERRORS.NO_RESPONSE)});
+
+            // Then the flow waits instead of sending a request that would be lost too
+            expect(isAt(actor, openAt(READY_TO_SIGN, HIDDEN, OFFLINE))).toBe(true);
+
+            // When the device comes back online
+            actor.send({type: 'NETWORK_ONLINE'});
+
+            // Then the fresh challenge is requested
             expect(isAt(actor, openAt(SIGNING_CHALLENGE))).toBe(true);
 
             actor.stop();

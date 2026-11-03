@@ -225,7 +225,6 @@ function ValidateCodeForm() {
                     onPress={validateAndSubmitForm}
                     text={translate('common.verify')}
                     isLoading={isFormBusy}
-                    isDisabled={isOffline}
                 />
             </View>
         </>
@@ -235,11 +234,16 @@ function ValidateCodeForm() {
 function MultifactorAuthenticationValidateCodePage() {
     const {translate} = useLocalize();
     const {requestCancel, state} = useMultifactorAuthenticationInternal();
-    const {isCancelConfirmVisible, recoveryAttempts} = state;
+    const {isCancelConfirmVisible, recoveryAttempts, isWaitingForNetwork} = state;
+
+    // Recovery can email a new code while this screen is still shown, so the form remounts to drop the old
+    // code, its errors and the resend countdown.
+    const form = <ValidateCodeForm key={recoveryAttempts} />;
 
     return (
         <ScreenWrapper
             testID={MultifactorAuthenticationValidateCodePage.displayName}
+            shouldShowOfflineIndicator={false}
             focusTrapSettings={{
                 // Turn the trap off while the cancel confirmation modal is up so it can't swallow
                 // the modal's clicks, and back on when it closes. See https://github.com/Expensify/App/issues/93193
@@ -255,11 +259,8 @@ function MultifactorAuthenticationValidateCodePage() {
                 onBackButtonPress={requestCancel}
                 shouldShowBackButton
             />
-            <FullPageOfflineBlockingView>
-                {/* Recovery can email a new code while this screen is still shown, so the form remounts
-                    to drop the old code, its errors and the resend countdown. */}
-                <ValidateCodeForm key={recoveryAttempts} />
-            </FullPageOfflineBlockingView>
+            {/* The form works offline. Only a submitted code waiting to be sent swaps it for the offline view. */}
+            {isWaitingForNetwork ? <FullPageOfflineBlockingView>{form}</FullPageOfflineBlockingView> : form}
         </ScreenWrapper>
     );
 }

@@ -94,6 +94,9 @@ type MfaContext = {
 
     /** How many times this flow went back to re-registration after a recoverable credential failure. Once it reaches the limit, such a failure ends the flow instead. */
     recoveryAttempts: number;
+
+    /** How many times this flow requested the authorization challenge again after its answer was lost. Once it reaches the limit, a lost one ends the flow instead. */
+    challengeRetries: number;
 };
 
 /** See `MfaContext.promptPresentationPhase`. */
