@@ -349,6 +349,7 @@ const SIMPLE_MESSAGE_ACTION_TYPES = new Set<ReportActionName>([
     CONST.REPORT.ACTIONS.TYPE.RESOLVED_DUPLICATES,
     CONST.REPORT.ACTIONS.TYPE.DEMOTED_FROM_WORKSPACE,
     CONST.REPORT.ACTIONS.TYPE.ACTIONABLE_CARD_3DS_TRANSACTION_APPROVAL,
+    CONST.REPORT.ACTIONS.TYPE.ACTIONABLE_CARD_FRAUD_TRANSACTION_APPROVAL,
     CONST.REPORT.ACTIONS.TYPE.MARK_REIMBURSED_FROM_INTEGRATION,
 ]);
 
@@ -674,7 +675,11 @@ function isSimpleMessageAction(reportAction: OnyxInputOrEntry<ReportAction>): bo
  * Structural previews and interactive/actionable rows are deliberately excluded so new action types opt in explicitly.
  */
 function isSystemMessageAction(reportAction: OnyxInputOrEntry<ReportAction>): reportAction is ReportAction {
-    if (!reportAction || reportAction.actionName === CONST.REPORT.ACTIONS.TYPE.ACTIONABLE_CARD_3DS_TRANSACTION_APPROVAL) {
+    if (
+        !reportAction ||
+        reportAction.actionName === CONST.REPORT.ACTIONS.TYPE.ACTIONABLE_CARD_3DS_TRANSACTION_APPROVAL ||
+        reportAction.actionName === CONST.REPORT.ACTIONS.TYPE.ACTIONABLE_CARD_FRAUD_TRANSACTION_APPROVAL
+    ) {
         return false;
     }
 
@@ -5839,10 +5844,22 @@ function getRoomChangeLogMessage(translate: LocalizedTranslate, reportAction: Re
     return `${actionText} ${targetAccountIDs.length} ${userText}`;
 }
 
-// Renders content of ACTIONABLE_CARD_3DS_TRANSACTION_APPROVAL reportActions
-function getActionableCard3DSTransactionApprovalMessage(
+type ActionableCardTransactionApprovalAction = ReportAction<
+    typeof CONST.REPORT.ACTIONS.TYPE.ACTIONABLE_CARD_3DS_TRANSACTION_APPROVAL | typeof CONST.REPORT.ACTIONS.TYPE.ACTIONABLE_CARD_FRAUD_TRANSACTION_APPROVAL
+>;
+
+/** Concierge messages asking the cardholder to review a card transaction, for 3DS or fraud */
+function isActionableCardTransactionApprovalAction(reportAction: OnyxInputOrEntry<ReportAction>): reportAction is ActionableCardTransactionApprovalAction {
+    return (
+        isActionOfType(reportAction, CONST.REPORT.ACTIONS.TYPE.ACTIONABLE_CARD_3DS_TRANSACTION_APPROVAL) ||
+        isActionOfType(reportAction, CONST.REPORT.ACTIONS.TYPE.ACTIONABLE_CARD_FRAUD_TRANSACTION_APPROVAL)
+    );
+}
+
+// Renders content of ACTIONABLE_CARD_3DS_TRANSACTION_APPROVAL and ACTIONABLE_CARD_FRAUD_TRANSACTION_APPROVAL reportActions
+function getActionableCardTransactionApprovalMessage(
     translate: LocalizedTranslate,
-    reportAction: ReportAction<typeof CONST.REPORT.ACTIONS.TYPE.ACTIONABLE_CARD_3DS_TRANSACTION_APPROVAL>,
+    reportAction: ReportAction<typeof CONST.REPORT.ACTIONS.TYPE.ACTIONABLE_CARD_3DS_TRANSACTION_APPROVAL | typeof CONST.REPORT.ACTIONS.TYPE.ACTIONABLE_CARD_FRAUD_TRANSACTION_APPROVAL>,
     convertToDisplayString: CurrencyListActionsContextType['convertToDisplayString'],
     convertToDisplayStringWithoutCurrency: CurrencyListActionsContextType['convertToDisplayStringWithoutCurrency'],
 ) {
@@ -5855,6 +5872,9 @@ function getActionableCard3DSTransactionApprovalMessage(
     if (amount) {
         // Show the amount without any currency symbol when the message carries no currency, rather than defaulting to USD.
         formattedAmount = currency ? convertToDisplayString(amount, currency) : convertToDisplayStringWithoutCurrency(amount);
+    }
+    if (isActionOfType(reportAction, CONST.REPORT.ACTIONS.TYPE.ACTIONABLE_CARD_FRAUD_TRANSACTION_APPROVAL)) {
+        return translate('report.actions.type.actionableCardFraudTransactionApproval', formattedAmount, merchant);
     }
     return translate('report.actions.type.actionableCard3DSTransactionApproval', formattedAmount, merchant);
 }
@@ -6315,7 +6335,8 @@ export {
     getTagListUpdatedRequiredMessage,
     getWorkspaceCustomUnitUpdatedMessage,
     getRoomChangeLogMessage,
-    getActionableCard3DSTransactionApprovalMessage,
+    getActionableCardTransactionApprovalMessage,
+    isActionableCardTransactionApprovalAction,
     getTravelNudgeMessage,
     shouldShowActivateCard,
     isRejectedAction,
