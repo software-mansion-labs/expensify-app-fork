@@ -768,6 +768,10 @@ const translations: TranslationDeepObject<typeof en> = {
             giveItAnotherTry: 'Versuche es noch einmal',
             thankYouForConfirming: 'Danke für die Bestätigung, dass die Transaktion von dir stammt. Bitte versuche es beim Händler erneut.',
             ifYouCloseWeWillFreezeCard: 'Wenn du diesen Bildschirm schließt, müssen wir deine Karte einfrieren. Du musst sie wieder freigeben, um sie erneut zu verwenden.',
+            frozenCard: 'Gesperrte Karte',
+            yourCardHasBeenFrozen: 'Deine Karte wurde eingefroren',
+            weFrozeYourCard:
+                'Wir haben deine Karte eingefroren, um weitere Belastungen zu verhindern. Wende dich an <concierge-link>Concierge</concierge-link>, wenn du befürchtest, dass deine Karte kompromittiert wurde.',
         },
         unsupportedDevice: {
             unsupportedDevice: 'Nicht unterstütztes Gerät',

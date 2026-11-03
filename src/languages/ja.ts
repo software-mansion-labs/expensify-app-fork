@@ -759,6 +759,9 @@ const translations: TranslationDeepObject<typeof en> = {
             giveItAnotherTry: 'もう一度お試しください',
             thankYouForConfirming: 'ご自身の取引であることを確認いただきありがとうございます。加盟店でもう一度お試しください。',
             ifYouCloseWeWillFreezeCard: 'この画面を閉じると、カードを凍結する必要があります。再度使用するには凍結を解除してください。',
+            frozenCard: '凍結されたカード',
+            yourCardHasBeenFrozen: 'カードが凍結されました',
+            weFrozeYourCard: 'これ以上の請求を防ぐため、カードを凍結しました。カードが不正利用された可能性がある場合は<concierge-link>Concierge</concierge-link>にお問い合わせください。',
         },
         unsupportedDevice: {
             unsupportedDevice: '未対応のデバイス',
