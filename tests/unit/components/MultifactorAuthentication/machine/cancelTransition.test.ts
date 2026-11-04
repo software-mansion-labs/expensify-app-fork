@@ -1225,7 +1225,7 @@ describe('MFA cancel', () => {
                 await settle(cancel, NETWORK_ERROR);
                 await settle(scenarioAction, {success: false, error: approveNetworkError});
 
-                // Then the flow fails with the approve's error, because the deny was sent next to an approve already out and neither result decides better
+                // Then the flow fails with the approve's error, because neither request got a response and a failed scenario action ranks above a failed cancel
                 const result = actor.getSnapshot();
                 expect(matchesState(openAt(FINALIZING_OUTCOME, MFA_STATE.CANCEL_CONFIRM_HIDDEN, MFA_STATE.OFFLINE), result.value)).toBe(true);
                 expect(result.context.error).toBe(approveNetworkError);
@@ -1318,9 +1318,11 @@ describe('MFA cancel', () => {
             jest.mocked(addMFABreadcrumb).mockClear();
         });
 
-        // Offline these steps hold instead of passing straight through, so they are where back is pressed most.
-        // Cancelling in `readyToRegister` leaves the created key on the device, which the next flow recovers from.
-        const OFFLINE_HOLD_STATES: Array<{description: string; flow: StateValue}> = [
+        // The states around the platform ceremonies, which `STEP_STATES` leaves out: online the `readyTo*` states pass
+        // straight through, and the dialog moves a running ceremony back to them. Offline back skips the dialog, so they
+        // close like any other step. Cancelling in `readyToRegister` leaves a key the server doesn't know, so the next
+        // flow registers a new one.
+        const CEREMONY_STATES: Array<{description: string; flow: StateValue}> = [
             {description: 'holding the credential ceremony', flow: READY_TO_CREATE},
             {description: 'creating the key', flow: CREATING_KEY},
             {description: 'holding the created key for registration', flow: {[MFA_STATE.PROMPT]: {[MFA_STATE.CREATING_CREDENTIAL]: MFA_STATE.READY_TO_REGISTER}}},
@@ -1328,7 +1330,7 @@ describe('MFA cancel', () => {
             {description: 'signing the challenge', flow: SIGNING_CHALLENGE},
         ];
 
-        it.each([...STEP_STATES_BEFORE_SCENARIO_ACTION, ...OFFLINE_HOLD_STATES])('closes the modal without asking while $description', ({flow}) => {
+        it.each([...STEP_STATES_BEFORE_SCENARIO_ACTION, ...CEREMONY_STATES])('closes the modal without asking while $description', ({flow}) => {
             // Given the flow is mid-step while offline, where the scenario's cancel logic couldn't reach the backend
             const actor = createActorAtState(openAt(flow, HIDDEN, OFFLINE));
 
@@ -1336,7 +1338,7 @@ describe('MFA cancel', () => {
             actor.start();
             actor.send({type: 'REQUEST_CANCEL'});
 
-            // Then the modal closes right away without the dialog, the same as before the state machine
+            // Then the modal closes right away without the dialog
             const result = actor.getSnapshot();
             expect(result.matches(MFA_STATE.CLOSING)).toBe(true);
             expect(snapshotToState(result).isCancelConfirmVisible).toBe(false);
