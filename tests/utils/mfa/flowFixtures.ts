@@ -63,6 +63,8 @@ const MFA_TEST_REGISTRATION_REQUIRED_ERROR = createMFAErrorFromApiResponse(
     CONST.MULTIFACTOR_AUTHENTICATION.REASON.CLIENT_ERRORS.REGISTRATION_REQUIRED,
     'Graph-traversal registration required',
 );
+// A request whose answer never came, which the flow sends again once.
+const MFA_TEST_LOST_ANSWER_ERROR = createMFAErrorFromApiResponse(0, CONST.MULTIFACTOR_AUTHENTICATION.REASON.LOCAL_ERRORS.NO_RESPONSE, 'Graph-traversal lost answer');
 const MFA_TEST_CANCEL_ERROR = createLocalMFAError(CONST.MULTIFACTOR_AUTHENTICATION.REASON.LOCAL_ERRORS.CANCELED, 'Graph-traversal cancellation');
 const MFA_TEST_FINALIZE_OUTCOME_SHOW_SCREEN: FinalizeOutcomeOutput = {callbackResponse: CONST.MULTIFACTOR_AUTHENTICATION.CALLBACK_RESPONSE.SHOW_OUTCOME_SCREEN};
 // The Provider's pre-INIT snapshot, carried only for the outcome telemetry's start/end comparison - no
@@ -99,6 +101,7 @@ export {
     MFA_TEST_REGISTRATION_CHALLENGE,
     MFA_TEST_REGISTRATION_STATE_AT_START,
     MFA_TEST_REGISTRATION_REQUIRED_ERROR,
+    MFA_TEST_LOST_ANSWER_ERROR,
     MFA_TEST_SCENARIO_ACTION_ERROR,
     MFA_TEST_SCENARIO_RESPONSE,
     MFA_TEST_SIGNED_CHALLENGE,
