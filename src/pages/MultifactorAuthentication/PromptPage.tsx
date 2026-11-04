@@ -29,7 +29,7 @@ function MultifactorAuthenticationPromptPage({route}: MultifactorAuthenticationP
     const {translate} = useLocalize();
     const styles = useThemeStyles();
     const {requestCancel, approveSoftPrompt, state} = useMultifactorAuthenticationInternal();
-    const {isCancelConfirmVisible, isCancelConfirmed, isProcessingPrompt, isAuthorizing, softPromptApproved, registrationChallenge} = state;
+    const {isCancelConfirmVisible, isCancelConfirmed, isProcessingPrompt, isAuthorizing, softPromptApproved, registrationChallenge, isWaitingForNetwork} = state;
 
     const {illustration, title: defaultTitle, subtitle: defaultSubtitle} = MULTIFACTOR_AUTHENTICATION_PROMPT_UI[route.params.promptType];
 
@@ -54,9 +54,36 @@ function MultifactorAuthenticationPromptPage({route}: MultifactorAuthenticationP
         }
     }
 
+    const content = (
+        <>
+            <MultifactorAuthenticationPromptContent
+                illustration={illustration}
+                title={title}
+                subtitle={subtitle}
+            />
+            <FixedFooter style={[styles.flexColumn, styles.gap3]}>
+                {isProcessingPrompt || isCancelConfirmed ? (
+                    <View style={[styles.w100, styles.justifyContentCenter, {height: variables.componentSizeLarge}]}>
+                        <LoadingIndicator iconSize={28} />
+                    </View>
+                ) : (
+                    <Button
+                        variant={CONST.BUTTON_VARIANT.SUCCESS}
+                        size={CONST.BUTTON_SIZE.LARGE}
+                        onPress={approveSoftPrompt}
+                        testID={CONST.MULTIFACTOR_AUTHENTICATION.TEST_ID.PROMPT_CONFIRM_BUTTON}
+                    >
+                        <Button.Text>{translate('common.buttonConfirm')}</Button.Text>
+                    </Button>
+                )}
+            </FixedFooter>
+        </>
+    );
+
     return (
         <ScreenWrapper
             testID={MultifactorAuthenticationPromptPage.displayName}
+            shouldShowOfflineIndicator={false}
             focusTrapSettings={{
                 // Turn the trap off while the cancel confirmation modal is up so it can't swallow
                 // the modal's clicks, and back on when it closes. See https://github.com/Expensify/App/issues/93193
@@ -72,29 +99,8 @@ function MultifactorAuthenticationPromptPage({route}: MultifactorAuthenticationP
                 onBackButtonPress={requestCancel}
                 shouldShowBackButton
             />
-            <FullPageOfflineBlockingView>
-                <MultifactorAuthenticationPromptContent
-                    illustration={illustration}
-                    title={title}
-                    subtitle={subtitle}
-                />
-                <FixedFooter style={[styles.flexColumn, styles.gap3]}>
-                    {isProcessingPrompt || isCancelConfirmed ? (
-                        <View style={[styles.w100, styles.justifyContentCenter, {height: variables.componentSizeLarge}]}>
-                            <LoadingIndicator iconSize={28} />
-                        </View>
-                    ) : (
-                        <Button
-                            variant={CONST.BUTTON_VARIANT.SUCCESS}
-                            size={CONST.BUTTON_SIZE.LARGE}
-                            onPress={approveSoftPrompt}
-                            testID={CONST.MULTIFACTOR_AUTHENTICATION.TEST_ID.PROMPT_CONFIRM_BUTTON}
-                        >
-                            <Button.Text>{translate('common.buttonConfirm')}</Button.Text>
-                        </Button>
-                    )}
-                </FixedFooter>
-            </FullPageOfflineBlockingView>
+            {/* The soft prompt works offline. Only a step waiting to send its request swaps the screen for the offline view. */}
+            {isWaitingForNetwork ? <FullPageOfflineBlockingView>{content}</FullPageOfflineBlockingView> : content}
         </ScreenWrapper>
     );
 }
