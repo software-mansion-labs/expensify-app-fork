@@ -125,7 +125,10 @@ function getRecoveryTransition(step: RecoverableStep, cause: keyof typeof RECOVE
     } as const;
 }
 
-/** Whether the in-flight cancel ends on a scenario action whose answer was lost, so nobody knows whether it went through. */
+/**
+ * Whether the in-flight cancel settles on a lost answer, so nobody knows what the server did. Usually the scenario
+ * action's, but it can be the cancel's own, e.g. when the wait times out with the scenario action still running.
+ */
 function isInFlightCancelUnconfirmed({context}: {context: MfaContext}) {
     return getInFlightCancelOutcome(context).error?.reason === CONST.MULTIFACTOR_AUTHENTICATION.REASON.LOCAL_ERRORS.NO_RESPONSE;
 }

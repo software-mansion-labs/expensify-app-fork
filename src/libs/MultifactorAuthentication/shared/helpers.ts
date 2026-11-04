@@ -82,7 +82,8 @@ function parseHttpResponse(
 } {
     const httpStatusCode = Number(jsonCode ?? 0);
     const category = categorizeHttpStatus(httpStatusCode);
-    // Every scenario command rejects an unknown or used challenge with this answer, so it is mapped here once.
+    // Every scenario command rejects an unknown or used challenge with this answer, so it is mapped here once, for every
+    // command. Only the machine's re-send reads it, and the other commands fall back to the generic client error either way.
     if (category === VALUES.HTTP_STATUS.CLIENT_ERROR && message?.toLowerCase().endsWith(VALUES.BACKEND_MESSAGE.AUTHENTICATION_REQUIRED.toLowerCase())) {
         return {httpStatusCode, reason: VALUES.REASON.CLIENT_ERRORS.AUTHENTICATION_REQUIRED, message};
     }
