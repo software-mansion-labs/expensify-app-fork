@@ -42,6 +42,7 @@ jest.mock('@components/MultifactorAuthentication/observability/breadcrumbs', () 
 
 const MFA_STATE = CONST.MULTIFACTOR_AUTHENTICATION.MFA_STATE;
 const HIDDEN = MFA_STATE.CANCEL_CONFIRM_HIDDEN;
+const VISIBLE = MFA_STATE.CANCEL_CONFIRM_VISIBLE;
 const OFFLINE = MFA_STATE.OFFLINE;
 
 const AWAITING_INPUT = {[MFA_STATE.VALIDATE_CODE]: {[MFA_STATE.AWAITING_VALIDATE_CODE]: MFA_STATE.AWAITING_INPUT}};
@@ -112,7 +113,7 @@ describe('MFA offline', () => {
             actor.send({type: 'NETWORK_OFFLINE'});
             actor.send({type: 'NETWORK_ONLINE'});
 
-            // Then both flips are logged as network changes, not as a paused flow
+            // Then both flips are logged, even though no step was waiting for the network
             const scenario = createFlowContext().scenarioName;
             expect(jest.mocked(addMFABreadcrumb).mock.calls).toEqual([
                 ['Network offline', {scenario}, 'warning'],
@@ -201,6 +202,23 @@ describe('MFA offline', () => {
             // Then the held key is registered
             expect(isAt(actor, openAt(REGISTERING_KEY))).toBe(true);
             expect(actor.getSnapshot().context.registrationKeyInfo).toBe(MFA_TEST_KEY_INFO);
+
+            actor.stop();
+        });
+
+        it('registers a key held offline once back online even with the dialog up', () => {
+            // Given the created key waits for the network while the cancel dialog is up
+            const actor = createActorAtState(openAt(READY_TO_REGISTER, VISIBLE, OFFLINE), {
+                registrationChallenge: MFA_TEST_REGISTRATION_CHALLENGE,
+                registrationKeyInfo: MFA_TEST_KEY_INFO,
+            });
+            actor.start();
+
+            // When the device comes back online
+            actor.send({type: 'NETWORK_ONLINE'});
+
+            // Then the key is registered behind the dialog, because only the platform prompt would cover it
+            expect(isAt(actor, openAt(REGISTERING_KEY, VISIBLE))).toBe(true);
 
             actor.stop();
         });
