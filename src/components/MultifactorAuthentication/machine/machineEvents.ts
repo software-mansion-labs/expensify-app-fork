@@ -4,7 +4,7 @@ import type createActors from './mfaActors';
 import type {MfaEvent} from './types';
 
 type MfaActors = ReturnType<typeof createActors>;
-// The network watcher never finishes, so it has no done or error events.
+// The network watcher never finishes, so it has no done event, and the machine has no transition for its error.
 type MfaActorId = Exclude<keyof MfaActors, 'watchNetwork'>;
 type MfaActorOutput<Id extends MfaActorId> = OutputFrom<MfaActors[Id]>;
 
