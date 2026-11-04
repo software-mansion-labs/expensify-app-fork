@@ -28,7 +28,7 @@ import {
     MFA_TEST_SIGNED_CHALLENGE,
 } from 'tests/utils/mfa/flowFixtures';
 import waitForBatchedUpdates from 'tests/utils/waitForBatchedUpdates';
-import {createActor, fromPromise, matchesState} from 'xstate';
+import {createActor, fromPromise, matchesState, SimulatedClock} from 'xstate';
 
 jest.mock('@components/MultifactorAuthentication/observability/breadcrumbs', () => ({__esModule: true, default: jest.fn()}));
 
@@ -40,6 +40,10 @@ const OFFLINE = MFA_STATE.OFFLINE;
 const AWAITING_RESULT = {[MFA_STATE.PROMPT]: {[MFA_STATE.AUTHORIZING]: {[MFA_STATE.EXECUTING_SCENARIO_ACTION]: MFA_STATE.AWAITING_RESULT}}};
 const RESEND_PENDING = {[MFA_STATE.PROMPT]: {[MFA_STATE.AUTHORIZING]: MFA_STATE.RESEND_PENDING}};
 const DECISION_UNCONFIRMED = {[MFA_STATE.PROMPT]: {[MFA_STATE.AUTHORIZING]: MFA_STATE.DECISION_UNCONFIRMED}};
+const CANCELLING_IN_FLIGHT = {[MFA_STATE.PROMPT]: {[MFA_STATE.AUTHORIZING]: {[MFA_STATE.EXECUTING_SCENARIO_ACTION]: MFA_STATE.CANCELLING_IN_FLIGHT}}};
+
+const REQUEST_TIMEOUT_MS = CONST.MULTIFACTOR_AUTHENTICATION.REQUEST_TIMEOUT_MS;
+const RESEND_REASON = CONST.MULTIFACTOR_AUTHENTICATION.RESEND_REASON;
 
 const LOST: ExecuteScenarioActionOutput = {success: false, error: MFA_TEST_SCENARIO_ACTION_LOST_ERROR};
 const SUCCEEDED: ExecuteScenarioActionOutput = {success: true, scenarioResponse: MFA_TEST_SCENARIO_RESPONSE};
@@ -84,7 +88,8 @@ async function startScenarioAction(contextOverrides: Partial<MfaContext> = {}) {
         },
     });
     const context = createFlowContext(contextOverrides);
-    const actor = createActor(machine, {snapshot: machine.resolveState({value: openAt({[MFA_STATE.PROMPT]: MFA_STATE.AWAITING_SOFT_PROMPT}), context})});
+    const clock = new SimulatedClock();
+    const actor = createActor(machine, {snapshot: machine.resolveState({value: openAt({[MFA_STATE.PROMPT]: MFA_STATE.AWAITING_SOFT_PROMPT}), context}), clock});
     actor.start();
     actor.send({type: 'SOFT_PROMPT_APPROVED'});
     await waitForBatchedUpdates();
@@ -101,7 +106,7 @@ async function startScenarioAction(contextOverrides: Partial<MfaContext> = {}) {
     const isAt = (flow: StateValue, cancelConfirm: typeof HIDDEN | typeof MFA_STATE.CANCEL_CONFIRM_VISIBLE = HIDDEN, network: typeof MFA_STATE.ONLINE | typeof OFFLINE = MFA_STATE.ONLINE) =>
         matchesState(openAt(flow, cancelConfirm, network), actor.getSnapshot().value);
 
-    return {actor, scenarioActionCalls, finalizeInputs, settleScenarioAction, settleCancel, isAt, getAuthorizeRuns: () => authorizeRuns};
+    return {actor, clock, scenarioActionCalls, finalizeInputs, settleScenarioAction, settleCancel, isAt, getAuthorizeRuns: () => authorizeRuns};
 }
 
 function getSetPINOrderCardContext(): Partial<MfaContext> {
@@ -192,6 +197,103 @@ describe('MFA resend of a scenario action whose answer was lost', () => {
         // Then the same signed request goes out
         expect(isAt(AWAITING_RESULT)).toBe(true);
         expect(scenarioActionCalls).toHaveLength(2);
+
+        actor.stop();
+    });
+
+    describe('when the scenario action hangs', () => {
+        it('keeps waiting until the timeout', async () => {
+            // Given the scenario action is out
+            const {actor, clock, scenarioActionCalls, isAt} = await startScenarioAction();
+
+            // When its answer takes almost as long as the timeout
+            clock.increment(REQUEST_TIMEOUT_MS - 1);
+
+            // Then the flow keeps waiting for it
+            expect(isAt(AWAITING_RESULT)).toBe(true);
+            expect(scenarioActionCalls).toHaveLength(1);
+
+            actor.stop();
+        });
+
+        it('re-sends it as lost once the timeout passes and ignores the late answer', async () => {
+            // Given the scenario action is out
+            const {actor, clock, scenarioActionCalls, isAt} = await startScenarioAction();
+
+            // When no answer comes in time
+            clock.increment(REQUEST_TIMEOUT_MS);
+            await waitForBatchedUpdates();
+
+            // Then the same signed request goes out again, and the re-send records why
+            expect(isAt(AWAITING_RESULT)).toBe(true);
+            expect(scenarioActionCalls).toHaveLength(2);
+            expect(scenarioActionCalls.at(1)?.input.signedChallenge).toBe(MFA_TEST_SIGNED_CHALLENGE);
+            expect(actor.getSnapshot().context.resendReasons).toEqual([RESEND_REASON.TIMEOUT]);
+            expect(snapshotToState(actor.getSnapshot()).isResending).toBe(true);
+
+            // When the first request answers late
+            scenarioActionCalls.at(0)?.resolve(SUCCEEDED);
+            await waitForBatchedUpdates();
+
+            // Then the flow keeps waiting for the re-sent one, since leaving stopped the first
+            expect(isAt(AWAITING_RESULT)).toBe(true);
+
+            actor.stop();
+        });
+
+        it("can't confirm the result when the re-sent request hangs too", async () => {
+            // Given a hung request was re-sent
+            const {actor, clock, isAt} = await startScenarioAction();
+            clock.increment(REQUEST_TIMEOUT_MS);
+            await waitForBatchedUpdates();
+
+            // When the re-sent one hangs as well
+            clock.increment(REQUEST_TIMEOUT_MS);
+
+            // Then the app says it can't confirm the result
+            expect(isAt(DECISION_UNCONFIRMED)).toBe(true);
+
+            actor.stop();
+        });
+
+        it('leaves a confirmed cancel to its own timeout', async () => {
+            // Given the user confirmed a cancel while the scenario action was out
+            const {actor, clock, scenarioActionCalls, isAt} = await startScenarioAction();
+            actor.send({type: 'REQUEST_CANCEL'});
+            actor.send({type: 'CONFIRM_CANCEL'});
+
+            // When the request timeout passes
+            clock.increment(REQUEST_TIMEOUT_MS);
+
+            // Then nothing is re-sent, since the user asked to cancel
+            expect(isAt(CANCELLING_IN_FLIGHT)).toBe(true);
+            expect(scenarioActionCalls).toHaveLength(1);
+
+            actor.stop();
+        });
+    });
+
+    it('reports every automatic and user retry with the outcome', async () => {
+        // Given a lost answer, a lost re-send and a user retry whose request hangs once
+        const {actor, clock, finalizeInputs, settleScenarioAction} = await startScenarioAction();
+        await settleScenarioAction(LOST);
+        await settleScenarioAction(LOST);
+        actor.send({type: 'RETRY_WITH_NEW_CHALLENGE'});
+        await waitForBatchedUpdates();
+        clock.increment(REQUEST_TIMEOUT_MS);
+        await waitForBatchedUpdates();
+
+        // When the last re-send succeeds
+        await settleScenarioAction(SUCCEEDED);
+
+        // Then the outcome carries each re-send with its reason and the user's retry
+        expect(finalizeInputs.at(0)).toEqual(
+            expect.objectContaining({
+                challengeRetries: 0,
+                resendReasons: [RESEND_REASON.NO_RESPONSE, RESEND_REASON.TIMEOUT],
+                userRetries: 1,
+            }),
+        );
 
         actor.stop();
     });

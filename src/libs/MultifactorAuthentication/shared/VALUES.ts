@@ -374,6 +374,18 @@ const SHARED_VALUES = {
     /** How long a confirmed cancel waits for its requests before the flow fails on its own. */
     CANCEL_TIMEOUT_MS: 60 * 1000,
 
+    /**
+     * How long the scenario action waits for its answer before the flow treats it as lost and re-sends it. Above the
+     * slowest command's p99: a re-send while the first copy still runs can only end on "couldn't confirm".
+     */
+    REQUEST_TIMEOUT_MS: 30 * 1000,
+
+    /** Why the flow re-sent a scenario action, reported with the flow outcome. */
+    RESEND_REASON: {
+        NO_RESPONSE: 'noResponse',
+        TIMEOUT: 'timeout',
+    },
+
     /** Stable testIDs shared between MFA views and tests. */
     TEST_ID: {
         INITIAL_SCREEN: 'MultifactorAuthenticationInitialScreen',
