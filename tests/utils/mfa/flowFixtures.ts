@@ -57,15 +57,13 @@ const MFA_TEST_CREDENTIAL_REGISTRATION_ERROR = createMFAErrorFromApiResponse(
 const MFA_TEST_AUTHORIZATION_ORDINARY_ERROR = createLocalMFAError(CONST.MULTIFACTOR_AUTHENTICATION.REASON.LOCAL_ERRORS.HSM.CANCELED, 'Graph-traversal authorization cancellation');
 // A backend rejection of the scenario action, which lands on the generic failure copy.
 const MFA_TEST_SCENARIO_ACTION_ERROR = createMFAErrorFromApiResponse(400, CONST.MULTIFACTOR_AUTHENTICATION.REASON.CLIENT_ERRORS.UNRECOGNIZED, 'Graph-traversal scenario action rejection');
-// The answer to the scenario action was lost, so the flow re-sends it once and then can't confirm it.
-const MFA_TEST_SCENARIO_ACTION_LOST_ERROR = createMFAErrorFromApiResponse(0, CONST.MULTIFACTOR_AUTHENTICATION.REASON.LOCAL_ERRORS.NO_RESPONSE, 'Graph-traversal lost answer');
 // The server no longer knows the key, which sends the flow back to re-register once.
 const MFA_TEST_REGISTRATION_REQUIRED_ERROR = createMFAErrorFromApiResponse(
     400,
     CONST.MULTIFACTOR_AUTHENTICATION.REASON.CLIENT_ERRORS.REGISTRATION_REQUIRED,
     'Graph-traversal registration required',
 );
-// A request whose answer never came, which the flow sends again once.
+// A request whose answer never came. A lost challenge is requested again once, and a lost scenario action is re-sent once.
 const MFA_TEST_LOST_ANSWER_ERROR = createMFAErrorFromApiResponse(0, CONST.MULTIFACTOR_AUTHENTICATION.REASON.LOCAL_ERRORS.NO_RESPONSE, 'Graph-traversal lost answer');
 const MFA_TEST_CANCEL_ERROR = createLocalMFAError(CONST.MULTIFACTOR_AUTHENTICATION.REASON.LOCAL_ERRORS.CANCELED, 'Graph-traversal cancellation');
 const MFA_TEST_FINALIZE_OUTCOME_SHOW_SCREEN: FinalizeOutcomeOutput = {callbackResponse: CONST.MULTIFACTOR_AUTHENTICATION.CALLBACK_RESPONSE.SHOW_OUTCOME_SCREEN};
@@ -105,7 +103,6 @@ export {
     MFA_TEST_REGISTRATION_REQUIRED_ERROR,
     MFA_TEST_LOST_ANSWER_ERROR,
     MFA_TEST_SCENARIO_ACTION_ERROR,
-    MFA_TEST_SCENARIO_ACTION_LOST_ERROR,
     MFA_TEST_SCENARIO_RESPONSE,
     MFA_TEST_SIGNED_CHALLENGE,
     MFA_TEST_VALIDATE_CODE,

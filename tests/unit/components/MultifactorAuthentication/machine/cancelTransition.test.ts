@@ -1397,13 +1397,10 @@ describe('MFA cancel', () => {
             actor.stop();
         });
 
-        it.each([
-            {description: 'with onCancel', withOnCancel: true},
-            {description: 'without onCancel', withOnCancel: false},
-        ])('ends the flow as unconfirmed without asking during a scenario action $description', ({withOnCancel}) => {
-            // Given a scenario action is already out and the device is offline
-            const onCancelContext = createOnCancelContext();
-            const actor = createActorAtState(openAt(AWAITING_RESULT, HIDDEN, OFFLINE), withOnCancel ? onCancelContext.context : {});
+        it('ends the flow as unconfirmed without asking or running onCancel during a scenario action', () => {
+            // Given a scenario with onCancel whose action is already out, and the device is offline
+            const {context, onCancel} = createOnCancelContext();
+            const actor = createActorAtState(openAt(AWAITING_RESULT, HIDDEN, OFFLINE), context);
 
             // When the user asks to cancel
             actor.start();
@@ -1413,7 +1410,8 @@ describe('MFA cancel', () => {
             const result = actor.getSnapshot();
             expect(matchesState(openAt(FINALIZING_OUTCOME, HIDDEN, OFFLINE), result.value)).toBe(true);
             expect(result.context.error?.reason).toBe(CONST.MULTIFACTOR_AUTHENTICATION.REASON.LOCAL_ERRORS.UNCONFIRMED);
-            expect(onCancelContext.onCancel).not.toHaveBeenCalled();
+            expect(result.context.isCancelConfirmed).toBe(false);
+            expect(onCancel).not.toHaveBeenCalled();
             expect(addMFABreadcrumb).not.toHaveBeenCalledWith(...OFFLINE_CANCEL_BREADCRUMB);
 
             actor.stop();
