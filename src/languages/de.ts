@@ -736,7 +736,7 @@ const translations: TranslationDeepObject<typeof en> = {
             decisionSubtitle: 'Die Verbindung wurde beim Senden unterbrochen, daher ist sie möglicherweise bereits gespeichert. Versuche es erneut, um das zu prüfen.',
             cardOrderTitle: 'Wir konnten deine Kartenbestellung nicht bestätigen',
             cardOrderSubtitle:
-                'Die Verbindung wurde unterbrochen, bevor wir eine Antwort erhalten haben, daher ist deine Karte möglicherweise bereits unterwegs. Prüfe deine Karte im Wallet, bevor du erneut bestellst.',
+                'Die Verbindung wurde unterbrochen, bevor wir eine Antwort erhalten haben, daher ist deine Karte möglicherweise bereits unterwegs. Prüfe deine Karte in der Brieftasche, bevor du erneut bestellst.',
         },
         unsupportedDevice: {
             unsupportedDevice: 'Nicht unterstütztes Gerät',

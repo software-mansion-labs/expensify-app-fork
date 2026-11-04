@@ -13,6 +13,7 @@ import type {
     MfaContext,
 } from '@components/MultifactorAuthentication/machine/types';
 
+import type {SignedChallenge} from '@libs/MultifactorAuthentication/shared/challengeTypes';
 import {createLocalMFAError, createMFAErrorFromApiResponse} from '@libs/MultifactorAuthentication/shared/MFAResult';
 
 import CONST from '@src/CONST';
@@ -20,15 +21,9 @@ import CONST from '@src/CONST';
 import type {StateValue} from 'xstate';
 
 import {createFlowContext, openAt} from 'tests/utils/mfa/flowActors';
-import {
-    MFA_TEST_AUTH_METHOD,
-    MFA_TEST_FINALIZE_OUTCOME_SHOW_SCREEN,
-    MFA_TEST_SCENARIO_ACTION_LOST_ERROR,
-    MFA_TEST_SCENARIO_RESPONSE,
-    MFA_TEST_SIGNED_CHALLENGE,
-} from 'tests/utils/mfa/flowFixtures';
+import {MFA_TEST_AUTH_METHOD, MFA_TEST_FINALIZE_OUTCOME_SHOW_SCREEN, MFA_TEST_LOST_ANSWER_ERROR, MFA_TEST_SCENARIO_RESPONSE, MFA_TEST_SIGNED_CHALLENGE} from 'tests/utils/mfa/flowFixtures';
 import waitForBatchedUpdates from 'tests/utils/waitForBatchedUpdates';
-import {createActor, fromPromise, matchesState} from 'xstate';
+import {createActor, fromPromise, matchesState, SimulatedClock} from 'xstate';
 
 jest.mock('@components/MultifactorAuthentication/observability/breadcrumbs', () => ({__esModule: true, default: jest.fn()}));
 
@@ -41,7 +36,7 @@ const AWAITING_RESULT = {[MFA_STATE.PROMPT]: {[MFA_STATE.AUTHORIZING]: {[MFA_STA
 const RESEND_PENDING = {[MFA_STATE.PROMPT]: {[MFA_STATE.AUTHORIZING]: MFA_STATE.RESEND_PENDING}};
 const DECISION_UNCONFIRMED = {[MFA_STATE.PROMPT]: {[MFA_STATE.AUTHORIZING]: MFA_STATE.DECISION_UNCONFIRMED}};
 
-const LOST: ExecuteScenarioActionOutput = {success: false, error: MFA_TEST_SCENARIO_ACTION_LOST_ERROR};
+const LOST: ExecuteScenarioActionOutput = {success: false, error: MFA_TEST_LOST_ANSWER_ERROR};
 const SUCCEEDED: ExecuteScenarioActionOutput = {success: true, scenarioResponse: MFA_TEST_SCENARIO_RESPONSE};
 const AUTHENTICATION_REQUIRED: ExecuteScenarioActionOutput = {
     success: false,
@@ -50,11 +45,16 @@ const AUTHENTICATION_REQUIRED: ExecuteScenarioActionOutput = {
 
 type Resolve<T> = (value: T) => void;
 
+/** The first prompt signs the shared fixture and every later one a distinct signature, so a fresh challenge is visible in the request. */
+function getSignedChallengeForRun(run: number): SignedChallenge {
+    return run === 1 ? MFA_TEST_SIGNED_CHALLENGE : {...MFA_TEST_SIGNED_CHALLENGE, response: {...MFA_TEST_SIGNED_CHALLENGE.response, signature: `signature-${run}`}};
+}
+
 /**
  * Runs the flow live from the soft prompt into the scenario action, so each scenario action request (the first one,
  * a re-send, a retry) is a real invocation the test settles in order. A restored snapshot wouldn't invoke it.
  */
-async function startScenarioAction(contextOverrides: Partial<MfaContext> = {}) {
+async function startScenarioAction(contextOverrides: Partial<MfaContext> = {}, {shouldFinalizeOutcomeThrow = false} = {}) {
     const scenarioActionCalls: Array<{input: ExecuteScenarioActionInput; resolve: Resolve<ExecuteScenarioActionOutput>}> = [];
     const cancelCalls: Array<Resolve<CancelScenarioOutput>> = [];
     const finalizeInputs: FinalizeOutcomeInput[] = [];
@@ -63,7 +63,7 @@ async function startScenarioAction(contextOverrides: Partial<MfaContext> = {}) {
         actors: {
             authorize: fromPromise<AuthorizeOutput, AuthorizeInput>(() => {
                 authorizeRuns += 1;
-                return Promise.resolve({success: true, signedChallenge: MFA_TEST_SIGNED_CHALLENGE, authenticationMethod: MFA_TEST_AUTH_METHOD});
+                return Promise.resolve({success: true, signedChallenge: getSignedChallengeForRun(authorizeRuns), authenticationMethod: MFA_TEST_AUTH_METHOD});
             }),
             executeScenarioAction: fromPromise<ExecuteScenarioActionOutput, ExecuteScenarioActionInput>(
                 ({input}) =>
@@ -79,12 +79,13 @@ async function startScenarioAction(contextOverrides: Partial<MfaContext> = {}) {
             ),
             finalizeOutcome: fromPromise<FinalizeOutcomeOutput, FinalizeOutcomeInput>(({input}) => {
                 finalizeInputs.push(input);
-                return Promise.resolve(MFA_TEST_FINALIZE_OUTCOME_SHOW_SCREEN);
+                return shouldFinalizeOutcomeThrow ? Promise.reject(new Error('Finalize exploded')) : Promise.resolve(MFA_TEST_FINALIZE_OUTCOME_SHOW_SCREEN);
             }),
         },
     });
     const context = createFlowContext(contextOverrides);
-    const actor = createActor(machine, {snapshot: machine.resolveState({value: openAt({[MFA_STATE.PROMPT]: MFA_STATE.AWAITING_SOFT_PROMPT}), context})});
+    const clock = new SimulatedClock();
+    const actor = createActor(machine, {snapshot: machine.resolveState({value: openAt({[MFA_STATE.PROMPT]: MFA_STATE.AWAITING_SOFT_PROMPT}), context}), clock});
     actor.start();
     actor.send({type: 'SOFT_PROMPT_APPROVED'});
     await waitForBatchedUpdates();
@@ -101,7 +102,7 @@ async function startScenarioAction(contextOverrides: Partial<MfaContext> = {}) {
     const isAt = (flow: StateValue, cancelConfirm: typeof HIDDEN | typeof MFA_STATE.CANCEL_CONFIRM_VISIBLE = HIDDEN, network: typeof MFA_STATE.ONLINE | typeof OFFLINE = MFA_STATE.ONLINE) =>
         matchesState(openAt(flow, cancelConfirm, network), actor.getSnapshot().value);
 
-    return {actor, scenarioActionCalls, finalizeInputs, settleScenarioAction, settleCancel, isAt, getAuthorizeRuns: () => authorizeRuns};
+    return {actor, clock, scenarioActionCalls, cancelCalls, finalizeInputs, settleScenarioAction, settleCancel, isAt, getAuthorizeRuns: () => authorizeRuns};
 }
 
 function getSetPINOrderCardContext(): Partial<MfaContext> {
@@ -211,12 +212,30 @@ describe('MFA resend of a scenario action whose answer was lost', () => {
             actor.stop();
         });
 
+        it('closes the modal as unconfirmed when the device went offline while the re-sent request runs', async () => {
+            // Given a lost answer is being re-sent and the device then goes offline
+            const {actor, cancelCalls, finalizeInputs, settleScenarioAction} = await startScenarioAction();
+            await settleScenarioAction(LOST);
+            actor.send({type: 'NETWORK_OFFLINE'});
+
+            // When the user presses back
+            actor.send({type: 'REQUEST_CANCEL'});
+            await waitForBatchedUpdates();
+
+            // Then the flow ends as unconfirmed, the same as back offline during the first request
+            expect(actor.getSnapshot().matches(MFA_STATE.CLOSING)).toBe(true);
+            expect(finalizeInputs.at(0)?.error?.reason).toBe(REASON.LOCAL_ERRORS.UNCONFIRMED);
+            expect(cancelCalls).toHaveLength(0);
+
+            actor.stop();
+        });
+
         it.each([
             {description: 'waits offline to re-send it', goOffline: true},
             {description: "can't confirm the result", goOffline: false},
         ])('closes the modal as unconfirmed without asking when the flow $description', async ({goOffline}) => {
             // Given the flow stopped at a lost answer
-            const {actor, finalizeInputs, settleScenarioAction} = await startScenarioAction();
+            const {actor, cancelCalls, finalizeInputs, settleScenarioAction} = await startScenarioAction();
             if (goOffline) {
                 actor.send({type: 'NETWORK_OFFLINE'});
                 await settleScenarioAction(LOST);
@@ -229,9 +248,29 @@ describe('MFA resend of a scenario action whose answer was lost', () => {
             actor.send({type: 'REQUEST_CANCEL'});
             await waitForBatchedUpdates();
 
-            // Then the flow ends as unconfirmed and the modal closes without an outcome screen
+            // Then the flow ends as unconfirmed and the modal closes without an outcome screen. The scenario's cancel (e.g. a deny)
+            // doesn't run, so the callback sees a flow the user didn't cancel.
             expect(actor.getSnapshot().matches(MFA_STATE.CLOSING)).toBe(true);
+            expect(finalizeInputs).toHaveLength(1);
             expect(finalizeInputs.at(0)?.error?.reason).toBe(REASON.LOCAL_ERRORS.UNCONFIRMED);
+            expect(finalizeInputs.at(0)?.isCancelConfirmed).toBe(false);
+            expect(cancelCalls).toHaveLength(0);
+
+            actor.stop();
+        });
+
+        it('still closes the modal when finalizing the unconfirmed outcome throws', async () => {
+            // Given the app couldn't confirm the result, and finalizing the outcome will throw
+            const {actor, settleScenarioAction} = await startScenarioAction({}, {shouldFinalizeOutcomeThrow: true});
+            await settleScenarioAction(LOST);
+            await settleScenarioAction(LOST);
+
+            // When the user presses Close
+            actor.send({type: 'REQUEST_CANCEL'});
+            await waitForBatchedUpdates();
+
+            // Then the modal closes instead of showing a failure screen the user didn't ask for
+            expect(actor.getSnapshot().matches(MFA_STATE.CLOSING)).toBe(true);
 
             actor.stop();
         });
@@ -248,24 +287,34 @@ describe('MFA resend of a scenario action whose answer was lost', () => {
             actor.send({type: 'RETRY_WITH_NEW_CHALLENGE'});
             await waitForBatchedUpdates();
 
-            // Then a fresh challenge is signed and the action goes out again
+            // Then a fresh challenge is signed and the action goes out again with it
             expect(getAuthorizeRuns()).toBe(2);
             expect(isAt(AWAITING_RESULT)).toBe(true);
             expect(scenarioActionCalls).toHaveLength(3);
+            expect(scenarioActionCalls.at(2)?.input.signedChallenge).toEqual(getSignedChallengeForRun(2));
             expect(actor.getSnapshot().context.resendAttempts).toBe(0);
 
             // When this answer is lost as well
             await settleScenarioAction(LOST);
 
-            // Then it is re-sent once, like the first request
+            // Then it is re-sent once with the fresh challenge, like the first request
             expect(scenarioActionCalls).toHaveLength(4);
+            expect(scenarioActionCalls.at(3)?.input.signedChallenge).toEqual(getSignedChallengeForRun(2));
+
+            // When the re-sent answer is lost too
+            await settleScenarioAction(LOST);
+
+            // Then the app again can't confirm the result, and the counter allowed only that one re-send
+            expect(isAt(DECISION_UNCONFIRMED)).toBe(true);
+            expect(scenarioActionCalls).toHaveLength(4);
+            expect(actor.getSnapshot().context.resendAttempts).toBe(1);
 
             actor.stop();
         });
 
         it('is not offered for a scenario whose action is not idempotent', async () => {
             // Given the card order couldn't be confirmed
-            const {actor, settleScenarioAction, isAt, getAuthorizeRuns} = await startScenarioAction(getSetPINOrderCardContext());
+            const {actor, finalizeInputs, settleScenarioAction, isAt, getAuthorizeRuns} = await startScenarioAction(getSetPINOrderCardContext());
             await settleScenarioAction(LOST);
             await settleScenarioAction(LOST);
             expect(snapshotToState(actor.getSnapshot()).canRetryUnconfirmed).toBe(false);
@@ -278,6 +327,15 @@ describe('MFA resend of a scenario action whose answer was lost', () => {
             expect(isAt(DECISION_UNCONFIRMED)).toBe(true);
             expect(getAuthorizeRuns()).toBe(1);
 
+            // When the user closes the screen
+            actor.send({type: 'REQUEST_CANCEL'});
+            await waitForBatchedUpdates();
+
+            // Then the callback runs as unconfirmed, so the card order can open the card page, and the modal closes
+            expect(actor.getSnapshot().matches(MFA_STATE.CLOSING)).toBe(true);
+            expect(finalizeInputs.at(0)?.scenarioName).toBe(CONST.MULTIFACTOR_AUTHENTICATION.SCENARIO.SET_PIN_ORDER_CARD);
+            expect(finalizeInputs.at(0)?.error?.reason).toBe(REASON.LOCAL_ERRORS.UNCONFIRMED);
+
             actor.stop();
         });
     });
@@ -285,7 +343,7 @@ describe('MFA resend of a scenario action whose answer was lost', () => {
     describe('with a confirmed cancel in flight', () => {
         it("doesn't re-send a lost answer and can't confirm the result", async () => {
             // Given the user confirmed a cancel while the scenario action was out
-            const {actor, scenarioActionCalls, settleScenarioAction, settleCancel, isAt} = await startScenarioAction();
+            const {actor, scenarioActionCalls, finalizeInputs, settleScenarioAction, settleCancel, isAt, getAuthorizeRuns} = await startScenarioAction();
             actor.send({type: 'REQUEST_CANCEL'});
             actor.send({type: 'CONFIRM_CANCEL'});
 
@@ -298,7 +356,50 @@ describe('MFA resend of a scenario action whose answer was lost', () => {
             expect(scenarioActionCalls).toHaveLength(1);
             expect(snapshotToState(actor.getSnapshot()).canRetryUnconfirmed).toBe(false);
 
+            // When something asks to try again anyway
+            actor.send({type: 'RETRY_WITH_NEW_CHALLENGE'});
+            await waitForBatchedUpdates();
+
+            // Then nothing is signed or sent
+            expect(isAt(DECISION_UNCONFIRMED)).toBe(true);
+            expect(getAuthorizeRuns()).toBe(1);
+
+            // When the user closes the screen
+            actor.send({type: 'REQUEST_CANCEL'});
+            await waitForBatchedUpdates();
+
+            // Then the flow ends as unconfirmed, and the callback knows the cancel already ran
+            expect(actor.getSnapshot().matches(MFA_STATE.CLOSING)).toBe(true);
+            expect(finalizeInputs.at(0)?.error?.reason).toBe(REASON.LOCAL_ERRORS.UNCONFIRMED);
+            expect(finalizeInputs.at(0)?.isCancelConfirmed).toBe(true);
+
             actor.stop();
+        });
+
+        it.each([
+            {
+                description: "the scenario action's answer was lost and the cancel never answered",
+                settle: async ({settleScenarioAction}: {settleScenarioAction: (output: ExecuteScenarioActionOutput) => Promise<void>}) => settleScenarioAction(LOST),
+            },
+            {
+                description: "the cancel's answer was lost and the scenario action is still running",
+                settle: async ({settleCancel}: {settleCancel: (output: CancelScenarioOutput) => Promise<void>}) => settleCancel(MFA_TEST_LOST_ANSWER_ERROR),
+            },
+        ])("can't confirm the result when the wait times out after $description", async ({settle}) => {
+            // Given the user confirmed a cancel while the scenario action was out
+            const flow = await startScenarioAction();
+            flow.actor.send({type: 'REQUEST_CANCEL'});
+            flow.actor.send({type: 'CONFIRM_CANCEL'});
+
+            // When one request's answer is lost and the other never returns before the timeout
+            await settle(flow);
+            flow.clock.increment(CONST.MULTIFACTOR_AUTHENTICATION.CANCEL_TIMEOUT_MS);
+
+            // Then nobody knows what the server did, so the app says so instead of showing a timeout failure
+            expect(flow.isAt(DECISION_UNCONFIRMED)).toBe(true);
+            expect(flow.scenarioActionCalls).toHaveLength(1);
+
+            flow.actor.stop();
         });
 
         it('lands on the outcome when the cancel got an answer', async () => {
