@@ -87,9 +87,10 @@ async function registerAuthenticationKey({keyInfo}: MultifactorAuthenticationSce
     }
 }
 
-// What `fetch` rejects with when the connection drops, on web and on native.
+// What `fetch` rejects with when the connection drops: Chromium and Firefox, Safari, and React Native's fetch.
 const CONNECTION_LOST_MESSAGES = new Set<string>([
     CONST.ERROR.FAILED_TO_FETCH,
+    CONST.ERROR.IOS_LOAD_FAILED,
     CONST.ERROR.NETWORK_REQUEST_FAILED,
     CONST.ERROR.IOS_NETWORK_CONNECTION_LOST,
     CONST.ERROR.IOS_NETWORK_CONNECTION_LOST_RUSSIAN,
@@ -217,7 +218,7 @@ async function requestAuthorizationChallenge(): Promise<AuthenticationChallengeR
         const parsedResponse = parseHttpResponse(undefined, CONST.MULTIFACTOR_AUTHENTICATION.API_RESPONSE_MAP.REQUEST_AUTHENTICATION_CHALLENGE, undefined);
         return {
             ...parsedResponse,
-            // The machine requests a lost challenge once more (an unused one just expires on the server).
+            // Lets the machine tell a lost answer from one the server sent.
             reason: isNoResponseError(error) ? CONST.MULTIFACTOR_AUTHENTICATION.REASON.LOCAL_ERRORS.NO_RESPONSE : parsedResponse.reason,
             challenge: undefined,
             publicKeys: undefined,

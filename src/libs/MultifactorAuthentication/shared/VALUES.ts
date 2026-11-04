@@ -264,6 +264,7 @@ const MFA_STATE = {
     READY_TO_REGISTER: 'readyToRegister',
     REGISTERING_KEY: 'registeringKey',
     AUTHORIZING: 'authorizing',
+    AWAITING_CHALLENGE_RETRY: 'awaitingChallengeRetry',
     READY_TO_SIGN: 'readyToSign',
     SIGNING_CHALLENGE: 'signingChallenge',
     EXECUTING_SCENARIO_ACTION: 'executingScenarioAction',
@@ -365,6 +366,12 @@ const SHARED_VALUES = {
 
     /** How long a confirmed cancel waits for its requests before the flow fails on its own. */
     CANCEL_TIMEOUT_MS: 60 * 1000,
+
+    /**
+     * How long a lost request waits before it is sent again. A dropped connection usually shows up as offline only a
+     * moment after the request fails, so a retry sent at once could be lost the same way.
+     */
+    RETRY_DELAY_MS: 2 * 1000,
 
     /** Stable testIDs shared between MFA views and tests. */
     TEST_ID: {

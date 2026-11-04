@@ -37,7 +37,7 @@ import createInitEvent, {
     MFA_TEST_VALIDATE_CODE,
 } from 'tests/utils/mfa/flowFixtures';
 import waitForBatchedUpdates from 'tests/utils/waitForBatchedUpdates';
-import {createActor, fromPromise, matchesState, waitFor} from 'xstate';
+import {createActor, fromPromise, matchesState, SimulatedClock, waitFor} from 'xstate';
 
 jest.mock('@components/MultifactorAuthentication/observability/breadcrumbs', () => ({__esModule: true, default: jest.fn()}));
 
@@ -57,6 +57,7 @@ const REGISTERING_KEY = {[MFA_STATE.PROMPT]: {[MFA_STATE.CREATING_CREDENTIAL]: M
 const AUTHORIZING = {[MFA_STATE.PROMPT]: MFA_STATE.AUTHORIZING};
 const READY_TO_SIGN = {[MFA_STATE.PROMPT]: {[MFA_STATE.AUTHORIZING]: MFA_STATE.READY_TO_SIGN}};
 const SIGNING_CHALLENGE = {[MFA_STATE.PROMPT]: {[MFA_STATE.AUTHORIZING]: MFA_STATE.SIGNING_CHALLENGE}};
+const AWAITING_CHALLENGE_RETRY = {[MFA_STATE.PROMPT]: {[MFA_STATE.AUTHORIZING]: MFA_STATE.AWAITING_CHALLENGE_RETRY}};
 const EXECUTING_SCENARIO_ACTION = {[MFA_STATE.PROMPT]: {[MFA_STATE.AUTHORIZING]: MFA_STATE.EXECUTING_SCENARIO_ACTION}};
 const FINALIZING_OUTCOME = {[MFA_STATE.OUTCOME]: MFA_STATE.FINALIZING_OUTCOME};
 
@@ -269,22 +270,32 @@ describe('MFA offline', () => {
             actor.stop();
         });
 
-        it('waits for the network before requesting a lost challenge again', () => {
-            // Given the challenge request is running and the device goes offline before its answer arrives
-            const actor = createActorAtState(openAt(SIGNING_CHALLENGE, HIDDEN, OFFLINE));
+        it('holds a lost challenge offline when the connection turns out to be gone during the pause', async () => {
+            // Given the challenge request is running. It starts live, because `resolveState` doesn't start an invoked actor.
+            const authorize = createControlledStep<AuthorizeOutput, AuthorizeInput>();
+            const machine = mfaMachine.provide({actors: {authorize: authorize.actor}});
+            const clock = new SimulatedClock();
+            const actor = createActor(machine, {snapshot: machine.resolveState({value: openAt(READY_TO_SIGN, HIDDEN, OFFLINE), context: createFlowContext()}), clock});
             actor.start();
+            actor.send({type: 'NETWORK_ONLINE'});
+            expect(authorize.getCalls()).toBe(1);
 
-            // When the answer is lost
-            sendAuthorizeDone(actor, {success: false, error: createMFAErrorFromApiResponse(0, CONST.MULTIFACTOR_AUTHENTICATION.REASON.LOCAL_ERRORS.NO_RESPONSE)});
+            // When its answer is lost before the app noticed the connection drop, and the drop shows up during the pause
+            await authorize.settle({success: false, error: createMFAErrorFromApiResponse(0, CONST.MULTIFACTOR_AUTHENTICATION.REASON.LOCAL_ERRORS.NO_RESPONSE)});
+            expect(isAt(actor, openAt(AWAITING_CHALLENGE_RETRY))).toBe(true);
+            actor.send({type: 'NETWORK_OFFLINE'});
+            clock.increment(CONST.MULTIFACTOR_AUTHENTICATION.RETRY_DELAY_MS);
 
             // Then the flow waits instead of sending a request that would be lost too
             expect(isAt(actor, openAt(READY_TO_SIGN, HIDDEN, OFFLINE))).toBe(true);
+            expect(authorize.getCalls()).toBe(1);
 
             // When the device comes back online
             actor.send({type: 'NETWORK_ONLINE'});
 
-            // Then the fresh challenge is requested
+            // Then a fresh challenge is requested
             expect(isAt(actor, openAt(SIGNING_CHALLENGE))).toBe(true);
+            expect(authorize.getCalls()).toBe(2);
 
             actor.stop();
         });

@@ -22,6 +22,7 @@ import createInitEvent, {
     MFA_TEST_FINALIZE_OUTCOME_SHOW_SCREEN,
     MFA_TEST_INVALID_CODE_ERROR,
     MFA_TEST_KEY_INFO,
+    MFA_TEST_LOST_ANSWER_ERROR,
     MFA_TEST_REGISTRATION_CHALLENGE,
     MFA_TEST_REGISTRATION_REQUIRED_ERROR,
     MFA_TEST_SCENARIO_ACTION_ERROR,
@@ -249,6 +250,18 @@ const DRIVING_JOURNEYS: DrivingJourney[] = [
             createActorDoneEvent('registerCredential', {success: true}),
         ],
         endState: `${MFA_STATE.OPEN}.${MFA_STATE.FLOW}.${MFA_STATE.PROMPT}.${MFA_STATE.AUTHORIZING}`,
+    },
+    // The generated paths offer one authorization failure, which isn't a lost answer, so this journey drives
+    // the pause before a lost challenge is requested again. Leaving the pause needs a timer, so it ends there.
+    {
+        description: 'the lost-challenge journey pauses before requesting the challenge again',
+        events: [
+            createInitEvent(),
+            createActorDoneEvent('validateDevice', {success: true}),
+            createActorDoneEvent('loadRegistrationState', {hasServerCredentials: false, hasLocalCredentials: true, hasEverAcceptedSoftPrompt: true}),
+            createActorDoneEvent('authorize', {success: false, error: MFA_TEST_LOST_ANSWER_ERROR}),
+        ],
+        endState: `${MFA_STATE.OPEN}.${MFA_STATE.FLOW}.${MFA_STATE.PROMPT}.${MFA_STATE.AUTHORIZING}.${MFA_STATE.AWAITING_CHALLENGE_RETRY}`,
     },
     // Recovery depends on the once-per-flow flag in context, so the generated paths, which offer one
     // failure per actor, never reach it. These journeys drive it explicitly.

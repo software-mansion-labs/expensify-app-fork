@@ -15,6 +15,7 @@ import type {
 
 import {createLocalMFAError, createMFAErrorFromApiResponse} from '@libs/MultifactorAuthentication/shared/MFAResult';
 import type {MFAResult} from '@libs/MultifactorAuthentication/shared/MFAResult';
+import * as NetworkState from '@libs/NetworkState';
 
 import {createScenarioActionRunner} from '@userActions/MultifactorAuthentication/processing';
 
@@ -30,12 +31,13 @@ import {
     MFA_TEST_SIGNED_CHALLENGE,
 } from 'tests/utils/mfa/flowFixtures';
 import waitForBatchedUpdates from 'tests/utils/waitForBatchedUpdates';
-import {createActor, fromPromise, waitFor} from 'xstate';
+import {createActor, fromPromise, SimulatedClock, waitFor} from 'xstate';
 
 const MFA_STATE = CONST.MULTIFACTOR_AUTHENTICATION.MFA_STATE;
 const REASON = CONST.MULTIFACTOR_AUTHENTICATION.REASON;
 
 const SIGNING_CHALLENGE = {[MFA_STATE.OPEN]: {[MFA_STATE.FLOW]: {[MFA_STATE.PROMPT]: {[MFA_STATE.AUTHORIZING]: MFA_STATE.SIGNING_CHALLENGE}}}};
+const AWAITING_CHALLENGE_RETRY = {[MFA_STATE.OPEN]: {[MFA_STATE.FLOW]: {[MFA_STATE.PROMPT]: {[MFA_STATE.AUTHORIZING]: MFA_STATE.AWAITING_CHALLENGE_RETRY}}}};
 const EXECUTING_SCENARIO_ACTION = {[MFA_STATE.OPEN]: {[MFA_STATE.FLOW]: {[MFA_STATE.PROMPT]: {[MFA_STATE.AUTHORIZING]: MFA_STATE.EXECUTING_SCENARIO_ACTION}}}};
 
 // The graph-traversal suites generate their expectations from the machine, so a transition pointed at
@@ -149,21 +151,32 @@ describe('MFA authorization', () => {
         describe('lost challenge', () => {
             const lostChallengeError = createMFAErrorFromApiResponse(0, REASON.LOCAL_ERRORS.NO_RESPONSE);
 
-            it('requests the challenge once more when its answer was lost', () => {
+            it('requests the challenge once more after a short pause when its answer was lost', () => {
                 // Given the challenge request is running
-                const actor = createActorAtState(SIGNING_CHALLENGE);
+                const refreshNetworkState = jest.spyOn(NetworkState, 'refresh');
+                const clock = new SimulatedClock();
+                const actor = createActorAtState(SIGNING_CHALLENGE, {}, clock);
                 actor.start();
 
                 // When its answer is lost
                 sendAuthorizeDone(actor, {success: false, error: lostChallengeError});
 
+                // Then the flow pauses and checks the network, so a dropped connection the app hasn't noticed yet can show up as offline
+                expect(actor.getSnapshot().matches(AWAITING_CHALLENGE_RETRY)).toBe(true);
+                expect(actor.getSnapshot().context.challengeRetries).toBe(1);
+                expect(actor.getSnapshot().context.error).toBeUndefined();
+                expect(refreshNetworkState).toHaveBeenCalledTimes(1);
+                clock.increment(CONST.MULTIFACTOR_AUTHENTICATION.RETRY_DELAY_MS - 1);
+                expect(actor.getSnapshot().matches(AWAITING_CHALLENGE_RETRY)).toBe(true);
+
+                // When the pause ends
+                clock.increment(1);
+
                 // Then the flow asks for a fresh challenge instead of failing, because an unused one just expires on the server
-                const result = actor.getSnapshot();
-                expect(result.matches(SIGNING_CHALLENGE)).toBe(true);
-                expect(result.context.challengeRetries).toBe(1);
-                expect(result.context.error).toBeUndefined();
+                expect(actor.getSnapshot().matches(SIGNING_CHALLENGE)).toBe(true);
 
                 actor.stop();
+                refreshNetworkState.mockRestore();
             });
 
             it('reaches the failure outcome when the retried challenge is lost too', () => {
