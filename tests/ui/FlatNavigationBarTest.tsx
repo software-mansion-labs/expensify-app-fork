@@ -14,12 +14,21 @@ import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';
 import ROUTES from '@src/ROUTES';
 
+import type {ComponentType} from 'react';
 import type {ValueOf} from 'type-fest';
 
 import React from 'react';
 import Onyx from 'react-native-onyx';
 
 import waitForBatchedUpdatesWithAct from '../utils/waitForBatchedUpdatesWithAct';
+
+type ReactActual = {
+    createElement: typeof React.createElement;
+};
+
+type ReactNativeActual = {
+    View: ComponentType<{testID: string}>;
+};
 
 type IndicatorStatusMock = {status: string | undefined; indicatorColor: string | undefined};
 
@@ -39,7 +48,11 @@ jest.mock('@components/Navigation/NavigationTabBar/useInsightsTabNavigation', ()
 jest.mock('@hooks/useRestoreWorkspacesTabOnNavigate', () => () => mockNavigateToWorkspaces);
 jest.mock('@hooks/useInboxTabIndicatorStatus', () => () => mockInboxIndicator);
 jest.mock('@hooks/useWorkspacesTabIndicatorStatus', () => () => mockWorkspacesIndicator);
-jest.mock('@components/Navigation/FlatNavigationBar/FlatNavCreateMenuButtons', () => () => null);
+jest.mock('@components/Navigation/FlatNavigationBar/FlatNavCreateButton', () => {
+    const {createElement} = jest.requireActual<ReactActual>('react');
+    const {View} = jest.requireActual<ReactNativeActual>('react-native');
+    return () => createElement(View, {testID: 'FlatNavCreateButton'});
+});
 jest.mock('@pages/inbox/sidebar/SupportalSwitcherButton', () => () => null);
 jest.mock('@components/Avatar/AccountNavigationAvatar', () => () => null);
 jest.mock('@libs/Navigation/Navigation', () => ({
@@ -122,6 +135,17 @@ describe('FlatNavigationBar', () => {
         expect(getRow(rowName)).toBeSelected();
     });
 
+    it('puts the Create button right below the logo', async () => {
+        // Given the bar on the Home tab
+        // When it renders
+        renderBar(NAVIGATION_TABS.HOME);
+        await waitForBatchedUpdatesWithAct();
+
+        // Then the Create button comes right after the logo, as in the pre-design
+        const headerElements = screen.getAllByTestId(/^(ExpensifyLogoButton|FlatNavCreateButton)$/);
+        expect(headerElements.map((element) => String(element.props.testID))).toEqual(['ExpensifyLogoButton', 'FlatNavCreateButton']);
+    });
+
     it('leaves pressing the current row as a no-op', async () => {
         // Given the bar on the Home tab
         renderBar(NAVIGATION_TABS.HOME);
@@ -157,6 +181,31 @@ describe('FlatNavigationBar', () => {
         // Then the row shows the name and its accessible name contains it, so voice control can activate it by the visible label
         expect(getRow('John Doe, My settings')).toBeOnTheScreen();
         expect(within(getRow('John Doe, My settings')).getByText('John Doe')).toBeOnTheScreen();
+    });
+
+    it('shows the emoji status on the right of the Account row', async () => {
+        // Given a user with an emoji status
+        await Onyx.set(ONYXKEYS.PERSONAL_DETAILS_LIST, {[ACCOUNT_ID]: {accountID: ACCOUNT_ID, displayName: 'John Doe', status: {emojiCode: '🥪', text: 'Lunch!'}}});
+
+        // When the bar renders
+        renderBar(NAVIGATION_TABS.HOME);
+        await waitForBatchedUpdatesWithAct();
+
+        // Then the emoji sits inside the Account row as its own chip, because a badge on the avatar crowds its ring and dot
+        expect(within(getRow('John Doe, My settings')).getByTestId('FlatNavAccountStatus')).toBeOnTheScreen();
+        expect(within(getRow('John Doe, My settings')).getByText('🥪')).toBeOnTheScreen();
+    });
+
+    it('shows no status chip when the user has no emoji status', async () => {
+        // Given a user without an emoji status
+        await Onyx.set(ONYXKEYS.PERSONAL_DETAILS_LIST, {[ACCOUNT_ID]: {accountID: ACCOUNT_ID, displayName: 'John Doe'}});
+
+        // When the bar renders
+        renderBar(NAVIGATION_TABS.HOME);
+        await waitForBatchedUpdatesWithAct();
+
+        // Then the row keeps only the avatar and the name, so an empty chip never takes space next to the name
+        expect(screen.queryByTestId('FlatNavAccountStatus')).not.toBeOnTheScreen();
     });
 
     it('flags Inbox and Workspaces when they need the user', async () => {

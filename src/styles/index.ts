@@ -890,8 +890,25 @@ const staticStyles = (theme: ThemeColors) =>
             alignItems: 'center',
             justifyContent: 'space-between',
             height: variables.flatNavigationBarHeaderHeight,
-            paddingLeft: 20,
+            paddingLeft: variables.flatNavigationBarRowInset + variables.flatNavigationBarRowPadding,
             paddingRight: 12,
+        },
+
+        flatNavigationBarCreateRow: {
+            marginHorizontal: variables.flatNavigationBarCreateRowInset,
+            marginBottom: variables.flatNavigationBarCreateRowGap,
+        },
+
+        flatNavigationBarCreateButton: {
+            height: variables.flatNavigationBarCreateButtonHeight,
+            minHeight: variables.flatNavigationBarCreateButtonHeight,
+            minWidth: variables.flatNavigationBarCreateButtonHeight,
+        },
+
+        flatNavigationBarCreateButtonCompact: {
+            width: variables.flatNavigationBarCreateButtonHeight,
+            paddingHorizontal: 0,
+            borderRadius: variables.flatNavigationBarCreateButtonHeight / 2,
         },
 
         flatNavigationBarItem: {
@@ -899,7 +916,7 @@ const staticStyles = (theme: ThemeColors) =>
             alignItems: 'center',
             gap: 12,
             height: variables.flatNavigationBarItemHeight,
-            paddingHorizontal: 12,
+            paddingHorizontal: variables.flatNavigationBarRowPadding,
             marginHorizontal: variables.flatNavigationBarRowInset,
             borderRadius: variables.componentBorderRadiusNormal,
         },
@@ -908,23 +925,11 @@ const staticStyles = (theme: ThemeColors) =>
             height: variables.flatNavigationBarAccountItemHeight,
         },
 
-        flatNavigationBarItemSelected: {
-            backgroundColor: theme.hoverComponentBG,
-        },
-
-        flatNavigationBarItemHovered: {
-            backgroundColor: theme.highlightBG,
-        },
-
         flatNavigationBarDivider: {
             height: 1,
-            marginHorizontal: 20,
+            marginHorizontal: variables.flatNavigationBarRowInset + variables.flatNavigationBarRowPadding,
             marginVertical: 8,
             backgroundColor: theme.border,
-        },
-
-        flatNavigationBarFooter: {
-            paddingBottom: 12,
         },
 
         button: {
