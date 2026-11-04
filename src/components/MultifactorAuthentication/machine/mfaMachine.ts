@@ -41,6 +41,8 @@ const EXECUTING_SCENARIO_ACTION_TARGET = `#${MFA_STATE.EXECUTING_SCENARIO_ACTION
 const OFFLINE_TARGET = `#${MFA_STATE.OFFLINE}` as const;
 
 // The platform ceremonies wait while the cancel confirmation is up (the prompt would cover it) or while offline.
+// Creating a key needs no network itself, but offline nothing could register it, so the user isn't prompted
+// for a key that may never be used.
 const CAN_START_CEREMONY = and([not(stateIn(CANCEL_CONFIRM_VISIBLE_TARGET)), not(stateIn(OFFLINE_TARGET))]);
 
 // One literal shared by both branches of an explicit soft-prompt approval, so they can't drift apart.
@@ -258,7 +260,7 @@ const MFAMachine = setup({
         addNetworkOnlineBreadcrumb: ({context}) => {
             addMFABreadcrumb('Network online', {scenario: context.scenarioName});
         },
-        // Same message and payload as the legacy offline cancel, so existing Sentry queries keep matching.
+        // Keeps the message and payload that existing Sentry queries for an offline cancel filter on.
         addOfflineCancelBreadcrumb: ({context}) => {
             addMFABreadcrumb('Flow cancelled - closing directly', {hasScenario: !!context.scenario, isOffline: true}, 'warning');
         },
@@ -562,8 +564,10 @@ const MFAMachine = setup({
                                                         target: OUTCOME_TARGET,
                                                         actions: assign({error: ({event}) => getMFAFailureError(event.output)}),
                                                     },
-                                                    // The scenario action can't be sent offline, so the signature is dropped and the
-                                                    // ceremony runs again with a fresh challenge once back online.
+                                                    // The scenario action can't be sent offline, so the signature is dropped and a fresh
+                                                    // challenge is signed once back online, since this one may expire meanwhile. A created
+                                                    // key is kept instead (`readyToRegister`): a new one would reuse the same registration
+                                                    // challenge, because a fresh challenge needs a new validate code.
                                                     {guard: stateIn(OFFLINE_TARGET), target: MFA_STATE.WAITING_TO_SIGN},
                                                     // The scenario action takes the method as input, so it is stored before the request
                                                     // and outcome telemetry reports it even when the scenario action fails.
