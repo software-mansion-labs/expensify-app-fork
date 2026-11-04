@@ -71,6 +71,7 @@ const PERSONAL_DETAILS = {
 
 const SUCCESS_RESPONSE: MultifactorAuthenticationScenarioResponse = {httpStatusCode: 200, reason: undefined, message: undefined};
 const CANCELED_ERROR = createLocalMFAError(REASON.LOCAL_ERRORS.CANCELED, 'user canceled');
+const UNCONFIRMED_ERROR = createLocalMFAError(REASON.LOCAL_ERRORS.UNCONFIRMED, 'closed unconfirmed');
 
 type RunScenarioOptions = {
     scenarioResponse?: MultifactorAuthenticationScenarioResponse;
@@ -219,6 +220,14 @@ describe('MFA scenario callbacks through the finalize-outcome actor', () => {
             expect(clearDraftValues).not.toHaveBeenCalled();
             expect(Navigation.navigate).not.toHaveBeenCalled();
         });
+
+        it('lands the user on the card page when the order is unconfirmed, so they can see whether it shipped', async () => {
+            const output = await runScenario(SCENARIO.SET_PIN_ORDER_CARD, {error: UNCONFIRMED_ERROR, payload});
+
+            expect(output).toEqual({callbackResponse: CALLBACK_RESPONSE.SKIP_OUTCOME_SCREEN});
+            expect(Navigation.closeRHPFlow).toHaveBeenCalled();
+            expect(Navigation.navigate).toHaveBeenCalledWith(ROUTES.SETTINGS_WALLET_DOMAIN_CARD.getRoute(CARD_ID));
+        });
     });
 
     describeScenario(SCENARIO.CHANGE_PIN, () => {
@@ -254,6 +263,12 @@ describe('MFA scenario callbacks through the finalize-outcome actor', () => {
 
             expect(output).toEqual({callbackResponse: CALLBACK_RESPONSE.SHOW_OUTCOME_SCREEN});
             expect(fireAndForgetDenyTransaction).toHaveBeenCalledWith({transactionID: TRANSACTION_ID});
+        });
+
+        it('sends no deny when the user closes an unconfirmed approve, since it may have gone through', async () => {
+            await runScenario(SCENARIO.AUTHORIZE_TRANSACTION, {error: UNCONFIRMED_ERROR, payload});
+
+            expect(fireAndForgetDenyTransaction).not.toHaveBeenCalled();
         });
 
         it.each([
