@@ -12,6 +12,7 @@ const REASON = CONST.MULTIFACTOR_AUTHENTICATION.REASON;
 describe('requestAuthorizationChallenge', () => {
     it.each([
         {description: 'fetch fails on web', error: new TypeError(CONST.ERROR.FAILED_TO_FETCH)},
+        {description: 'fetch fails on Safari', error: new TypeError(CONST.ERROR.IOS_LOAD_FAILED)},
         {description: 'fetch fails on native', error: new TypeError(CONST.ERROR.NETWORK_REQUEST_FAILED)},
         {description: 'the iOS connection drops', error: new Error(CONST.ERROR.IOS_NETWORK_CONNECTION_LOST)},
         {
