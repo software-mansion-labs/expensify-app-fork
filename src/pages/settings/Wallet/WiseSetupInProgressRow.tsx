@@ -9,7 +9,6 @@ import useTheme from '@hooks/useTheme';
 import useThemeStyles from '@hooks/useThemeStyles';
 
 import createDynamicRoute from '@libs/Navigation/helpers/dynamicRoutesUtils/createDynamicRoute';
-import getWiseOnboardingStatusRoute from '@libs/Navigation/helpers/getWiseOnboardingStatusRoute';
 import Navigation from '@libs/Navigation/Navigation';
 
 import variables from '@styles/variables';
@@ -62,7 +61,7 @@ function WiseSetupInProgressRow({bankAccountID, canContinue, isOnboardingSubmitt
                             variant="label"
                             onPress={() =>
                                 isOnboardingSubmitted
-                                    ? Navigation.navigate(getWiseOnboardingStatusRoute(bankAccountID))
+                                    ? Navigation.navigate(createDynamicRoute(DYNAMIC_ROUTES.WISE_ONBOARDING_STATUS.getRoute(bankAccountID)))
                                     : Navigation.navigate(createDynamicRoute(DYNAMIC_ROUTES.WISE_GLOBAL_REIMBURSEMENTS_INTRO.getRoute(bankAccountID)))
                             }
                         >

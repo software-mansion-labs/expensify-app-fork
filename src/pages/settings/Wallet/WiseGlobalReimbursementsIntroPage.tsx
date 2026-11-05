@@ -101,7 +101,9 @@ function WiseGlobalReimbursementsIntroPage({route}: WiseGlobalReimbursementsIntr
                                 dismissProductTraining(CONST.WISE_GLOBAL_REIMBURSEMENTS_WORKSPACE_BANNER);
                                 // A submitted business has nothing left to submit, so it sees where its onboarding stands instead of ending on the terms
                                 Navigation.navigate(
-                                    createDynamicRoute(isOnboardingSubmitted ? DYNAMIC_ROUTES.WISE_ONBOARDING_STATUS.path : DYNAMIC_ROUTES.WISE_BUSINESS_ONBOARDING.getRoute()),
+                                    createDynamicRoute(
+                                        isOnboardingSubmitted ? DYNAMIC_ROUTES.WISE_ONBOARDING_STATUS.getRoute(bankAccountID) : DYNAMIC_ROUTES.WISE_BUSINESS_ONBOARDING.getRoute(),
+                                    ),
                                 );
                             }}
                         />

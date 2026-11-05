@@ -82,7 +82,7 @@ function WiseBusinessOnboardingPage({route}: WiseBusinessOnboardingPageProps) {
 
     // A submitted business has nothing left to submit, and the back path follows the focused route, so introPath stays out of the effect and the status page opens once
     const isOnboardingSubmitted = isWiseOnboardingSubmitted(bankAccount?.accountData);
-    const openStatusPage = useEffectEvent(() => Navigation.navigate(createDynamicRoute(DYNAMIC_ROUTES.WISE_ONBOARDING_STATUS.path, introPath), {forceReplace: true}));
+    const openStatusPage = useEffectEvent(() => Navigation.navigate(createDynamicRoute(DYNAMIC_ROUTES.WISE_ONBOARDING_STATUS.getRoute(bankAccountID), introPath), {forceReplace: true}));
     useEffect(() => {
         if (!isOnboardingSubmitted) {
             return;

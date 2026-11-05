@@ -2,10 +2,11 @@ import ConnectionStatusMessage from '@components/ConnectionStatusMessage';
 
 import useLocalize from '@hooks/useLocalize';
 
-import getWiseOnboardingStatusRoute from '@libs/Navigation/helpers/getWiseOnboardingStatusRoute';
+import createDynamicRoute from '@libs/Navigation/helpers/dynamicRoutesUtils/createDynamicRoute';
 import Navigation from '@libs/Navigation/Navigation';
 
 import CONST from '@src/CONST';
+import {DYNAMIC_ROUTES} from '@src/ROUTES';
 
 import React from 'react';
 
@@ -28,7 +29,7 @@ function WiseMoreInfoNeededRow({bankAccountID}: WiseMoreInfoNeededRowProps) {
             message={translate('walletPage.wiseMoreInfoNeeded')}
             statusTone="success"
             actionText={translate('common.review')}
-            onActionPress={() => Navigation.navigate(getWiseOnboardingStatusRoute(bankAccountID))}
+            onActionPress={() => Navigation.navigate(createDynamicRoute(DYNAMIC_ROUTES.WISE_ONBOARDING_STATUS.getRoute(bankAccountID)))}
             actionSentryLabel={CONST.SENTRY_LABEL.SETTINGS_WALLET.WISE_MORE_INFO_NEEDED_REVIEW}
         />
     );

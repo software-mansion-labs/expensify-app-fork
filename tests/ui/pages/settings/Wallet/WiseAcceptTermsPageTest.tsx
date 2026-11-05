@@ -182,7 +182,7 @@ describe('WiseAcceptTermsPage', () => {
         expect(clearDraftValues).toHaveBeenCalledWith(ONYXKEYS.FORMS.WISE_BUSINESS_ONBOARDING_FORM);
         expect(clearSensitiveAnswers).toHaveBeenCalledWith(ONYXKEYS.FORMS.WISE_BUSINESS_ONBOARDING_FORM);
         expect(clearWiseOnboardingUnsavedPages).toHaveBeenCalled();
-        expect(Navigation.navigate).toHaveBeenCalledWith('settings/wallet/global-reimbursements/1/status', {forceReplace: true});
+        expect(Navigation.navigate).toHaveBeenCalledWith('settings/wallet/global-reimbursements/1/global-reimbursements/status/1', {forceReplace: true});
     });
 
     it('opens the status page only once while the terms page is still mounted under it', () => {
@@ -269,7 +269,7 @@ describe('WiseAcceptTermsPage', () => {
         // Then nothing is sent again, the answers left on the device go and the status page replaces the terms
         expect(submitWiseBusinessOnboarding).not.toHaveBeenCalled();
         expect(clearDraftValues).toHaveBeenCalledWith(ONYXKEYS.FORMS.WISE_BUSINESS_ONBOARDING_FORM);
-        expect(Navigation.navigate).toHaveBeenCalledWith('settings/wallet/global-reimbursements/1/status', {forceReplace: true});
+        expect(Navigation.navigate).toHaveBeenCalledWith('settings/wallet/global-reimbursements/1/global-reimbursements/status/1', {forceReplace: true});
     });
 
     it('opens the status page only once when the server sends the submitted business after the submission succeeded', () => {

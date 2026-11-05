@@ -41,7 +41,6 @@ import useThemeStyles from '@hooks/useThemeStyles';
 import {isBankAccountEligibleForGlobalReimbursements, isPersonalBankAccountMissingInfo, isWiseOnboardingSubmitted, showUnlockAlreadyRequestedModal} from '@libs/BankAccountUtils';
 import {hasDisplayableAssignedCards, isDirectFeed, maskCardNumber} from '@libs/CardUtils';
 import createDynamicRoute from '@libs/Navigation/helpers/dynamicRoutesUtils/createDynamicRoute';
-import getWiseOnboardingStatusRoute from '@libs/Navigation/helpers/getWiseOnboardingStatusRoute';
 import Navigation from '@libs/Navigation/Navigation';
 import {formatPaymentMethods, getPaymentMethodDescription} from '@libs/PaymentUtils';
 import {getStreetLines} from '@libs/PersonalDetailsUtils';
@@ -537,7 +536,7 @@ function WalletPage() {
                                   const {bankAccountID} = paymentMethod.selectedPaymentMethod;
                                   // The intro only starts the onboarding, so once it is submitted the status page opens instead
                                   if (bankAccountID && isWiseOnboardingSubmitted(paymentMethod.selectedPaymentMethod)) {
-                                      Navigation.navigate(getWiseOnboardingStatusRoute(bankAccountID));
+                                      Navigation.navigate(createDynamicRoute(DYNAMIC_ROUTES.WISE_ONBOARDING_STATUS.getRoute(bankAccountID)));
                                       return;
                                   }
                                   Navigation.navigate(createDynamicRoute(DYNAMIC_ROUTES.WISE_GLOBAL_REIMBURSEMENTS_INTRO.getRoute(bankAccountID)));

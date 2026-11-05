@@ -3,10 +3,11 @@ import BaseWidgetItem from '@components/BaseWidgetItem';
 import {useMemoizedLazyExpensifyIcons} from '@hooks/useLazyAsset';
 import useLocalize from '@hooks/useLocalize';
 
-import getWiseOnboardingStatusRoute from '@libs/Navigation/helpers/getWiseOnboardingStatusRoute';
+import createDynamicRoute from '@libs/Navigation/helpers/dynamicRoutesUtils/createDynamicRoute';
 import Navigation from '@libs/Navigation/Navigation';
 
 import CONST from '@src/CONST';
+import {DYNAMIC_ROUTES} from '@src/ROUTES';
 
 import React from 'react';
 
@@ -32,7 +33,7 @@ function VerifyWiseBankAccount({bankAccountID, bankAccountLastFour}: VerifyWiseB
             title={translate('homePage.timeSensitiveSection.verifyWiseBankAccount.title')}
             subtitle={bankAccountLastFour ? translate('homePage.timeSensitiveSection.verifyWiseBankAccount.subtitle', {bankAccountLastFour}) : undefined}
             ctaText={translate('homePage.forYouSection.begin')}
-            onCtaPress={() => Navigation.navigate(getWiseOnboardingStatusRoute(bankAccountID))}
+            onCtaPress={() => Navigation.navigate(createDynamicRoute(DYNAMIC_ROUTES.WISE_ONBOARDING_STATUS.getRoute(bankAccountID)))}
             buttonVariant={CONST.BUTTON_VARIANT.SUCCESS}
         />
     );

@@ -419,7 +419,7 @@ describe('WiseBusinessOnboardingPage', () => {
         expect(navigateSpy).toHaveBeenCalledTimes(1);
         expect(openReimbursementAccountPage).not.toHaveBeenCalled();
         expect(saveDraftAnswers).not.toHaveBeenCalled();
-        expect(navigateSpy).toHaveBeenCalledWith('settings/wallet/global-reimbursements/1/status', {forceReplace: true});
+        expect(navigateSpy).toHaveBeenCalledWith('settings/wallet/global-reimbursements/1/global-reimbursements/status/1', {forceReplace: true});
         expect(screen.queryByTestId(FLOW_TEST_ID)).not.toBeOnTheScreen();
     });
 

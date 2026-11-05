@@ -325,7 +325,7 @@ describe('PaymentMethodList', () => {
         fireEvent.press(screen.getByText('Continue.'), {preventDefault: jest.fn()});
 
         // Then Continue opens the status page, since the onboarding is already with Wise and only waits on the admin's answers
-        expect(Navigation.navigate).toHaveBeenCalledWith(`settings/wallet/global-reimbursements/${WISE_BANK_ACCOUNT_ID}/status`);
+        expect(Navigation.navigate).toHaveBeenCalledWith(`settings/wallet/global-reimbursements/status/${WISE_BANK_ACCOUNT_ID}`);
     });
 
     it('shows a submitted Wise onboarding as in progress without Continue', async () => {

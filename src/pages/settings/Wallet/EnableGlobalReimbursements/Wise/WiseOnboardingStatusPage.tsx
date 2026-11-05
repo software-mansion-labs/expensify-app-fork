@@ -1,6 +1,6 @@
 /**
  * Shows where the business's Wise onboarding stands for one bank account: more info needed, in review, approved, or rejected.
- * It opens over the intro and shows the status the bank account holds. Wise also sends the user here when its KYC form ends.
+ * It opens over the intro or straight over the screen that links to it, and shows the status the bank account holds. Wise also sends the user here when its KYC form ends.
  */
 import FullPageNotFoundView from '@components/BlockingViews/FullPageNotFoundView';
 import FullScreenLoadingIndicator from '@components/FullscreenLoadingIndicator';
@@ -8,12 +8,12 @@ import Header from '@components/Header';
 import ScreenWrapper from '@components/ScreenWrapper';
 
 import useAndroidBackButtonHandler from '@hooks/useAndroidBackButtonHandler';
+import useDynamicBackPath from '@hooks/useDynamicBackPath';
 import useLocalize from '@hooks/useLocalize';
 import useOnyx from '@hooks/useOnyx';
 import usePermissions from '@hooks/usePermissions';
-import useWiseOnboardingEntryPath from '@hooks/useWiseOnboardingEntryPath';
 
-import getWiseOnboardingStatusRoute from '@libs/Navigation/helpers/getWiseOnboardingStatusRoute';
+import stripDynamicRouteSuffixFromPath from '@libs/Navigation/helpers/dynamicRoutesUtils/stripDynamicRouteSuffixFromPath';
 import type {PlatformStackScreenProps} from '@libs/Navigation/PlatformStackNavigation/types';
 
 import Navigation from '@navigation/Navigation';
@@ -24,6 +24,7 @@ import {setOptimisticWiseOnboardingInReview} from '@userActions/Wise';
 import CONST from '@src/CONST';
 import type {TranslationPaths} from '@src/languages/types';
 import ONYXKEYS from '@src/ONYXKEYS';
+import {DYNAMIC_ROUTES} from '@src/ROUTES';
 import type SCREENS from '@src/SCREENS';
 
 import type {ReactNode} from 'react';
@@ -39,7 +40,9 @@ type WiseOnboardingStatusPageProps = PlatformStackScreenProps<SettingsNavigatorP
 
 function WiseOnboardingStatusPage({route, navigation}: WiseOnboardingStatusPageProps) {
     const bankAccountID = Number(route.params.bankAccountID);
-    const entryPath = useWiseOnboardingEntryPath();
+    const backPath = useDynamicBackPath(DYNAMIC_ROUTES.WISE_ONBOARDING_STATUS.path);
+    // The intro is underneath only when the flow opened this page, so it is stripped when present
+    const entryPath = stripDynamicRouteSuffixFromPath(backPath, DYNAMIC_ROUTES.WISE_GLOBAL_REIMBURSEMENTS_INTRO.path);
     const kycReviewFormStatus = route.params.status;
     const [hasBankAccount] = useOnyx(ONYXKEYS.BANK_ACCOUNT_LIST, {selector: (bankAccountList) => !!bankAccountList?.[bankAccountID]});
     const [onboardingStatus] = useOnyx(ONYXKEYS.BANK_ACCOUNT_LIST, {selector: (bankAccountList) => bankAccountList?.[bankAccountID]?.accountData?.additionalData?.wise?.status});
@@ -91,13 +94,7 @@ function WiseOnboardingStatusPage({route, navigation}: WiseOnboardingStatusPageP
     switch (onboardingStatus) {
         case CONST.WISE.ONBOARDING_STATUS.ACTION_REQUIRED:
             title = 'walletPage.wiseOnboarding.moreInfoNeeded.headerTitle';
-            content = (
-                <MoreInfoNeededContent
-                    bankAccountID={bankAccountID}
-                    // Wallet and Home open this page without the intro on the stack, so the path is built over the entry screen instead of read from the stack
-                    statusPath={getWiseOnboardingStatusRoute(bankAccountID, entryPath)}
-                />
-            );
+            content = <MoreInfoNeededContent bankAccountID={bankAccountID} />;
             break;
         case CONST.WISE.ONBOARDING_STATUS.APPROVED:
             title = 'walletPage.wiseOnboarding.approved.title';

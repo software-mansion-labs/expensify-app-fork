@@ -2,11 +2,12 @@ import FullPageNotFoundView from '@components/BlockingViews/FullPageNotFoundView
 import FullScreenWebView from '@components/FullScreenWebView';
 import ScreenWrapper from '@components/ScreenWrapper';
 
+import useDynamicBackPath from '@hooks/useDynamicBackPath';
 import useEnvironment from '@hooks/useEnvironment';
 import useOnyx from '@hooks/useOnyx';
-import useWiseOnboardingEntryPath from '@hooks/useWiseOnboardingEntryPath';
 
-import getWiseOnboardingStatusRoute from '@libs/Navigation/helpers/getWiseOnboardingStatusRoute';
+import createDynamicRoute from '@libs/Navigation/helpers/dynamicRoutesUtils/createDynamicRoute';
+import stripDynamicRouteSuffixFromPath from '@libs/Navigation/helpers/dynamicRoutesUtils/stripDynamicRouteSuffixFromPath';
 import type {PlatformStackScreenProps} from '@libs/Navigation/PlatformStackNavigation/types';
 import openExternalLink from '@libs/openExternalLink';
 
@@ -15,6 +16,7 @@ import type {SettingsNavigatorParamList} from '@navigation/types';
 
 import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';
+import {DYNAMIC_ROUTES} from '@src/ROUTES';
 import type SCREENS from '@src/SCREENS';
 
 import type {ShouldStartLoadRequest, WebViewOpenWindowEvent} from 'react-native-webview/lib/WebViewTypes';
@@ -37,10 +39,10 @@ function getRedirectStatus(url: string, environmentURL: string): string | null {
 function WiseKYCReviewPage({route}: WiseKYCReviewPageProps) {
     const [kycReviewURL] = useOnyx(ONYXKEYS.RAM_ONLY_WISE_KYC_REVIEW_EMBEDDED_LINK, {selector: (embeddedLink) => embeddedLink?.url});
     const bankAccountID = Number(route.params.bankAccountID);
-    const entryPath = useWiseOnboardingEntryPath();
+    const backPath = useDynamicBackPath(DYNAMIC_ROUTES.WISE_KYC_REVIEW.path);
     const {environmentURL} = useEnvironment();
 
-    const goBack = () => Navigation.goBack(getWiseOnboardingStatusRoute(bankAccountID, entryPath));
+    const goBack = () => Navigation.goBack(backPath);
 
     // Wise ends the form by redirecting to our redirect URL with the outcome in a query param, so the WebView stops there instead of loading that page
     const closeFormOnRedirect = ({url, isTopFrame}: ShouldStartLoadRequest) => {
@@ -50,7 +52,8 @@ function WiseKYCReviewPage({route}: WiseKYCReviewPageProps) {
             return true;
         }
         // The status page underneath applies the outcome, the same way it does after Wise's redirect on web
-        Navigation.goBack(getWiseOnboardingStatusRoute(bankAccountID, entryPath, status), {compareParams: false});
+        const statusRoute = DYNAMIC_ROUTES.WISE_ONBOARDING_STATUS.getRoute(bankAccountID, status);
+        Navigation.goBack(createDynamicRoute(statusRoute, stripDynamicRouteSuffixFromPath(backPath, DYNAMIC_ROUTES.WISE_ONBOARDING_STATUS.path)), {compareParams: false});
         return false;
     };
 

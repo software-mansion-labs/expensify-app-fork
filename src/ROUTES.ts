@@ -247,10 +247,10 @@ const DYNAMIC_ROUTES = {
         entryScreens: [SCREENS.SETTINGS.WALLET.DYNAMIC_WISE_ONBOARDING_STATUS],
     },
     WISE_ONBOARDING_STATUS: {
-        path: 'status',
-        entryScreens: [SCREENS.SETTINGS.WALLET.DYNAMIC_WISE_GLOBAL_REIMBURSEMENTS_INTRO],
+        path: 'global-reimbursements/status/:bankAccountID',
+        entryScreens: [...ENABLE_GLOBAL_REIMBURSEMENTS_ENTRY_SCREENS, SCREENS.SETTINGS.WALLET.DYNAMIC_WISE_GLOBAL_REIMBURSEMENTS_INTRO],
         // Wise's redirect after its KYC form adds the form's outcome as `status`
-        getRoute: (kycReviewFormStatus: string) => getUrlWithParams('status', {status: kycReviewFormStatus}),
+        getRoute: (bankAccountID: number, kycReviewFormStatus?: string) => getUrlWithParams(`global-reimbursements/status/${bankAccountID}`, {status: kycReviewFormStatus}),
         queryParams: ['status'],
     },
     BANK_ACCOUNT_LINK_PLAID: {

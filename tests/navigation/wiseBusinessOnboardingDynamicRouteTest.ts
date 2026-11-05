@@ -62,7 +62,7 @@ describe('Wise business onboarding dynamic routes', () => {
 
     it.each([
         ['the terms', DYNAMIC_ROUTES.WISE_ACCEPT_TERMS.path, SCREENS.SETTINGS.WALLET.DYNAMIC_WISE_ACCEPT_TERMS],
-        ['the status', DYNAMIC_ROUTES.WISE_ONBOARDING_STATUS.path, SCREENS.SETTINGS.WALLET.DYNAMIC_WISE_ONBOARDING_STATUS],
+        ['the status', DYNAMIC_ROUTES.WISE_ONBOARDING_STATUS.getRoute(BANK_ACCOUNT_ID), SCREENS.SETTINGS.WALLET.DYNAMIC_WISE_ONBOARDING_STATUS],
     ] as const)('opens %s on top of the intro, since each page after the form replaces the one before', (_label, suffix, screen) => {
         // Given the page's suffix appended to the intro, where the replaced form leaves it
         const route = createDynamicRoute(suffix, getIntroPath(ROUTES.SETTINGS_WALLET));
@@ -72,6 +72,33 @@ describe('Wise business onboarding dynamic routes', () => {
 
         // Then the page is focused with the bank account from the intro underneath
         expect(focusedRoute.name).toBe(screen);
+        expect(focusedRoute.params).toMatchObject({bankAccountID: String(BANK_ACCOUNT_ID)});
+    });
+
+    it.each([
+        ['Wallet', ROUTES.SETTINGS_WALLET],
+        ['Home', ROUTES.HOME],
+    ] as const)('opens the status straight from %s with the bank account from its own path', (_label, basePath) => {
+        // Given the status suffix appended to the entry screen without the intro, the way the Wallet row and the Home task link to it
+        const route = createDynamicRoute(DYNAMIC_ROUTES.WISE_ONBOARDING_STATUS.getRoute(BANK_ACCOUNT_ID), basePath);
+
+        // When the URL is parsed into navigation state
+        const focusedRoute = getFocusedRoute(getStateFromPath(route));
+
+        // Then the status page is focused with the bank account, since its own path carries it
+        expect(focusedRoute.name).toBe(SCREENS.SETTINGS.WALLET.DYNAMIC_WISE_ONBOARDING_STATUS);
+        expect(focusedRoute.params).toMatchObject({bankAccountID: String(BANK_ACCOUNT_ID)});
+    });
+
+    it("opens Wise's form over a status page that opened without the intro", () => {
+        // Given the form's suffix appended to a status page the Wallet opened
+        const route = createDynamicRoute(DYNAMIC_ROUTES.WISE_KYC_REVIEW.path, createDynamicRoute(DYNAMIC_ROUTES.WISE_ONBOARDING_STATUS.getRoute(BANK_ACCOUNT_ID), ROUTES.SETTINGS_WALLET));
+
+        // When the URL is parsed into navigation state
+        const focusedRoute = getFocusedRoute(getStateFromPath(route));
+
+        // Then the form's screen is focused with the bank account from the status page underneath
+        expect(focusedRoute.name).toBe(SCREENS.SETTINGS.WALLET.DYNAMIC_WISE_KYC_REVIEW);
         expect(focusedRoute.params).toMatchObject({bankAccountID: String(BANK_ACCOUNT_ID)});
     });
 

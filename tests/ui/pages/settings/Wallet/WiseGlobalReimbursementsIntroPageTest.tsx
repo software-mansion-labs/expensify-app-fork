@@ -87,14 +87,14 @@ describe('WiseGlobalReimbursementsIntroPage', () => {
             CONST.GLOBAL_REIMBURSEMENT_PROVIDER.WISE,
             {status: CONST.WISE.ONBOARDING_STATUS.ACTION_REQUIRED},
             'common.continue',
-            '/status',
+            `/global-reimbursements/status/${BANK_ACCOUNT_ID}`,
         ],
         [
             'continues to the status page while Wise reviews the business',
             CONST.GLOBAL_REIMBURSEMENT_PROVIDER.WISE,
             {status: CONST.WISE.ONBOARDING_STATUS.IN_REVIEW},
             'common.continue',
-            '/status',
+            `/global-reimbursements/status/${BANK_ACCOUNT_ID}`,
         ],
     ])('%s', async (_label, globalReimbursementProvider, wise, buttonText, pageSuffix) => {
         // Given the intro for a bank account at some point of its Wise onboarding
