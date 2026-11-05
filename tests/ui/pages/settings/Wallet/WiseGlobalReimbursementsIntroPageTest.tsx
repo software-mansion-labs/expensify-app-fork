@@ -80,23 +80,29 @@ describe('WiseGlobalReimbursementsIntroPage', () => {
     });
 
     it.each([
-        ['starts the onboarding with Get started for an account that has not started', undefined, undefined, 'walletPage.wiseGlobalReimbursementsIntro.getStarted', '/business-onboarding'],
-        ['continues the onboarding the admin left before Submit', CONST.GLOBAL_REIMBURSEMENT_PROVIDER.WISE, undefined, 'common.continue', '/business-onboarding'],
+        [
+            'starts the onboarding with Get started for an account that has not started',
+            undefined,
+            undefined,
+            'walletPage.wiseGlobalReimbursementsIntro.getStarted',
+            [expect.stringMatching(/\/business-onboarding$/)],
+        ],
+        ['continues the onboarding the admin left before Submit', CONST.GLOBAL_REIMBURSEMENT_PROVIDER.WISE, undefined, 'common.continue', [expect.stringMatching(/\/business-onboarding$/)]],
         [
             'continues to the status page when Wise needs more info',
             CONST.GLOBAL_REIMBURSEMENT_PROVIDER.WISE,
             {status: CONST.WISE.ONBOARDING_STATUS.ACTION_REQUIRED},
             'common.continue',
-            `/global-reimbursements/status/${BANK_ACCOUNT_ID}`,
+            [`settings/wallet/global-reimbursements/status/${BANK_ACCOUNT_ID}`, {forceReplace: true}],
         ],
         [
             'continues to the status page while Wise reviews the business',
             CONST.GLOBAL_REIMBURSEMENT_PROVIDER.WISE,
             {status: CONST.WISE.ONBOARDING_STATUS.IN_REVIEW},
             'common.continue',
-            `/global-reimbursements/status/${BANK_ACCOUNT_ID}`,
+            [`settings/wallet/global-reimbursements/status/${BANK_ACCOUNT_ID}`, {forceReplace: true}],
         ],
-    ])('%s', async (_label, globalReimbursementProvider, wise, buttonText, pageSuffix) => {
+    ])('%s', async (_label, globalReimbursementProvider, wise, buttonText, navigateArgs) => {
         // Given the intro for a bank account at some point of its Wise onboarding
         await renderPage(createBusinessBankAccount(globalReimbursementProvider, wise));
 
@@ -104,7 +110,7 @@ describe('WiseGlobalReimbursementsIntroPage', () => {
         expect(screen.getByTestId(PRIMARY_BUTTON_TEST_ID)).toHaveTextContent(buttonText);
         fireEvent.press(screen.getByTestId(PRIMARY_BUTTON_TEST_ID));
 
-        // Then the button names what it does, and it opens the page where the admin left off, or the onboarding's first page for a new setup
-        expect(Navigation.navigate).toHaveBeenCalledWith(expect.stringMatching(new RegExp(`${pageSuffix}$`)));
+        // Then the button names what it does and opens where the admin left off, with the status page taking the intro's place so its URL does not repeat the intro
+        expect(Navigation.navigate).toHaveBeenCalledWith(...navigateArgs);
     });
 });

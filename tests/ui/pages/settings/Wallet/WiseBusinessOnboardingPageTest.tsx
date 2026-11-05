@@ -407,6 +407,7 @@ describe('WiseBusinessOnboardingPage', () => {
     it('opens the status page instead of the form once the business is submitted', async () => {
         // Given a bank account whose business is already submitted to Wise
         const navigateSpy = jest.spyOn(Navigation, 'navigate').mockImplementation(() => {});
+        const goBackSpy = jest.spyOn(Navigation, 'goBack').mockImplementation(() => {});
         const submittedBankAccount: BankAccount = {
             ...ELIGIBLE_BANK_ACCOUNT,
             accountData: {...ELIGIBLE_BANK_ACCOUNT.accountData, additionalData: {wise: {status: CONST.WISE.ONBOARDING_STATUS.IN_REVIEW}}},
@@ -415,11 +416,12 @@ describe('WiseBusinessOnboardingPage', () => {
         // When one of the form's pages opens for it
         await renderPage({bankAccount: submittedBankAccount, subPage: CONST.DYNAMIC_FORM.CONFIRMATION_PAGE_KEY});
 
-        // Then the status page replaces it, since there is nothing left to submit, and the form never shows nor reads or prefills its answers
+        // Then the status page replaces it and the intro, since there is nothing left to submit, and the form never shows nor reads or prefills its answers
         expect(navigateSpy).toHaveBeenCalledTimes(1);
         expect(openReimbursementAccountPage).not.toHaveBeenCalled();
         expect(saveDraftAnswers).not.toHaveBeenCalled();
-        expect(navigateSpy).toHaveBeenCalledWith('settings/wallet/global-reimbursements/1/global-reimbursements/status/1', {forceReplace: true});
+        expect(goBackSpy).toHaveBeenCalledWith('settings/wallet/global-reimbursements/1');
+        expect(navigateSpy).toHaveBeenCalledWith('settings/wallet/global-reimbursements/status/1', {forceReplace: true});
         expect(screen.queryByTestId(FLOW_TEST_ID)).not.toBeOnTheScreen();
     });
 

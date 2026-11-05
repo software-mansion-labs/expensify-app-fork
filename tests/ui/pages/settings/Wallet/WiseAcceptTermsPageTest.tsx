@@ -178,11 +178,12 @@ describe('WiseAcceptTermsPage', () => {
         // When the request succeeds
         answerSubmission(rerender, {isWiseBusinessOnboardingSubmitSuccessful: true});
 
-        // Then the draft, the SSN in memory and the unsaved pages go, since the server holds the business now, and the status page replaces the terms
+        // Then the draft, the SSN in memory and the unsaved pages go, since the server holds the business now, and the status page replaces the terms and the intro
         expect(clearDraftValues).toHaveBeenCalledWith(ONYXKEYS.FORMS.WISE_BUSINESS_ONBOARDING_FORM);
         expect(clearSensitiveAnswers).toHaveBeenCalledWith(ONYXKEYS.FORMS.WISE_BUSINESS_ONBOARDING_FORM);
         expect(clearWiseOnboardingUnsavedPages).toHaveBeenCalled();
-        expect(Navigation.navigate).toHaveBeenCalledWith('settings/wallet/global-reimbursements/1/global-reimbursements/status/1', {forceReplace: true});
+        expect(Navigation.goBack).toHaveBeenCalledWith(INTRO_PATH);
+        expect(Navigation.navigate).toHaveBeenCalledWith('settings/wallet/global-reimbursements/status/1', {forceReplace: true});
     });
 
     it('opens the status page only once while the terms page is still mounted under it', () => {
@@ -193,7 +194,7 @@ describe('WiseAcceptTermsPage', () => {
         answerSubmission(rerender, {isWiseBusinessOnboardingSubmitSuccessful: true});
 
         // When the terms page renders again with the status page focused, as it does until the replace finishes
-        mockFocusedPath = `${INTRO_PATH}/status`;
+        mockFocusedPath = 'settings/wallet/global-reimbursements/status/1';
         rerender();
 
         // Then it does not navigate again, since the focused path is no longer the terms page and would point at a route that does not exist
@@ -266,10 +267,11 @@ describe('WiseAcceptTermsPage', () => {
         // When the terms page opens for it
         renderPage();
 
-        // Then nothing is sent again, the answers left on the device go and the status page replaces the terms
+        // Then nothing is sent again, the answers left on the device go and the status page replaces the terms and the intro
         expect(submitWiseBusinessOnboarding).not.toHaveBeenCalled();
         expect(clearDraftValues).toHaveBeenCalledWith(ONYXKEYS.FORMS.WISE_BUSINESS_ONBOARDING_FORM);
-        expect(Navigation.navigate).toHaveBeenCalledWith('settings/wallet/global-reimbursements/1/global-reimbursements/status/1', {forceReplace: true});
+        expect(Navigation.goBack).toHaveBeenCalledWith(INTRO_PATH);
+        expect(Navigation.navigate).toHaveBeenCalledWith('settings/wallet/global-reimbursements/status/1', {forceReplace: true});
     });
 
     it('opens the status page only once when the server sends the submitted business after the submission succeeded', () => {
@@ -281,7 +283,7 @@ describe('WiseAcceptTermsPage', () => {
 
         // When the bank account with Wise's status arrives while the terms page is still mounted
         mockOnyxValues[ONYXKEYS.BANK_ACCOUNT_LIST] = {[BANK_ACCOUNT_ID]: {accountData: {additionalData: {wise: {status: CONST.WISE.ONBOARDING_STATUS.ACTION_REQUIRED}}}}};
-        mockFocusedPath = `${INTRO_PATH}/status`;
+        mockFocusedPath = 'settings/wallet/global-reimbursements/status/1';
         rerender();
 
         // Then it does not navigate again, since the status page is already open

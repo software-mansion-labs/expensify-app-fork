@@ -17,6 +17,7 @@ import useThemeStyles from '@hooks/useThemeStyles';
 import {isWiseOnboardingSubmitted} from '@libs/BankAccountUtils';
 import {getLatestErrorMessage} from '@libs/ErrorUtils';
 import createDynamicRoute from '@libs/Navigation/helpers/dynamicRoutesUtils/createDynamicRoute';
+import replaceWiseIntroWithOnboardingStatus from '@libs/Navigation/helpers/replaceWiseIntroWithOnboardingStatus';
 import type {PlatformStackScreenProps} from '@libs/Navigation/PlatformStackNavigation/types';
 
 import Navigation from '@navigation/Navigation';
@@ -150,7 +151,7 @@ function WiseAcceptTermsPage({route}: WiseAcceptTermsPageProps) {
             clearSensitiveAnswers(ONYXKEYS.FORMS.WISE_BUSINESS_ONBOARDING_FORM);
             clearWiseOnboardingUnsavedPages();
             // Wise's hosted form still has to collect the owners and directors, which the status page asks for while Wise needs more info
-            Navigation.navigate(createDynamicRoute(DYNAMIC_ROUTES.WISE_ONBOARDING_STATUS.getRoute(bankAccountID), introPath), {forceReplace: true});
+            replaceWiseIntroWithOnboardingStatus(introPath, bankAccountID);
             return;
         }
         if (!pageToFix) {

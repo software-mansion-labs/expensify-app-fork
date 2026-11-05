@@ -15,6 +15,7 @@ import useWiseOnboardingSaveStatus from '@hooks/useWiseOnboardingSaveStatus';
 import {isBankAccountEligibleForGlobalReimbursements, isWiseOnboardingSubmitted} from '@libs/BankAccountUtils';
 import {getSavedFileAnswers} from '@libs/getWiseOnboardingPageParams';
 import createDynamicRoute from '@libs/Navigation/helpers/dynamicRoutesUtils/createDynamicRoute';
+import replaceWiseIntroWithOnboardingStatus from '@libs/Navigation/helpers/replaceWiseIntroWithOnboardingStatus';
 import type {PlatformStackScreenProps} from '@libs/Navigation/PlatformStackNavigation/types';
 
 import Navigation from '@navigation/Navigation';
@@ -82,7 +83,7 @@ function WiseBusinessOnboardingPage({route}: WiseBusinessOnboardingPageProps) {
 
     // A submitted business has nothing left to submit, and the back path follows the focused route, so introPath stays out of the effect and the status page opens once
     const isOnboardingSubmitted = isWiseOnboardingSubmitted(bankAccount?.accountData);
-    const openStatusPage = useEffectEvent(() => Navigation.navigate(createDynamicRoute(DYNAMIC_ROUTES.WISE_ONBOARDING_STATUS.getRoute(bankAccountID), introPath), {forceReplace: true}));
+    const openStatusPage = useEffectEvent(() => replaceWiseIntroWithOnboardingStatus(introPath, bankAccountID));
     useEffect(() => {
         if (!isOnboardingSubmitted) {
             return;

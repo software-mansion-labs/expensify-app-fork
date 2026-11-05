@@ -27,7 +27,7 @@ const PRIMARY_BUTTON_TEST_ID = 'confirmation-primary-button';
 
 type OnboardingStatus = ValueOf<typeof CONST.WISE.ONBOARDING_STATUS>;
 
-jest.mock('@hooks/useDynamicBackPath', () => jest.fn(() => 'settings/wallet/global-reimbursements/9053192'));
+jest.mock('@hooks/useDynamicBackPath', () => jest.fn(() => 'settings/wallet'));
 jest.mock('@hooks/useLocalize', () => jest.fn(() => ({translate: (key: string) => key})));
 
 const Stack = createPlatformStackNavigator<SettingsNavigatorParamList>();
@@ -136,7 +136,7 @@ describe('WiseOnboardingStatusPage', () => {
     it.each([CONST.WISE.ONBOARDING_STATUS.IN_REVIEW, CONST.WISE.ONBOARDING_STATUS.APPROVED, CONST.WISE.ONBOARDING_STATUS.NOT_APPROVED])(
         'closes the flow on the primary button when the onboarding status is %s',
         async (onboardingStatus) => {
-            // Given the page opened over the intro, which Wallet opened
+            // Given the page opened over Wallet
             const goBackSpy = jest.spyOn(Navigation, 'goBack').mockImplementation(() => {});
             await renderPage(onboardingStatus);
 
@@ -149,14 +149,14 @@ describe('WiseOnboardingStatusPage', () => {
     );
 
     it('goes back to the screen the flow started from', async () => {
-        // Given the page opened over the intro, which Wallet opened
+        // Given the page opened over Wallet, in place of the intro
         const goBackSpy = jest.spyOn(Navigation, 'goBack').mockImplementation(() => {});
         await renderPage(CONST.WISE.ONBOARDING_STATUS.IN_REVIEW);
 
         // When the user presses the back button
         fireEvent.press(screen.getByLabelText('common.back'));
 
-        // Then the user leaves the intro too rather than reopening the form, since our part of the flow is done
+        // Then the user lands on Wallet rather than on the form, since our part of the flow is done
         expect(goBackSpy).toHaveBeenCalledWith(ROUTES.SETTINGS_WALLET);
     });
 });

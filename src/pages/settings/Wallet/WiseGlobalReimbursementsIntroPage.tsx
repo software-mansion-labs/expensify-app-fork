@@ -99,12 +99,12 @@ function WiseGlobalReimbursementsIntroPage({route}: WiseGlobalReimbursementsIntr
                                 // Starting onboarding for any account retires both banners for good
                                 dismissProductTraining(CONST.WISE_GLOBAL_REIMBURSEMENTS_WALLET_BANNER);
                                 dismissProductTraining(CONST.WISE_GLOBAL_REIMBURSEMENTS_WORKSPACE_BANNER);
-                                // A submitted business has nothing left to submit, so it sees where its onboarding stands instead of ending on the terms
-                                Navigation.navigate(
-                                    createDynamicRoute(
-                                        isOnboardingSubmitted ? DYNAMIC_ROUTES.WISE_ONBOARDING_STATUS.getRoute(bankAccountID) : DYNAMIC_ROUTES.WISE_BUSINESS_ONBOARDING.getRoute(),
-                                    ),
-                                );
+                                // A submitted business has nothing left to submit, so the status page takes the intro's place, the same way the form's pages open it
+                                if (isOnboardingSubmitted) {
+                                    Navigation.navigate(createDynamicRoute(DYNAMIC_ROUTES.WISE_ONBOARDING_STATUS.getRoute(bankAccountID), backPath), {forceReplace: true});
+                                    return;
+                                }
+                                Navigation.navigate(createDynamicRoute(DYNAMIC_ROUTES.WISE_BUSINESS_ONBOARDING.getRoute()));
                             }}
                         />
                     </FixedFooter>
