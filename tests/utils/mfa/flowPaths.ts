@@ -436,6 +436,72 @@ const DRIVING_JOURNEYS: DrivingJourney[] = [
         ],
         endState: MFA_STATE.CLOSING,
     },
+    // A lost answer depends on the per-request resend counter, so the generated paths never reach it. These journeys drive it.
+    {
+        description: 'the lost-answer journey re-sends the scenario action once and lands on its outcome',
+        events: [
+            createInitEvent(),
+            createActorDoneEvent('validateDevice', {success: true}),
+            createActorDoneEvent('loadRegistrationState', {hasServerCredentials: false, hasLocalCredentials: true, hasEverAcceptedSoftPrompt: true}),
+            createActorDoneEvent('authorize', {success: true, signedChallenge: MFA_TEST_SIGNED_CHALLENGE, authenticationMethod: MFA_TEST_AUTH_METHOD}),
+            createActorDoneEvent('executeScenarioAction', {success: false, error: MFA_TEST_LOST_ANSWER_ERROR}),
+            createActorDoneEvent('executeScenarioAction', {success: true, scenarioResponse: MFA_TEST_SCENARIO_RESPONSE}),
+            createActorDoneEvent('finalizeOutcome', MFA_TEST_FINALIZE_OUTCOME_SHOW_SCREEN),
+        ],
+        endState: `${MFA_STATE.OPEN}.${MFA_STATE.FLOW}.${MFA_STATE.OUTCOME}.${MFA_STATE.SUCCESS}`,
+    },
+    {
+        description: 'the unconfirmed journey tries again with a fresh challenge after the re-sent answer is lost too',
+        events: [
+            createInitEvent(),
+            createActorDoneEvent('validateDevice', {success: true}),
+            createActorDoneEvent('loadRegistrationState', {hasServerCredentials: false, hasLocalCredentials: true, hasEverAcceptedSoftPrompt: true}),
+            createActorDoneEvent('authorize', {success: true, signedChallenge: MFA_TEST_SIGNED_CHALLENGE, authenticationMethod: MFA_TEST_AUTH_METHOD}),
+            createActorDoneEvent('executeScenarioAction', {success: false, error: MFA_TEST_LOST_ANSWER_ERROR}),
+            createActorDoneEvent('executeScenarioAction', {success: false, error: MFA_TEST_LOST_ANSWER_ERROR}),
+            {type: 'RETRY_WITH_NEW_CHALLENGE'},
+        ],
+        endState: `${MFA_STATE.OPEN}.${MFA_STATE.FLOW}.${MFA_STATE.PROMPT}.${MFA_STATE.AUTHORIZING}.${MFA_STATE.SIGNING_CHALLENGE}`,
+    },
+    {
+        description: 'the unconfirmed journey closes the modal without an outcome screen',
+        events: [
+            createInitEvent(),
+            createActorDoneEvent('validateDevice', {success: true}),
+            createActorDoneEvent('loadRegistrationState', {hasServerCredentials: false, hasLocalCredentials: true, hasEverAcceptedSoftPrompt: true}),
+            createActorDoneEvent('authorize', {success: true, signedChallenge: MFA_TEST_SIGNED_CHALLENGE, authenticationMethod: MFA_TEST_AUTH_METHOD}),
+            createActorDoneEvent('executeScenarioAction', {success: false, error: MFA_TEST_LOST_ANSWER_ERROR}),
+            createActorDoneEvent('executeScenarioAction', {success: false, error: MFA_TEST_LOST_ANSWER_ERROR}),
+            {type: 'REQUEST_CANCEL'},
+            createActorDoneEvent('finalizeOutcome', MFA_TEST_FINALIZE_OUTCOME_SHOW_SCREEN),
+        ],
+        endState: MFA_STATE.CLOSING,
+    },
+    {
+        description: 'the offline lost-answer journey holds the re-send while the device is offline',
+        events: [
+            createInitEvent(),
+            createActorDoneEvent('validateDevice', {success: true}),
+            createActorDoneEvent('loadRegistrationState', {hasServerCredentials: false, hasLocalCredentials: true, hasEverAcceptedSoftPrompt: true}),
+            createActorDoneEvent('authorize', {success: true, signedChallenge: MFA_TEST_SIGNED_CHALLENGE, authenticationMethod: MFA_TEST_AUTH_METHOD}),
+            {type: 'NETWORK_OFFLINE'},
+            createActorDoneEvent('executeScenarioAction', {success: false, error: MFA_TEST_LOST_ANSWER_ERROR}),
+        ],
+        endState: `${MFA_STATE.OPEN}.${MFA_STATE.FLOW}.${MFA_STATE.PROMPT}.${MFA_STATE.AUTHORIZING}.${MFA_STATE.RESEND_PENDING}`,
+    },
+    {
+        description: 'the offline back journey during the scenario action closes the modal as unconfirmed without asking',
+        events: [
+            createInitEvent(),
+            createActorDoneEvent('validateDevice', {success: true}),
+            createActorDoneEvent('loadRegistrationState', {hasServerCredentials: false, hasLocalCredentials: true, hasEverAcceptedSoftPrompt: true}),
+            createActorDoneEvent('authorize', {success: true, signedChallenge: MFA_TEST_SIGNED_CHALLENGE, authenticationMethod: MFA_TEST_AUTH_METHOD}),
+            {type: 'NETWORK_OFFLINE'},
+            {type: 'REQUEST_CANCEL'},
+            createActorDoneEvent('finalizeOutcome', MFA_TEST_FINALIZE_OUTCOME_SHOW_SCREEN),
+        ],
+        endState: MFA_STATE.CLOSING,
+    },
 ];
 
 /**
@@ -471,6 +537,7 @@ const MFA_GRAPH_EVENT_FIXTURES = {
     REQUEST_CANCEL: [{type: 'REQUEST_CANCEL'}],
     DISMISS_CANCEL: [{type: 'DISMISS_CANCEL'}],
     CONFIRM_CANCEL: [{type: 'CONFIRM_CANCEL'}],
+    RETRY_WITH_NEW_CHALLENGE: [{type: 'RETRY_WITH_NEW_CHALLENGE'}],
 } satisfies MfaEventFixtures;
 
 /**

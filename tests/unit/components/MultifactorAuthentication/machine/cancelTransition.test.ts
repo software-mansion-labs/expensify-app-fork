@@ -1397,25 +1397,21 @@ describe('MFA cancel', () => {
             actor.stop();
         });
 
-        it.each([
-            {description: 'with onCancel', withOnCancel: true},
-            {description: 'without onCancel', withOnCancel: false},
-        ])('still asks during a scenario action $description and waits for the result on confirm', ({withOnCancel}) => {
-            // Given a scenario action is already out and the device is offline
-            const actor = createActorAtState(openAt(AWAITING_RESULT, HIDDEN, OFFLINE), withOnCancel ? createOnCancelContext().context : {});
+        it('ends the flow as unconfirmed without asking or running onCancel during a scenario action', () => {
+            // Given a scenario with onCancel whose action is already out, and the device is offline
+            const {context, onCancel} = createOnCancelContext();
+            const actor = createActorAtState(openAt(AWAITING_RESULT, HIDDEN, OFFLINE), context);
 
             // When the user asks to cancel
             actor.start();
             actor.send({type: 'REQUEST_CANCEL'});
 
-            // Then the dialog opens, because the request may still land, so closing would drop its result
-            expect(matchesState(openAt(AWAITING_RESULT, VISIBLE, OFFLINE), actor.getSnapshot().value)).toBe(true);
-
-            // When the user confirms
-            actor.send({type: 'CONFIRM_CANCEL'});
-
-            // Then the flow waits for the result, the same as online
-            expect(matchesState(openAt(CANCELLING_IN_FLIGHT, HIDDEN, OFFLINE), actor.getSnapshot().value)).toBe(true);
+            // Then the flow ends without the dialog or the cancel logic, since offline never sends a deny and the result is unknown
+            const result = actor.getSnapshot();
+            expect(matchesState(openAt(FINALIZING_OUTCOME, HIDDEN, OFFLINE), result.value)).toBe(true);
+            expect(result.context.error?.reason).toBe(CONST.MULTIFACTOR_AUTHENTICATION.REASON.LOCAL_ERRORS.UNCONFIRMED);
+            expect(result.context.isCancelConfirmed).toBe(false);
+            expect(onCancel).not.toHaveBeenCalled();
             expect(addMFABreadcrumb).not.toHaveBeenCalledWith(...OFFLINE_CANCEL_BREADCRUMB);
 
             actor.stop();

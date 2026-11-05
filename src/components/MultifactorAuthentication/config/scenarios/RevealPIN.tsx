@@ -55,6 +55,8 @@ const ServerFailureScreen = createScreenWithDefaults(
 export default {
     allowedAuthenticationMethods: [CONST.MULTIFACTOR_AUTHENTICATION.TYPE.BIOMETRICS_HSM, CONST.MULTIFACTOR_AUTHENTICATION.TYPE.PASSKEYS],
     action: revealPINForCard,
+    // Read only.
+    idempotent: true,
     callback: async (isSuccessful, callbackInput, payload) => {
         if (isSuccessful && isRevealPINPayload(payload)) {
             const pin = typeof callbackInput.body?.pin === 'string' ? callbackInput.body.pin : '';
