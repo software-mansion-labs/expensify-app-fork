@@ -4,7 +4,7 @@ import type {MfaContext} from '@components/MultifactorAuthentication/machine/typ
 
 import CONST from '@src/CONST';
 
-import type {StateValue} from 'xstate';
+import type {SimulatedClock, StateValue} from 'xstate';
 
 import {createActor} from 'xstate';
 
@@ -49,17 +49,20 @@ function createFlowContext(overrides: Partial<MfaContext> = {}): MfaContext {
         cancelError: undefined,
         scenarioActionResult: undefined,
         recoveryAttempts: 0,
+        challengeRetries: 0,
         ...overrides,
     };
 }
 
 /**
  * Creates an actor resolved to the given state value over a fresh post-INIT context, so a transition
- * spec can drive a single hop without walking the whole flow first. The actor is not started.
+ * spec can drive a single hop without walking the whole flow first. The actor is not started. Pass a
+ * `SimulatedClock` to fire the machine's delayed transitions by hand.
  */
-function createActorAtState(value: StateValue, contextOverrides?: Partial<MfaContext>) {
+function createActorAtState(value: StateValue, contextOverrides?: Partial<MfaContext>, clock?: SimulatedClock) {
     const snapshot = mfaMachine.resolveState({value, context: createFlowContext(contextOverrides)});
-    return createActor(mfaMachineWithLifecycleEvents, {snapshot});
+    // An explicit `clock: undefined` would replace XState's default clock, so the key is set only when given.
+    return createActor(mfaMachineWithLifecycleEvents, clock ? {snapshot, clock} : {snapshot});
 }
 
 /**
