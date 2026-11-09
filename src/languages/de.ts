@@ -11692,8 +11692,7 @@ Fügen Sie weitere Ausgabelimits hinzu, um den Cashflow Ihres Unternehmens zu sc
                     'Zahlung zurückgestellt, während unser Partner eine Prüfung abschließt. Warten Sie auf ein weiteres Update. Chatten Sie mit <concierge-link>Concierge</concierge-link>.',
                 reimbursementReleased: 'Die Prüfung ist abgeschlossen und Ihre Zahlung ist unterwegs. Der endgültige FX-Kurs kann den Betrag noch ändern.',
                 actionableCardFraudTransactionApproval: (amount: string, merchant: string | undefined) => {
-                    const details = [merchant, amount ? `(${amount})` : ''].filter((s) => !!s?.length).join(' ');
-                    return `Eine Transaktion${details ? ` von ${details}` : ''} wurde wegen Betrugsverdachts abgelehnt.`;
+                    return `Eine Transaktion${merchant ? ` bei ${merchant}` : ''}${amount ? ` (${amount})` : ''} wurde wegen Betrugsverdachts abgelehnt.`;
                 },
             },
             error: {
