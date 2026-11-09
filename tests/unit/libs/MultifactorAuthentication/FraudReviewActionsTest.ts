@@ -118,6 +118,28 @@ describe('fraud review actions', () => {
             expect(result.isCardTerminated).toBe(true);
         });
 
+        it('treats a response without the terminated flag as a frozen card', async () => {
+            // Given the server freezes the card and does not mention termination
+            mockMakeRequestWithSideEffects.mockResolvedValue({jsonCode: 200});
+
+            // When the cardholder reports the transaction as fraud
+            const result = await reportFraudulentTransaction({transactionID: TRANSACTION_ID});
+
+            // Then the screen shows the frozen card result
+            expect(result.isCardTerminated).toBe(false);
+        });
+
+        it('treats a failed request as a frozen card', async () => {
+            // Given the request fails before the server answers
+            mockMakeRequestWithSideEffects.mockRejectedValue(new Error('Network error'));
+
+            // When the cardholder reports the transaction as fraud
+            const result = await reportFraudulentTransaction({transactionID: TRANSACTION_ID});
+
+            // Then nothing claims the card was terminated, since the server never said so
+            expect(result.isCardTerminated).toBe(false);
+        });
+
         it('maps an already reviewed response to the already reviewed outcome', async () => {
             // Given the transaction was already reviewed on another device
             mockMakeRequestWithSideEffects.mockResolvedValue({jsonCode: 400, message: 'Transaction already reviewed'});
