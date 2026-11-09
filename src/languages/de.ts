@@ -11421,8 +11421,7 @@ Fügen Sie weitere Ausgabelimits hinzu, um den Cashflow Ihres Unternehmens zu sc
                 autoPayFeeDisclosure: (adminName: string, bankName: string, lastFour: string, autoPaySettingsURL: string) =>
                     `Globale Rückerstattungen wurden von ${adminName} am ${bankName ? `${bankName} ` : ''}Konto mit der Endung ${lastFour} aktiviert. Exakte Wechselkurse und Gebühren können vor der Zahlung nicht angezeigt werden, wenn grenzüberschreitende Berichte automatisch bezahlt werden. Überprüfen Sie Ihre <a href="${autoPaySettingsURL}">Automatikzahlungs-Einstellungen</a> für weitere Informationen zu Kursen und Gebühren.`,
                 actionableCardFraudTransactionApproval: (amount: string, merchant: string | undefined) => {
-                    const details = [merchant, amount ? `(${amount})` : ''].filter((s) => !!s?.length).join(' ');
-                    return `Eine Transaktion${details ? ` von ${details}` : ''} wurde wegen Betrugsverdachts abgelehnt.`;
+                    return `Eine Transaktion${merchant ? ` bei ${merchant}` : ''}${amount ? ` (${amount})` : ''} wurde wegen Betrugsverdachts abgelehnt.`;
                 },
             },
             error: {
