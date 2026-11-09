@@ -9,6 +9,7 @@ import ReviewTransactionPage from '@pages/MultifactorAuthentication/ReviewTransa
 
 import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';
+import ROUTES from '@src/ROUTES';
 
 import type {ComponentProps} from 'react';
 
@@ -133,12 +134,19 @@ jest.mock(
             mockOutcome('frozen-outcome', 'unfreeze', onUnfreezePress),
 );
 
+jest.mock(
+    '@pages/MultifactorAuthentication/ReviewTransactionPage/TerminatedCardOutcomeScreen',
+    () =>
+        ({onCardDetailsPress}: {onCardDetailsPress: () => void}) =>
+            mockOutcome('terminated-outcome', 'card-details', onCardDetailsPress),
+);
+
 function renderPage() {
     render(<ReviewTransactionPage {...createMock<PageProps>({route: {params: {transactionID: TRANSACTION_ID}}})} />);
 }
 
-function mockReportResult(reason: ReportResult['reason']) {
-    jest.mocked(reportFraudulentTransaction).mockResolvedValue(createMock<ReportResult>({reason, httpStatusCode: 200}));
+function mockReportResult(reason: ReportResult['reason'], isCardTerminated = false) {
+    jest.mocked(reportFraudulentTransaction).mockResolvedValue(createMock<ReportResult>({reason, httpStatusCode: 200, isCardTerminated}));
 }
 
 describe('ReviewTransactionPage', () => {
@@ -258,5 +266,35 @@ describe('ReviewTransactionPage', () => {
 
         // Then the screen stays to show the outcome, instead of closing as if another device answered
         expect(Navigation.closeRHPFlow).not.toHaveBeenCalled();
+    });
+
+    it('shows the terminated card outcome and opens the wallet when the server terminates the card', async () => {
+        // Given the server terminates the card because of an earlier fraud report
+        mockReportResult(CONST.MULTIFACTOR_AUTHENTICATION.REASON.FLOW_OUTCOMES.FRAUD_REPORTED, true);
+        renderPage();
+        await waitForBatchedUpdatesWithAct();
+
+        // When the cardholder reports the transaction and then taps the card details button
+        fireEvent.press(screen.getByTestId('not-recognized'));
+        await waitForBatchedUpdatesWithAct();
+        fireEvent.press(screen.getByTestId('card-details'));
+
+        // Then they land in the wallet, since a terminated card has no card page anymore
+        expect(Navigation.navigate).toHaveBeenCalledWith(ROUTES.SETTINGS_WALLET);
+    });
+
+    it('warns about termination and shows the terminated card when backing out with the flag set', async () => {
+        // Given the server says this report would terminate the card
+        await Onyx.merge(ONYXKEYS.TRANSACTIONS_PENDING_FRAUD_REVIEW, {[TRANSACTION_ID]: {willTerminateIfNotRecognized: true}});
+        renderPage();
+        await waitForBatchedUpdatesWithAct();
+
+        // When the cardholder taps back and confirms the drawer
+        fireEvent.press(screen.getByTestId('back'));
+        fireEvent.press(screen.getByTestId('confirm-terminate'));
+
+        // Then the terminate drawer was used and the terminated result shows right away
+        expect(fireAndForgetReportFraudulentTransaction).toHaveBeenCalledWith({transactionID: TRANSACTION_ID});
+        expect(screen.getByText('terminated-outcome')).toBeOnTheScreen();
     });
 });
