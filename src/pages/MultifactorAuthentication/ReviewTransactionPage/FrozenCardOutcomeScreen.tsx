@@ -1,5 +1,6 @@
 import cardScarf from '@assets/images/card-scarf.svg';
 
+import Button from '@components/Button';
 import CardPreview from '@components/CardPreview';
 
 import useLocalize from '@hooks/useLocalize';
@@ -36,11 +37,16 @@ function FrozenCardOutcomeScreen({onUnfreezePress, onClose}: FrozenCardOutcomeSc
             }
             title={translate('multifactorAuthentication.fraudReview.yourCardHasBeenFrozen')}
             subtitle={translate('multifactorAuthentication.fraudReview.weFrozeYourCard')}
-            secondaryButtonText={translate('cardPage.unfreezeCard')}
-            onSecondaryButtonPress={onUnfreezePress}
-            secondaryButtonSentryLabel={CONST.SENTRY_LABEL.MULTIFACTOR_AUTHENTICATION.REVIEW_TRANSACTION_UNFREEZE_CARD}
             onClose={onClose}
-        />
+        >
+            <Button
+                size={CONST.BUTTON_SIZE.LARGE}
+                onPress={onUnfreezePress}
+                sentryLabel={CONST.SENTRY_LABEL.MULTIFACTOR_AUTHENTICATION.REVIEW_TRANSACTION_UNFREEZE_CARD}
+            >
+                <Button.Text>{translate('cardPage.unfreezeCard')}</Button.Text>
+            </Button>
+        </FraudReviewOutcomeScreen>
     );
 }
 
