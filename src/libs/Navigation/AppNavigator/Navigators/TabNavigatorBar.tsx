@@ -16,6 +16,8 @@ import useThemeStyles from '@hooks/useThemeStyles';
 import isTabRouteAtRoot from '@libs/Navigation/helpers/isTabRouteAtRoot';
 import cancelTabNavigationSpans, {NAVIGATION_TAB_TO_SPANS} from '@libs/telemetry/cancelTabNavigationSpans';
 
+import variables from '@styles/variables';
+
 import SCREENS from '@src/SCREENS';
 
 import type {BottomTabBarProps} from '@react-navigation/bottom-tabs';
@@ -29,7 +31,7 @@ import {View} from 'react-native';
  * Wrapped in overflow:'visible' so floating buttons (FAB, GPS, Camera) aren't clipped.
  */
 function TabNavigatorBar({state}: Pick<BottomTabBarProps, 'state'>) {
-    const {shouldUseNarrowLayout} = useResponsiveLayout();
+    const {shouldUseNarrowLayout, isInLandscapeMode} = useResponsiveLayout();
     const {isBlockingViewVisible} = useFullScreenBlockingViewState();
     const {paddingBottom: safeAreaPaddingBottom} = useSafeAreaPaddings(true);
     const styles = useThemeStyles();
@@ -80,7 +82,7 @@ function TabNavigatorBar({state}: Pick<BottomTabBarProps, 'state'>) {
         // Negative marginTop overlays the tab bar on content (zero flex space) to prevent layout shifts.
         return (
             <View
-                style={[StyleUtils.getTabBarNarrowStyle(safeAreaPaddingBottom), isHidden && styles.opacity0]}
+                style={[StyleUtils.getTabBarNarrowStyle(safeAreaPaddingBottom, isInLandscapeMode), isHidden && styles.opacity0]}
                 pointerEvents={isHidden ? 'none' : 'auto'}
             >
                 <NavigationTabBar
@@ -92,9 +94,11 @@ function TabNavigatorBar({state}: Pick<BottomTabBarProps, 'state'>) {
     }
 
     // When the screen is not blocking the view, we need to raise the tab bar above the screen content so the DebugTabView is visible.
+    // The container also spans the sidebar next to the bar, so floating content such as the debug view is not clipped.
+    // tabNavigatorBarContainer's negative margin gives that width back, leaving only the bar's width as layout space.
     return (
         <View
-            style={[styles.tabNavigatorBarContainer, StyleUtils.getTabNavigatorBarWidthStyle(navigationBarWidth), !isBlockingViewVisible && {zIndex: 1}]}
+            style={[styles.tabNavigatorBarContainer, StyleUtils.getWidthStyle(navigationBarWidth + variables.sideBarWithLHBWidth), !isBlockingViewVisible && styles.zIndex1]}
             pointerEvents="box-none"
         >
             {shouldUseFlatNavigationBar ? <FlatNavigationBar selectedTab={selectedTab} /> : <NavigationTabBar selectedTab={selectedTab} />}

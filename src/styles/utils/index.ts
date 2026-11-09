@@ -46,6 +46,7 @@ import createModalStyleUtils from './generators/ModalStyleUtils';
 import createReportActionContextMenuStyleUtils from './generators/ReportActionContextMenuStyleUtils';
 import createTooltipStyleUtils from './generators/TooltipStyleUtils';
 import getContextMenuItemStyles from './getContextMenuItemStyles';
+import getFloatingTabBarHeight from './getFloatingTabBarHeight';
 import getHiddenChatContentStyle from './getHiddenChatContentStyle';
 import getHighResolutionInfoWrapperStyle from './getHighResolutionInfoWrapperStyle';
 import getMoneyRequestReportPreviewStyle from './getMoneyRequestReportPreviewStyle';
@@ -1555,6 +1556,7 @@ const staticStyleUtils = {
     getNavigationBarType,
     getSuccessReportCardLostIllustrationStyle,
     getOptionMargin,
+    getFloatingTabBarHeight,
 };
 
 const createStyleUtils = (theme: ThemeColors, styles: ThemeStyles) => ({
@@ -2541,15 +2543,9 @@ const createStyleUtils = (theme: ThemeColors, styles: ThemeStyles) => ({
         }
     },
 
-    // The container reaches over the sidebar next to the bar, so floating content such as the debug view is not
-    // clipped; tabNavigatorBarContainer's negative margin gives that overflow back, leaving the bar's width as layout space.
-    getTabNavigatorBarWidthStyle: (navigationBarWidth: number): ViewStyle => ({
-        width: navigationBarWidth + variables.sideBarWithLHBWidth,
-    }),
-
-    getTabBarNarrowStyle: (safeAreaPaddingBottom: number): ViewStyle => ({
+    getTabBarNarrowStyle: (safeAreaPaddingBottom: number, isInLandscapeMode: boolean): ViewStyle => ({
         overflow: 'visible',
-        marginTop: -(variables.floatingTabBarHeight + variables.floatingTabBarBottomInset + safeAreaPaddingBottom),
+        marginTop: -(getFloatingTabBarHeight(isInLandscapeMode) + variables.floatingTabBarBottomInset + safeAreaPaddingBottom),
         paddingBottom: variables.floatingTabBarBottomInset + safeAreaPaddingBottom,
     }),
 

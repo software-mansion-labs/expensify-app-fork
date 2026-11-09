@@ -83,6 +83,7 @@ function WorkspaceInitialPage({policyDraft, policy: policyProp, route}: Workspac
     const tabRootScreenWrapperProps = useTabRootScreenWrapperProps(NAVIGATION_TABS.WORKSPACES);
     const tabRootScrollProps = useTabRootScrollProps(styles.flexColumn);
     const {shouldUseNarrowLayout} = useResponsiveLayout();
+    const menuItemWrapperStyle = styles.sectionMenuItem(shouldUseNarrowLayout);
     const {translate} = useLocalize();
     const {convertToDisplayString} = useCurrencyListActions();
     const {isBetaEnabled} = usePermissions();
@@ -314,7 +315,7 @@ function WorkspaceInitialPage({policyDraft, policy: policyProp, route}: Workspac
                             {workspaceMenuItems.map((item) => {
                                 const isConnectionsItem = item.screenName === SCREENS.WORKSPACE.CONNECTIONS;
                                 const isItemFocused = getItemScreenNames(item).some((screenName) => activeRoute?.startsWith(screenName));
-                                const {shouldShowBasicTitle, selectedStyle, hoveredStyle} = getFlatNavRowProps(isItemFocused);
+                                const {shouldShowBasicTitle, titleStyle, hoveredTitleStyle, selectedStyle, hoveredStyle} = getFlatNavRowProps(isItemFocused);
                                 const onPress = () => {
                                     if (isConnectionsItem) {
                                         hideConnectionsTooltip();
@@ -330,9 +331,11 @@ function WorkspaceInitialPage({policyDraft, policy: policyProp, route}: Workspac
                                         icon={item.icon}
                                         onPress={onPress}
                                         brickRoadIndicator={item.brickRoadIndicator}
-                                        wrapperStyle={[styles.sectionMenuItem(shouldUseNarrowLayout), selectedStyle]}
+                                        wrapperStyle={[menuItemWrapperStyle, selectedStyle]}
                                         hoveredStyle={hoveredStyle}
                                         shouldShowBasicTitle={shouldShowBasicTitle}
+                                        titleStyle={titleStyle}
+                                        hoveredTitleStyle={hoveredTitleStyle}
                                         highlighted={!!item?.highlighted}
                                         focused={isItemFocused}
                                         role={CONST.ROLE.TAB}

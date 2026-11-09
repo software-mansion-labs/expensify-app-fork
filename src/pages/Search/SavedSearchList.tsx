@@ -1,6 +1,4 @@
 import MenuItemList from '@components/MenuItemList';
-import type {FlatNavSidebarRowProps} from '@components/Navigation/FlatNavigationBar/useFlatNavSidebarRowProps';
-import useFlatNavSidebarRowProps from '@components/Navigation/FlatNavigationBar/useFlatNavSidebarRowProps';
 import {useSearchSidebarCollapse} from '@components/Navigation/SearchSidebarCollapseStore';
 import {usePersonalDetails} from '@components/OnyxListItemProvider';
 import {useSearchQueryContext} from '@components/Search/SearchContext';
@@ -15,12 +13,11 @@ import useResponsiveLayout from '@hooks/useResponsiveLayout';
 import useShareSavedSearch from '@hooks/useShareSavedSearch';
 import useThemeStyles from '@hooks/useThemeStyles';
 
-import {setSearchContext} from '@libs/actions/Search';
 import {mergeCardListWithWorkspaceFeeds} from '@libs/CardUtils';
-import Navigation from '@libs/Navigation/Navigation';
 import {getAllTaxRates} from '@libs/PolicyUtils';
 import type {SearchKey} from '@libs/SearchKeyUtils';
 import {savedSearchIDToSearchKey} from '@libs/SearchKeyUtils';
+import {navigateToSearch} from '@libs/SearchNavigationUtils';
 import {getValidLastQuery, normalizeDatePresetsInQuery} from '@libs/SearchQueryUtils';
 import type {SavedSearchMenuItem} from '@libs/SearchUIUtils';
 import {createBaseSavedSearchMenuItem, getLastSearchQuery, getOverflowMenu as getOverflowMenuUtil, SAVED_SEARCH_FALLBACK_ICON_NAME, SAVED_SEARCH_ICON_NAMES} from '@libs/SearchUIUtils';
@@ -29,7 +26,6 @@ import variables from '@styles/variables';
 
 import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';
-import ROUTES from '@src/ROUTES';
 import type {SaveSearchItem} from '@src/types/onyx/SaveSearch';
 import type IconAsset from '@src/types/utils/IconAsset';
 
@@ -52,8 +48,6 @@ type SavedSearchMenuItemBuilderParams = {
     itemStyle: SavedSearchMenuItem['style'];
     isCopied: boolean;
     icon: IconAsset;
-    wrapperStyle: SavedSearchMenuItem['wrapperStyle'];
-    getFlatNavRowProps: (isSelected: boolean) => FlatNavSidebarRowProps;
 };
 
 function buildSavedSearchMenuItem({
@@ -67,13 +61,10 @@ function buildSavedSearchMenuItem({
     itemStyle,
     isCopied,
     icon,
-    wrapperStyle,
-    getFlatNavRowProps,
 }: SavedSearchMenuItemBuilderParams): SavedSearchMenuItem & {icon: IconAsset} {
     const savedSearchKey = savedSearchIDToSearchKey(key);
     const isItemFocused = savedSearchKey === currentSearchKey;
     const baseMenuItem: SavedSearchMenuItem = createBaseSavedSearchMenuItem(item, key, index, title, isItemFocused);
-    const {shouldShowBasicTitle, selectedStyle, hoveredStyle} = getFlatNavRowProps(isItemFocused);
 
     return {
         ...baseMenuItem,
@@ -81,8 +72,7 @@ function buildSavedSearchMenuItem({
         role: CONST.ROLE.TAB,
         sentryLabel: CONST.SENTRY_LABEL.SEARCH.SAVED_SEARCH_MENU_ITEM,
         onPress: () => {
-            setSearchContext(false);
-            Navigation.navigate(ROUTES.SEARCH_ROOT.getRoute({query: itemQuery, name: item?.name, searchKey: savedSearchKey}));
+            navigateToSearch({query: itemQuery, name: item?.name, searchKey: savedSearchKey});
         },
         rightComponent: (
             <SavedSearchItemThreeDotMenu
@@ -92,9 +82,6 @@ function buildSavedSearchMenuItem({
             />
         ),
         style: itemStyle,
-        wrapperStyle: [wrapperStyle, selectedStyle],
-        hoveredStyle,
-        shouldShowBasicTitle,
     };
 }
 
@@ -103,7 +90,6 @@ function SavedSearchList() {
     const {translate, localeCompare, formatPhoneNumber} = useLocalize();
     const {shouldUseNarrowLayout} = useResponsiveLayout();
     const {isVisuallyCollapsed} = useSearchSidebarCollapse();
-    const getFlatNavRowProps = useFlatNavSidebarRowProps();
 
     const [savedSearches] = useOnyx(ONYXKEYS.SAVED_SEARCHES);
     const [searchFilters] = useOnyx(ONYXKEYS.SEARCH_FILTERS);
@@ -150,7 +136,6 @@ function SavedSearchList() {
         });
 
     const itemStyle = [styles.alignItemsCenter];
-    const menuItemWrapperStyle = [styles.sectionMenuItem(shouldUseNarrowLayout), styles.searchTypeMenuItemPadding];
 
     // Resolve each saved search's icon once per collection change (see useSavedSearchIcons for why).
     const savedSearchIconNames = useSavedSearchIcons(savedSearches);
@@ -170,8 +155,6 @@ function SavedSearchList() {
                       itemStyle,
                       isCopied: copiedID === key,
                       icon: expensifyIcons[savedSearchIconNames.get(item.query) ?? SAVED_SEARCH_FALLBACK_ICON_NAME],
-                      wrapperStyle: menuItemWrapperStyle,
-                      getFlatNavRowProps,
                   });
               })
               .sort((a, b) => localeCompare(a.title ?? '', b.title ?? ''))
@@ -197,6 +180,7 @@ function SavedSearchList() {
     return (
         <MenuItemList
             menuItems={savedSearchesMenuItems}
+            wrapperStyle={[styles.sectionMenuItem(shouldUseNarrowLayout), styles.searchTypeMenuItemPadding]}
             iconWidth={variables.iconSizeNormal}
             iconHeight={variables.iconSizeNormal}
             shouldUseSingleExecution
