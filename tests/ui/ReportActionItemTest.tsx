@@ -1803,9 +1803,8 @@ describe('ReportActionItem', () => {
             renderItemWithAction(action);
             await waitForBatchedUpdatesWithAct();
 
-            // Then it names the merchant and says why the transaction was declined, so the user knows what to review
-            expect(screen.getByText(/Amazon/)).toBeOnTheScreen();
-            expect(screen.getByText(/declined due to fraud suspicion/)).toBeOnTheScreen();
+            // Then it names the merchant and amount and says why the transaction was declined, so the user knows what to review
+            expect(screen.getByText('A transaction from Amazon ($40.00) has been declined due to fraud suspicion.')).toBeOnTheScreen();
         });
     });
 
