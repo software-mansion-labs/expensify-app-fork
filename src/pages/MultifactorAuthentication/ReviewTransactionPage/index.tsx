@@ -74,10 +74,15 @@ function ReviewTransactionPage({route}: ReviewTransactionPageProps) {
                 Navigation.navigate(createDynamicRoute(DYNAMIC_ROUTES.WALLET_DOMAIN_CARD.getRoute(String(cardID)), ROUTES.SETTINGS_WALLET));
             }
         };
+        // A terminated card is no longer listed on its own page, so the wallet is the closest place to see the cards
+        const openWallet = () => {
+            closeOutcome();
+            Navigation.navigate(ROUTES.SETTINGS_WALLET);
+        };
         setOutcomeScreen(
             isCardTerminated ? (
                 <TerminatedCardOutcomeScreen
-                    onCardDetailsPress={openCardDetails}
+                    onCardDetailsPress={openWallet}
                     onClose={closeOutcome}
                 />
             ) : (
@@ -159,6 +164,8 @@ function ReviewTransactionPage({route}: ReviewTransactionPageProps) {
         );
     }
 
+    const BackOutConfirmModal = transaction.willTerminateIfNotRecognized ? TerminateCardCancelConfirmModal : FreezeCardCancelConfirmModal;
+
     return (
         <ScreenWrapper testID={ReviewTransactionPage.displayName}>
             <Header>
@@ -179,19 +186,11 @@ function ReviewTransactionPage({route}: ReviewTransactionPageProps) {
                         authorizeSentryLabel={CONST.SENTRY_LABEL.MULTIFACTOR_AUTHENTICATION.REVIEW_TRANSACTION_RECOGNIZED}
                         denySentryLabel={CONST.SENTRY_LABEL.MULTIFACTOR_AUTHENTICATION.REVIEW_TRANSACTION_NOT_RECOGNIZED}
                     />
-                    {transaction.willTerminateIfNotRecognized ? (
-                        <TerminateCardCancelConfirmModal
-                            isVisible={isConfirmModalVisible}
-                            onConfirm={confirmBackOut}
-                            onCancel={hideConfirmModal}
-                        />
-                    ) : (
-                        <FreezeCardCancelConfirmModal
-                            isVisible={isConfirmModalVisible}
-                            onConfirm={confirmBackOut}
-                            onCancel={hideConfirmModal}
-                        />
-                    )}
+                    <BackOutConfirmModal
+                        isVisible={isConfirmModalVisible}
+                        onConfirm={confirmBackOut}
+                        onCancel={hideConfirmModal}
+                    />
                 </View>
             </FullPageOfflineBlockingView>
         </ScreenWrapper>

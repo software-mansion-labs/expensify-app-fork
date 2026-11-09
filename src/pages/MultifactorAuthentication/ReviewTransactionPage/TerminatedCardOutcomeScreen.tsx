@@ -1,5 +1,6 @@
 import cardTerminated from '@assets/images/multifactorAuthentication/card-terminated.svg';
 
+import Button from '@components/Button';
 import ImageSVG from '@components/ImageSVG';
 
 import useLocalize from '@hooks/useLocalize';
@@ -38,11 +39,16 @@ function TerminatedCardOutcomeScreen({onCardDetailsPress, onClose}: TerminatedCa
             }
             title={translate('multifactorAuthentication.fraudReview.yourCardHasBeenTerminated')}
             subtitle={translate('multifactorAuthentication.fraudReview.weTerminatedYourCard')}
-            secondaryButtonText={translate('multifactorAuthentication.fraudReview.goToCardDetails')}
-            onSecondaryButtonPress={onCardDetailsPress}
-            secondaryButtonSentryLabel={CONST.SENTRY_LABEL.MULTIFACTOR_AUTHENTICATION.REVIEW_TRANSACTION_GO_TO_CARD_DETAILS}
             onClose={onClose}
-        />
+        >
+            <Button
+                size={CONST.BUTTON_SIZE.LARGE}
+                onPress={onCardDetailsPress}
+                sentryLabel={CONST.SENTRY_LABEL.MULTIFACTOR_AUTHENTICATION.REVIEW_TRANSACTION_GO_TO_CARD_DETAILS}
+            >
+                <Button.Text>{translate('multifactorAuthentication.fraudReview.goToCardDetails')}</Button.Text>
+            </Button>
+        </FraudReviewOutcomeScreen>
     );
 }
 
