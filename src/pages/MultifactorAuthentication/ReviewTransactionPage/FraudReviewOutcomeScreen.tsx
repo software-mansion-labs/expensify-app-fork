@@ -9,7 +9,6 @@ import useLocalize from '@hooks/useLocalize';
 import useThemeStyles from '@hooks/useThemeStyles';
 
 import CONST from '@src/CONST';
-import type {SentryLabel} from '@src/types/utils/SentryLabel';
 
 import type {ReactNode} from 'react';
 
@@ -24,23 +23,14 @@ type FraudReviewOutcomeScreenProps = {
     /** HTML, so it can link to Concierge or the card page */
     subtitle: string;
 
-    secondaryButtonText: string;
-    onSecondaryButtonPress: () => void;
-    secondaryButtonSentryLabel: SentryLabel;
+    /** Extra action shown above the confirm button, e.g. a way to unfreeze the card */
+    children: ReactNode;
+
     onClose: () => void;
 };
 
 /** Result of answering a fraud review that the cardholder can act on, e.g. by unfreezing the card */
-function FraudReviewOutcomeScreen({
-    headerTitle,
-    illustration,
-    title,
-    subtitle,
-    secondaryButtonText,
-    onSecondaryButtonPress,
-    secondaryButtonSentryLabel,
-    onClose,
-}: FraudReviewOutcomeScreenProps) {
+function FraudReviewOutcomeScreen({headerTitle, illustration, title, subtitle, children, onClose}: FraudReviewOutcomeScreenProps) {
     const styles = useThemeStyles();
     const {translate} = useLocalize();
 
@@ -59,13 +49,7 @@ function FraudReviewOutcomeScreen({
                 <HTMLSubtitle htmlString={subtitle} />
             </ScrollView>
             <View style={[styles.m5, styles.mt0, styles.gap3]}>
-                <Button
-                    size={CONST.BUTTON_SIZE.LARGE}
-                    onPress={onSecondaryButtonPress}
-                    sentryLabel={secondaryButtonSentryLabel}
-                >
-                    <Button.Text>{secondaryButtonText}</Button.Text>
-                </Button>
+                {children}
                 <Button
                     size={CONST.BUTTON_SIZE.LARGE}
                     variant={CONST.BUTTON_VARIANT.SUCCESS}
