@@ -30,6 +30,7 @@ function FrozenCardOutcomeScreen({onUnfreezePress, onClose}: FrozenCardOutcomeSc
                     <CardPreview
                         overlayImage={cardScarf}
                         overlayContainerStyle={styles.cardScarfOverlay}
+                        shouldShowCardHolder={false}
                     />
                 </View>
             }
