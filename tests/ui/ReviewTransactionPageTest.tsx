@@ -1,4 +1,4 @@
-import {fireEvent, render, screen} from '@testing-library/react-native';
+import {cleanup, fireEvent, render, screen} from '@testing-library/react-native';
 
 import Text from '@components/Text';
 
@@ -24,6 +24,8 @@ type PageProps = ComponentProps<typeof ReviewTransactionPage>;
 
 const TRANSACTION_ID = '123';
 
+const mockExecuteScenario = jest.fn();
+
 function mockTouchable(testID: string, onPress: () => void) {
     const {Pressable} = jest.requireActual<Record<string, React.FC<Record<string, unknown>>>>('react-native');
     return (
@@ -37,6 +39,15 @@ function mockTouchable(testID: string, onPress: () => void) {
 
 function mockLabel(label: string) {
     return <Text>{label}</Text>;
+}
+
+function mockActions(onDeny: () => void, onAuthorize: () => void) {
+    return (
+        <View>
+            {mockTouchable('not-recognized', onDeny)}
+            {mockTouchable('recognized', onAuthorize)}
+        </View>
+    );
 }
 
 function mockOutcome(label: string, actionTestID: string, onAction: () => void) {
@@ -60,7 +71,7 @@ jest.mock('@libs/Navigation/Navigation', () => ({
 }));
 
 jest.mock('@components/MultifactorAuthentication/Context', () => ({
-    useMultifactorAuthentication: () => ({executeScenario: jest.fn()}),
+    useMultifactorAuthentication: () => ({executeScenario: mockExecuteScenario}),
 }));
 
 jest.mock('@hooks/useBeforeRemove', () => jest.fn());
@@ -98,8 +109,8 @@ jest.mock('@components/Header', () => {
 jest.mock(
     '@pages/MultifactorAuthentication/AuthorizeTransactionPage/AuthorizeTransactionActions',
     () =>
-        ({onDeny}: {onDeny: () => void}) =>
-            mockTouchable('not-recognized', onDeny),
+        ({onDeny, onAuthorize}: {onDeny: () => void; onAuthorize: () => void}) =>
+            mockActions(onDeny, onAuthorize),
 );
 
 jest.mock('@components/MultifactorAuthentication/components/Modals', () => {
@@ -137,10 +148,13 @@ describe('ReviewTransactionPage', () => {
         await Onyx.merge(ONYXKEYS.TRANSACTIONS_PENDING_FRAUD_REVIEW, {
             [TRANSACTION_ID]: {transactionID: TRANSACTION_ID, created: '2026-11-09 10:00:00', lastFourPAN: '1234', amount: 4000, currency: 'USD', merchant: 'Amazon', cardID: CARD_ID},
         });
+
+        // Start every test with fresh mock calls
+        jest.clearAllMocks();
     });
 
     afterEach(async () => {
-        jest.clearAllMocks();
+        cleanup();
         await Onyx.clear();
     });
 
@@ -216,5 +230,33 @@ describe('ReviewTransactionPage', () => {
         // Then only the first report is sent
         expect(reportFraudulentTransaction).toHaveBeenCalledTimes(1);
         expect(fireAndForgetReportFraudulentTransaction).not.toHaveBeenCalled();
+    });
+
+    it('starts the MFA flow when the cardholder recognizes the transaction', async () => {
+        // Given the review screen is open
+        renderPage();
+        await waitForBatchedUpdatesWithAct();
+
+        // When the cardholder says they recognize the transaction
+        fireEvent.press(screen.getByTestId('recognized'));
+
+        // Then the review is handed to the MFA scenario that signs the answer, and nothing is reported as fraud
+        expect(mockExecuteScenario).toHaveBeenCalledWith(CONST.MULTIFACTOR_AUTHENTICATION.SCENARIO.REVIEW_FRAUD_TRANSACTION, {transactionID: TRANSACTION_ID});
+        expect(reportFraudulentTransaction).not.toHaveBeenCalled();
+    });
+
+    it('keeps the screen open while the report is in flight and the server already removed the review', async () => {
+        // Given the report is in flight
+        jest.mocked(reportFraudulentTransaction).mockReturnValue(new Promise(() => {}));
+        renderPage();
+        await waitForBatchedUpdatesWithAct();
+        fireEvent.press(screen.getByTestId('not-recognized'));
+
+        // When the server removes the review from the queue before the report resolves
+        await Onyx.merge(ONYXKEYS.TRANSACTIONS_PENDING_FRAUD_REVIEW, {[TRANSACTION_ID]: null});
+        await waitForBatchedUpdatesWithAct();
+
+        // Then the screen stays to show the outcome, instead of closing as if another device answered
+        expect(Navigation.closeRHPFlow).not.toHaveBeenCalled();
     });
 });
