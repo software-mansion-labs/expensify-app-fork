@@ -2,6 +2,7 @@ import {act, fireEvent, screen} from '@testing-library/react-native';
 
 import type {MfaActorDoneEvent, MfaInternalEvent, MfaMachineEvent} from '@components/MultifactorAuthentication/machine/machineEvents';
 import mfaMachine from '@components/MultifactorAuthentication/machine/mfaMachine';
+import snapshotToState from '@components/MultifactorAuthentication/machine/snapshotToState';
 import {mfaNavigationRef} from '@components/MultifactorAuthentication/mfaNavigation';
 
 import {setForceOffline} from '@libs/NetworkState';
@@ -93,9 +94,9 @@ type ExecuteScenario = ReturnType<typeof renderMfaUi>['executeScenario'];
 
 type MfaSnapshot = SnapshotFrom<typeof mfaMachine>;
 
-/** Offline, the validate-code and prompt screens swap their content for the offline blocking view. */
-function isOffline(state: MfaSnapshot) {
-    return state.matches({[MFA_STATE.OPEN]: {[MFA_STATE.NETWORK]: MFA_STATE.OFFLINE}});
+/** A step holding its request offline swaps the validate-code or prompt screen's content for the offline blocking view. */
+function isWaitingForNetwork(state: MfaSnapshot) {
+    return snapshotToState(state).isWaitingForNetwork;
 }
 
 function getInitEvent(step: MfaExecutorStep<'INIT'>) {
@@ -256,22 +257,34 @@ const testConfig = {
             expect(mfaNavigationRef.getCurrentRoute()?.name).toBe(SCREENS.MULTIFACTOR_AUTHENTICATION.VALIDATE_CODE);
             expect(screen.getByText(translateLocal('multifactorAuthentication.letsVerifyItsYou'))).toBeOnTheScreen();
             expect(state.context.error).toBeUndefined();
-            if (isOffline(state)) {
+            if (isWaitingForNetwork(state)) {
                 return;
             }
             expect(screen.getByTestId(TEST_ID.VALIDATE_CODE_INPUT)).toBeOnTheScreen();
             expect(screen.getByTestId(TEST_ID.VALIDATE_CODE_SUBMIT_BUTTON)).toBeOnTheScreen();
-            // The countdown mock finishes immediately, so the resend button is rendered and must be pressable while the screen waits for a code.
-            expect(screen.getByTestId(TEST_ID.VALIDATE_CODE_RESEND_BUTTON)).toBeEnabled();
+            // The countdown mock finishes immediately, so the resend button is rendered and must be pressable while the screen waits
+            // for a code. Offline the form stays usable, but a resend would need the network.
+            if (state.matches({[MFA_STATE.OPEN]: {[MFA_STATE.NETWORK]: MFA_STATE.OFFLINE}})) {
+                expect(screen.getByTestId(TEST_ID.VALIDATE_CODE_RESEND_BUTTON)).toBeDisabled();
+            } else {
+                expect(screen.getByTestId(TEST_ID.VALIDATE_CODE_RESEND_BUTTON)).toBeEnabled();
+            }
         },
         [`${MFA_STATE.OPEN}.${MFA_STATE.FLOW}.${MFA_STATE.VALIDATE_CODE}.${MFA_STATE.AWAITING_VALIDATE_CODE}.${MFA_STATE.AWAITING_INPUT}`]: () => {
             expect(screen.queryByText(translateLocal('validateCodeForm.error.incorrectSecurityCode'))).not.toBeOnTheScreen();
         },
         [`${MFA_STATE.OPEN}.${MFA_STATE.FLOW}.${MFA_STATE.VALIDATE_CODE}.${MFA_STATE.AWAITING_VALIDATE_CODE}.${MFA_STATE.INVALID_CODE}`]: (state: MfaSnapshot) => {
-            if (isOffline(state)) {
+            if (isWaitingForNetwork(state)) {
                 return;
             }
             expect(screen.getByText(translateLocal('validateCodeForm.error.incorrectSecurityCode'))).toBeOnTheScreen();
+        },
+        // Only reachable offline, where the offline view replaces the form (asserted by the network leaf).
+        [`${MFA_STATE.OPEN}.${MFA_STATE.FLOW}.${MFA_STATE.VALIDATE_CODE}.${MFA_STATE.READY_TO_REQUEST_REGISTRATION_CHALLENGE}`]: (state: MfaSnapshot) => {
+            expect(screen.queryAllByTestId(TEST_ID.MODAL_BACKDROP)).toHaveLength(1);
+            expect(mfaNavigationRef.getCurrentRoute()?.name).toBe(SCREENS.MULTIFACTOR_AUTHENTICATION.VALIDATE_CODE);
+            expect(state.context.validateCode).toBeDefined();
+            expect(isWaitingForNetwork(state)).toBe(true);
         },
         [`${MFA_STATE.OPEN}.${MFA_STATE.FLOW}.${MFA_STATE.VALIDATE_CODE}.${MFA_STATE.REQUESTING_REGISTRATION_CHALLENGE}`]: (state: MfaSnapshot) => {
             expect(screen.queryAllByTestId(TEST_ID.MODAL_BACKDROP)).toHaveLength(1);
@@ -280,7 +293,7 @@ const testConfig = {
             expect(state.context.validateCode).toBeDefined();
             expect(state.context.registrationChallenge).toBeUndefined();
             expect(state.context.error).toBeUndefined();
-            if (isOffline(state)) {
+            if (isWaitingForNetwork(state)) {
                 return;
             }
             expect(screen.getByTestId(TEST_ID.VALIDATE_CODE_INPUT)).toBeOnTheScreen();
@@ -295,7 +308,7 @@ const testConfig = {
             expect(mfaNavigationRef.getCurrentRoute()?.name).toBe(SCREENS.MULTIFACTOR_AUTHENTICATION.PROMPT);
             expect(state.context.error).toBeUndefined();
             expect(state.context.softPromptApproved).toBe(false);
-            if (isOffline(state)) {
+            if (isWaitingForNetwork(state)) {
                 return;
             }
             expect(screen.getByTestId(TEST_ID.PROMPT_CONFIRM_BUTTON)).toBeOnTheScreen();
@@ -320,7 +333,7 @@ const testConfig = {
             expect(mfaNavigationRef.getCurrentRoute()?.name).toBe(SCREENS.MULTIFACTOR_AUTHENTICATION.PROMPT);
             // The prompt stays mounted while authorizing, same as credential creation, and shows the loader instead of the confirm action.
             expect(screen.queryByTestId(TEST_ID.PROMPT_CONFIRM_BUTTON)).not.toBeOnTheScreen();
-            if (isOffline(state)) {
+            if (isWaitingForNetwork(state)) {
                 return;
             }
             // The prompt copy bridges into authorization along the three arrival routes - see the
@@ -337,7 +350,7 @@ const testConfig = {
         [`${MFA_STATE.OPEN}.${MFA_STATE.FLOW}.${MFA_STATE.CANCELLING}`]: (state: MfaSnapshot) => {
             expect(screen.queryAllByTestId(TEST_ID.MODAL_BACKDROP)).toHaveLength(1);
             expect(screen.queryAllByTestId(TEST_ID.OUTCOME_SCREEN)).toHaveLength(0);
-            if (isOffline(state)) {
+            if (isWaitingForNetwork(state)) {
                 return;
             }
             const routeName = mfaNavigationRef.getCurrentRoute()?.name;
@@ -398,11 +411,9 @@ const testConfig = {
         [`${MFA_STATE.OPEN}.${MFA_STATE.NETWORK}.${MFA_STATE.ONLINE}`]: () => {
             expect(screen.queryByText(translateLocal('common.thisFeatureRequiresInternet'))).not.toBeOnTheScreen();
         },
-        // Only the validate-code and prompt screens block offline. The initial and outcome screens have no request to block.
-        [`${MFA_STATE.OPEN}.${MFA_STATE.NETWORK}.${MFA_STATE.OFFLINE}`]: () => {
-            const routeName = mfaNavigationRef.getCurrentRoute()?.name;
-            const isBlockingScreen = routeName === SCREENS.MULTIFACTOR_AUTHENTICATION.VALIDATE_CODE || routeName === SCREENS.MULTIFACTOR_AUTHENTICATION.PROMPT;
-            expect(screen.queryAllByText(translateLocal('common.thisFeatureRequiresInternet'))).toHaveLength(isBlockingScreen ? 1 : 0);
+        // Offline, only a step holding its request blocks the screen. The local steps (the code form, the soft prompt) stay usable.
+        [`${MFA_STATE.OPEN}.${MFA_STATE.NETWORK}.${MFA_STATE.OFFLINE}`]: (state: MfaSnapshot) => {
+            expect(screen.queryAllByText(translateLocal('common.thisFeatureRequiresInternet'))).toHaveLength(isWaitingForNetwork(state) ? 1 : 0);
         },
         [MFA_STATE.CLOSING]: () => {
             expect(screen.queryAllByTestId(TEST_ID.MODAL_BACKDROP)).toHaveLength(1);

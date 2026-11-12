@@ -22,6 +22,7 @@ import createInitEvent, {
     MFA_TEST_FINALIZE_OUTCOME_SHOW_SCREEN,
     MFA_TEST_INVALID_CODE_ERROR,
     MFA_TEST_KEY_INFO,
+    MFA_TEST_LOST_ANSWER_ERROR,
     MFA_TEST_REGISTRATION_CHALLENGE,
     MFA_TEST_REGISTRATION_REQUIRED_ERROR,
     MFA_TEST_SCENARIO_ACTION_ERROR,
@@ -250,6 +251,18 @@ const DRIVING_JOURNEYS: DrivingJourney[] = [
         ],
         endState: `${MFA_STATE.OPEN}.${MFA_STATE.FLOW}.${MFA_STATE.PROMPT}.${MFA_STATE.AUTHORIZING}`,
     },
+    // The generated paths offer one authorization failure, which isn't a lost answer, so this journey drives
+    // the pause before a lost challenge is requested again. Leaving the pause needs a timer, so it ends there.
+    {
+        description: 'the lost-challenge journey pauses before requesting the challenge again',
+        events: [
+            createInitEvent(),
+            createActorDoneEvent('validateDevice', {success: true}),
+            createActorDoneEvent('loadRegistrationState', {hasServerCredentials: false, hasLocalCredentials: true, hasEverAcceptedSoftPrompt: true}),
+            createActorDoneEvent('authorize', {success: false, error: MFA_TEST_LOST_ANSWER_ERROR}),
+        ],
+        endState: `${MFA_STATE.OPEN}.${MFA_STATE.FLOW}.${MFA_STATE.PROMPT}.${MFA_STATE.AUTHORIZING}.${MFA_STATE.AWAITING_CHALLENGE_RETRY}`,
+    },
     // Recovery depends on the once-per-flow flag in context, so the generated paths, which offer one
     // failure per actor, never reach it. These journeys drive it explicitly.
     {
@@ -351,20 +364,16 @@ const DRIVING_JOURNEYS: DrivingJourney[] = [
     // The generated paths never go offline (see `UNTRAVERSED_EVENT_TYPES`), so these journeys are the only UI
     // coverage of the offline leaf and of the steps that wait for the network.
     {
-        description: 'the offline journey covers the validate-code form while offline and brings it back once online',
+        description: 'the offline journey holds a code submitted offline and sends it once back online',
         events: [
             createInitEvent(),
             createActorDoneEvent('validateDevice', {success: true}),
             createActorDoneEvent('loadRegistrationState', {hasServerCredentials: false, hasLocalCredentials: false, hasEverAcceptedSoftPrompt: false}),
             {type: 'NETWORK_OFFLINE'},
+            {type: 'VALIDATE_CODE_ENTERED', validateCode: MFA_TEST_VALIDATE_CODE},
             {type: 'NETWORK_ONLINE'},
         ],
-        endState: {
-            [MFA_STATE.OPEN]: {
-                [MFA_STATE.FLOW]: {[MFA_STATE.VALIDATE_CODE]: {[MFA_STATE.AWAITING_VALIDATE_CODE]: MFA_STATE.AWAITING_INPUT}},
-                [MFA_STATE.NETWORK]: MFA_STATE.ONLINE,
-            },
-        },
+        endState: `${MFA_STATE.OPEN}.${MFA_STATE.FLOW}.${MFA_STATE.VALIDATE_CODE}.${MFA_STATE.REQUESTING_REGISTRATION_CHALLENGE}`,
     },
     {
         description: 'the start-offline journey holds the ceremony until the device is back online',
