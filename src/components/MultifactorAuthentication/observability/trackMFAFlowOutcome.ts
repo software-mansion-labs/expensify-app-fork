@@ -1,5 +1,6 @@
 import type {MFARegistrationStateSnapshot} from '@components/MultifactorAuthentication/biometrics/captureRegistrationState';
 import type {MultifactorAuthenticationScenarioResponse} from '@components/MultifactorAuthentication/config/types';
+import type {ResendReason} from '@components/MultifactorAuthentication/machine/types';
 
 import Log from '@libs/Log';
 import type {MFAError} from '@libs/MultifactorAuthentication/shared/MFAResult';
@@ -39,6 +40,13 @@ type MFAFlowOutcomeContext = {
     isAuthorizationComplete: boolean;
     softPromptApproved: boolean;
     recoveryAttempts: number;
+
+    /** Automatic retries: a lost authorization challenge requested again, and each re-sent scenario action with why it was re-sent. */
+    challengeRetries: number;
+    resendReasons: ResendReason[];
+
+    /** Retries the user started with a fresh challenge after the app couldn't confirm the result. */
+    userRetries: number;
     startState: MFARegistrationStateSnapshot;
     endState: MFARegistrationStateSnapshot;
 };
@@ -86,6 +94,9 @@ function trackMFAFlowOutcome(rawContext: MFAFlowOutcomeContext): void {
             isAuthorizationComplete: context.isAuthorizationComplete,
             softPromptApproved: context.softPromptApproved,
             recoveryAttempts: context.recoveryAttempts,
+            challengeRetries: context.challengeRetries,
+            resendReasons: context.resendReasons,
+            userRetries: context.userRetries,
             startState: context.startState,
             endState: context.endState,
         };
