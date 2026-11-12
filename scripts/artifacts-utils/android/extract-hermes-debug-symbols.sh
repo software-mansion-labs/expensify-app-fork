@@ -7,7 +7,7 @@
 #   - prefab/modules/hermesvm/libs/android.<abi>/libhermesvm.so   unstripped (full DWARF), used by the NDK linker
 # Both are the same build (same GNU build-id), so the prefab copy symbolicates crashes of the runtime copy.
 #
-# Like the react-android symbols (patch 049), the output is a debug companion per library
+# Like the react-android symbols (patch 050), the output is a debug companion per library
 # (`llvm-objcopy --only-keep-debug`, the format AGP uses for native-debug-symbols.zip): symbols only, no code.
 # The NDK is looked up through LLVM_OBJCOPY, ANDROID_NDK_HOME, ANDROID_NDK_ROOT, then the newest
 # $ANDROID_HOME/ndk/<version>. Without one the unstripped library is copied as is, which Sentry accepts too.

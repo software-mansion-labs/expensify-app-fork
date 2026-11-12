@@ -127,7 +127,7 @@ jobs:
 
           ./gradlew buildReactNativeArtifacts -PpatchedArtifacts.forceBuildFromSource=true -x lint -x test -x check "${EXCLUDE_TASKS[@]}"
           # The publication also carries react-android-<version>-<variant>-symbols.zip: debug companions
-          # (symbols only) of libreactnative.so, libjsi.so, libhermestooling.so and libfbjni.so (see patch 049),
+          # (symbols only) of libreactnative.so, libjsi.so, libhermestooling.so and libfbjni.so (see patch 050),
           # the Android counterpart of the iOS dSYM tarballs.
           ./gradlew publishReactNativeArtifacts -PpatchedArtifacts.forceBuildFromSource=true
         env:
@@ -148,7 +148,7 @@ jobs:
       # Every file is a debug companion (`llvm-objcopy --only-keep-debug`): DWARF, symbol table and build-id
       # without the code, like a dSYM. Covered here:
       #   - libreactnative.so, libjsi.so, libhermestooling.so: compiled by this job, DWARF captured before AGP
-      #     strips the AAR (extract/zip<Variant>NativeDebugSymbols, patch 049).
+      #     strips the AAR (extract/zip<Variant>NativeDebugSymbols, patch 050).
       #   - libfbjni.so: the fbjni AAR ships it unstripped and ReactAndroid repackages a stripped copy; the
       #     companion is made from the unstripped one.
       #   - libhermesvm.so: not built here (consumers link Meta's hermes-android from Maven Central), but the
