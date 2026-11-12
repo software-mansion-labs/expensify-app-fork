@@ -1,7 +1,6 @@
 import {act, fireEvent, render, screen} from '@testing-library/react-native';
 
 import KeyboardShortcut from '@libs/KeyboardShortcut';
-import type {KeyCommandEvent} from '@libs/KeyboardShortcut/bindHandlerToKeydownEvent/types';
 import Navigation from '@libs/Navigation/Navigation';
 
 import EscapeHandler from '@navigation/AppNavigator/KeyboardShortcutsHandler/EscapeHandler';
@@ -9,17 +8,17 @@ import EscapeHandler from '@navigation/AppNavigator/KeyboardShortcutsHandler/Esc
 import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';
 
+import type * as KeyboardShortcutMock from 'tests/utils/keyboardShortcutMock';
 import type * as MfaRealUiMocks from 'tests/utils/mfa/realUi/mocks';
 
 import React from 'react';
 import Onyx from 'react-native-onyx';
+import {pressEscape as pressEscapeKey} from 'tests/utils/keyboardShortcutMock';
 import {MFA_TEST_ACCOUNT_ID} from 'tests/utils/mfa/flowFixtures';
 import renderMfaUi from 'tests/utils/mfa/realUi/harness';
 import {finalizeOutcomeControl, loadRegistrationStateControl, pendingModalClose, resetMfaUiMocks, validateDeviceControl} from 'tests/utils/mfa/realUi/mocks';
 import {translateLocal} from 'tests/utils/TestHelper';
 import waitForBatchedUpdatesWithAct from 'tests/utils/waitForBatchedUpdatesWithAct';
-
-type KeyCommandListener = (keyCommandEvent: KeyCommandEvent, event: KeyboardEvent) => void;
 
 // The same mocks as the UI walk in `viewMatchesMachine.test.tsx`; see the comments there.
 jest.mock('@hooks/useResponsiveLayout');
@@ -35,46 +34,16 @@ jest.mock('@components/MultifactorAuthentication/useSyncMfaModalNavigatorWithHis
 jest.mock('@libs/Navigation/Navigation', () => jest.requireActual<typeof MfaRealUiMocks>('tests/utils/mfa/realUi/mocks').navigationMock());
 jest.mock('@libs/actions/User', () => jest.requireActual<typeof MfaRealUiMocks>('tests/utils/mfa/realUi/mocks').userActionsMock());
 
-// The KeyCommand mock is a no-op, so this captures the listeners `KeyboardShortcut` registers on import to drive a
-// key press through its real handler stack. They live on the mock itself because the import runs before this file's body.
-jest.mock('react-native-key-command', () => {
-    const listeners: KeyCommandListener[] = [];
-    return {
-        constants: {},
-        addListener: (_trigger: unknown, listener: KeyCommandListener) => {
-            listeners.push(listener);
-            return () => {};
-        },
-        listeners,
-    };
-});
+jest.mock('react-native-key-command', () => jest.requireActual<typeof KeyboardShortcutMock>('tests/utils/keyboardShortcutMock').keyCommandMock());
 // Escape is a web concern, and only the web binder honours `captureOnInputs`, so the stack runs with it here.
 jest.mock('@libs/KeyboardShortcut/bindHandlerToKeydownEvent', () => jest.requireActual<Record<string, unknown>>('@libs/KeyboardShortcut/bindHandlerToKeydownEvent/index.ts'));
-// The history marker is owned by the mocked history hook, so the open-modal signal `EscapeHandler` reads is pinned here.
-jest.mock('@libs/Navigation/helpers/mfaModalMarkerPreservation', () => ({
-    ...jest.requireActual<Record<string, unknown>>('@libs/Navigation/helpers/mfaModalMarkerPreservation'),
-    isMfaModalNavigatorOpen: () => true,
-}));
 
 const TEST_ID = CONST.MULTIFACTOR_AUTHENTICATION.TEST_ID;
 const NO_CREDENTIALS = {hasServerCredentials: false, hasLocalCredentials: false, hasEverAcceptedSoftPrompt: false};
 
-/** Dispatches Escape through `KeyboardShortcut`, optionally from a focused input, and flushes the Onyx updates it triggers. */
+/** Presses Escape, optionally from a focused input, and flushes the Onyx updates it triggers. */
 async function pressEscape(target?: HTMLElement) {
-    const listener = jest.requireMock<{listeners: KeyCommandListener[]}>('react-native-key-command').listeners.at(0);
-    if (!listener) {
-        throw new Error('KeyboardShortcut registered no KeyCommand listener.');
-    }
-    const keyCommandEvent = {input: 'keyInputEscape'};
-    const event = new KeyboardEvent('keydown', {key: 'Escape', bubbles: true, cancelable: true});
-    act(() => {
-        if (!target) {
-            listener(keyCommandEvent, event);
-            return;
-        }
-        target.addEventListener('keydown', (dispatched) => listener(keyCommandEvent, dispatched), {once: true});
-        target.dispatchEvent(event);
-    });
+    act(() => pressEscapeKey(target));
     await waitForBatchedUpdatesWithAct();
 }
 
@@ -83,7 +52,7 @@ function isCancelConfirmVisible() {
 }
 
 async function startFlow() {
-    // Mounted first, like the app root's handler, so it sits below the MFA shortcut until it re-subscribes.
+    // Mounted first, like the app root's handler.
     render(<EscapeHandler />);
     const {executeScenario} = renderMfaUi();
     await waitForBatchedUpdatesWithAct();
@@ -99,7 +68,7 @@ async function settle(settleActor: () => void) {
 }
 
 describe('the MFA Escape shortcut', () => {
-    // Sits at the bottom of the stack, below the MFA shortcut, so it runs only when Escape gets past it.
+    // Sits below the MFA shortcut, so it runs only when Escape gets past it.
     const fallThroughHandler = jest.fn();
     let unsubscribeFallThrough: () => void;
 
@@ -138,8 +107,14 @@ describe('the MFA Escape shortcut', () => {
         await settle(() => loadRegistrationStateControl.resolve(NO_CREDENTIALS));
         expect(screen.getByTestId(TEST_ID.VALIDATE_CODE_INPUT)).toBeOnTheScreen();
 
+        const input = document.createElement('input');
+        document.body.appendChild(input);
+        input.focus();
+        expect(document.activeElement).toBe(input);
+
         // When the user presses Escape while typing in that input
-        await pressEscape(document.createElement('input'));
+        await pressEscape(input);
+        input.remove();
 
         // Then the cancel confirmation still opens, because a focused input must not swallow the user's way out
         expect(isCancelConfirmVisible()).toBe(true);
@@ -161,7 +136,7 @@ describe('the MFA Escape shortcut', () => {
         expect(Navigation.dismissModal).not.toHaveBeenCalled();
     });
 
-    it('closes the modal on an outcome screen and then lets Escape through while it closes', async () => {
+    it('closes the modal on an outcome screen and keeps Escape to itself while it closes', async () => {
         // Given an MFA flow that has reached an outcome screen, where there is nothing left to cancel
         await startFlow();
         await settle(() => validateDeviceControl.reject());
@@ -176,11 +151,21 @@ describe('the MFA Escape shortcut', () => {
         expect(fallThroughHandler).not.toHaveBeenCalled();
         expect(Navigation.dismissModal).not.toHaveBeenCalled();
 
-        // When the user presses Escape again while the modal is still animating closed
+        // And the app's Escape handler re-subscribed on top of the stack while the modal is still animating closed
+        await act(async () => {
+            await Onyx.merge(ONYXKEYS.MODAL, {willAlertModalBecomeVisible: true});
+        });
+        await act(async () => {
+            await Onyx.merge(ONYXKEYS.MODAL, {willAlertModalBecomeVisible: false});
+        });
+        await waitForBatchedUpdatesWithAct();
+
+        // When the user presses Escape again
         await pressEscape();
 
-        // Then Escape passes through, because a closing modal must not keep capturing the keyboard
-        expect(fallThroughHandler).toHaveBeenCalledTimes(1);
+        // Then Escape stops at the MFA shortcut, so the screen underneath is not dismissed while the modal is still on screen
+        expect(fallThroughHandler).not.toHaveBeenCalled();
+        expect(Navigation.dismissModal).not.toHaveBeenCalled();
 
         // When the close animation finishes
         act(() => pendingModalClose.run());
@@ -189,7 +174,7 @@ describe('the MFA Escape shortcut', () => {
         expect(screen.queryByTestId(TEST_ID.MODAL_BACKDROP)).not.toBeOnTheScreen();
     });
 
-    it('lets Escape through to the confirmation modal while it is visible', async () => {
+    it('keeps Escape from the app without requesting another cancel while the confirmation is visible', async () => {
         // Given an MFA flow with the cancel confirmation already open
         await startFlow();
         await pressEscape();
@@ -197,21 +182,22 @@ describe('the MFA Escape shortcut', () => {
         // When the user presses Escape again
         await pressEscape();
 
-        // Then the MFA shortcut steps aside, so the confirmation modal's own Escape handling can dismiss it
-        // The modal shell is mocked here, so the dismissal itself is pinned against the real modal in
-        // `escapeConfirmModalDismissal.test.tsx`.
-        expect(fallThroughHandler).toHaveBeenCalledTimes(1);
+        // Then the keydown stops at the MFA shortcut and the confirmation stays up, so only its own keyup handling
+        // dismisses it. The modal shell is mocked here, so that dismissal is pinned in `escapeConfirmModalDismissal.test.tsx`.
+        expect(isCancelConfirmVisible()).toBe(true);
+        expect(fallThroughHandler).not.toHaveBeenCalled();
+        expect(Navigation.dismissModal).not.toHaveBeenCalled();
     });
 
-    it('still handles Escape after the app handler re-subscribes on top of it', async () => {
-        // Given an MFA flow where the app's Escape handler has re-subscribed above the MFA shortcut
+    it('still handles Escape after the app handler re-subscribes', async () => {
+        // Given an MFA flow where the app's Escape handler re-subscribed after the MFA shortcut
         await startFlow();
         await pressEscape();
         fireEvent.press(screen.getByTestId(TEST_ID.CANCEL_DIALOG_DISMISS_BUTTON));
         await waitForBatchedUpdatesWithAct();
         expect(isCancelConfirmVisible()).toBe(false);
 
-        // Toggling the alert-modal flag re-subscribes `EscapeHandler`, which puts it on top of the stack.
+        // Toggling the alert-modal flag re-subscribes `EscapeHandler`.
         await act(async () => {
             await Onyx.merge(ONYXKEYS.MODAL, {willAlertModalBecomeVisible: true});
         });
@@ -223,7 +209,7 @@ describe('the MFA Escape shortcut', () => {
         // When the user presses Escape
         await pressEscape();
 
-        // Then the cancel confirmation still opens, because the app handler defers to the MFA modal regardless of stack order
+        // Then the cancel confirmation still opens, because the app handler stays out of the way while the MFA modal is on screen
         expect(isCancelConfirmVisible()).toBe(true);
         expect(Navigation.dismissModal).not.toHaveBeenCalled();
     });

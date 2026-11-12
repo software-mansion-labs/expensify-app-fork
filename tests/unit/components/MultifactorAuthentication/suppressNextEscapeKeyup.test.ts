@@ -1,11 +1,9 @@
-import type suppressNextEscapeKeyupType from '@components/MultifactorAuthentication/useMFACancelOnEscape/suppressNextEscapeKeyup';
+import type suppressNextEscapeKeyupType from '@components/MultifactorAuthentication/suppressNextEscapeKeyup';
 
 // Jest resolves the native variant by default, so each variant is loaded by its explicit file name.
-const suppressNextEscapeKeyupWeb = jest.requireActual<{default: typeof suppressNextEscapeKeyupType}>(
-    '@components/MultifactorAuthentication/useMFACancelOnEscape/suppressNextEscapeKeyup/index.ts',
-).default;
+const suppressNextEscapeKeyupWeb = jest.requireActual<{default: typeof suppressNextEscapeKeyupType}>('@components/MultifactorAuthentication/suppressNextEscapeKeyup/index.ts').default;
 const suppressNextEscapeKeyupNative = jest.requireActual<{default: typeof suppressNextEscapeKeyupType}>(
-    '@components/MultifactorAuthentication/useMFACancelOnEscape/suppressNextEscapeKeyup/index.native.ts',
+    '@components/MultifactorAuthentication/suppressNextEscapeKeyup/index.native.ts',
 ).default;
 
 function dispatchKeyup(key: string): jest.SpyInstance {
@@ -56,6 +54,16 @@ describe('suppressNextEscapeKeyup', () => {
 
             // When Escape is released later
             // Then it goes through, so a leftover listener can never swallow an unrelated Escape
+            expect(dispatchKeyup('Escape')).not.toHaveBeenCalled();
+        });
+
+        it('stops swallowing once the window loses focus, so a lost keyup cannot eat a later Escape', () => {
+            // Given the suppression is armed, and the window loses focus before Escape is released
+            suppressNextEscapeKeyupWeb();
+            window.dispatchEvent(new Event('blur'));
+
+            // When Escape is pressed and released later
+            // Then it goes through, because the keyup of the opening press was never going to arrive
             expect(dispatchKeyup('Escape')).not.toHaveBeenCalled();
         });
 
