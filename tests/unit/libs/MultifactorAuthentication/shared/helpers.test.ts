@@ -28,6 +28,31 @@ describe('MultifactorAuthentication shared helpers', () => {
             expect(result.reason).toBe(VALUES.REASON.CLIENT_ERRORS.REGISTRATION_REQUIRED);
         });
 
+        it.each(Object.entries(VALUES.API_RESPONSE_MAP))('maps an unknown or used challenge for %s', (_, responseMap) => {
+            const result = parseHttpResponse(401, responseMap, '401 Authentication required');
+
+            expect(result.httpStatusCode).toBe(401);
+            expect(result.reason).toBe(VALUES.REASON.CLIENT_ERRORS.AUTHENTICATION_REQUIRED);
+        });
+
+        it('maps an unknown or used challenge whatever the case of the message', () => {
+            const result = parseHttpResponse(401, VALUES.API_RESPONSE_MAP.APPROVE_TRANSACTION, 'authentication REQUIRED');
+
+            expect(result.reason).toBe(VALUES.REASON.CLIENT_ERRORS.AUTHENTICATION_REQUIRED);
+        });
+
+        it('keeps the generic client error for another 4xx message', () => {
+            const result = parseHttpResponse(401, VALUES.API_RESPONSE_MAP.APPROVE_TRANSACTION, 'Authentication required for something else');
+
+            expect(result.reason).toBe(VALUES.REASON.CLIENT_ERRORS.UNRECOGNIZED);
+        });
+
+        it('keeps a server error a server error even with the same message', () => {
+            const result = parseHttpResponse(500, VALUES.API_RESPONSE_MAP.APPROVE_TRANSACTION, 'Authentication required');
+
+            expect(result.reason).toBe(VALUES.REASON.SERVER_ERRORS.UNRECOGNIZED);
+        });
+
         it('should return LOCAL_ERROR for an unmapped HTTP code', () => {
             const responseMap = VALUES.API_RESPONSE_MAP.REQUEST_AUTHENTICATION_CHALLENGE;
             const result = parseHttpResponse(999, responseMap, 'Something is needed');

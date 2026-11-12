@@ -83,7 +83,7 @@ async function registerAuthenticationKey({keyInfo}: MultifactorAuthenticationSce
         return parseHttpResponse(jsonCode, CONST.MULTIFACTOR_AUTHENTICATION.API_RESPONSE_MAP.REGISTER_AUTHENTICATION_KEY, message);
     } catch (error) {
         Log.hmmm('[MFA] Failed to register an authentication key', {error});
-        return parseHttpResponse(undefined, CONST.MULTIFACTOR_AUTHENTICATION.API_RESPONSE_MAP.REGISTER_AUTHENTICATION_KEY, undefined);
+        return parseRequestError(error, CONST.MULTIFACTOR_AUTHENTICATION.API_RESPONSE_MAP.REGISTER_AUTHENTICATION_KEY);
     }
 }
 
@@ -108,6 +108,18 @@ function isNoResponseError(error: unknown): boolean {
         return true;
     }
     return error instanceof Error && CONNECTION_LOST_MESSAGES.has(error.message);
+}
+
+/**
+ * Parses a request that threw instead of answering. A lost answer becomes NO_RESPONSE, since the server may or may
+ * not have the request. An HTTP error status is an answer, so it keeps its status (a 500 stays a server error).
+ */
+function parseRequestError(error: unknown, responseMap: Parameters<typeof parseHttpResponse>[1]): ReturnType<typeof parseHttpResponse> {
+    const message = error instanceof Error ? error.message : undefined;
+    if (isNoResponseError(error)) {
+        return {httpStatusCode: 0, reason: CONST.MULTIFACTOR_AUTHENTICATION.REASON.LOCAL_ERRORS.NO_RESPONSE, message};
+    }
+    return parseHttpResponse(error instanceof HttpsError && error.status ? error.status : undefined, responseMap, message);
 }
 
 type RegistrationChallengeResponse = {
@@ -178,7 +190,7 @@ async function requestRegistrationChallenge(validateCode: string): Promise<Regis
     } catch (error) {
         Log.hmmm('[MFA] Failed to request a registration challenge', {error});
         return {
-            ...parseHttpResponse(undefined, CONST.MULTIFACTOR_AUTHENTICATION.API_RESPONSE_MAP.REQUEST_AUTHENTICATION_CHALLENGE, undefined),
+            ...parseRequestError(error, CONST.MULTIFACTOR_AUTHENTICATION.API_RESPONSE_MAP.REQUEST_AUTHENTICATION_CHALLENGE),
             challenge: undefined,
             publicKeys: undefined,
         };
@@ -215,11 +227,9 @@ async function requestAuthorizationChallenge(): Promise<AuthenticationChallengeR
         };
     } catch (error) {
         Log.hmmm('[MFA] Failed to request an authorization challenge', {error});
-        const parsedResponse = parseHttpResponse(undefined, CONST.MULTIFACTOR_AUTHENTICATION.API_RESPONSE_MAP.REQUEST_AUTHENTICATION_CHALLENGE, undefined);
         return {
-            ...parsedResponse,
             // Lets the machine tell a lost answer from one the server sent.
-            reason: isNoResponseError(error) ? CONST.MULTIFACTOR_AUTHENTICATION.REASON.LOCAL_ERRORS.NO_RESPONSE : parsedResponse.reason,
+            ...parseRequestError(error, CONST.MULTIFACTOR_AUTHENTICATION.API_RESPONSE_MAP.REQUEST_AUTHENTICATION_CHALLENGE),
             challenge: undefined,
             publicKeys: undefined,
         };
@@ -239,7 +249,7 @@ async function troubleshootMultifactorAuthentication({signedChallenge, authentic
         return parseHttpResponse(jsonCode, CONST.MULTIFACTOR_AUTHENTICATION.API_RESPONSE_MAP.TROUBLESHOOT_MULTIFACTOR_AUTHENTICATION, message);
     } catch (error) {
         Log.hmmm('[MFA] Failed to troubleshoot multifactor authentication', {error});
-        return parseHttpResponse(undefined, CONST.MULTIFACTOR_AUTHENTICATION.API_RESPONSE_MAP.TROUBLESHOOT_MULTIFACTOR_AUTHENTICATION, undefined);
+        return parseRequestError(error, CONST.MULTIFACTOR_AUTHENTICATION.API_RESPONSE_MAP.TROUBLESHOOT_MULTIFACTOR_AUTHENTICATION);
     }
 }
 
@@ -251,7 +261,7 @@ async function revokeMultifactorAuthenticationCredentials(params: RevokeMultifac
         return parseHttpResponse(jsonCode, CONST.MULTIFACTOR_AUTHENTICATION.API_RESPONSE_MAP.REVOKE_MULTIFACTOR_AUTHENTICATION_SETUP, message);
     } catch (error) {
         Log.hmmm('[MFA] Failed to revoke multifactor authentication credentials', {error});
-        return parseHttpResponse(undefined, CONST.MULTIFACTOR_AUTHENTICATION.API_RESPONSE_MAP.REVOKE_MULTIFACTOR_AUTHENTICATION_SETUP, undefined);
+        return parseRequestError(error, CONST.MULTIFACTOR_AUTHENTICATION.API_RESPONSE_MAP.REVOKE_MULTIFACTOR_AUTHENTICATION_SETUP);
     }
 }
 
@@ -289,7 +299,7 @@ async function setPersonalDetailsAndShipExpensifyCardsWithPIN(params: Multifacto
         return parseHttpResponse(jsonCode, CONST.MULTIFACTOR_AUTHENTICATION.API_RESPONSE_MAP.SET_PERSONAL_DETAILS_AND_SHIP_EXPENSIFY_CARDS_WITH_PIN, message);
     } catch (error) {
         Log.hmmm('[MFA] Failed to set personal details and ship card with PIN', {error});
-        return parseHttpResponse(undefined, CONST.MULTIFACTOR_AUTHENTICATION.API_RESPONSE_MAP.SET_PERSONAL_DETAILS_AND_SHIP_EXPENSIFY_CARDS_WITH_PIN, undefined);
+        return parseRequestError(error, CONST.MULTIFACTOR_AUTHENTICATION.API_RESPONSE_MAP.SET_PERSONAL_DETAILS_AND_SHIP_EXPENSIFY_CARDS_WITH_PIN);
     }
 }
 async function revealPINForCard({cardID, signedChallenge, authenticationMethod}: MultifactorAuthenticationScenarioParameters['REVEAL-PIN']) {
@@ -305,7 +315,7 @@ async function revealPINForCard({cardID, signedChallenge, authenticationMethod}:
         };
     } catch (error) {
         Log.hmmm('[MultifactorAuthentication] Failed to reveal PIN for card', {error});
-        return parseHttpResponse(undefined, CONST.MULTIFACTOR_AUTHENTICATION.API_RESPONSE_MAP.REVEAL_CARD_PIN, undefined);
+        return parseRequestError(error, CONST.MULTIFACTOR_AUTHENTICATION.API_RESPONSE_MAP.REVEAL_CARD_PIN);
     }
 }
 
@@ -321,7 +331,7 @@ async function changePINForCard({cardID, pin, signedChallenge, authenticationMet
         return parseHttpResponse(jsonCode, CONST.MULTIFACTOR_AUTHENTICATION.API_RESPONSE_MAP.CHANGE_CARD_PIN, message);
     } catch (error) {
         Log.hmmm('[MultifactorAuthentication] Failed to change PIN for card', {error});
-        return parseHttpResponse(undefined, CONST.MULTIFACTOR_AUTHENTICATION.API_RESPONSE_MAP.CHANGE_CARD_PIN, undefined);
+        return parseRequestError(error, CONST.MULTIFACTOR_AUTHENTICATION.API_RESPONSE_MAP.CHANGE_CARD_PIN);
     }
 }
 
@@ -371,7 +381,7 @@ async function setPersonalDetailsAndRevealExpensifyCardWithSCA(params: Multifact
         };
     } catch (error) {
         Log.hmmm('[MultifactorAuthentication] Failed to set personal details and reveal card details for card', {error});
-        return parseHttpResponse(undefined, CONST.MULTIFACTOR_AUTHENTICATION.API_RESPONSE_MAP.SET_PERSONAL_DETAILS_AND_REVEAL_EXPENSIFY_CARD, undefined);
+        return parseRequestError(error, CONST.MULTIFACTOR_AUTHENTICATION.API_RESPONSE_MAP.SET_PERSONAL_DETAILS_AND_REVEAL_EXPENSIFY_CARD);
     }
 }
 
@@ -404,7 +414,7 @@ async function authorizeTransaction({transactionID, signedChallenge, authenticat
         return parseHttpResponse(jsonCode, CONST.MULTIFACTOR_AUTHENTICATION.API_RESPONSE_MAP.APPROVE_TRANSACTION, message);
     } catch (error) {
         Log.hmmm('[MFA] Failed to authorize transaction', {error});
-        return parseHttpResponse(undefined, CONST.MULTIFACTOR_AUTHENTICATION.API_RESPONSE_MAP.APPROVE_TRANSACTION, undefined);
+        return parseRequestError(error, CONST.MULTIFACTOR_AUTHENTICATION.API_RESPONSE_MAP.APPROVE_TRANSACTION);
     }
 }
 
@@ -431,7 +441,7 @@ async function denyTransaction({transactionID}: DenyTransactionParams) {
         return parseHttpResponse(jsonCode, CONST.MULTIFACTOR_AUTHENTICATION.API_RESPONSE_MAP.DENY_TRANSACTION, message);
     } catch (error) {
         Log.hmmm('[MFA] Failed to deny transaction', {error});
-        return parseHttpResponse(undefined, CONST.MULTIFACTOR_AUTHENTICATION.API_RESPONSE_MAP.DENY_TRANSACTION, undefined);
+        return parseRequestError(error, CONST.MULTIFACTOR_AUTHENTICATION.API_RESPONSE_MAP.DENY_TRANSACTION);
     }
 }
 
