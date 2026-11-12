@@ -37,6 +37,13 @@ const CANCELLING_IN_FLIGHT_TARGET = `#${MFA_STATE.CANCELLING_IN_FLIGHT}` as cons
 // The state is just `visible`, so its id spells out the region to stay unique across the machine.
 const CANCEL_CONFIRM_VISIBLE_ID = 'cancelConfirmVisible';
 const CANCEL_CONFIRM_VISIBLE_TARGET = `#${CANCEL_CONFIRM_VISIBLE_ID}` as const;
+const EXECUTING_SCENARIO_ACTION_TARGET = `#${MFA_STATE.EXECUTING_SCENARIO_ACTION}` as const;
+const OFFLINE_TARGET = `#${MFA_STATE.OFFLINE}` as const;
+
+// The platform ceremonies wait while the cancel confirmation is up (the prompt would cover it) or while offline.
+// Creating a key needs no network itself, but offline nothing could register it, so the user isn't prompted
+// for a key that may never be used.
+const CAN_START_CEREMONY = and([not(stateIn(CANCEL_CONFIRM_VISIBLE_TARGET)), not(stateIn(OFFLINE_TARGET))]);
 
 // One literal shared by both branches of an explicit soft-prompt approval, so they can't drift apart.
 const SOFT_PROMPT_ACCEPTED_ACTIONS = ['approveSoftPrompt', 'persistSoftPromptAcceptance'] as const;
@@ -157,6 +164,10 @@ const MFAMachine = setup({
         // Back asks for confirmation until the outcome. From there it closes the modal right away. While the
         // cancel itself runs (`cancelling`, or `cancellingInFlight` next to the scenario action), there is nothing left to ask.
         shouldConfirmCancel: and([not(stateIn(OUTCOME_TARGET)), not(stateIn(CANCELLING_TARGET)), not(stateIn(CANCELLING_IN_FLIGHT_TARGET))]),
+        // Offline, a cancel closes the modal without asking and without the scenario's cancel logic, which
+        // couldn't reach the backend anyway. A scenario action already sent still asks, so a confirm waits for
+        // its result next to the cancel.
+        canCancelOffline: and([stateIn(OFFLINE_TARGET), 'shouldConfirmCancel', not(stateIn(EXECUTING_SCENARIO_ACTION_TARGET))]),
         // A successful scenario action decides on its own; anything else waits for both results.
         canResolveInFlightCancel: ({context: {scenarioActionResult, cancelError}}) => !!scenarioActionResult?.success || (scenarioActionResult !== undefined && cancelError !== undefined),
         // A failure that a fresh key registration can fix restarts registration until the flow runs out of attempts.
@@ -242,6 +253,17 @@ const MFAMachine = setup({
             softPromptApproved: false,
             recoveryAttempts: ({context}) => context.recoveryAttempts + 1,
         }),
+        // Without these a flow waiting for the network looks the same as a stuck one in Sentry.
+        addNetworkOfflineBreadcrumb: ({context}) => {
+            addMFABreadcrumb('Network offline', {scenario: context.scenarioName}, 'warning');
+        },
+        addNetworkOnlineBreadcrumb: ({context}) => {
+            addMFABreadcrumb('Network online', {scenario: context.scenarioName});
+        },
+        // Keeps the message and payload that existing Sentry queries for an offline cancel filter on.
+        addOfflineCancelBreadcrumb: ({context}) => {
+            addMFABreadcrumb('Flow cancelled - closing directly', {hasScenario: !!context.scenario, isOffline: true}, 'warning');
+        },
         // Clears the module-level navigation buffer (pendingNavigation/hasInitialLaidOut). Owned by
         // the machine so a navigator that unmounts mid-close cannot leave a stale buffered screen
         // behind for the next flow.
@@ -270,8 +292,9 @@ const MFAMachine = setup({
                 INIT: {target: MFA_STATE.OPEN, actions: 'initFlow'},
             },
         },
-        // Two regions run side by side: `flow` walks the MFA steps, and `cancelConfirm` tracks the
-        // cancel-confirmation dialog, so opening the dialog never stops the step that is running.
+        // Three regions run side by side: `flow` walks the MFA steps, `cancelConfirm` tracks the
+        // cancel-confirmation dialog, so opening the dialog never stops the step that is running, and
+        // `network` tracks whether the device is offline.
         [MFA_STATE.OPEN]: {
             type: 'parallel',
             on: {
@@ -283,7 +306,11 @@ const MFAMachine = setup({
                     on: {
                         // Declared once for every step. The dialog hides itself once the flow reaches `cancelling`.
                         // `executingScenarioAction` overrides this while its request is in flight.
-                        CONFIRM_CANCEL: {guard: stateIn(CANCEL_CONFIRM_VISIBLE_TARGET), target: `.${MFA_STATE.CANCELLING}`},
+                        // Offline the cancel logic couldn't reach the backend, so a confirm closes the modal instead.
+                        CONFIRM_CANCEL: [
+                            {guard: and([stateIn(CANCEL_CONFIRM_VISIBLE_TARGET), stateIn(OFFLINE_TARGET)]), target: CLOSING_TARGET, actions: 'addOfflineCancelBreadcrumb'},
+                            {guard: stateIn(CANCEL_CONFIRM_VISIBLE_TARGET), target: `.${MFA_STATE.CANCELLING}`},
+                        ],
                     },
                     states: {
                         // This is the transparent initial screen, and its child states run the pre-screen
@@ -351,7 +378,9 @@ const MFAMachine = setup({
                                     entry: assign({validateCodePresentationPhase: MFA_STATE.AWAITING_VALIDATE_CODE}),
                                     initial: MFA_STATE.AWAITING_INPUT,
                                     on: {
-                                        VALIDATE_CODE_ENTERED: {target: MFA_STATE.REQUESTING_REGISTRATION_CHALLENGE, actions: 'submitValidateCode'},
+                                        // The screen hides the form offline, so this guard only covers a submit that lands before
+                                        // the offline re-render. The code isn't kept for later because it may expire meanwhile.
+                                        VALIDATE_CODE_ENTERED: {guard: not(stateIn(OFFLINE_TARGET)), target: MFA_STATE.REQUESTING_REGISTRATION_CHALLENGE, actions: 'submitValidateCode'},
                                         RESEND_VALIDATE_CODE: {target: `.${MFA_STATE.AWAITING_INPUT}`, actions: 'requestValidateCode'},
                                     },
                                     states: {
@@ -430,11 +459,12 @@ const MFAMachine = setup({
                                     initial: MFA_STATE.WAITING_TO_CREATE,
                                     states: {
                                         // The platform prompt would cover the cancel confirmation, so the ceremony runs only while
-                                        // no cancel is pending: dismissing starts it, confirming leaves for `cancelling`. With no
-                                        // dialog up, this passes straight through. It is a separate state because `invoke` only
-                                        // starts on entry, and opening the dialog stops the ceremony by leaving `creatingKey`.
+                                        // no cancel is pending: dismissing starts it, confirming leaves for `cancelling`. It also
+                                        // waits offline and starts once back online. Otherwise this passes straight through. It is a
+                                        // separate state because `invoke` only starts on entry, and opening the dialog stops the
+                                        // ceremony by leaving `creatingKey`.
                                         [MFA_STATE.WAITING_TO_CREATE]: {
-                                            always: {guard: not('isCancelConfirmVisible'), target: MFA_STATE.CREATING_KEY},
+                                            always: {guard: CAN_START_CEREMONY, target: MFA_STATE.CREATING_KEY},
                                         },
                                         [MFA_STATE.CREATING_KEY]: {
                                             // Nothing has reached the backend yet, so dismissing restarts it with the same registration
@@ -456,7 +486,7 @@ const MFAMachine = setup({
                                                         actions: assign({error: ({event}) => getMFAFailureError(event.output)}),
                                                     },
                                                     {
-                                                        target: MFA_STATE.REGISTERING_KEY,
+                                                        target: MFA_STATE.READY_TO_REGISTER,
                                                         actions: assign({registrationKeyInfo: ({event}) => (event.output.success ? event.output.keyInfo : undefined)}),
                                                     },
                                                 ],
@@ -465,6 +495,11 @@ const MFAMachine = setup({
                                                     actions: assign({error: ({event}) => createUnhandledExceptionMFAError('Credential creation', event.error)}),
                                                 },
                                             },
+                                        },
+                                        // Holds the created key while offline and registers it once back online. The dialog doesn't
+                                        // hold it, because registration runs behind the dialog anyway.
+                                        [MFA_STATE.READY_TO_REGISTER]: {
+                                            always: {guard: not(stateIn(OFFLINE_TARGET)), target: MFA_STATE.REGISTERING_KEY},
                                         },
                                         // A registration request can't be taken back once sent, so opening the dialog doesn't stop
                                         // it. A confirmed cancel still leaves and drops its result; the server keeps the key, which is harmless.
@@ -502,9 +537,9 @@ const MFAMachine = setup({
                                     exit: assign({signedChallenge: undefined}),
                                     initial: MFA_STATE.WAITING_TO_SIGN,
                                     states: {
-                                        // Same hold as `waitingToCreate`: the ceremony runs only while no cancel dialog is up.
+                                        // Same hold as `waitingToCreate`: the ceremony runs only while no cancel dialog is up and while online.
                                         [MFA_STATE.WAITING_TO_SIGN]: {
-                                            always: {guard: not('isCancelConfirmVisible'), target: MFA_STATE.SIGNING_CHALLENGE},
+                                            always: {guard: CAN_START_CEREMONY, target: MFA_STATE.SIGNING_CHALLENGE},
                                         },
                                         [MFA_STATE.SIGNING_CHALLENGE]: {
                                             // The scenario action never goes out while the dialog is up. Dismissing restarts with a fresh
@@ -529,6 +564,11 @@ const MFAMachine = setup({
                                                         target: OUTCOME_TARGET,
                                                         actions: assign({error: ({event}) => getMFAFailureError(event.output)}),
                                                     },
+                                                    // The scenario action can't be sent offline, so the signature is dropped and a fresh
+                                                    // challenge is signed once back online, since this one may expire meanwhile. A created
+                                                    // key is kept instead (`readyToRegister`): a new one would reuse the same registration
+                                                    // challenge, because a fresh challenge needs a new validate code.
+                                                    {guard: stateIn(OFFLINE_TARGET), target: MFA_STATE.WAITING_TO_SIGN},
                                                     // The scenario action takes the method as input, so it is stored before the request
                                                     // and outcome telemetry reports it even when the scenario action fails.
                                                     {
@@ -547,6 +587,7 @@ const MFAMachine = setup({
                                             },
                                         },
                                         [MFA_STATE.EXECUTING_SCENARIO_ACTION]: {
+                                            id: MFA_STATE.EXECUTING_SCENARIO_ACTION,
                                             initial: MFA_STATE.AWAITING_RESULT,
                                             on: {
                                                 // The request is already out and can't be taken back, so a confirmed cancel runs `onCancel`
@@ -690,7 +731,10 @@ const MFAMachine = setup({
                     states: {
                         [MFA_STATE.CANCEL_CONFIRM_HIDDEN]: {
                             on: {
-                                REQUEST_CANCEL: {guard: 'shouldConfirmCancel', target: MFA_STATE.CANCEL_CONFIRM_VISIBLE},
+                                REQUEST_CANCEL: [
+                                    {guard: 'canCancelOffline', target: CLOSING_TARGET, actions: 'addOfflineCancelBreadcrumb'},
+                                    {guard: 'shouldConfirmCancel', target: MFA_STATE.CANCEL_CONFIRM_VISIBLE},
+                                ],
                             },
                         },
                         [MFA_STATE.CANCEL_CONFIRM_VISIBLE]: {
@@ -701,6 +745,23 @@ const MFAMachine = setup({
                             // The flow owns CONFIRM_CANCEL. Once it moves on to the cancel, or reaches the outcome behind
                             // the dialog, there is nothing left to confirm, so the dialog hides.
                             always: {guard: not('shouldConfirmCancel'), target: MFA_STATE.CANCEL_CONFIRM_HIDDEN},
+                        },
+                    },
+                },
+                // Invoked children start only after the INIT macrostep, so the status arrives right after it. That is
+                // early enough because `preparing` always waits on an async actor before any step can need the network.
+                // Invoked on the region rather than a leaf, so the watcher isn't restarted on every change.
+                [MFA_STATE.NETWORK]: {
+                    initial: MFA_STATE.ONLINE,
+                    invoke: {id: 'watchNetwork', src: 'watchNetwork'},
+                    states: {
+                        [MFA_STATE.ONLINE]: {
+                            on: {NETWORK_OFFLINE: {target: MFA_STATE.OFFLINE, actions: 'addNetworkOfflineBreadcrumb'}},
+                        },
+                        // Steps already sent keep running; only the steps that would go to the network next wait for `online`.
+                        [MFA_STATE.OFFLINE]: {
+                            id: MFA_STATE.OFFLINE,
+                            on: {NETWORK_ONLINE: {target: MFA_STATE.ONLINE, actions: 'addNetworkOnlineBreadcrumb'}},
                         },
                     },
                 },
