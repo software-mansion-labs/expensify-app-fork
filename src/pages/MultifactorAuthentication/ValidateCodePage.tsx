@@ -194,7 +194,7 @@ function MultifactorAuthenticationValidateCodePage() {
                 active: isCancelConfirmVisible ? false : undefined,
                 focusTrapOptions: {
                     // Escape is handled by the MFA modal's own shortcut.
-                    escapeDeactivates: () => false,
+                    escapeDeactivates: false,
                 },
             }}
         >
