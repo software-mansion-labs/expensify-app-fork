@@ -1,0 +1,106 @@
+diff --git a/node_modules/react-native/ReactAndroid/build.gradle.kts b/node_modules/react-native/ReactAndroid/build.gradle.kts
+index 99e0541..ec85ae2 100644
+--- a/node_modules/react-native/ReactAndroid/build.gradle.kts
++++ b/node_modules/react-native/ReactAndroid/build.gradle.kts
+@@ -5,6 +5,7 @@
+  * LICENSE file in the root directory of this source tree.
+  */
+ 
++import com.android.build.api.artifact.SingleArtifact
+ import com.android.build.gradle.internal.tasks.factory.dependsOn
+ import com.facebook.react.internal.PrivateReactExtension
+ import com.facebook.react.tasks.internal.*
+@@ -12,6 +13,7 @@ import com.facebook.react.tasks.internal.utils.*
+ import de.undercouch.gradle.tasks.download.Download
+ import java.nio.file.Paths
+ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
++import javax.inject.Inject
+ 
+ plugins {
+   id("maven-publish")
+@@ -769,3 +771,70 @@ apply(from = "./publish.gradle")
+ publishing {
+   publications { getByName("release", MavenPublication::class) { artifactId = "react-android" } }
+ }
++
++// Native debug symbols of the prebuilt artifacts, published next to the AAR as
++// react-android-<version>-<variant>-symbols.zip: the Android counterpart of the dSYM tarballs of the iOS
++// prebuilds. MERGED_NATIVE_LIBS is the input of strip<Variant>DebugSymbols, the last point where the DWARF of the
++// libraries compiled here still exists. Each library is reduced to a debug companion (`llvm-objcopy
++// --only-keep-debug`, the format AGP itself uses for native-debug-symbols.zip), so the zip carries symbols only,
++// never code to link against. Crash reporters match the companions to the stripped libraries by build-id.
++abstract class NativeDebugSymbolsTask : DefaultTask() {
++  @get:InputDirectory abstract val mergedNativeLibs: DirectoryProperty
++  @get:Input abstract val libraries: ListProperty<String>
++  @get:Input abstract val objcopy: Property<String>
++  @get:OutputDirectory abstract val outputDir: DirectoryProperty
++  @get:Inject abstract val execOperations: ExecOperations
++
++  @TaskAction
++  fun extract() {
++    val output = outputDir.get().asFile
++    output.deleteRecursively()
++    val abiDirs = mergedNativeLibs.get().asFile.resolve("lib").listFiles()?.filter { it.isDirectory } ?: emptyList()
++    for (abiDir in abiDirs) {
++      for (name in libraries.get()) {
++        val library = abiDir.resolve(name)
++        if (!library.isFile) continue
++        val companion = output.resolve("lib/${abiDir.name}/$name.dbg")
++        companion.parentFile.mkdirs()
++        execOperations.exec {
++          commandLine(objcopy.get(), "--only-keep-debug", library.absolutePath, companion.absolutePath)
++        }
++      }
++    }
++  }
++}
++
++val ndkHostTag =
++    System.getProperty("os.name").lowercase().let {
++      when {
++        it.contains("mac") -> "darwin-x86_64"
++        it.contains("windows") -> "windows-x86_64"
++        else -> "linux-x86_64"
++      }
++    }
++
++androidComponents {
++  onVariants { variant ->
++    val variantName = variant.name.replaceFirstChar { it.uppercase() }
++    val extractSymbols =
++        tasks.register<NativeDebugSymbolsTask>("extract${variantName}NativeDebugSymbols") {
++          mergedNativeLibs.set(variant.artifacts.get(SingleArtifact.MERGED_NATIVE_LIBS))
++          // Libraries compiled by this module, plus fbjni, which its AAR ships unstripped.
++          libraries.set(listOf("libreactnative.so", "libjsi.so", "libhermestooling.so", "libfbjni.so"))
++          objcopy.set(
++              provider {
++                File(android.ndkDirectory, "toolchains/llvm/prebuilt/$ndkHostTag/bin/llvm-objcopy").absolutePath
++              }
++          )
++          outputDir.set(layout.buildDirectory.dir("intermediates/native_debug_symbols/${variant.name}"))
++        }
++    tasks.register<Zip>("zip${variantName}NativeDebugSymbols") {
++      description = "Packages the native debug symbols of the ${variant.name} variant for crash symbolication."
++      from(extractSymbols)
++      archiveBaseName.set("react-android")
++      archiveClassifier.set("${variant.name}-symbols")
++      destinationDirectory.set(layout.buildDirectory.dir("outputs/native-debug-symbols"))
++      isZip64 = true
++    }
++  }
++}
+diff --git a/node_modules/react-native/ReactAndroid/publish.gradle b/node_modules/react-native/ReactAndroid/publish.gradle
+index 77f9452..e851b13 100644
+--- a/node_modules/react-native/ReactAndroid/publish.gradle
++++ b/node_modules/react-native/ReactAndroid/publish.gradle
+@@ -27,6 +27,10 @@ publishing {
+                 // we publish `components.release`
+                 if (plugins.hasPlugin("com.android.library")) {
+                     from components.default
++                    // Native debug symbols of every variant, see zip<Variant>NativeDebugSymbols in build.gradle.kts.
++                    tasks.matching { it.name ==~ /zip\w+NativeDebugSymbols/ }.all { zipTask ->
++                        artifact(zipTask)
++                    }
+                 }
+             }
+ 

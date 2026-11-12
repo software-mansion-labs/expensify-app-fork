@@ -24,6 +24,9 @@ on:
       SLACK_WEBHOOK:
         description: Webhook used to announce failures.
         required: true
+      SENTRY_AUTH_TOKEN:
+        description: Token used to upload the native debug symbols of the published artifacts to Sentry.
+        required: true
 
 jobs:
   buildAndPublishReactNativeArtifacts:
@@ -123,6 +126,9 @@ jobs:
           )
 
           ./gradlew buildReactNativeArtifacts -PpatchedArtifacts.forceBuildFromSource=true -x lint -x test -x check "${EXCLUDE_TASKS[@]}"
+          # The publication also carries react-android-<version>-<variant>-symbols.zip: debug companions
+          # (symbols only) of libreactnative.so, libjsi.so, libhermestooling.so and libfbjni.so (see patch 049),
+          # the Android counterpart of the iOS dSYM tarballs.
           ./gradlew publishReactNativeArtifacts -PpatchedArtifacts.forceBuildFromSource=true
         env:
           GH_PUBLISH_ACTOR: ${{ github.actor }}
@@ -132,6 +138,46 @@ jobs:
           PATCHES_HASH: ${{ steps.computePatchesHash.outputs.PATCHES_HASH }}
           HERMES_VERSION: ${{ steps.hermes.outputs.VERSION }}
           CMAKE_VERSION: 3.31.6
+
+      # Native debug symbols. Sentry matches a crash to a debug file by the GNU build-id of the library, so one
+      # upload per published artifact version covers every HybridApp and Standalone build that consumes it,
+      # whichever app version that is. The app builds cannot do this themselves: the AAR only contains stripped
+      # libraries, and Standalone has no Sentry Gradle plugin at all.
+      #
+      # Covered here:
+      # Every file is a debug companion (`llvm-objcopy --only-keep-debug`): DWARF, symbol table and build-id
+      # without the code, like a dSYM. Covered here:
+      #   - libreactnative.so, libjsi.so, libhermestooling.so: compiled by this job, DWARF captured before AGP
+      #     strips the AAR (extract/zip<Variant>NativeDebugSymbols, patch 049).
+      #   - libfbjni.so: the fbjni AAR ships it unstripped and ReactAndroid repackages a stripped copy; the
+      #     companion is made from the unstripped one.
+      #   - libhermesvm.so: not built here (consumers link Meta's hermes-android from Maven Central), but the
+      #     prefab copy inside that AAR is unstripped with the runtime's build-id, see
+      #     extract-hermes-debug-symbols.sh.
+      - name: Collect Hermes VM debug symbols
+        id: hermes-symbols
+        continue-on-error: true
+        run: ./scripts/artifacts-utils/android/extract-hermes-debug-symbols.sh "${HERMES_VERSION}" /tmp/hermes-debug-symbols
+        env:
+          HERMES_VERSION: ${{ steps.hermes.outputs.VERSION }}
+
+      - name: Upload native debug symbols to Sentry
+        id: upload-native-symbols
+        continue-on-error: true
+        run: |
+          npx sentry-cli debug-files upload --include-sources node_modules/react-native/ReactAndroid/build/outputs/native-debug-symbols
+          if [[ -d /tmp/hermes-debug-symbols ]]; then
+            npx sentry-cli debug-files upload /tmp/hermes-debug-symbols
+          fi
+        env:
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+          SENTRY_PROPERTIES: android/sentry.properties
+
+      - name: Log native debug symbols upload failure
+        if: steps.hermes-symbols.outcome == 'failure' || steps.upload-native-symbols.outcome == 'failure'
+        run: echo "::error::Failed to upload native debug symbols to Sentry – native frames of react-native ${{ env.PATCHED_VERSION }} will not be symbolicated"
+        env:
+          PATCHED_VERSION: ${{ steps.getNewPatchedVersion.outputs.NEW_PATCHED_VERSION }}
 
       - name: Announce failed workflow in Slack
         if: ${{ failure() }}

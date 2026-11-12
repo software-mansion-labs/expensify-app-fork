@@ -401,3 +401,11 @@
 - E/App issue: https://github.com/Expensify/App/issues/105359
 - PR introducing patch: 🛑 TODO
 - 0.86.0 migration note: drop once we adopt a React Native release that contains `f6a5042`. Adding this patch changes the patches hash, so merging it republishes the prebuilt artifacts; that publish is also the first CI build from source since the move, so confirm it passes.
+
+### [react-native+0.86.0+049+publish-android-native-debug-symbols.patch](react-native+0.86.0+049+publish-android-native-debug-symbols.patch)
+
+- Reason: Publishes the native debug symbols of our prebuilt Android artifacts, the counterpart of the dSYM tarballs our iOS artifacts already carry. AGP strips `libreactnative.so`, `libjsi.so`, `libhermestooling.so` and `libfbjni.so` before packaging the AAR, so apps consuming `react-android` from GitHub Packages get no DWARF for them and Sentry cannot symbolicate native React Native frames (HybridApp's `uploadNativeSymbols` only sees the stripped copies, Standalone has no Sentry Gradle plugin). The patch registers `extract<Variant>NativeDebugSymbols`, which reads `SingleArtifact.MERGED_NATIVE_LIBS` (the input of `strip<Variant>DebugSymbols`, the last place where the unstripped libraries exist) and reduces each library to a debug companion with the NDK's `llvm-objcopy --only-keep-debug` (DWARF, symbol table and build-id, no code; the format AGP uses for `native-debug-symbols.zip`), and `zip<Variant>NativeDebugSymbols`, which packages them as `lib/<abi>/<name>.so.dbg` into `react-android-<version>-<variant>-symbols.zip`, added to the Maven publication. The AAR itself is unchanged. The publish workflow uploads these zips to Sentry; build-id matching makes one upload cover every app build that links the artifact.
+- Upstream PR/issue: 🛑 not opened yet. The change is repository-agnostic (upstream publishes `react-android` with the same AGP pipeline and already ships dSYMs for its iOS prebuilds), so it is a candidate for an upstream PR.
+- E/App issue: 🛑 TODO
+- PR introducing patch: 🛑 TODO
+- 0.86.0 migration note: keep until upstream publishes native debug symbols for `react-android`; on a React Native upgrade re-check that `MERGED_NATIVE_LIBS` is still the strip task input and that the NDK host tag lookup still matches the toolchain layout.
