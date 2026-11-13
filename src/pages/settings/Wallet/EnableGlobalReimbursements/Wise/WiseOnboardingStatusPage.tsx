@@ -28,7 +28,7 @@ import type SCREENS from '@src/SCREENS';
 
 import type {ReactNode} from 'react';
 
-import React, {useEffect} from 'react';
+import React, {useEffect, useState} from 'react';
 
 import ApprovedContent from './WiseOnboardingStatus/ApprovedContent';
 import InReviewContent from './WiseOnboardingStatus/InReviewContent';
@@ -79,6 +79,21 @@ function WiseOnboardingStatusPage({route, navigation}: WiseOnboardingStatusPageP
         // The screen's own navigation reaches the route even on a cold start, when the navigators above it are not listening yet
         navigation.setParams({status: undefined});
     }, [kycReviewFormStatus, hasBankAccount, onboardingStatus, bankAccountID, navigation]);
+
+    // A status that changes while the admin is on the page shows a short loading state first, so the new content does not swap in abruptly
+    const [shownStatus, setShownStatus] = useState(onboardingStatus);
+    const [isChangingStatus, setIsChangingStatus] = useState(false);
+    if (onboardingStatus !== shownStatus) {
+        setShownStatus(onboardingStatus);
+        setIsChangingStatus(!!shownStatus);
+    }
+    useEffect(() => {
+        if (!isChangingStatus) {
+            return;
+        }
+        const timeoutID = setTimeout(() => setIsChangingStatus(false), CONST.WISE.STATUS_CHANGE_LOADING_DURATION_MS);
+        return () => clearTimeout(timeoutID);
+    }, [isChangingStatus]);
 
     // On a cold direct link the account list can be empty until the payment-method fetch finishes, so wait for it before judging the account
     const isWaitingForBankAccount = !hasBankAccount && !!isLoadingPaymentMethods;
@@ -133,6 +148,7 @@ function WiseOnboardingStatusPage({route, navigation}: WiseOnboardingStatusPageP
                 </Header>
                 {content}
             </FullPageNotFoundView>
+            {isChangingStatus && <FullScreenLoadingIndicator shouldUseGoBackButton={false} />}
         </ScreenWrapper>
     );
 }

@@ -1118,6 +1118,7 @@ const CONST = {
             APPROVED: 'APPROVED',
             NOT_APPROVED: 'NOT_APPROVED',
         },
+        STATUS_CHANGE_LOADING_DURATION_MS: 500,
         /** The steps UpdateWiseOnboardingAdditionalData accepts: our intake pages, and the EDD pages keyed by Wise's KYC requirement key. The server answers any other step with 400 Invalid step. */
         ONBOARDING_STEP: {
             BUSINESS: 'business',
