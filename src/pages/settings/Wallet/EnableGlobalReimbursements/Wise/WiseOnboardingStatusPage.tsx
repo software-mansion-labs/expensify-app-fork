@@ -33,6 +33,7 @@ import React, {useEffect} from 'react';
 import ApprovedContent from './WiseOnboardingStatus/ApprovedContent';
 import InReviewContent from './WiseOnboardingStatus/InReviewContent';
 import MoreInfoNeededContent from './WiseOnboardingStatus/MoreInfoNeededContent';
+import ReceivedContent from './WiseOnboardingStatus/ReceivedContent';
 import RejectedContent from './WiseOnboardingStatus/RejectedContent';
 
 type WiseOnboardingStatusPageProps = PlatformStackScreenProps<SettingsNavigatorParamList, typeof SCREENS.SETTINGS.WALLET.DYNAMIC_WISE_ONBOARDING_STATUS>;
@@ -89,6 +90,10 @@ function WiseOnboardingStatusPage({route, navigation}: WiseOnboardingStatusPageP
     let title: TranslationPaths;
     let content: ReactNode;
     switch (onboardingStatus) {
+        case CONST.WISE.ONBOARDING_STATUS.NEW:
+            title = 'walletPage.wiseOnboarding.received.title';
+            content = <ReceivedContent />;
+            break;
         case CONST.WISE.ONBOARDING_STATUS.ACTION_REQUIRED:
             title = 'walletPage.wiseOnboarding.moreInfoNeeded.headerTitle';
             content = (

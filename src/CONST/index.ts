@@ -1112,6 +1112,7 @@ const CONST = {
 
         /** Server-derived state of the Wise onboarding */
         ONBOARDING_STATUS: {
+            NEW: 'NEW',
             IN_REVIEW: 'IN_REVIEW',
             ACTION_REQUIRED: 'ACTION_REQUIRED',
             APPROVED: 'APPROVED',

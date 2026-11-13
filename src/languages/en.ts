@@ -3207,6 +3207,11 @@ const translations = {
                 title: 'Verify additional info',
                 subtitle: 'Our payments partner needs more info directly. This should only take a couple of minutes.',
             },
+            received: {
+                title: 'Details received',
+                heading: "We've received your details",
+                description: "We're checking them now. This only takes a few seconds.",
+            },
             inReview: {
                 title: 'In review',
                 heading: "We got what we need.\nYou'll hear from us!",
