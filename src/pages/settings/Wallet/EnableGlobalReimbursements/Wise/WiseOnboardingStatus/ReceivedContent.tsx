@@ -15,12 +15,12 @@ import React from 'react';
 function ReceivedContent() {
     const styles = useThemeStyles();
     const {translate} = useLocalize();
-    const illustrations = useMemoizedLazyIllustrations(['UserShield']);
+    const illustrations = useMemoizedLazyIllustrations(['FolderWithPapersAndWatch']);
 
     return (
         <ConfirmationPage>
             <ConfirmationPage.Content style={styles.ph5}>
-                <ConfirmationPage.Illustration illustration={illustrations.UserShield} />
+                <ConfirmationPage.Illustration illustration={illustrations.FolderWithPapersAndWatch} />
                 <ConfirmationPage.Heading>{translate('walletPage.wiseOnboarding.received.heading')}</ConfirmationPage.Heading>
                 <ConfirmationPage.Description style={styles.textSupporting}>{translate('walletPage.wiseOnboarding.received.description')}</ConfirmationPage.Description>
             </ConfirmationPage.Content>

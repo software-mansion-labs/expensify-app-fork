@@ -80,20 +80,19 @@ function WiseOnboardingStatusPage({route, navigation}: WiseOnboardingStatusPageP
         navigation.setParams({status: undefined});
     }, [kycReviewFormStatus, hasBankAccount, onboardingStatus, bankAccountID, navigation]);
 
-    // A status that changes while the admin is on the page shows a short loading state first, so the new content does not swap in abruptly
-    const [shownStatus, setShownStatus] = useState(onboardingStatus);
-    const [isChangingStatus, setIsChangingStatus] = useState(false);
-    if (onboardingStatus !== shownStatus) {
-        setShownStatus(onboardingStatus);
-        setIsChangingStatus(!!shownStatus);
+    // A status that changes while the admin is on the page keeps the previous content under a short loading state, so the new content does not swap in abruptly
+    const [displayedStatus, setDisplayedStatus] = useState(onboardingStatus);
+    if (!displayedStatus && onboardingStatus) {
+        setDisplayedStatus(onboardingStatus);
     }
+    const isChangingStatus = !!displayedStatus && displayedStatus !== onboardingStatus;
     useEffect(() => {
         if (!isChangingStatus) {
             return;
         }
-        const timeoutID = setTimeout(() => setIsChangingStatus(false), CONST.WISE.STATUS_CHANGE_LOADING_DURATION_MS);
+        const timeoutID = setTimeout(() => setDisplayedStatus(onboardingStatus), CONST.WISE.STATUS_CHANGE_LOADING_DURATION_MS);
         return () => clearTimeout(timeoutID);
-    }, [isChangingStatus]);
+    }, [isChangingStatus, onboardingStatus]);
 
     // On a cold direct link the account list can be empty until the payment-method fetch finishes, so wait for it before judging the account
     const isWaitingForBankAccount = !hasBankAccount && !!isLoadingPaymentMethods;
@@ -104,7 +103,7 @@ function WiseOnboardingStatusPage({route, navigation}: WiseOnboardingStatusPageP
 
     let title: TranslationPaths;
     let content: ReactNode;
-    switch (onboardingStatus) {
+    switch (displayedStatus ?? onboardingStatus) {
         case CONST.WISE.ONBOARDING_STATUS.NEW:
             title = 'walletPage.wiseOnboarding.received.title';
             content = <ReceivedContent />;
