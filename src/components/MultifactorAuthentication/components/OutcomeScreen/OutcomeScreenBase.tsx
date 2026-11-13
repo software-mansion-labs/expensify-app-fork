@@ -46,7 +46,14 @@ type OutcomeScreenBaseProps = {
     titleStyle?: StyleProp<TextStyle>;
 };
 
-function HTMLSubtitle({htmlString = '', style}: {htmlString?: string; style?: ViewStyle}) {
+type HTMLSubtitleProps = {
+    /** Subtitle markup, may contain links */
+    htmlString?: string;
+
+    style?: ViewStyle;
+};
+
+function HTMLSubtitle({htmlString = '', style}: HTMLSubtitleProps) {
     const styles = useThemeStyles();
 
     // RenderHTML expands vertically beyond its content height. We render
@@ -148,3 +155,4 @@ function OutcomeScreenBase(props: OutcomeScreenBaseProps) {
 OutcomeScreenBase.displayName = 'OutcomeScreenBase';
 
 export default OutcomeScreenBase;
+export {HTMLSubtitle};

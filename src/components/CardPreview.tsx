@@ -24,9 +24,12 @@ type CardPreviewProps = {
 
     /** Styles for overlay container (absolute positioning, size, etc.). */
     overlayContainerStyle?: StyleProp<ViewStyle>;
+
+    /** Whether to print the cardholder name on the card, off for a generic card illustration. */
+    shouldShowCardHolder?: boolean;
 };
 
-function CardPreview({overlayImage, overlayContainerStyle}: CardPreviewProps) {
+function CardPreview({overlayImage, overlayContainerStyle, shouldShowCardHolder = true}: CardPreviewProps) {
     const styles = useThemeStyles();
     const lazyIllustrations = useMemoizedLazyIllustrations(['ExpensifyCardImage']);
 
@@ -55,13 +58,15 @@ function CardPreview({overlayImage, overlayContainerStyle}: CardPreviewProps) {
                     height={variables.cardPreviewHeight}
                     width={variables.cardPreviewWidth}
                 />
-                <Text
-                    style={[styles.walletCardHolder, {color: getCardFeedTextColor(CONST.EXPENSIFY_CARD.BANK)}]}
-                    numberOfLines={1}
-                    ellipsizeMode="tail"
-                >
-                    {cardHolder}
-                </Text>
+                {shouldShowCardHolder && (
+                    <Text
+                        style={[styles.walletCardHolder, {color: getCardFeedTextColor(CONST.EXPENSIFY_CARD.BANK)}]}
+                        numberOfLines={1}
+                        ellipsizeMode="tail"
+                    >
+                        {cardHolder}
+                    </Text>
+                )}
             </View>
             {!!overlayImage && (
                 <View

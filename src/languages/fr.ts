@@ -783,6 +783,10 @@ const translations: TranslationDeepObject<typeof en> = {
             giveItAnotherTry: 'Essayez à nouveau',
             thankYouForConfirming: "Merci d'avoir confirmé que vous étiez à l'origine de cette transaction. Veuillez réessayer auprès du commerçant.",
             ifYouCloseWeWillFreezeCard: 'Si vous fermez cet écran, nous devrons geler votre carte. Vous devrez la dégeler pour pouvoir la réutiliser.',
+            frozenCard: 'Carte gelée',
+            yourCardHasBeenFrozen: 'Votre carte a été gelée',
+            weFrozeYourCard:
+                'Nous avons gelé votre carte pour empêcher tout nouveau débit. Veuillez contacter <concierge-link>Concierge</concierge-link> si vous craignez que les données de votre carte aient été compromises.',
         },
         unsupportedDevice: {
             unsupportedDevice: 'Appareil non pris en charge',
