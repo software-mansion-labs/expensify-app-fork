@@ -11616,7 +11616,7 @@ Adicione mais regras de gasto para proteger o fluxo de caixa da empresa.`,
                 reimbursementHeld: 'Pagamento em espera enquanto nosso parceiro conclui uma análise. Aguarde outra atualização. Converse com o <concierge-link>Concierge</concierge-link>.',
                 reimbursementReleased: 'A análise foi concluída e seu pagamento está a caminho. A taxa de câmbio final pode alterar o valor.',
                 actionableCardFraudTransactionApproval: (amount: string, merchant: string | undefined) => {
-                    return `Uma transação${merchant ? ` de ${merchant}` : ''}${amount ? ` (${amount})` : ''} foi recusada por suspeita de fraude.`;
+                    return `Uma transação${merchant ? ` em ${merchant}` : ''}${amount ? ` (${amount})` : ''} foi recusada por suspeita de fraude.`;
                 },
             },
             error: {

@@ -11447,8 +11447,7 @@ ${reportName}`,
                     'パートナーによる審査が完了するまで支払いを保留しています。続報をお待ちください。<concierge-link>Concierge</concierge-link>にチャットでお問い合わせください。',
                 reimbursementReleased: '審査が完了し、お支払いは送金手続き中です。最終的な為替レートにより金額が変わる場合があります。',
                 actionableCardFraudTransactionApproval: (amount: string, merchant: string | undefined) => {
-                    const details = [merchant, amount ? `(${amount})` : ''].filter((s) => !!s?.length).join(' ');
-                    return `${details ? `${details} の` : ''}取引が不正の疑いにより拒否されました。`;
+                    return `取引${merchant ? `（加盟店：${merchant}）` : ''}${amount ? `（${amount}）` : ''}は不正利用の疑いがあるため、承認が拒否されました。`;
                 },
             },
             error: {

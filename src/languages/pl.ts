@@ -11647,7 +11647,7 @@ Dodaj więcej zasad wydatków, żeby chronić płynność finansową firmy.`,
                     'Płatność wstrzymana, dopóki nasz partner nie zakończy weryfikacji. Poczekaj na kolejną aktualizację. Porozmawiaj z <concierge-link>Concierge</concierge-link>.',
                 reimbursementReleased: 'Weryfikacja została zakończona i twoja płatność jest w drodze. Ostateczny kurs walutowy może zmienić kwotę.',
                 actionableCardFraudTransactionApproval: (amount: string, merchant: string | undefined) => {
-                    return `Transakcja${merchant ? ` w ${merchant}` : ''}${amount ? ` (${amount})` : ''} została odrzucona z powodu podejrzenia oszustwa.`;
+                    return `Transakcja${merchant ? ` u sprzedawcy ${merchant}` : ''}${amount ? ` (${amount})` : ''} została odrzucona z powodu podejrzenia oszustwa.`;
                 },
             },
             error: {

@@ -11722,7 +11722,7 @@ Ajoutez davantage de règles de dépenses pour protéger la trésorerie de l’e
                     'Paiement en attente pendant que notre partenaire termine un examen. Attendez une autre mise à jour. Discutez avec <concierge-link>Concierge</concierge-link>.',
                 reimbursementReleased: 'L’examen est terminé et votre paiement est en cours d’acheminement. Le taux de change final peut modifier le montant.',
                 actionableCardFraudTransactionApproval: (amount: string, merchant: string | undefined) => {
-                    return `Une transaction${merchant ? ` de ${merchant}` : ''}${amount ? ` (${amount})` : ''} a été refusée pour suspicion de fraude.`;
+                    return `Une transaction${merchant ? ` auprès de ${merchant}` : ''}${amount ? ` (${amount})` : ''} a été refusée pour suspicion de fraude.`;
                 },
             },
             error: {
