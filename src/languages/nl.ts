@@ -11341,7 +11341,7 @@ er bestedingsregels toe om de kasstroom van het bedrijf te beschermen.`,
                 autoPayFeeDisclosure: (adminName: string, bankName: string, lastFour: string, autoPaySettingsURL: string) =>
                     `Global Reimbursements is ingeschakeld door ${adminName} op de ${bankName ? `${bankName} ` : ''}rekening die eindigt op ${lastFour}. Exacte wisselkoersen en kosten kunnen niet vooraf worden bekeken wanneer grensoverschrijdende rapporten automatisch worden betaald. Bekijk je <a href="${autoPaySettingsURL}">automatische betaalinstellingen</a> voor meer informatie over tarieven en kosten.`,
                 actionableCardFraudTransactionApproval: (amount: string, merchant: string | undefined) => {
-                    return `Een transactie${merchant ? ` van ${merchant}` : ''}${amount ? ` (${amount})` : ''} is geweigerd vanwege vermoedelijke fraude.`;
+                    return `Een transactie${merchant ? ` bij ${merchant}` : ''}${amount ? ` (${amount})` : ''} is geweigerd wegens een vermoeden van fraude.`;
                 },
             },
             error: {
