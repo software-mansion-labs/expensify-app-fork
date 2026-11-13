@@ -787,6 +787,13 @@ const translations: TranslationDeepObject<typeof en> = {
             yourCardHasBeenFrozen: 'La tua carta è stata bloccata',
             weFrozeYourCard:
                 'Abbiamo bloccato la tua carta per evitare ulteriori addebiti. Contatta <concierge-link>Concierge</concierge-link> se temi che i dati della tua carta siano stati compromessi.',
+            terminateCard: 'Annulla la carta',
+            ifYouDoNotReviewWeWillTerminateCard: 'Se non controlli questa transazione, annulleremo la tua carta e dovrai richiederne una sostitutiva.',
+            cardTerminated: 'Carta annullata',
+            yourCardHasBeenTerminated: 'La tua carta è stata annullata',
+            weTerminatedYourCard:
+                'Abbiamo annullato la tua carta per proteggere il tuo account. Puoi richiedere una carta sostitutiva in qualsiasi momento o <concierge-link>contattare Concierge</concierge-link> se pensi che si sia trattato di una frode.',
+            goToCardDetails: 'Vai ai dettagli della carta',
         },
         unsupportedDevice: {
             unsupportedDevice: 'Dispositivo non supportato',

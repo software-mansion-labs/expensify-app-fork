@@ -807,6 +807,13 @@ const translations = {
             yourCardHasBeenFrozen: 'Your card has been frozen',
             weFrozeYourCard:
                 "We've frozen your card to prevent further charges. Please reach out to <concierge-link>Concierge</concierge-link> if you're concerned your card has been compromised.",
+            terminateCard: 'Terminate card',
+            ifYouDoNotReviewWeWillTerminateCard: "If you do not review this transaction, we'll terminate your card, and you'll need to request a replacement.",
+            cardTerminated: 'Card terminated',
+            yourCardHasBeenTerminated: 'Your card has been terminated',
+            weTerminatedYourCard:
+                "We've terminated your card to keep your account safe. You can request a replacement anytime, or <concierge-link>reach out to Concierge</concierge-link> if you think this was fraud.",
+            goToCardDetails: 'Go to card details',
         },
         unsupportedDevice: {
             unsupportedDevice: 'Unsupported device',

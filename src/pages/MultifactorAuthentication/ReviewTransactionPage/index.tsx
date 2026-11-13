@@ -1,7 +1,7 @@
 import ActivityIndicator from '@components/ActivityIndicator';
 import FullPageOfflineBlockingView from '@components/BlockingViews/FullPageOfflineBlockingView';
 import Header from '@components/Header';
-import {FreezeCardCancelConfirmModal} from '@components/MultifactorAuthentication/components/Modals';
+import {FreezeCardCancelConfirmModal, TerminateCardCancelConfirmModal} from '@components/MultifactorAuthentication/components/Modals';
 import {AlreadyReviewedFailureScreen, DeniedTransactionServerFailureScreen} from '@components/MultifactorAuthentication/config/scenarios/AuthorizeTransaction';
 import {useMultifactorAuthentication} from '@components/MultifactorAuthentication/Context';
 import ScreenWrapper from '@components/ScreenWrapper';
@@ -33,6 +33,7 @@ import {View} from 'react-native';
 
 import FrozenCardOutcomeScreen from './FrozenCardOutcomeScreen';
 import ReviewTransactionContent from './ReviewTransactionContent';
+import TerminatedCardOutcomeScreen from './TerminatedCardOutcomeScreen';
 
 function addBreadcrumb(message: string, data?: Record<string, string | number | boolean | undefined>, level: SeverityLevel = 'info'): void {
     Sentry.addBreadcrumb({
@@ -66,18 +67,30 @@ function ReviewTransactionPage({route}: ReviewTransactionPageProps) {
     };
 
     // The card ID is read when the fraud is reported, since the server then removes the review from the queue
-    const showFrozenCardOutcome = (cardID: number | undefined) => {
+    const showReportedFraudOutcome = (cardID: number | undefined, isCardTerminated: boolean) => {
         const openCardDetails = () => {
             closeOutcome();
             if (cardID) {
                 Navigation.navigate(createDynamicRoute(DYNAMIC_ROUTES.WALLET_DOMAIN_CARD.getRoute(String(cardID)), ROUTES.SETTINGS_WALLET));
             }
         };
+        // A terminated card is no longer listed on its own page, so the wallet is the closest place to see the cards
+        const openWallet = () => {
+            closeOutcome();
+            Navigation.navigate(ROUTES.SETTINGS_WALLET);
+        };
         setOutcomeScreen(
-            <FrozenCardOutcomeScreen
-                onUnfreezePress={openCardDetails}
-                onClose={closeOutcome}
-            />,
+            isCardTerminated ? (
+                <TerminatedCardOutcomeScreen
+                    onCardDetailsPress={openWallet}
+                    onClose={closeOutcome}
+                />
+            ) : (
+                <FrozenCardOutcomeScreen
+                    onUnfreezePress={openCardDetails}
+                    onClose={closeOutcome}
+                />
+            ),
         );
     };
 
@@ -90,7 +103,7 @@ function ReviewTransactionPage({route}: ReviewTransactionPageProps) {
         }
         addBreadcrumb('Back-out confirmed, reporting fraud', {transactionID}, 'warning');
         fireAndForgetReportFraudulentTransaction({transactionID});
-        showFrozenCardOutcome(transaction?.cardID);
+        showReportedFraudOutcome(transaction?.cardID, !!transaction?.willTerminateIfNotRecognized);
     };
 
     const {isConfirmModalVisible, showConfirmModal, hideConfirmModal, confirmBackOut, allowNavigatingAway} = useForcedReviewScreen({
@@ -114,10 +127,10 @@ function ReviewTransactionPage({route}: ReviewTransactionPageProps) {
         addBreadcrumb('Unrecognized tapped', {transactionID});
         const cardID = transaction?.cardID;
         setIsReportingFraud(true);
-        reportFraudulentTransaction({transactionID}).then(({reason, httpStatusCode}) => {
-            addBreadcrumb('Fraud report completed', {transactionID, reason, httpStatusCode});
+        reportFraudulentTransaction({transactionID}).then(({reason, httpStatusCode, isCardTerminated}) => {
+            addBreadcrumb('Fraud report completed', {transactionID, reason, httpStatusCode, isCardTerminated});
             if (reason === CONST.MULTIFACTOR_AUTHENTICATION.REASON.FLOW_OUTCOMES.FRAUD_REPORTED) {
-                showFrozenCardOutcome(cardID);
+                showReportedFraudOutcome(cardID, isCardTerminated);
                 return;
             }
             if (reason === CONST.MULTIFACTOR_AUTHENTICATION.REASON.CLIENT_ERRORS.ALREADY_REVIEWED) {
@@ -151,6 +164,8 @@ function ReviewTransactionPage({route}: ReviewTransactionPageProps) {
         );
     }
 
+    const BackOutConfirmModal = transaction.willTerminateIfNotRecognized ? TerminateCardCancelConfirmModal : FreezeCardCancelConfirmModal;
+
     return (
         <ScreenWrapper testID={ReviewTransactionPage.displayName}>
             <Header>
@@ -171,7 +186,7 @@ function ReviewTransactionPage({route}: ReviewTransactionPageProps) {
                         authorizeSentryLabel={CONST.SENTRY_LABEL.MULTIFACTOR_AUTHENTICATION.REVIEW_TRANSACTION_RECOGNIZED}
                         denySentryLabel={CONST.SENTRY_LABEL.MULTIFACTOR_AUTHENTICATION.REVIEW_TRANSACTION_NOT_RECOGNIZED}
                     />
-                    <FreezeCardCancelConfirmModal
+                    <BackOutConfirmModal
                         isVisible={isConfirmModalVisible}
                         onConfirm={confirmBackOut}
                         onCancel={hideConfirmModal}

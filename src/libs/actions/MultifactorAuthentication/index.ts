@@ -484,12 +484,12 @@ async function reportFraudulentTransaction({transactionID}: Pick<RecordFraudFeed
             {optimisticData: getLocallyProcessedFraudReviewOptimisticData(transactionID)},
         );
 
-        const {jsonCode, message} = response ?? {};
+        const {jsonCode, message, cardTerminated} = response ?? {};
 
-        return parseHttpResponse(jsonCode, CONST.MULTIFACTOR_AUTHENTICATION.API_RESPONSE_MAP.REPORT_FRAUDULENT_TRANSACTION, message);
+        return {...parseHttpResponse(jsonCode, CONST.MULTIFACTOR_AUTHENTICATION.API_RESPONSE_MAP.REPORT_FRAUDULENT_TRANSACTION, message), isCardTerminated: !!cardTerminated};
     } catch (error) {
         Log.hmmm('[MFA] Failed to report fraudulent transaction', {error});
-        return parseHttpResponse(undefined, CONST.MULTIFACTOR_AUTHENTICATION.API_RESPONSE_MAP.REPORT_FRAUDULENT_TRANSACTION, undefined);
+        return {...parseHttpResponse(undefined, CONST.MULTIFACTOR_AUTHENTICATION.API_RESPONSE_MAP.REPORT_FRAUDULENT_TRANSACTION, undefined), isCardTerminated: false};
     }
 }
 

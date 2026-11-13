@@ -3002,6 +3002,7 @@ const SENTRY_LABEL = {
         REVIEW_TRANSACTION_RECOGNIZED: 'MultifactorAuthentication-ReviewTransactionRecognized',
         REVIEW_TRANSACTION_OUTCOME_CONFIRM: 'MultifactorAuthentication-ReviewTransactionOutcomeConfirm',
         REVIEW_TRANSACTION_UNFREEZE_CARD: 'MultifactorAuthentication-ReviewTransactionUnfreezeCard',
+        REVIEW_TRANSACTION_GO_TO_CARD_DETAILS: 'MultifactorAuthentication-ReviewTransactionGoToCardDetails',
         REVOKE_ALL: 'MultifactorAuthentication-RevokeAll',
         REVOKE_DISMISS: 'MultifactorAuthentication-RevokeDismiss',
         REVOKE_THIS_DEVICE: 'MultifactorAuthentication-RevokeThisDevice',
