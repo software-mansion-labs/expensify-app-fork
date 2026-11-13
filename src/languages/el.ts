@@ -11568,6 +11568,9 @@ ${reportName}`,
                     const amountAndMerchantText = [amount, merchant].filter((s) => !!s?.length).join(' ');
                     return `Ανοίξτε την εφαρμογή Expensify στο κινητό για να ελέγξετε τη συναλλαγή ${amountAndMerchantText ? `${amountAndMerchantText} ` : ''} σας`;
                 },
+                actionableCardFraudTransactionApproval: (amount: string, merchant: string | undefined) => {
+                    return `Μια συναλλαγή${merchant ? ` από ${merchant}` : ''}${amount ? ` (${amount})` : ''} απορρίφθηκε λόγω υποψίας απάτης.`;
+                },
                 integrationSyncFailed: (label: string, errorMessage: string, workspaceAccountingLink?: string) =>
                     `παρουσιάστηκε πρόβλημα με το συγχρονισμό με ${label}${errorMessage ? ` ("${errorMessage}")` : ''}. Διορθώστε το ζήτημα στις <a href="${workspaceAccountingLink}">ρυθμίσεις του χώρου εργασίας</a>.`,
                 integrationSyncFailedRecurrence: ({count}: {count: number}) => `(Επαναλήφθηκε ${count} φορές.)`,

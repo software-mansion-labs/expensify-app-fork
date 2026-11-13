@@ -1786,6 +1786,26 @@ describe('ReportActionItem', () => {
 
             expect(screen.getByText(/Amazon/)).toBeOnTheScreen();
         });
+
+        it('ACTIONABLE_CARD_FRAUD_TRANSACTION_APPROVAL action shows the declined transaction message', async () => {
+            // Given a Concierge message about a transaction declined on suspicion of fraud
+            const action = createReportAction(CONST.REPORT.ACTIONS.TYPE.ACTIONABLE_CARD_FRAUD_TRANSACTION_APPROVAL, {
+                transactionID: '1',
+                amount: 4000,
+                currency: 'USD',
+                merchant: 'Amazon',
+                created: '2026-11-03 10:00:00',
+                lastFourPAN: '1234',
+                cardID: 1,
+            });
+
+            // When the message is rendered in the chat
+            renderItemWithAction(action);
+            await waitForBatchedUpdatesWithAct();
+
+            // Then it names the merchant and amount and says why the transaction was declined, so the user knows what to review
+            expect(screen.getByText('A transaction from Amazon ($40.00) has been declined due to fraud suspicion.')).toBeOnTheScreen();
+        });
     });
 
     describe('IOU PAY actions', () => {

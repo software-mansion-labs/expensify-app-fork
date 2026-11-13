@@ -11679,6 +11679,9 @@ const translations = {
                     const amountAndMerchantText = [amount, merchant].filter((s) => !!s?.length).join(' ');
                     return `Open the Expensify mobile app to review your ${amountAndMerchantText ? `${amountAndMerchantText} ` : ''}transaction`;
                 },
+                actionableCardFraudTransactionApproval: (amount: string, merchant: string | undefined) => {
+                    return `A transaction${merchant ? ` from ${merchant}` : ''}${amount ? ` (${amount})` : ''} has been declined due to fraud suspicion.`;
+                },
                 integrationSyncFailed: (label: string, errorMessage: string, workspaceAccountingLink?: string) =>
                     `there was a problem syncing with ${label}${errorMessage ? ` ("${errorMessage}")` : ''}. Please fix the issue in <a href="${workspaceAccountingLink}">workspace settings</a>.`,
                 integrationSyncFailedRecurrence: ({count}: {count: number}) => `(Repeated ${count} times.)`,
