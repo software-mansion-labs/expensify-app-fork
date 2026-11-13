@@ -10882,7 +10882,7 @@ ${reportName}`,
                 autoPayFeeDisclosure: (adminName: string, bankName: string, lastFour: string, autoPaySettingsURL: string) =>
                     `${adminName} 已在以 ${lastFour} 结尾的 ${bankName ? `${bankName} ` : ''}账户上启用了全球报销。对于自动支付的跨境报销单，无法在付款前预览准确的汇率和费用。请查看<a href="${autoPaySettingsURL}">自动支付设置</a>以了解更多费率和费用信息。`,
                 actionableCardFraudTransactionApproval: (amount: string, merchant: string | undefined) => {
-                    return `${merchant ? `来自 ${merchant} 的` : '一笔'}${amount ? `金额为 ${amount} 的` : ''}交易因涉嫌欺诈已被拒绝。`;
+                    return `一笔${merchant ? `来自 ${merchant} 的` : ''}交易${amount ? `（${amount}）` : ''}因涉嫌欺诈而被拒绝。`;
                 },
             },
             error: {
