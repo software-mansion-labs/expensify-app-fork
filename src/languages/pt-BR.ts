@@ -11346,6 +11346,9 @@ Adicione mais regras de gasto para proteger o fluxo de caixa da empresa.`,
                 },
                 autoPayFeeDisclosure: (adminName: string, bankName: string, lastFour: string, autoPaySettingsURL: string) =>
                     `Reembolsos Globais foram ativados por ${adminName} na conta ${bankName ? `${bankName} ` : ''}terminada em ${lastFour}. Taxas de câmbio exatas e tarifas não podem ser pré-visualizadas antes do pagamento quando relatórios internacionais são pagos automaticamente. Revise suas <a href="${autoPaySettingsURL}">configurações de pagamento automático</a> para mais informações sobre taxas de câmbio e tarifas.`,
+                actionableCardFraudTransactionApproval: (amount: string, merchant: string | undefined) => {
+                    return `Uma transação${merchant ? ` em ${merchant}` : ''}${amount ? ` (${amount})` : ''} foi recusada por suspeita de fraude.`;
+                },
             },
             error: {
                 invalidCredentials: 'Credenciais inválidas, verifique a configuração da sua conexão.',

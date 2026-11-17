@@ -11420,6 +11420,9 @@ Fügen Sie weitere Ausgabelimits hinzu, um den Cashflow Ihres Unternehmens zu sc
                 },
                 autoPayFeeDisclosure: (adminName: string, bankName: string, lastFour: string, autoPaySettingsURL: string) =>
                     `Globale Rückerstattungen wurden von ${adminName} am ${bankName ? `${bankName} ` : ''}Konto mit der Endung ${lastFour} aktiviert. Exakte Wechselkurse und Gebühren können vor der Zahlung nicht angezeigt werden, wenn grenzüberschreitende Berichte automatisch bezahlt werden. Überprüfen Sie Ihre <a href="${autoPaySettingsURL}">Automatikzahlungs-Einstellungen</a> für weitere Informationen zu Kursen und Gebühren.`,
+                actionableCardFraudTransactionApproval: (amount: string, merchant: string | undefined) => {
+                    return `Eine Transaktion${merchant ? ` bei ${merchant}` : ''}${amount ? ` (${amount})` : ''} wurde wegen Betrugsverdachts abgelehnt.`;
+                },
             },
             error: {
                 invalidCredentials: 'Ungültige Anmeldedaten, bitte überprüfen Sie die Konfiguration Ihrer Verbindung.',

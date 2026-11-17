@@ -2185,6 +2185,8 @@ const CONST = {
                 ACTIONABLE_ADD_PAYMENT_CARD: 'ACTIONABLEADDPAYMENTCARD',
                 // Concierge message informing the user of a 3DS challenge - custom reportAction type because we want to translate it
                 ACTIONABLE_CARD_3DS_TRANSACTION_APPROVAL: 'ACTIONABLE_CARD_3DS_TRANSACTION_APPROVAL',
+                // Concierge message telling the user a suspicious transaction was declined and needs their review
+                ACTIONABLE_CARD_FRAUD_TRANSACTION_APPROVAL: 'ACTIONABLE_CARD_FRAUD_TRANSACTION_APPROVAL',
                 ACTIONABLE_CARD_FRAUD_ALERT: 'ACTIONABLECARDFRAUDALERT',
                 ACTIONABLE_JOIN_REQUEST: 'ACTIONABLEJOINREQUEST',
                 ACTIONABLE_MENTION_WHISPER: 'ACTIONABLEMENTIONWHISPER',
