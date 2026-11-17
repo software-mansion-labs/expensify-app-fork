@@ -95,7 +95,7 @@ jest.mock(
         ({children}: {children: React.ReactNode}) =>
             children,
 );
-jest.mock('@pages/MultifactorAuthentication/ReviewTransactionPage/ReviewTransactionContent', () => () => null);
+jest.mock('@pages/MultifactorAuthentication/AuthorizeTransactionPage/AuthorizeTransactionContent', () => () => null);
 
 jest.mock('@components/Header', () => {
     function MockHeader({children}: {children: React.ReactNode}) {
