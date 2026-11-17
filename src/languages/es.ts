@@ -706,6 +706,13 @@ const translations: TranslationDeepObject<typeof en> = {
             yourCardHasBeenFrozen: 'Hemos congelado tu tarjeta',
             weFrozeYourCard:
                 'Hemos congelado tu tarjeta para evitar más cargos. Contacta con <concierge-link>Concierge</concierge-link> si te preocupa que los datos de tu tarjeta hayan caído en manos de terceros.',
+            terminateCard: 'Desactivar tarjeta',
+            ifYouDoNotReviewWeWillTerminateCard: 'Si no revisas esta transacción, desactivaremos tu tarjeta y tendrás que solicitar un reemplazo.',
+            cardTerminated: 'Tarjeta desactivada',
+            yourCardHasBeenTerminated: 'Tu tarjeta ha sido desactivada',
+            weTerminatedYourCard:
+                'Hemos desactivado tu tarjeta para mantener tu cuenta segura. Puedes solicitar un reemplazo en cualquier momento o <concierge-link>contactar con Concierge</concierge-link> si crees que se trató de un fraude.',
+            goToCardDetails: 'Ve a los detalles de la tarjeta',
         },
         unsupportedDevice: {
             unsupportedDevice: 'Dispositivo no compatible',

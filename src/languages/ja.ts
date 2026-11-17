@@ -778,6 +778,13 @@ const translations: TranslationDeepObject<typeof en> = {
             yourCardHasBeenFrozen: 'カードが一時停止されました',
             weFrozeYourCard:
                 'これ以上の請求を防ぐため、カードを一時停止しました。カード情報が不正に取得されたおそれがある場合は、<concierge-link>Concierge</concierge-link>にお問い合わせください。',
+            terminateCard: 'カードを解約',
+            ifYouDoNotReviewWeWillTerminateCard: 'この取引を確認しない場合、カードを解約します。その場合は、再発行を申請する必要があります。',
+            cardTerminated: '解約済みのカード',
+            yourCardHasBeenTerminated: 'カードが解約されました',
+            weTerminatedYourCard:
+                'アカウントを保護するため、カードを解約しました。再発行はいつでも申請できます。不正利用と思われる場合は、<concierge-link>Conciergeにお問い合わせください</concierge-link>。',
+            goToCardDetails: 'カードの詳細へ移動',
         },
         unsupportedDevice: {
             unsupportedDevice: '未対応のデバイス',
