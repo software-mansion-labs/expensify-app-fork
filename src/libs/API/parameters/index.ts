@@ -187,7 +187,6 @@ export type {default as DeletePaymentCardParams} from './DeletePaymentCardParams
 export type {default as DeletePersonalCardParams} from './DeletePersonalCardParams';
 export type {default as TogglePolicyUberAutoInvitePageParams} from './TogglePolicyUberAutoInvitePageParams';
 export type {default as DismissReferralBannerParams} from './DismissReferralBannerParams';
-export type {default as ExpandURLPreviewParams} from './ExpandURLPreviewParams';
 export type {default as GetMissingOnyxMessagesParams} from './GetMissingOnyxMessagesParams';
 export type {default as GetNewerActionsParams} from './GetNewerActionsParams';
 export type {default as GetOlderActionsParams} from './GetOlderActionsParams';
@@ -440,6 +439,7 @@ export type {default as CreatePolicyDistanceRateParams} from './CreatePolicyDist
 export type {default as SetPolicyDistanceRatesUnitParams} from './SetPolicyDistanceRatesUnitParams';
 export type {default as SetWorkspaceDistanceAutoUpdateParams} from './SetWorkspaceDistanceAutoUpdateParams';
 export type {default as EnableDistanceRequestTaxParams} from './EnableDistanceRequestTaxParams';
+export type {default as DismissUKFuelRateTaxErrorParams} from './DismissUKFuelRateTaxErrorParams';
 export type {default as SetCustomUnitDefaultCategoryParams} from './SetCustomUnitDefaultCategoryParams';
 export type {default as UpdatePolicyDistanceRateValueParams} from './UpdatePolicyDistanceRateValueParams';
 export type {default as UpdatePolicyDistanceRateParams} from './UpdatePolicyDistanceRateParams';
@@ -639,6 +639,7 @@ export type {default as GetWiseBankAccountFieldsParams} from './GetWiseBankAccou
 export type {default as CreateWiseBankAccountParams} from './CreateWiseBankAccountParams';
 export type {default as BankAccountCreateCorpayParams} from './BankAccountCreateCorpayParams';
 export type {default as JoinAccessiblePolicyParams} from './JoinAccessiblePolicyParams';
+export type {default as JoinAccountingIntegrationWaitlistParams} from './JoinAccountingIntegrationWaitlistParams';
 export type {default as AskToJoinPolicyParams} from './AskToJoinPolicyParams';
 export type {default as ImportPerDiemRatesParams} from './ImportPerDiemRatesParams';
 export type {default as ExportPerDiemCSVParams} from './ExportPerDiemCSVParams';

@@ -4,6 +4,8 @@ import type {FileObject} from '@src/types/utils/Attachment';
 
 import type Account from './Account';
 import type AccountData from './AccountData';
+import type AccountingIntegrationWaitlist from './AccountingIntegrationWaitlist';
+import type AccountingIntegrationWaitlistRequests from './AccountingIntegrationWaitlistRequests';
 import type Agent from './Agent';
 import type AgentNewAvatarDraft from './AgentNewAvatarDraft';
 import type AppReview from './AppReview';
@@ -214,6 +216,7 @@ import type ReportUserIsTyping from './ReportUserIsTyping';
 import type ReportViolationName from './ReportViolationName';
 import type Request from './Request';
 import type {AnyRequest} from './Request';
+import type RequestsKeptOnSAMLSignOut from './RequestsKeptOnSAMLSignOut';
 import type Response from './Response';
 import type ReusableDistanceRoute from './ReusableDistanceRoute';
 import type ReviewDuplicates from './ReviewDuplicates';
@@ -244,6 +247,7 @@ import type TableColumnWidths from './TableColumnWidths';
 import type Task from './Task';
 import type Transaction from './Transaction';
 import type TransactionPending3DSReview from './TransactionPending3DSReview';
+import type TransactionPendingFraudReview from './TransactionPendingFraudReview';
 import type TransactionsPending3DSReview from './TransactionsPending3DSReview';
 import type TransactionsPendingFraudReview from './TransactionsPendingFraudReview';
 import type {TransactionViolation, ViolationName} from './TransactionViolation';
@@ -282,9 +286,12 @@ export type {
     AvatarCropResult,
     Account,
     AccountData,
+    AccountingIntegrationWaitlist,
+    AccountingIntegrationWaitlistRequests,
     AssignCard,
     TransactionPending3DSReview,
     TransactionsPending3DSReview,
+    TransactionPendingFraudReview,
     TransactionsPendingFraudReview,
     BankAccount,
     BankAccountList,
@@ -423,6 +430,7 @@ export type {
     ReportLayoutSelection,
     GroupedTransactions,
     AnyRequest,
+    RequestsKeptOnSAMLSignOut,
     Request,
     Response,
     ScreenShareRequest,

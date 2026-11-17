@@ -131,7 +131,6 @@ type UnofferedOnboardingAccountingConnection =
     | typeof CONST.POLICY.CONNECTIONS.NAME.CAMPFIRE
     // Covered by the Microsoft Dynamics option, and still behind the BUSINESS_CENTRAL beta.
     | typeof CONST.POLICY.CONNECTIONS.NAME.BUSINESS_CENTRAL
-    // Still behind the ZOHO_BOOKS beta.
     | typeof CONST.POLICY.CONNECTIONS.NAME.ZOHO_BOOKS
     // Still behind the DIGITS beta.
     | typeof CONST.POLICY.CONNECTIONS.NAME.DIGITS;
@@ -1525,9 +1524,9 @@ const CONST = {
         VENDOR_MATCHING: 'vendorMatching',
         INDIRECT_TAG_UPLOADS: 'indirectTagUploads',
         BUSINESS_CENTRAL: 'businessCentral',
-        ZOHO_BOOKS: 'zohoBooks',
         DIGITS: 'digits',
         EXACT_ONLINE: 'exactOnline2026',
+        SAGE_ACCOUNTING: 'sageAccounting',
         COMMUTER_EXCLUSIONS: 'commuterExclusions',
         COMMUTER_EXCLUSIONS_ARRANGEMENTS: 'commuterExclusionsArrangements',
         MULTIPLE_APPROVERS: 'multipleApprovers',
@@ -1545,9 +1544,9 @@ const CONST = {
         RESIZABLE_TABLE_COLUMNS: 'resizableTableColumns',
         PINNABLE_TABLE_COLUMNS: 'pinnableTableColumns',
         COLLECT_DEPOSIT_ACCOUNTS: 'collectDepositAccounts',
-        RESIZABLE_RHP: 'resizableRHP',
         RESIZABLE_SIDE_PANEL: 'resizableSidePanel',
         TRAVEL_APPROVAL: 'travelApproval',
+        SINGLE_EXPENSE_TABLE_VIEW: 'singleExpenseTableView',
         FLAT_NAV: 'flatNav',
         CATEGORY_VISIBILITY: 'categoryVisibility',
         RECEIPT_TRANSLATION: 'receiptTranslation',
@@ -2095,6 +2094,7 @@ const CONST = {
             DUPLICATE_EXPENSE: 'duplicateExpense',
             DUPLICATE_REPORT: 'duplicateReport',
             MOVE_EXPENSE: 'moveExpense',
+            TOGGLE_SINGLE_EXPENSE_VIEW: 'toggleSingleExpenseView',
         },
         PRIMARY_ACTIONS: {
             SUBMIT: 'submit',
@@ -2679,6 +2679,10 @@ const CONST = {
             DETAILED: 'detailed',
             MATRIX: 'matrix',
         },
+        SINGLE_EXPENSE_REPORT_VIEW: {
+            EXPENSE: 'expense',
+            TABLE: 'table',
+        },
     } as const,
     UNREPORTED_EXPENSES_PAGE_SIZE: 50,
     OUTSTANDING_REPORTS_PAGE_SIZE: 50,
@@ -2799,6 +2803,8 @@ const CONST = {
         BREADCRUMB_CATEGORY_MFA: 'mfa',
         BREADCRUMB_CATEGORY_3DS_NAVIGATION: '3ds.navigation',
         BREADCRUMB_CATEGORY_3DS_AUTHORIZE: '3ds.authorize',
+        BREADCRUMB_CATEGORY_FRAUD_REVIEW_NAVIGATION: 'fraudReview.navigation',
+        BREADCRUMB_CATEGORY_FRAUD_REVIEW_SCREEN: 'fraudReview.screen',
         BREADCRUMB_CATEGORY_SAML_AUTH_SESSION: 'saml.auth_session',
         BREADCRUMB_CATEGORY_BOOTSPLASH_FLOW: 'bootsplash.flow',
         BREADCRUMB_CATEGORY_MODULE_INIT: 'module.init',
@@ -5196,6 +5202,12 @@ const CONST = {
         RULE_CONDITIONS: {
             MATCHES: 'matches',
         },
+
+        // Expensify Classic stores this in an employee's forwardsTo or overLimitForwardsTo when it sends reports to nobody
+        EMPLOYEE_NO_ONE: 'no one',
+
+        // Approval limit, in cents, up to which Expensify Classic admins mean every report to go to the over-limit approver
+        EVERY_REPORT_OVER_LIMIT_APPROVAL_LIMIT: 100,
         FIELDS: {
             TAG: 'tag',
             CATEGORY: 'category',
@@ -5591,6 +5603,7 @@ const CONST = {
                 ZOHO_BOOKS: 'zohoBooks',
                 BUSINESS_CENTRAL: 'businessCentral',
                 EXACT_ONLINE: 'exactOnline',
+                SAGE_ACCOUNTING: 'sageAccounting',
                 GUSTO: 'gusto',
                 ZENEFITS: 'zenefits',
                 MERGE_HR: 'merge_hris',
@@ -5632,6 +5645,7 @@ const CONST = {
                 zohoBooks: 'Zoho Books',
                 businessCentral: 'Dynamics 365 Business Central',
                 exactOnline: 'Exact Online',
+                sageAccounting: 'Sage Accounting',
                 gusto: 'Gusto',
                 billCom: 'Bill.com',
                 zenefits: 'TriNet',
@@ -5661,6 +5675,10 @@ const CONST = {
                     this.NAME.ZOHO_BOOKS,
                     this.NAME.BUSINESS_CENTRAL,
                 ] as const;
+            },
+            // Integrations that aren't available yet, so the Connections page offers their waitlist instead of connecting
+            get WAITLIST_CONNECTION_NAMES() {
+                return [this.NAME.SAGE_ACCOUNTING] as const;
             },
             // The `origin` the backend stamps on a report field imported by an accounting integration. These values
             // differ from the connection names above (e.g. `quickbooksOnline` is stamped as `qbo`), so map them here.
@@ -9314,7 +9332,9 @@ const CONST = {
         },
         AMOUNT_MODIFIERS: {
             LESS_THAN: 'LessThan',
+            LESS_THAN_OR_EQUAL_TO: 'LessThanOrEqualTo',
             GREATER_THAN: 'GreaterThan',
+            GREATER_THAN_OR_EQUAL_TO: 'GreaterThanOrEqualTo',
             EQUAL_TO: 'EqualTo',
         },
         DATE_PRESETS: {
@@ -9838,6 +9858,11 @@ const CONST = {
             UPDATE: 'update',
             REMOVE: 'remove',
         },
+        /** Which reports an approver after the first one gets */
+        APPROVER_CONDITION: {
+            ALWAYS: 'always',
+            OVER_AMOUNT: 'overAmount',
+        },
     },
 
     RULES: {
@@ -9953,6 +9978,7 @@ const CONST = {
         HAS_PAYMENT_METHOD_ERROR: 'hasPaymentMethodError',
         HAS_POLICY_ERRORS: 'hasPolicyError',
         HAS_CUSTOM_UNITS_ERROR: 'hasCustomUnitsError',
+        HAS_UK_FUEL_RATE_TAX_ERROR: 'hasUKFuelRateTaxError',
         HAS_EMPLOYEE_LIST_ERROR: 'hasEmployeeListError',
         HAS_REIMBURSEMENT_EXPORT_ERROR: 'hasReimbursementExportError',
         HAS_SYNC_ERRORS: 'hasSyncError',
@@ -10344,6 +10370,9 @@ const CONST = {
         /** Pointer travel, in px, under which pressing a handle counts as a click rather than a drag. */
         DRAG_SLOP: 3,
 
+        /** How far, in px, one arrow key press on a focused handle moves its edge. */
+        KEYBOARD_STEP: 8,
+
         /** Width of the strip straddling a pane's edge that picks up a drag, as wide as the RHP floating card's gutter. */
         PANE_HIT_WIDTH: 12,
 
@@ -10414,9 +10443,6 @@ const CONST = {
         COLUMN_RESIZE: {
             /** Narrowest drag width. Low enough to hide most content, but wide enough to keep the column's edge reachable. */
             MIN_WIDTH: 48,
-
-            /** How far, in px, one arrow key press on a focused column edge moves it. */
-            KEYBOARD_STEP: 8,
 
             /** Share of the heading's height the grip spans, centred vertically. The heading spans the header row, padding included. */
             GRIP_HEIGHT_RATIO: 0.4,
