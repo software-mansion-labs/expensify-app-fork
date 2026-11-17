@@ -784,6 +784,10 @@ const translations: TranslationDeepObject<typeof en> = {
             giveItAnotherTry: 'Versuchen Sie es noch einmal',
             thankYouForConfirming: 'Vielen Dank für Ihre Bestätigung, dass Sie die Transaktion veranlasst haben. Bitte versuchen Sie es beim Händler erneut.',
             ifYouCloseWeWillFreezeCard: 'Wenn Sie diesen Bildschirm schließen, müssen wir Ihre Karte sperren. Sie müssen sie entsperren, um sie wieder nutzen zu können.',
+            frozenCard: 'Gesperrte Karte',
+            yourCardHasBeenFrozen: 'Ihre Karte wurde gesperrt',
+            weFrozeYourCard:
+                'Wir haben Ihre Karte gesperrt, um weitere Belastungen zu verhindern. Bitte wenden Sie sich an <concierge-link>Concierge</concierge-link>, wenn Sie befürchten, dass Ihre Kartendaten in falsche Hände geraten sind.',
         },
         unsupportedDevice: {
             unsupportedDevice: 'Nicht unterstütztes Gerät',
