@@ -1,45 +1,33 @@
-import FullScreenLoadingIndicator from '@components/FullscreenLoadingIndicator';
-import InteractiveStepWrapper from '@components/InteractiveStepWrapper';
+import DynamicFormFlow from '@components/DynamicForm';
+import useDraftPrefill from '@components/DynamicForm/hooks/useDraftPrefill';
 
 import useLocalize from '@hooks/useLocalize';
 import useNetwork from '@hooks/useNetwork';
 import useOnyx from '@hooks/useOnyx';
-import useSubPage from '@hooks/useSubPage';
+import useReimbursementAccountSubmitCallback from '@hooks/useReimbursementAccountSubmitCallback';
 
-import Navigation from '@libs/Navigation/Navigation';
+import {getLatestErrorMessage} from '@libs/ErrorUtils';
 
 import NotFoundPage from '@pages/ErrorPage/NotFoundPage';
 import type NonUSDPageProps from '@pages/ReimbursementAccount/NonUSD/types';
-import {getBankInfoStepValues} from '@pages/ReimbursementAccount/NonUSD/utils/getBankInfoStepValues';
 import getCurrencyForNonUSDBankAccount from '@pages/ReimbursementAccount/NonUSD/utils/getCurrencyForNonUSDBankAccount';
-import getInitialSubStepForBankInfoStep from '@pages/ReimbursementAccount/NonUSD/utils/getInitialSubStepForBankInfoStep';
-import getInputKeysForBankInfoStep from '@pages/ReimbursementAccount/NonUSD/utils/getInputKeysForBankInfoStep';
 
 import {clearReimbursementAccountBankCreation, createCorpayBankAccount, getCorpayBankAccountFields} from '@userActions/BankAccounts';
-import {clearErrors} from '@userActions/FormActions';
 
 import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';
 import ROUTES from '@src/ROUTES';
-import type {ReimbursementAccountForm} from '@src/types/form/ReimbursementAccountForm';
 
-import React, {useEffect, useRef} from 'react';
+import React, {useEffect} from 'react';
 
-import type BankInfoSubStepProps from './types';
+import getBankInfoForm, {getBankInfoParams, getBankInfoPrefill, getBankInfoRuleErrors} from './getBankInfoForm';
 
-import AccountHolderDetails from './subSteps/AccountHolderDetails';
-import BankAccountDetails from './subSteps/BankAccountDetails';
-import Confirmation from './subSteps/Confirmation';
+const FORM_ID = ONYXKEYS.FORMS.REIMBURSEMENT_ACCOUNT_FORM;
 
-const {PAGE_NAME, BANK_INFO_STEP} = CONST.NON_USD_BANK_ACCOUNT;
-const SUB_PAGE_NAMES = BANK_INFO_STEP.SUB_PAGE_NAMES;
+/** Where this step sits among the steps of the non-USD bank account setup */
+const STEP_INDEX = 1;
 
-const pages = [
-    {pageName: SUB_PAGE_NAMES.BANK_ACCOUNT_DETAILS, component: BankAccountDetails},
-    {pageName: SUB_PAGE_NAMES.ACCOUNT_HOLDER_DETAILS, component: AccountHolderDetails},
-    {pageName: SUB_PAGE_NAMES.CONFIRMATION, component: Confirmation},
-];
-
+/** The "Bank info" step of the non-USD bank account setup. Its fields come from Corpay and depend on the bank's country and currency. */
 function BankInfo({onBackButtonPress, onSubmit, policyID, stepNames, backTo}: NonUSDPageProps) {
     const {translate} = useLocalize();
 
@@ -48,36 +36,24 @@ function BankInfo({onBackButtonPress, onSubmit, policyID, stepNames, backTo}: No
     const [corpayFields] = useOnyx(ONYXKEYS.CORPAY_FIELDS);
     const [policy] = useOnyx(`${ONYXKEYS.COLLECTION.POLICY}${policyID}`);
     const {country, currency} = getCurrencyForNonUSDBankAccount(policy, reimbursementAccountDraft, reimbursementAccount);
-    const inputKeys = getInputKeysForBankInfoStep(corpayFields);
-    const values = getBankInfoStepValues(inputKeys, reimbursementAccountDraft, reimbursementAccount);
-    const startFrom = getInitialSubStepForBankInfoStep(values, corpayFields);
-    const isSubmittingRef = useRef(false);
+    const formFields = corpayFields?.formFields;
 
-    const submit = () => {
-        const {formFields, isLoading, isSuccess, ...corpayData} = corpayFields ?? {};
+    const isPrefillPending = useDraftPrefill(FORM_ID, getBankInfoPrefill(formFields, reimbursementAccount?.achData, country));
 
-        isSubmittingRef.current = true;
-        createCorpayBankAccount({...values, ...corpayData} as ReimbursementAccountForm, policyID);
-    };
+    // A failed request does not always come back with an error, so the step only moves on once the bank account is created
+    const markSubmitting = useReimbursementAccountSubmitCallback(() => {
+        if (!reimbursementAccount?.isSuccess) {
+            return;
+        }
+        onSubmit();
+        clearReimbursementAccountBankCreation();
+    });
 
     useNetwork({
         onReconnect: () => {
             getCorpayBankAccountFields(country, currency);
         },
     });
-
-    useEffect(() => {
-        if (reimbursementAccount?.isLoading === true || !!reimbursementAccount?.errors) {
-            return;
-        }
-
-        // We need to check value of local isSubmittingRef because on initial render reimbursementAccount?.isSuccess is still true after submitting the previous step
-        if (reimbursementAccount?.isSuccess === true && isSubmittingRef.current) {
-            isSubmittingRef.current = false;
-            onSubmit();
-            clearReimbursementAccountBankCreation();
-        }
-    }, [corpayFields?.bankCurrency, country, currency, onSubmit, reimbursementAccount?.errors, reimbursementAccount?.isLoading, reimbursementAccount?.isSuccess]);
 
     useEffect(() => {
         // No fetching when there is no country
@@ -99,53 +75,31 @@ function BankInfo({onBackButtonPress, onSubmit, policyID, stepNames, backTo}: No
         getCorpayBankAccountFields(country, currency);
     }, [corpayFields?.bankCurrency, corpayFields?.bankCountry, country, currency]);
 
-    const buildRoute = (pageName: string, action?: 'edit') => ROUTES.BANK_ACCOUNT_NON_USD_SETUP.getRoute({policyID, page: PAGE_NAME.BANK_INFO, subPage: pageName, action, backTo});
-
-    const {CurrentPage, isEditing, currentPageName, pageIndex, nextPage, prevPage, moveTo, isRedirecting} = useSubPage<BankInfoSubStepProps>({
-        pages,
-        startFrom,
-        onFinished: submit,
-        buildRoute,
-    });
-
-    const handleBackButtonPress = () => {
-        clearErrors(ONYXKEYS.FORMS.REIMBURSEMENT_ACCOUNT_FORM);
-        if (isEditing) {
-            Navigation.goBack(buildRoute(SUB_PAGE_NAMES.CONFIRMATION));
-            return;
-        }
-
-        if (pageIndex === 0) {
-            onBackButtonPress();
-        } else {
-            prevPage();
-        }
-    };
-
-    if (corpayFields !== undefined && corpayFields?.isLoading === false && corpayFields?.isSuccess !== undefined && corpayFields?.isSuccess === false) {
+    if (corpayFields?.isLoading === false && corpayFields.isSuccess === false) {
         return <NotFoundPage />;
     }
 
-    if (isRedirecting) {
-        return <FullScreenLoadingIndicator />;
-    }
-
     return (
-        <InteractiveStepWrapper
-            wrapperID="BankInfo"
-            handleBackButtonPress={handleBackButtonPress}
+        <DynamicFormFlow
+            schema={getBankInfoForm(formFields)}
+            formID={FORM_ID}
+            testID="BankInfo"
             headerTitle={translate('bankAccount.bankInfo')}
-            stepNames={stepNames}
-            startStepIndex={1}
-        >
-            <CurrentPage
-                isEditing={isEditing}
-                onNext={nextPage}
-                onMove={moveTo}
-                currentPageName={currentPageName}
-                corpayFields={corpayFields}
-            />
-        </InteractiveStepWrapper>
+            confirmationTitle={translate('bankInfoStep.letsDoubleCheck')}
+            confirmationSubtitle={translate('bankInfoStep.thisBankAccount')}
+            parentSteps={{names: stepNames ?? CONST.NON_USD_BANK_ACCOUNT.STEP_NAMES, index: STEP_INDEX}}
+            buildRoute={(pageName, action) => ROUTES.BANK_ACCOUNT_NON_USD_SETUP.getRoute({policyID, page: CONST.NON_USD_BANK_ACCOUNT.PAGE_NAME.BANK_INFO, subPage: pageName, action, backTo})}
+            onBack={onBackButtonPress}
+            onSubmit={(answers) => {
+                createCorpayBankAccount(getBankInfoParams(answers, corpayFields), policyID);
+                markSubmitting();
+            }}
+            validatePage={(page, values) => getBankInfoRuleErrors(formFields, page, values)}
+            // The pages read their answers from the draft when they mount, so they wait for the fields and for the saved answers to reach the draft
+            isLoading={!formFields || !!corpayFields?.isLoading || isPrefillPending}
+            isSubmitting={!!reimbursementAccount?.isLoading}
+            submitError={getLatestErrorMessage(reimbursementAccount ?? {})}
+        />
     );
 }
 

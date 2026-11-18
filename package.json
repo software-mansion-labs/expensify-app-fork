@@ -232,7 +232,8 @@
     "react-webcam": "^7.1.1",
     "scheduler": "0.27.0",
     "victory-native": "^42.0.1",
-    "xlsx": "https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz"
+    "xlsx": "https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz",
+    "xstate": "5.31.1"
   },
   "devDependencies": {
     "@aaroon/workbox-rspack-plugin": "^1.0.1",

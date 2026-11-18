@@ -1,6 +1,3 @@
-import type {ComponentRef, ForwardedRef} from 'react';
-import type {View} from 'react-native';
-
 import React from 'react';
 
 import PersonalInfo from './PersonalInfo/PersonalInfo';
@@ -12,16 +9,13 @@ type RequestorStepProps = {
     /** Handles submit button press (URL-based navigation) */
     onSubmit?: () => void;
 
-    ref?: ForwardedRef<ComponentRef<typeof View>>;
-
     /** Back to URL for preserving navigation context */
     backTo?: string;
 };
 
-function RequestorStep({onBackButtonPress, onSubmit, ref, backTo}: RequestorStepProps) {
+function RequestorStep({onBackButtonPress, onSubmit, backTo}: RequestorStepProps) {
     return (
         <PersonalInfo
-            ref={ref}
             onBackButtonPress={onBackButtonPress}
             onSubmit={onSubmit}
             backTo={backTo}

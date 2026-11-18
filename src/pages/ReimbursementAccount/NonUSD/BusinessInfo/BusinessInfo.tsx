@@ -1,185 +1,96 @@
-import ActivityIndicator from '@components/ActivityIndicator';
-import InteractiveStepWrapper from '@components/InteractiveStepWrapper';
+import DynamicFormFlow from '@components/DynamicForm';
+import useDraftPrefill from '@components/DynamicForm/hooks/useDraftPrefill';
 
 import useEnvironment from '@hooks/useEnvironment';
 import useLocalize from '@hooks/useLocalize';
+import useNetwork from '@hooks/useNetwork';
 import useOnyx from '@hooks/useOnyx';
-import useSubPage from '@hooks/useSubPage';
-import useThemeStyles from '@hooks/useThemeStyles';
+import useReimbursementAccountSubmitCallback from '@hooks/useReimbursementAccountSubmitCallback';
 
-import Navigation from '@libs/Navigation/Navigation';
+import {getDefaultCompanyWebsite} from '@libs/BankAccountUtils';
+import {getLatestErrorMessage} from '@libs/ErrorUtils';
 
 import type NonUSDPageProps from '@pages/ReimbursementAccount/NonUSD/types';
 import getCurrencyForNonUSDBankAccount from '@pages/ReimbursementAccount/NonUSD/utils/getCurrencyForNonUSDBankAccount';
-import getInitialSubStepForBusinessInfoStep from '@pages/ReimbursementAccount/NonUSD/utils/getInitialSubStepForBusinessInfoStep';
-import getSubStepValues from '@pages/ReimbursementAccount/utils/getSubStepValues';
 
 import {clearReimbursementAccountSaveCorpayOnboardingCompanyDetails, getCorpayOnboardingFields, saveCorpayOnboardingCompanyDetails} from '@userActions/BankAccounts';
-import {clearErrors} from '@userActions/FormActions';
 
 import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';
 import ROUTES from '@src/ROUTES';
-import INPUT_IDS from '@src/types/form/ReimbursementAccountForm';
+import {primaryLoginSelector} from '@src/selectors/Account';
+import {emailSelector} from '@src/selectors/Session';
 
-import {Str} from 'expensify-common';
-import React, {useEffect, useRef} from 'react';
-import {View} from 'react-native';
+import React, {useEffect} from 'react';
 
-import Address from './subSteps/Address';
-import AverageReimbursement from './subSteps/AverageReimbursement';
-import BusinessType from './subSteps/BusinessType';
-import Confirmation from './subSteps/Confirmation';
-import ContactInformation from './subSteps/ContactInformation';
-import IncorporationLocation from './subSteps/IncorporationLocation';
-import Name from './subSteps/Name';
-import PaymentVolume from './subSteps/PaymentVolume';
-import RegistrationNumber from './subSteps/RegistrationNumber';
-import TaxIDEINNumber from './subSteps/TaxIDEINNumber';
-import Website from './subSteps/Website';
+import getBusinessInfoForm, {getBusinessInfoParams, getBusinessInfoPrefill, getBusinessInfoRuleErrors} from './getBusinessInfoForm';
 
-const {PAGE_NAME, BUSINESS_INFO_STEP} = CONST.NON_USD_BANK_ACCOUNT;
-const SUB_PAGE_NAMES = BUSINESS_INFO_STEP.SUB_PAGE_NAMES;
+const FORM_ID = ONYXKEYS.FORMS.REIMBURSEMENT_ACCOUNT_FORM;
 
-const pages = [
-    {pageName: SUB_PAGE_NAMES.NAME, component: Name},
-    {pageName: SUB_PAGE_NAMES.WEBSITE, component: Website},
-    {pageName: SUB_PAGE_NAMES.ADDRESS, component: Address},
-    {pageName: SUB_PAGE_NAMES.CONTACT_INFORMATION, component: ContactInformation},
-    {pageName: SUB_PAGE_NAMES.REGISTRATION_NUMBER, component: RegistrationNumber},
-    {pageName: SUB_PAGE_NAMES.TAX_ID_EIN_NUMBER, component: TaxIDEINNumber},
-    {pageName: SUB_PAGE_NAMES.INCORPORATION_LOCATION, component: IncorporationLocation},
-    {pageName: SUB_PAGE_NAMES.BUSINESS_TYPE, component: BusinessType},
-    {pageName: SUB_PAGE_NAMES.PAYMENT_VOLUME, component: PaymentVolume},
-    {pageName: SUB_PAGE_NAMES.AVERAGE_REIMBURSEMENT, component: AverageReimbursement},
-    {pageName: SUB_PAGE_NAMES.CONFIRMATION, component: Confirmation},
-];
+/** Where this step sits among the steps of the non-USD bank account setup */
+const STEP_INDEX = 2;
 
-const INPUT_KEYS = {
-    NAME: INPUT_IDS.ADDITIONAL_DATA.CORPAY.COMPANY_NAME,
-    WEBSITE: INPUT_IDS.ADDITIONAL_DATA.CORPAY.COMPANY_WEBSITE,
-    STREET: INPUT_IDS.ADDITIONAL_DATA.CORPAY.COMPANY_STREET,
-    CITY: INPUT_IDS.ADDITIONAL_DATA.CORPAY.COMPANY_CITY,
-    STATE: INPUT_IDS.ADDITIONAL_DATA.CORPAY.COMPANY_STATE,
-    COMPANY_POSTAL_CODE: INPUT_IDS.ADDITIONAL_DATA.CORPAY.COMPANY_POSTAL_CODE,
-    COMPANY_COUNTRY_CODE: INPUT_IDS.ADDITIONAL_DATA.CORPAY.COMPANY_COUNTRY_CODE,
-    CONTACT_NUMBER: INPUT_IDS.ADDITIONAL_DATA.CORPAY.BUSINESS_CONTACT_NUMBER,
-    CONFIRMATION_EMAIL: INPUT_IDS.ADDITIONAL_DATA.CORPAY.BUSINESS_CONFIRMATION_EMAIL,
-    INCORPORATION_STATE: INPUT_IDS.ADDITIONAL_DATA.CORPAY.FORMATION_INCORPORATION_STATE,
-    INCORPORATION_COUNTRY: INPUT_IDS.ADDITIONAL_DATA.CORPAY.FORMATION_INCORPORATION_COUNTRY_CODE,
-    BUSINESS_REGISTRATION_INCORPORATION_NUMBER: INPUT_IDS.ADDITIONAL_DATA.CORPAY.BUSINESS_REGISTRATION_INCORPORATION_NUMBER,
-    BUSINESS_CATEGORY: INPUT_IDS.ADDITIONAL_DATA.CORPAY.BUSINESS_CATEGORY,
-    APPLICANT_TYPE_ID: INPUT_IDS.ADDITIONAL_DATA.CORPAY.APPLICANT_TYPE_ID,
-    ANNUAL_VOLUME: INPUT_IDS.ADDITIONAL_DATA.CORPAY.ANNUAL_VOLUME,
-    TRADE_VOLUME: INPUT_IDS.ADDITIONAL_DATA.CORPAY.TRADE_VOLUME,
-    TAX_ID_EIN_NUMBER: INPUT_IDS.ADDITIONAL_DATA.CORPAY.TAX_ID_EIN_NUMBER,
-    BUSINESS_TYPE_ID: INPUT_IDS.ADDITIONAL_DATA.CORPAY.BUSINESS_TYPE_ID,
-};
-
-function BusinessInfo({onBackButtonPress, onSubmit, policyID: policyIDProp, stepNames, currentSubPage, backTo}: NonUSDPageProps) {
+/** The "Business info" step of the non-USD bank account setup. Its option lists come from Corpay and depend on the bank's country. */
+function BusinessInfo({onBackButtonPress, onSubmit, policyID: policyIDProp, stepNames, backTo}: NonUSDPageProps) {
     const {translate} = useLocalize();
     const {isProduction} = useEnvironment();
-    const styles = useThemeStyles();
 
     const [reimbursementAccount] = useOnyx(ONYXKEYS.REIMBURSEMENT_ACCOUNT);
     const [reimbursementAccountDraft] = useOnyx(ONYXKEYS.FORMS.REIMBURSEMENT_ACCOUNT_FORM_DRAFT);
+    const [corpayOnboardingFields] = useOnyx(ONYXKEYS.CORPAY_ONBOARDING_FIELDS);
+    const [email] = useOnyx(ONYXKEYS.SESSION, {selector: emailSelector});
+    const [primaryLogin] = useOnyx(ONYXKEYS.ACCOUNT, {selector: primaryLoginSelector});
     const policyID = policyIDProp ?? reimbursementAccount?.achData?.policyID;
     const [policy] = useOnyx(`${ONYXKEYS.COLLECTION.POLICY}${policyID}`);
     const {country, currency} = getCurrencyForNonUSDBankAccount(policy, reimbursementAccountDraft, reimbursementAccount);
-    const businessInfoStepValues = getSubStepValues(INPUT_KEYS, reimbursementAccountDraft, reimbursementAccount);
-    const bankAccountID = reimbursementAccount?.achData?.bankAccountID ?? CONST.DEFAULT_NUMBER_ID;
+    const picklists = corpayOnboardingFields?.picklists;
+    // Built before the first hook that reads the country, so React Compiler keeps caching getCurrencyForNonUSDBankAccount
+    const schema = getBusinessInfoForm({country, currency, picklists, translate});
 
-    const startFrom = getInitialSubStepForBusinessInfoStep(businessInfoStepValues);
-    const initialTargetSubPage = pages.at(startFrom)?.pageName ?? SUB_PAGE_NAMES.NAME;
-    const shouldRedirect = !currentSubPage;
+    const defaultWebsite = email ? getDefaultCompanyWebsite({email}, undefined, true) : '';
+    const isPrefillPending = useDraftPrefill(FORM_ID, getBusinessInfoPrefill(reimbursementAccount?.achData, country, defaultWebsite, primaryLogin));
 
-    const isBusinessTypeRequired = country !== CONST.COUNTRY.CA;
-    const isSubmittingRef = useRef(false);
-
-    useEffect(() => {
-        if (!shouldRedirect) {
+    // A failed request does not always come back with an error, so the step only moves on once the details are saved
+    const markSubmitting = useReimbursementAccountSubmitCallback(() => {
+        if (!reimbursementAccount?.isSuccess) {
             return;
         }
-        Navigation.navigate(ROUTES.BANK_ACCOUNT_NON_USD_SETUP.getRoute({policyID, page: PAGE_NAME.BUSINESS_INFO, subPage: initialTargetSubPage, backTo}), {forceReplace: true});
-    }, [shouldRedirect, policyID, initialTargetSubPage, backTo]);
+        onSubmit();
+        clearReimbursementAccountSaveCorpayOnboardingCompanyDetails();
+    }, 'isSavingCorpayOnboardingCompanyFields');
+
+    useNetwork({
+        onReconnect: () => {
+            getCorpayOnboardingFields(country);
+        },
+    });
 
     useEffect(() => {
         getCorpayOnboardingFields(country);
     }, [country]);
 
-    const submit = () => {
-        isSubmittingRef.current = true;
-        saveCorpayOnboardingCompanyDetails(
-            {
-                ...businessInfoStepValues,
-                // Corpay does not accept emails with a "+" character and will not let us connect account at the end of whole flow
-                businessConfirmationEmail: !isProduction ? Str.replaceAll(businessInfoStepValues.businessConfirmationEmail, '+', '') : businessInfoStepValues.businessConfirmationEmail,
-                fundSourceCountries: country,
-                fundDestinationCountries: country,
-                currencyNeeded: currency,
-                purposeOfTransactionId: CONST.NON_USD_BANK_ACCOUNT.PURPOSE_OF_TRANSACTION_ID,
-                businessTypeId: isBusinessTypeRequired ? businessInfoStepValues.businessTypeId : undefined,
-            },
-            bankAccountID,
-        );
-    };
-
-    useEffect(() => {
-        if (reimbursementAccount?.errors || reimbursementAccount?.isSavingCorpayOnboardingCompanyFields || !reimbursementAccount?.isSuccess) {
-            return;
-        }
-
-        // We need to check value of local isSubmittingRef because on initial render reimbursementAccount?.isSuccess is still true after submitting the previous step
-        if (reimbursementAccount?.isSuccess && isSubmittingRef.current) {
-            isSubmittingRef.current = false;
-            onSubmit();
-            clearReimbursementAccountSaveCorpayOnboardingCompanyDetails();
-        }
-
-        return () => {
-            clearReimbursementAccountSaveCorpayOnboardingCompanyDetails();
-        };
-    }, [reimbursementAccount?.errors, reimbursementAccount?.isSavingCorpayOnboardingCompanyFields, reimbursementAccount?.isSuccess, onSubmit]);
-
-    const buildRoute = (pageName: string, action?: 'edit') => ROUTES.BANK_ACCOUNT_NON_USD_SETUP.getRoute({policyID, page: PAGE_NAME.BUSINESS_INFO, subPage: pageName, action, backTo});
-
-    const {CurrentPage, isEditing, currentPageName, pageIndex, nextPage, prevPage, moveTo} = useSubPage({pages, startFrom, onFinished: submit, buildRoute});
-
-    const handleBackButtonPress = () => {
-        clearErrors(ONYXKEYS.FORMS.REIMBURSEMENT_ACCOUNT_FORM);
-        if (isEditing) {
-            Navigation.goBack(buildRoute(SUB_PAGE_NAMES.CONFIRMATION));
-            return;
-        }
-
-        if (pageIndex === 0) {
-            onBackButtonPress();
-        } else {
-            prevPage();
-        }
-    };
-
     return (
-        <InteractiveStepWrapper
-            wrapperID="BusinessInfo"
-            handleBackButtonPress={handleBackButtonPress}
+        <DynamicFormFlow
+            schema={schema}
+            formID={FORM_ID}
+            testID="BusinessInfo"
             headerTitle={translate('businessInfoStep.businessInfoTitle')}
-            stepNames={stepNames}
-            startStepIndex={2}
-        >
-            {shouldRedirect ? (
-                <View style={[styles.flex1, styles.fullScreenLoading]}>
-                    <ActivityIndicator size={CONST.ACTIVITY_INDICATOR_SIZE.LARGE} />
-                </View>
-            ) : (
-                <CurrentPage
-                    isEditing={isEditing}
-                    onNext={nextPage}
-                    onMove={moveTo}
-                    currentPageName={currentPageName}
-                />
-            )}
-        </InteractiveStepWrapper>
+            confirmationTitle={translate('businessInfoStep.letsDoubleCheck')}
+            parentSteps={{names: stepNames ?? CONST.NON_USD_BANK_ACCOUNT.STEP_NAMES, index: STEP_INDEX}}
+            buildRoute={(pageName, action) =>
+                ROUTES.BANK_ACCOUNT_NON_USD_SETUP.getRoute({policyID, page: CONST.NON_USD_BANK_ACCOUNT.PAGE_NAME.BUSINESS_INFO, subPage: pageName, action, backTo})
+            }
+            onBack={onBackButtonPress}
+            onSubmit={(answers) => {
+                saveCorpayOnboardingCompanyDetails(getBusinessInfoParams(answers, country, currency, isProduction), reimbursementAccount?.achData?.bankAccountID ?? CONST.DEFAULT_NUMBER_ID);
+                markSubmitting();
+            }}
+            validatePage={(page, values) => getBusinessInfoRuleErrors(page, values, country, translate)}
+            // A saved select answer is invalid until its Corpay option list loads, so the flow waits for the lists before it picks the first unanswered page
+            isLoading={!picklists || isPrefillPending}
+            isSubmitting={!!reimbursementAccount?.isSavingCorpayOnboardingCompanyFields}
+            submitError={getLatestErrorMessage(reimbursementAccount ?? {})}
+        />
     );
 }
 

@@ -7,17 +7,27 @@ import useOnyx from './useOnyx';
 /**
  * Defers navigation (onSubmit) until the reimbursement account API call completes.
  * Instead of navigating to the next step immediately after firing the API call,
- * this hook waits for `isLoading` to go back to `false` and checks for errors.
+ * this hook waits for the pending flag (`isLoading` by default) to go back to `false` and checks for errors.
  *
  * @param onSubmit - callback that navigates to the next step
+ * @param pendingFlag - the flag the API action keeps true while its request is in flight
  * @returns markSubmitting - call this right after firing the API action
  */
-export default function useReimbursementAccountSubmitCallback(onSubmit?: () => void) {
+export default function useReimbursementAccountSubmitCallback(
+    onSubmit?: () => void,
+    pendingFlag:
+        | 'isLoading'
+        | 'isSavingCorpayOnboardingCompanyFields'
+        | 'isSavingCorpayOnboardingBeneficialOwnersFields'
+        | 'isSavingCorpayOnboardingDirectorInformation'
+        | 'isFinishingCorpayBankAccountOnboarding' = 'isLoading',
+) {
     const [reimbursementAccount] = useOnyx(ONYXKEYS.REIMBURSEMENT_ACCOUNT);
     const isSubmittingRef = useRef(false);
+    const isPending = !!reimbursementAccount?.[pendingFlag];
 
     useEffect(() => {
-        if (!isSubmittingRef.current || reimbursementAccount?.isLoading) {
+        if (!isSubmittingRef.current || isPending) {
             return;
         }
 
@@ -31,7 +41,7 @@ export default function useReimbursementAccountSubmitCallback(onSubmit?: () => v
 
         isSubmittingRef.current = false;
         onSubmit?.();
-    }, [reimbursementAccount?.isLoading, reimbursementAccount?.errors, onSubmit]);
+    }, [isPending, reimbursementAccount?.errors, onSubmit]);
 
     return () => {
         isSubmittingRef.current = true;

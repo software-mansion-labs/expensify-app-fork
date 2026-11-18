@@ -9,7 +9,7 @@ import CONST from '@src/CONST';
 import IntlStore from '@src/languages/IntlStore';
 import type {DynamicFormField, DynamicFormSchemaField} from '@src/types/onyx';
 
-import {format, subYears} from 'date-fns';
+import {addDays, format, subYears} from 'date-fns';
 
 import {translateLocal} from '../../../utils/TestHelper';
 
@@ -389,6 +389,23 @@ describe('getDynamicFieldErrors', () => {
         expect(codeErrors).toEqual({});
     });
 
+    it('takes the country of an address from the schema when it allows only one', () => {
+        // Given a required address that can only be in the US, answered without a country, since none is asked
+        const homeAddress: DynamicFormField = {key: 'homeAddress', type: 'address', required: true, rule: 'zipCode', country: CONST.COUNTRY.US};
+        const addressKeys = getAddressInputKeys(homeAddress.key);
+        const values = {homeAddress: '1 Main Street', [addressKeys.city]: 'Springfield', [addressKeys.state]: 'IL', [addressKeys.zipCode]: '62701'};
+
+        // When the form is validated with a US zip and with a UK postcode
+        const errors = getDynamicFieldErrors([homeAddress], values, translateLocal);
+        const postcodeErrors = getDynamicFieldErrors([homeAddress], {...values, [addressKeys.zipCode]: 'SW1A 1AA'}, translateLocal);
+
+        // Then the country is not flagged as missing, and the zip is checked against the US format
+        expect(errors).toEqual({});
+        expect(postcodeErrors).toEqual({
+            [addressKeys.zipCode]: translateLocal('privatePersonalDetails.error.incorrectZipFormat', getCountryZipRegexDetails(CONST.COUNTRY.US)?.samples),
+        });
+    });
+
     it('accepts US and international phone numbers and rejects incomplete ones', () => {
         // Given a phone field
         const phone: DynamicFormField = {key: 'phone', type: 'text', required: true, rule: 'phone'};
@@ -402,6 +419,28 @@ describe('getDynamicFieldErrors', () => {
         expect(usErrors).toEqual({});
         expect(ukErrors).toEqual({});
         expect(incompleteErrors).toEqual({phone: translateLocal('common.error.phoneNumber')});
+    });
+
+    it('takes a US phone and a website without the parts users leave out, and a past date only', () => {
+        // Given a US phone, a website and a past date field
+        const fields: DynamicFormField[] = [
+            {key: 'phone', type: 'text', required: true, rule: 'usPhone'},
+            {key: 'website', type: 'text', required: true, rule: 'website'},
+            {key: 'startDate', type: 'date', required: true, rule: 'pastDate'},
+        ];
+        const tomorrow = format(addDays(new Date(), 1), CONST.DATE.FNS_FORMAT_STRING);
+
+        // When they are answered without a country code and a scheme, and then with invalid answers
+        const validErrors = getDynamicFieldErrors(fields, {phone: '415 555 0132', website: 'expensify.com', startDate: '2020-01-31'}, translateLocal);
+        const invalidErrors = getDynamicFieldErrors(fields, {phone: '415', website: 'expensify', startDate: tomorrow}, translateLocal);
+
+        // Then the short forms pass, since the API gets them completed, and each invalid answer is flagged
+        expect(validErrors).toEqual({});
+        expect(invalidErrors).toEqual({
+            phone: translateLocal('common.error.phoneNumber'),
+            website: translateLocal('bankAccount.error.website'),
+            startDate: translateLocal('common.error.dateInvalid'),
+        });
     });
 
     it('accepts No as the answer to a Yes/No question wherever it sits, but not to a consent checkbox', () => {

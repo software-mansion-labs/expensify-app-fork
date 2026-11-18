@@ -13,16 +13,18 @@ import INPUT_IDS from '@src/types/form/ReimbursementAccountForm';
 
 import React from 'react';
 import {View} from 'react-native';
+import {transition} from 'xstate';
 
 import type NonUSDPageProps from './types';
 
-import Agreements from './Agreements';
+import Agreements from './Agreements/Agreements';
 import BankInfo from './BankInfo/BankInfo';
 import BeneficialOwnerInfo from './BeneficialOwnerInfo/BeneficialOwnerInfo';
 import BusinessInfo from './BusinessInfo/BusinessInfo';
 import Country from './Country';
 import Docusign from './Docusign';
 import Finish from './Finish';
+import nonUSDBankAccountFlowMachine from './nonUSDBankAccountFlowMachine';
 import SignerInfo from './SignerInfo';
 import getInitialSubPageForSignerInfoStep from './utils/getInitialSubPageForSignerInfoStep';
 import requiresDocusignStep from './utils/requiresDocusignStep';
@@ -32,6 +34,7 @@ const BANK_INFO_SUB_PAGES = CONST.NON_USD_BANK_ACCOUNT.BANK_INFO_STEP.SUB_PAGE_N
 const BUSINESS_INFO_SUB_PAGES = CONST.NON_USD_BANK_ACCOUNT.BUSINESS_INFO_STEP.SUB_PAGE_NAMES;
 const BENEFICIAL_OWNER_INFO_SUB_PAGES = CONST.NON_USD_BANK_ACCOUNT.BENEFICIAL_OWNER_INFO_STEP.SUB_PAGE_NAMES;
 const SIGNER_INFO_SUB_PAGES = CONST.NON_USD_BANK_ACCOUNT.SIGNER_INFO_STEP.SUB_PAGE_NAMES;
+const AGREEMENTS_SUB_PAGES = CONST.NON_USD_BANK_ACCOUNT.AGREEMENTS_STEP.SUB_PAGE_NAMES;
 
 type PageEntry = {
     pageName: string;
@@ -40,18 +43,20 @@ type PageEntry = {
     lastSubPage?: string;
 };
 
+const countryPage: PageEntry = {pageName: PAGE_NAME.CURRENCY_AND_COUNTRY, component: Country};
+
 const allPages: PageEntry[] = [
-    {pageName: PAGE_NAME.CURRENCY_AND_COUNTRY, component: Country},
-    {pageName: PAGE_NAME.BANK_INFO, component: BankInfo, firstSubPage: BANK_INFO_SUB_PAGES.BANK_ACCOUNT_DETAILS, lastSubPage: BANK_INFO_SUB_PAGES.CONFIRMATION},
-    {pageName: PAGE_NAME.BUSINESS_INFO, component: BusinessInfo, firstSubPage: BUSINESS_INFO_SUB_PAGES.NAME, lastSubPage: BUSINESS_INFO_SUB_PAGES.CONFIRMATION},
+    countryPage,
+    {pageName: PAGE_NAME.BANK_INFO, component: BankInfo, firstSubPage: BANK_INFO_SUB_PAGES.BANK_ACCOUNT_DETAILS, lastSubPage: CONST.DYNAMIC_FORM.CONFIRMATION_PAGE_KEY},
+    {pageName: PAGE_NAME.BUSINESS_INFO, component: BusinessInfo, firstSubPage: BUSINESS_INFO_SUB_PAGES.NAME, lastSubPage: CONST.DYNAMIC_FORM.CONFIRMATION_PAGE_KEY},
     {
         pageName: PAGE_NAME.BENEFICIAL_OWNER_INFO,
         component: BeneficialOwnerInfo,
         firstSubPage: BENEFICIAL_OWNER_INFO_SUB_PAGES.IS_USER_BENEFICIAL_OWNER,
-        lastSubPage: BENEFICIAL_OWNER_INFO_SUB_PAGES.BENEFICIAL_OWNERS_LIST,
+        lastSubPage: CONST.DYNAMIC_FORM.CONFIRMATION_PAGE_KEY,
     },
-    {pageName: PAGE_NAME.SIGNER_INFO, component: SignerInfo, firstSubPage: SIGNER_INFO_SUB_PAGES.IS_DIRECTOR, lastSubPage: SIGNER_INFO_SUB_PAGES.CONFIRMATION},
-    {pageName: PAGE_NAME.AGREEMENTS, component: Agreements},
+    {pageName: PAGE_NAME.SIGNER_INFO, component: SignerInfo, firstSubPage: SIGNER_INFO_SUB_PAGES.IS_DIRECTOR, lastSubPage: CONST.DYNAMIC_FORM.CONFIRMATION_PAGE_KEY},
+    {pageName: PAGE_NAME.AGREEMENTS, component: Agreements, firstSubPage: AGREEMENTS_SUB_PAGES.CONFIRM_AGREEMENTS, lastSubPage: AGREEMENTS_SUB_PAGES.CONFIRM_AGREEMENTS},
     {pageName: PAGE_NAME.DOCUSIGN, component: Docusign},
     {pageName: PAGE_NAME.FINISH, component: Finish},
 ];
@@ -83,8 +88,7 @@ function NonUSDVerifiedBankAccountFlowPage({route}: NonUSDVerifiedBankAccountFlo
     const initialSignerSubPage = getInitialSubPageForSignerInfoStep(savedSignerEmail, savedSignerFullName, savedSecondSignerEmail, currency);
 
     const isAUD = currency === CONST.CURRENCY.AUD;
-    const filteredPages = isDocusignStepRequired ? allPages : allPages.filter((page) => page.pageName !== PAGE_NAME.DOCUSIGN);
-    const pages = filteredPages.map((page) => {
+    const pages = allPages.map((page) => {
         if (page.pageName !== PAGE_NAME.SIGNER_INFO) {
             return page;
         }
@@ -99,30 +103,34 @@ function NonUSDVerifiedBankAccountFlowPage({route}: NonUSDVerifiedBankAccountFlo
         };
     });
 
-    const index = pages.findIndex((p) => p.pageName === currentPage);
-    const currentPageIndex = index >= 0 ? index : 0;
+    const findPage = (pageName: string | undefined) => pages.find((page) => page.pageName === pageName);
 
-    const currentEntry = pages.at(currentPageIndex);
-    const CurrentPage = currentEntry?.component ?? Country;
+    const currentEntry = findPage(currentPage) ?? countryPage;
+    const CurrentPage = currentEntry.component;
+
+    /** The page the flow machine moves to from the page in the route, or nothing when the flow ends */
+    const getPageAfter = (eventType: 'NEXT' | 'BACK') => {
+        const snapshot = nonUSDBankAccountFlowMachine.resolveState({value: currentEntry.pageName, context: {isDocusignStepRequired}});
+        const [{value}] = transition(nonUSDBankAccountFlowMachine, snapshot, {type: eventType});
+        return findPage(value);
+    };
 
     const onSubmit = () => {
-        const nextIndex = currentPageIndex + 1;
-        if (nextIndex >= pages.length) {
+        const nextPage = getPageAfter('NEXT');
+        if (!nextPage) {
             Navigation.goBack();
             return;
         }
-        const nextPage = pages.at(nextIndex);
-        Navigation.navigate(ROUTES.BANK_ACCOUNT_NON_USD_SETUP.getRoute({policyID, page: nextPage?.pageName, subPage: nextPage?.firstSubPage, backTo}));
+        Navigation.navigate(ROUTES.BANK_ACCOUNT_NON_USD_SETUP.getRoute({policyID, page: nextPage.pageName, subPage: nextPage.firstSubPage, backTo}));
     };
 
     const onBackButtonPress = () => {
-        const prevIndex = currentPageIndex - 1;
-        if (prevIndex < 0) {
+        const prevPage = getPageAfter('BACK');
+        if (!prevPage) {
             Navigation.goBack();
             return;
         }
-        const prevPage = pages.at(prevIndex);
-        Navigation.goBack(ROUTES.BANK_ACCOUNT_NON_USD_SETUP.getRoute({policyID, page: prevPage?.pageName, subPage: prevPage?.lastSubPage, backTo}));
+        Navigation.goBack(ROUTES.BANK_ACCOUNT_NON_USD_SETUP.getRoute({policyID, page: prevPage.pageName, subPage: prevPage.lastSubPage, backTo}));
     };
 
     return (

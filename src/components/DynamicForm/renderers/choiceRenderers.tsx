@@ -2,6 +2,7 @@ import CheckboxWithLabel from '@components/CheckboxWithLabel';
 import CountryPicker from '@components/CountryPicker';
 import CurrencyPicker from '@components/CurrencyPicker';
 import CurrencyInlineListAdapter from '@components/DynamicForm/adapters/CurrencyInlineListAdapter';
+import DocumentDownloadAdapter from '@components/DynamicForm/adapters/DocumentDownloadAdapter';
 import InlineSelectionListAdapter from '@components/DynamicForm/adapters/InlineSelectionListAdapter';
 import TabsAdapter from '@components/DynamicForm/adapters/TabsAdapter';
 import ToggleLinkAdapter from '@components/DynamicForm/adapters/ToggleLinkAdapter';
@@ -197,6 +198,21 @@ const CHOICE_RENDERERS: Pick<DynamicFieldRendererMap, 'select' | 'radio' | 'mult
         };
     },
     boolean: (field, {translate, isLoneField}, inputProps) => {
+        if (field.presentation === 'download') {
+            return {
+                isMenuRow: false,
+                labelAbove: 'prompt',
+                input: (
+                    <InputWrapper
+                        InputComponent={DocumentDownloadAdapter}
+                        {...inputProps}
+                        valueType="boolean"
+                        documentPath={field.documentPath ?? ''}
+                        accessibilityLabel={getInputLabel(field, translate)}
+                    />
+                ),
+            };
+        }
         if (field.presentation === 'link') {
             return {
                 isMenuRow: false,

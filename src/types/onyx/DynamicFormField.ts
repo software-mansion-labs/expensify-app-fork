@@ -1,5 +1,6 @@
 import type {FormValue} from '@components/Form/types';
 
+import type {Country} from '@src/CONST';
 import type {TranslationPaths} from '@src/languages/types';
 import type {OnyxFormKey} from '@src/ONYXKEYS';
 
@@ -46,7 +47,7 @@ type DynamicFormLink = {
     /** Can match a field's key, since links and fields are told apart by `type` */
     key: string;
 
-    /** Address the link opens. Only https links to expensify.com or its subdomains are shown, since the link leaves the form. */
+    /** Address the link opens. Only https links to expensify.com, corpay.com or their subdomains are shown, since the link leaves the form. */
     url: string;
 
     /** The schema author's wording, shown when there is no textKey */
@@ -124,14 +125,14 @@ type DynamicFormTextField = DynamicFormFieldBase & {
     /** Sample value, shown as a hint and in the format error */
     example?: string;
 
-    /** Keyboard the input opens. Without it, `rule: 'phone'` opens the phone keyboard and a digits-only `regex` the numeric one. */
+    /** Keyboard the input opens. Without it, a phone rule opens the phone keyboard, `rule: 'website'` the URL one and a digits-only `regex` the numeric one. */
     keyboard?: Extract<InputModeOptions, 'email' | 'tel' | 'url' | 'numeric'>;
 
     /** Grows with its content, for descriptions */
     multiline?: boolean;
 
-    /** A named check on top of the others: `legalName` for a person's legal name, `phone` for an international phone number */
-    rule?: 'legalName' | 'phone';
+    /** A named check on top of the others: `legalName` for a person's legal name, `phone` for an international phone number, `usPhone` for a US one that may leave out the country code, `website` for a URL that may leave out the scheme */
+    rule?: 'legalName' | 'phone' | 'usPhone' | 'website';
 };
 
 /** Text that must parse as a finite number, typed on the numeric keyboard */
@@ -166,8 +167,8 @@ type DynamicFormDateField = DynamicFormFieldBase & {
     /** Tells the field types apart */
     type: 'date';
 
-    /** `dateOfBirth` takes only a past date within the allowed age range */
-    rule?: 'dateOfBirth';
+    /** `dateOfBirth` takes only a past date within the allowed age range, `pastDate` only today or an earlier date */
+    rule?: 'dateOfBirth' | 'pastDate';
 };
 
 /** A postal address. The street is the field's value, and the other parts are stored under `<key>.<part>`. */
@@ -177,6 +178,9 @@ type DynamicFormAddressField = DynamicFormFieldBase & {
 
     /** Checks the zip against the format of the chosen country */
     rule?: 'zipCode';
+
+    /** The only country the address can be in, for forms tied to one country. The country is then not asked. */
+    country?: Country;
 };
 
 /** Uploaded documents */
@@ -227,7 +231,7 @@ type DynamicFormCountryField = DynamicFormFieldBase & {
     type: 'country' | 'countryMultiselect';
 };
 
-/** A Yes/No question, where No is an answer too, a checkbox that must be ticked when required, or a link that turns the answer on and off */
+/** A Yes/No question, where No is an answer too, a checkbox that must be ticked when required, a link that turns the answer on and off, or a document the user must download */
 type DynamicFormBooleanField = DynamicFormFieldBase & {
     /** Tells the field types apart */
     type: 'boolean';
@@ -235,8 +239,12 @@ type DynamicFormBooleanField = DynamicFormFieldBase & {
     /**
      * `yesNo`, the default, asks a question that No answers. `checkbox` asks for consent, such as accepting terms, which only a tick gives.
      * `link` is an opt-out the user taps, such as "I don't have a social security number", and taps again to undo.
+     * `download` is a button that opens `documentPath` and turns the answer on, so a required one is answered once the user has the document.
      */
-    presentation?: 'yesNo' | 'checkbox' | 'link';
+    presentation?: 'yesNo' | 'checkbox' | 'link' | 'download';
+
+    /** Where the document of a `download` sits in the App, such as `/pdfs/terms.pdf`. It opens from the App's own address, so a schema cannot send the user elsewhere. */
+    documentPath?: string;
 
     /** The schema author's wording of a `link` while the answer is on, shown when there is no toggledLabelKey */
     toggledLabel?: string;

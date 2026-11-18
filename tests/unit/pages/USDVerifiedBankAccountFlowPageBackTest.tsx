@@ -70,7 +70,7 @@ jest.mock('@pages/ReimbursementAccount/USD/Requestor/RequestorStep', () => ({__e
 jest.mock('@pages/ReimbursementAccount/USD/Requestor/VerifyIdentity/VerifyIdentity', () => ({__esModule: true, default: () => null}));
 jest.mock('@pages/ReimbursementAccount/USD/BusinessInfo/BusinessInfo', () => ({__esModule: true, default: () => null}));
 jest.mock('@pages/ReimbursementAccount/USD/BeneficialOwnerInfo/BeneficialOwnersStep', () => ({__esModule: true, default: () => null}));
-jest.mock('@pages/ReimbursementAccount/USD/KYBDocuments', () => ({__esModule: true, default: () => null}));
+jest.mock('@pages/ReimbursementAccount/USD/KYBDocuments/KYBDocuments', () => ({__esModule: true, default: () => null}));
 jest.mock('@pages/ReimbursementAccount/USD/Country', () => ({__esModule: true, default: () => null}));
 
 type RouteParams = ReimbursementAccountNavigatorParamList[typeof SCREENS.REIMBURSEMENT_ACCOUNT_USD];

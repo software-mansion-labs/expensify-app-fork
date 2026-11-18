@@ -70,7 +70,9 @@ function DynamicFormFlow({
     isLoading,
     validatePage,
     layout = 'auto',
+    parentSteps,
     hasConfirmation = true,
+    submitButtonText,
     shouldDisableNextWhenOffline,
     children,
 }: DynamicFormFlowProps) {
@@ -355,10 +357,10 @@ function DynamicFormFlow({
             testID={testID}
             headerTitle={headerTitle}
             onBackButtonPress={goBack}
-            stepNames={stepNames}
-            stepIndex={stepIndex}
+            stepNames={parentSteps?.names ?? stepNames}
+            stepIndex={parentSteps?.index ?? stepIndex}
             stepTitle={stepTitle || undefined}
-            shouldShowStepIndicator={isStepIndicatorAsked && stepNames.length > 1}
+            shouldShowStepIndicator={!!parentSteps || (isStepIndicatorAsked && stepNames.length > 1)}
             shouldShowOfflineIndicatorInWideScreen={shouldDisableNextWhenOffline}
         >
             {isLoading || isDraftLoading || isRedirecting || isClearingEarlierVisit || isOnUnavailablePage || (!hasPageToShow && pages.length > 0) ? (
@@ -394,6 +396,7 @@ function DynamicFormFlow({
                     shouldShowFieldErrors={shouldShowFieldErrors}
                     shouldDisableNextWhenOffline={shouldDisableNextWhenOffline}
                     validatePage={validatePage}
+                    submitButtonText={submitButtonText}
                 >
                     {children}
                 </CurrentPage>

@@ -22,6 +22,7 @@ const SENTRY_LABEL = {
         TOGGLE_LINK: 'DynamicForm-ToggleLink',
         LINK_ROW: 'DynamicForm-LinkRow',
         FILE_TYPE_MENU_ITEM: 'DynamicForm-FileTypeMenuItem',
+        DOCUMENT_DOWNLOAD: 'DynamicForm-DocumentDownload',
     },
     APPROVE_MENU: {
         OPTION: {
@@ -3189,8 +3190,6 @@ const SENTRY_LABEL = {
     },
     BANK_ACCOUNT: {
         DATA_SECURE_LINK: 'BankAccount-DataSecureLink',
-        ROUTING_NUMBER_INPUT: 'BankAccount-RoutingNumberInput',
-        ACCOUNT_NUMBER_INPUT: 'BankAccount-AccountNumberInput',
         PRIVACY_LINK: 'BankAccount-PrivacyLink',
     },
     EARLY_DISCOUNT_BANNER: {
@@ -3473,27 +3472,14 @@ const SENTRY_LABEL = {
         PAYMENT_CARD_SECURITY_LINK: 'SettingsSubscription-PaymentCardSecurityLink',
     },
     REIMBURSEMENT_ACCOUNT: {
-        BENEFICIAL_OWNERS_CONFIRM: 'ReimbursementAccount-BeneficialOwnersConfirm',
         BANK_ACCOUNT_ADDED_CONFIRM: 'ReimbursementAccount-BankAccountAddedConfirm',
-        BENEFICIAL_OWNER_ROW: 'ReimbursementAccount-BeneficialOwnerRow',
         CONNECT_BANK_ACCOUNT_ADDED_CONFIRM: 'ReimbursementAccount-ConnectBankAccountAddedConfirm',
-        BUSINESS_INFO_ADDRESS: 'ReimbursementAccount-BusinessInfoAddress',
-        BUSINESS_INFO_INCORPORATION_DATE: 'ReimbursementAccount-BusinessInfoIncorporationDate',
-        BUSINESS_INFO_INCORPORATION_STATE: 'ReimbursementAccount-BusinessInfoIncorporationState',
-        BUSINESS_INFO_INDUSTRY_CODE: 'ReimbursementAccount-BusinessInfoIndustryCode',
-        BUSINESS_INFO_NAME: 'ReimbursementAccount-BusinessInfoName',
-        BUSINESS_INFO_PHONE: 'ReimbursementAccount-BusinessInfoPhone',
-        BUSINESS_INFO_TAX_ID: 'ReimbursementAccount-BusinessInfoTaxID',
-        BUSINESS_INFO_TYPE: 'ReimbursementAccount-BusinessInfoType',
-        BUSINESS_INFO_WEBSITE: 'ReimbursementAccount-BusinessInfoWebsite',
-        BUSINESS_TYPE_PICKER: 'ReimbursementAccount-BusinessTypePicker',
         CONNECTED_CHANGE_BANK_ACCOUNT: 'ReimbursementAccount-ConnectedChangeBankAccount',
         CONNECTED_DISCONNECT_BANK_ACCOUNT: 'ReimbursementAccount-ConnectedDisconnectBankAccount',
         CONNECT_BANK_ACCOUNT_ENABLE_TWO_FACTOR_AUTH: 'ReimbursementAccount-ConnectBankAccountEnableTwoFactorAuth',
         CONNECT_BANK_ACCOUNT_FINISH_IN_CHAT: 'ReimbursementAccount-ConnectBankAccountFinishInChat',
         CONNECT_BANK_ACCOUNT_START_OVER: 'ReimbursementAccount-ConnectBankAccountStartOver',
         CONNECT_BANK_ACCOUNT_UPDATE_DETAILS: 'ReimbursementAccount-ConnectBankAccountUpdateDetails',
-        ENTER_SIGNER_INFO_DOWNLOAD_PDS_AND_FSG: 'ReimbursementAccount-EnterSignerInfoDownloadPDSAndFSG',
         ENTRY_POINT_CHANGE_BANK_ACCOUNT: 'ReimbursementAccount-EntryPointChangeBankAccount',
         ENTRY_POINT_CONNECT_MANUALLY: 'ReimbursementAccount-EntryPointConnectManually',
         ENTRY_POINT_CONNECT_WITH_PLAID: 'ReimbursementAccount-EntryPointConnectWithPlaid',
@@ -3502,10 +3488,7 @@ const SENTRY_LABEL = {
         FINISH_CHAT_WITH_CONCIERGE: 'ReimbursementAccount-FinishChatWithConcierge',
         FINISH_ENABLE_TWO_FACTOR_AUTH: 'ReimbursementAccount-FinishEnableTwoFactorAuth',
         KYB_DOCUMENTS_FINISH_VIA_CHAT: 'ReimbursementAccount-KYBDocumentsFinishViaChat',
-        SIGNER_INFO_DOWNLOAD_PDS_AND_FSG: 'ReimbursementAccount-SignerInfoDownloadPDSAndFSG',
         SIGNER_INFO_SEND_REMINDER: 'ReimbursementAccount-SignerInfoSendReminder',
-        UBO_CONFIRM: 'ReimbursementAccount-UBOConfirm',
-        UBO_ROW: 'ReimbursementAccount-UBORow',
         BUSINESS_INFO_RESTRICTED_BUSINESSES_LINK: 'ReimbursementAccount-BusinessInfoRestrictedBusinessesLink',
         CONNECT_BANK_ACCOUNT_CONTACT_US_LINK: 'ReimbursementAccount-ConnectBankAccountContactUsLink',
     },
@@ -3923,9 +3906,6 @@ const SENTRY_LABEL = {
     HELP_LINKS: {
         LEARN_MORE_LINK: 'HelpLinks-LearnMoreLink',
         IS_MY_DATA_SAFE_LINK: 'HelpLinks-IsMyDataSafeLink',
-    },
-    WHY_LINK: {
-        WHY_DO_WE_ASK_LINK: 'WhyLink-WhyDoWeAskLink',
     },
     // Components that require a label get this one when rendered in tests. Tests send nothing to Sentry, so one shared label is enough.
     TEST: {

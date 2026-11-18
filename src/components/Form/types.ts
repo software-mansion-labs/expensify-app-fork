@@ -9,6 +9,7 @@ import type CurrencyPicker from '@components/CurrencyPicker';
 import type CurrencySelector from '@components/CurrencySelector';
 import type DatePicker from '@components/DatePicker';
 import type CurrencyInlineListAdapter from '@components/DynamicForm/adapters/CurrencyInlineListAdapter';
+import type DocumentDownloadAdapter from '@components/DynamicForm/adapters/DocumentDownloadAdapter';
 import type FileUploadAdapter from '@components/DynamicForm/adapters/FileUploadAdapter';
 import type InlineSelectionListAdapter from '@components/DynamicForm/adapters/InlineSelectionListAdapter';
 import type LabelledFileUploadAdapter from '@components/DynamicForm/adapters/LabelledFileUploadAdapter';
@@ -36,7 +37,6 @@ import type {AccessibilityFocusTarget} from '@libs/Accessibility/moveAccessibili
 import type {ForwardedFSClassProps} from '@libs/Fullstory/types';
 
 import type ConstantSelector from '@pages/Debug/ConstantSelector';
-import type BusinessTypePicker from '@pages/ReimbursementAccount/USD/BusinessInfo/subSteps/TypeBusiness/BusinessTypePicker';
 import type DimensionTypeSelector from '@pages/workspace/accounting/intacct/import/DimensionTypeSelector';
 import type NetSuiteCustomFieldMappingPicker from '@pages/workspace/accounting/netsuite/import/NetSuiteImportCustomFieldNew/NetSuiteCustomFieldMappingPicker';
 import type NetSuiteCustomListPicker from '@pages/workspace/accounting/netsuite/import/NetSuiteImportCustomFieldNew/NetSuiteCustomListPicker';
@@ -76,7 +76,6 @@ type ValidInputs =
     | typeof AmountForm
     | typeof NumberWithSymbolForm
     | typeof PercentageForm
-    | typeof BusinessTypePicker
     | typeof DimensionTypeSelector
     | typeof StateSelector
     | typeof RoomNameInput
@@ -105,7 +104,8 @@ type ValidInputs =
     | typeof TabsAdapter
     | typeof ToggleLinkAdapter
     | typeof ListFieldAdapter
-    | typeof LabelledFileUploadAdapter;
+    | typeof LabelledFileUploadAdapter
+    | typeof DocumentDownloadAdapter;
 
 type ValueTypeKey = 'string' | 'boolean' | 'date' | 'country' | 'stringList' | 'disabledListValues' | 'files' | 'listItems';
 type ValueTypeMap = {

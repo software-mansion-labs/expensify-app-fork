@@ -10,6 +10,8 @@ import {
     isValidDisplayName,
     isValidPastDate,
     isValidPhoneInternational,
+    isValidUSPhone,
+    isValidWebsite,
     isValidZipCodeForCountry,
     meetsMaximumAgeRequirement,
     meetsMinimumAgeRequirement,
@@ -27,6 +29,8 @@ import type {
     DynamicFormSchemaField,
     DynamicFormTextField,
 } from '@src/types/onyx';
+
+import {Str} from 'expensify-common';
 
 import getAddressInputKeys, {getAddressCountry, getStateOptions, isStateAsked} from './getAddressInputKeys';
 import getAnswerKeys from './getAnswerKeys';
@@ -168,8 +172,11 @@ const VALIDATORS: {[TType in DynamicFormFieldType]: FieldValidator<TType>} = {
         if (field.rule === 'legalName') {
             messages.push(...getLegalNameErrors(value, translate));
         }
-        if (field.rule === 'phone' && !isValidPhoneInternational(value)) {
+        if ((field.rule === 'phone' && !isValidPhoneInternational(value)) || (field.rule === 'usPhone' && !isValidUSPhone(value, true))) {
             messages.push(translate('common.error.phoneNumber'));
+        }
+        if (field.rule === 'website' && !isValidWebsite(Str.sanitizeURL(value, CONST.COMPANY_WEBSITE_DEFAULT_SCHEME))) {
+            messages.push(translate('bankAccount.error.website'));
         }
         return messages;
     },
@@ -186,6 +193,9 @@ const VALIDATORS: {[TType in DynamicFormFieldType]: FieldValidator<TType>} = {
         const value = getStringAnswer(field, values);
         if (!isValidDate(value)) {
             return [translate('common.error.dateInvalid')];
+        }
+        if (field.rule === 'pastDate') {
+            return isValidPastDate(value) ? [] : [translate('common.error.dateInvalid')];
         }
         if (field.rule !== 'dateOfBirth') {
             return [];
@@ -226,12 +236,17 @@ function isStateAnswered(state: FormValue | undefined, country: Country | ''): b
 /** Each address part has its own input, so its errors go under its own draft key */
 function getAddressPartErrors(field: DynamicFormAddressField, values: DynamicFormValues, translate: LocalizedTranslate): Array<[inputID: string, message: string]> {
     const addressKeys = getAddressInputKeys(field.key);
-    const country = getAddressCountry(field.key, values);
+    const country = getAddressCountry(field, values);
     // A country whose zip format accepts an empty zip does not require one
     const isZipAsked = !country || !isValidZipCodeForCountry('', country);
     const partErrors: Array<[string, string]> = [];
     if (isAddressRequired(field, values)) {
-        const requiredPartKeys = [addressKeys.city, addressKeys.country, ...(isZipAsked ? [addressKeys.zipCode] : []), ...(isStateAsked(country) ? [addressKeys.state] : [])];
+        const requiredPartKeys = [
+            addressKeys.city,
+            ...(field.country ? [] : [addressKeys.country]),
+            ...(isZipAsked ? [addressKeys.zipCode] : []),
+            ...(isStateAsked(country) ? [addressKeys.state] : []),
+        ];
         for (const partKey of requiredPartKeys) {
             const isPartAnswered = partKey === addressKeys.state ? isStateAnswered(values[partKey], country) : isAnswered(values[partKey]);
             if (!isPartAnswered) {
@@ -270,7 +285,7 @@ function getDynamicFieldErrors(fields: DynamicFormSchemaField[], values: Dynamic
                 addErrorMessage(errors, inputID, message);
             }
         }
-        if (!isAnswered(values[field.key], field.type === 'boolean' && field.presentation !== 'checkbox')) {
+        if (!isAnswered(values[field.key], field.type === 'boolean' && field.presentation !== 'checkbox' && field.presentation !== 'download')) {
             // A resumed sensitive field, such as an SSN, has no answer because the server never sends it back. The server keeps the saved answer when none is sent, so it is not an error.
             // Once the user clears the mask, the input holds an empty answer, and a new one is required
             if (hasProvidedAnswer(field, values) && values[field.key] === undefined) {

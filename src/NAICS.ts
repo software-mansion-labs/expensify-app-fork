@@ -12128,33 +12128,22 @@ const NAICS: NAICSItem[] = [
     },
 ];
 
-const NAICS_MAPPING_WITH_ID: Record<string, NAICSItemWithoutOptions[]> = {};
 const ALL_NAICS: NAICSItemWithoutOptions[] = [];
 
-function getNAICSMappingWithId(item: NAICSItem) {
+function addToAllNAICS(item: NAICSItem) {
     ALL_NAICS.push({
         id: item.id,
         value: item.value,
     });
 
-    NAICS_MAPPING_WITH_ID[item.id] = item.options.map((option) => {
-        return {
-            id: option.id,
-            value: option.value,
-        };
-    });
-
     for (const option of item.options) {
-        getNAICSMappingWithId(option);
+        addToAllNAICS(option);
     }
 }
 
-function buildNAICS() {
-    for (const item of NAICS) {
-        getNAICSMappingWithId(item);
-    }
+for (const item of NAICS) {
+    addToAllNAICS(item);
 }
 
-buildNAICS();
-
-export {NAICS, NAICS_MAPPING_WITH_ID, ALL_NAICS};
+// eslint-disable-next-line import/prefer-default-export -- the module is named after the data, not the one list it exports
+export {ALL_NAICS};

@@ -116,6 +116,19 @@ function ConnectBankAccount({onBackButtonPress, setShouldShowConnectedVerifiedBa
     const isBankAccountPending = bankAccountState === CONST.BANK_ACCOUNT.STATE.PENDING;
     const requiresTwoFactorAuth = account?.requiresTwoFactorAuth ?? false;
 
+    if (!maxAttemptsReached && isBankAccountPending) {
+        return (
+            <BankAccountValidationForm
+                requiresTwoFactorAuth={requiresTwoFactorAuth}
+                reimbursementAccount={reimbursementAccount}
+                policy={policy}
+                policyID={policyID}
+                backTo={backTo}
+                onBackButtonPress={onBackButtonPress}
+            />
+        );
+    }
+
     return (
         <ScreenWrapper
             testID="ConnectBankAccount"
@@ -140,13 +153,6 @@ function ConnectBankAccount({onBackButtonPress, setShouldShowConnectedVerifiedBa
                         .
                     </Text>
                 </View>
-            )}
-            {!maxAttemptsReached && isBankAccountPending && (
-                <BankAccountValidationForm
-                    requiresTwoFactorAuth={requiresTwoFactorAuth}
-                    reimbursementAccount={reimbursementAccount}
-                    policy={policy}
-                />
             )}
             {isBankAccountVerifying && (
                 <FinishChatCard

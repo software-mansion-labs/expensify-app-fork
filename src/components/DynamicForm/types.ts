@@ -34,7 +34,10 @@ type DynamicFormFlowProps = Pick<DynamicFormFieldsProps, 'currency' | 'maxFileSi
     /** Text under the confirmation page's title */
     confirmationSubtitle?: string;
 
-    /** Drawn on the confirmation page between the answers and Confirm, such as a terms checkbox. Confirm calls `onSubmit`, where the screen can check it before it sends anything. */
+    /**
+     * Drawn on the confirmation page between the answers and Confirm, such as a terms checkbox. Confirm calls `onSubmit`, where the screen can check it before it sends anything.
+     * Without a confirmation page it is drawn on the last page above its button instead.
+     */
     children?: ReactNode;
 
     /** testID of the screen wrapper */
@@ -89,8 +92,20 @@ type DynamicFormFlowProps = Pick<DynamicFormFieldsProps, 'currency' | 'maxFileSi
     /** When the step indicator shows: `auto` from three shown pages on, `stepper` always, `pages` never */
     layout?: DynamicFormLayout;
 
+    /** The steps of a longer flow this form is one step of. The step indicator then shows them instead of the form's own pages, whatever the `layout`. */
+    parentSteps?: {
+        /** Unique names of the flow's steps, in order */
+        names: readonly string[];
+
+        /** Index of the step this form is */
+        index: number;
+    };
+
     /** Whether a confirmation page follows the last page. On by default. A form with no page always gets one, since there has to be a page to land on. */
     hasConfirmation?: boolean;
+
+    /** Text of the last page's button when no confirmation page follows, `Confirm` when not set */
+    submitButtonText?: string;
 
     /**
      * Disables Next offline on every page, for flows that save each page to the server as the user leaves it, and shows the offline indicator on wide
@@ -117,6 +132,7 @@ type DynamicFormSubPageProps = SubPageProps &
         | 'refreshError'
         | 'shouldDisableNextWhenOffline'
         | 'validatePage'
+        | 'submitButtonText'
     > & {
         pages: DynamicFormPage[];
 

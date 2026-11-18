@@ -5,6 +5,7 @@ import type AddressFormFields from '@pages/ReimbursementAccount/AddressFormField
 import CONST from '@src/CONST';
 import type {Country} from '@src/CONST';
 import STATES_BY_COUNTRY from '@src/CONST/STATES_BY_COUNTRY';
+import type {DynamicFormAddressField} from '@src/types/onyx';
 
 import type {ComponentProps} from 'react';
 
@@ -30,9 +31,12 @@ function getAddressInputKeys(fieldKey: string): Required<Pick<AddressInputKeys, 
     };
 }
 
-/** The picked country, or '' while none or an unknown one is picked */
-function getAddressCountry(fieldKey: string, values: DynamicFormValues): Country | '' {
-    const country = values[getAddressInputKeys(fieldKey).country];
+/** The field's only country, else the picked one, or '' while none or an unknown one is picked */
+function getAddressCountry(field: Pick<DynamicFormAddressField, 'key' | 'country'>, values: DynamicFormValues): Country | '' {
+    if (field.country) {
+        return field.country;
+    }
+    const country = values[getAddressInputKeys(field.key).country];
     return typeof country === 'string' && isCountryCode(country) ? country : '';
 }
 

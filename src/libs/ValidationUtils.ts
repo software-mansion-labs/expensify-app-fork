@@ -238,10 +238,6 @@ function isValidDebitCard(string: string): boolean {
     return validateCardNumber(string);
 }
 
-function isValidIndustryCode(code: string): boolean {
-    return CONST.REGEX.INDUSTRY_CODE.test(code);
-}
-
 function isValidZipCode(zipCode: string): boolean {
     return CONST.REGEX.ZIP_CODE.test(zipCode);
 }
@@ -624,39 +620,6 @@ function isValidPhoneInternational(phoneNumber: string): boolean {
 }
 
 /**
- * Validates the given value if it is correct zip code for international addresses.
- * @param zipCode
- */
-function isValidZipCodeInternational(zipCode: string): boolean {
-    return /^[a-z0-9][a-z0-9\- ]{0,10}[a-z0-9]$/.test(zipCode);
-}
-
-/**
- * Validates the given value if it is correct ownership percentage
- * @param value
- * @param totalOwnedPercentage
- * @param ownerBeingModifiedID
- */
-function isValidOwnershipPercentage(value: string, totalOwnedPercentage: Record<string, number>, ownerBeingModifiedID: string): boolean {
-    const parsedValue = Number(value);
-    const isValidNumber = !Number.isNaN(parsedValue) && parsedValue >= 25 && parsedValue <= 100;
-
-    let totalOwnedPercentageSum = 0;
-    const totalOwnedPercentageKeys = Object.keys(totalOwnedPercentage);
-    for (const key of totalOwnedPercentageKeys) {
-        if (key === ownerBeingModifiedID) {
-            continue;
-        }
-
-        totalOwnedPercentageSum += totalOwnedPercentage[key];
-    }
-
-    const isTotalSumValid = totalOwnedPercentageSum + parsedValue <= 100;
-
-    return isValidNumber && isTotalSumValid;
-}
-
-/**
  * Validates the given value if it is correct ABN number - https://abr.business.gov.au/Help/AbnFormat
  * @param registrationNumber - number to validate.
  */
@@ -914,7 +877,6 @@ export {
     isValidSecurityCode,
     isValidExpirationDate,
     isValidDebitCard,
-    isValidIndustryCode,
     isValidZipCode,
     getCountryZipRegexDetails,
     isValidZipCodeForCountry,
@@ -934,7 +896,6 @@ export {
     isExistingRoomName,
     isValidRoomName,
     isValidRoomNameWithoutLimits,
-    isValidTaxID,
     isValidValidateCode,
     isValidCompanyName,
     isValidNameOnCard,
@@ -955,8 +916,6 @@ export {
     isValidEmail,
     isValidEmailWithTLD,
     isValidPhoneInternational,
-    isValidZipCodeInternational,
-    isValidOwnershipPercentage,
     isValidRegistrationNumber,
     isValidInputLength,
     isValidTaxIDEINNumber,

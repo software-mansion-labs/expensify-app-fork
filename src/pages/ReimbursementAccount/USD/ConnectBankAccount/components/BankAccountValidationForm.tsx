@@ -1,26 +1,21 @@
-import FormProvider from '@components/Form/FormProvider';
-import InputWrapper from '@components/Form/InputWrapper';
-import type {FormInputErrors, FormOnyxValues} from '@components/Form/types';
-import Text from '@components/Text';
-import TextInput from '@components/TextInput';
+import DynamicFormFlow from '@components/DynamicForm';
 
-import {useCurrencyListActions} from '@hooks/useCurrencyList';
 import useLocalize from '@hooks/useLocalize';
 import useThemeStyles from '@hooks/useThemeStyles';
 
 import {validateBankAccount} from '@libs/actions/BankAccounts';
-import getPermittedDecimalSeparator from '@libs/getPermittedDecimalSeparator';
 import {getBankAccountIDAsNumber} from '@libs/ReimbursementAccountUtils';
-import {isRequiredFulfilled} from '@libs/ValidationUtils';
+
+import getBankAccountValidationForm, {getBankAccountValidationErrors, getValidateCode} from '@pages/ReimbursementAccount/USD/ConnectBankAccount/getBankAccountValidationForm';
 
 import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';
-import INPUT_IDS from '@src/types/form/ReimbursementAccountForm';
+import ROUTES from '@src/ROUTES';
+import type {Route} from '@src/ROUTES';
 import type {Policy, ReimbursementAccount} from '@src/types/onyx';
 
 import type {OnyxEntry} from 'react-native-onyx';
 
-import {Str} from 'expensify-common';
 import React from 'react';
 import {View} from 'react-native';
 
@@ -33,111 +28,54 @@ type BankAccountValidationFormProps = {
     /** Boolean required to display Enable2FACard component */
     requiresTwoFactorAuth: boolean;
 
-    /** The policy which the user has access to and which the report is tied to */
+    /** The workspace whose output currency the amounts are in */
     policy: OnyxEntry<Policy>;
+
+    /** The workspace in the route, carried into the route of the form's page */
+    policyID?: string;
+
+    /** Route to return to when navigating back out of the flow */
+    backTo?: Route;
+
+    onBackButtonPress: () => void;
 };
 
-const AMOUNT_KEYS = [INPUT_IDS.AMOUNT1, INPUT_IDS.AMOUNT2, INPUT_IDS.AMOUNT3] as const;
-
-const filterInput = (amount: string, amountRegex?: RegExp, permittedDecimalSeparator?: string) => {
-    let value = amount ? amount.toString().trim() : '';
-    const regex = new RegExp(`^0+|([${permittedDecimalSeparator}]\\d*?)0+$`, 'g');
-    value = value.replace(regex, '$1');
-    if (value === '' || Number.isNaN(Number(value)) || !Math.abs(Str.fromUSDToNumber(value, false)) || (amountRegex && !amountRegex.test(value))) {
-        return '';
-    }
-
-    return value;
-};
-
-function BankAccountValidationForm({requiresTwoFactorAuth, reimbursementAccount, policy}: BankAccountValidationFormProps) {
-    const {translate, toLocaleDigit} = useLocalize();
-    const {getCurrencyDecimals} = useCurrencyListActions();
+/** The validation of a pending bank account, where the user enters the amounts of the three test transactions sent to it */
+function BankAccountValidationForm({requiresTwoFactorAuth, reimbursementAccount, policy, policyID, backTo, onBackButtonPress}: BankAccountValidationFormProps) {
+    const {translate} = useLocalize();
     const styles = useThemeStyles();
 
-    const policyID = reimbursementAccount?.achData?.policyID;
-    const bankAccountID = getBankAccountIDAsNumber(reimbursementAccount?.achData);
-    const decimalSeparator = toLocaleDigit('.');
-    const permittedDecimalSeparator = getPermittedDecimalSeparator(decimalSeparator);
-    const validate = (values: FormOnyxValues<typeof ONYXKEYS.FORMS.REIMBURSEMENT_ACCOUNT_FORM>): FormInputErrors<typeof ONYXKEYS.FORMS.REIMBURSEMENT_ACCOUNT_FORM> => {
-        const errors: FormInputErrors<typeof ONYXKEYS.FORMS.REIMBURSEMENT_ACCOUNT_FORM> = {};
-        const outputCurrency = policy?.outputCurrency ?? CONST.CURRENCY.USD;
-        const amountRegex = RegExp(`^-?\\d{0,${CONST.IOU.AMOUNT_MAX_LENGTH}}([${permittedDecimalSeparator}]\\d{0,${getCurrencyDecimals(outputCurrency)}})?$`, 'i');
+    const achData = reimbursementAccount?.achData;
+    const bankAccountID = getBankAccountIDAsNumber(achData);
+    const title = translate('connectBankAccountStep.validateYourBankAccount');
 
-        for (const key of AMOUNT_KEYS) {
-            const filteredValue = filterInput(values[key] ?? '', amountRegex, permittedDecimalSeparator);
-            if (isRequiredFulfilled(filteredValue.toString())) {
-                continue;
-            }
-            errors[key] = translate('common.error.invalidAmount');
-        }
-
-        return errors;
-    };
-
-    const submit = (values: FormOnyxValues<typeof ONYXKEYS.FORMS.REIMBURSEMENT_ACCOUNT_FORM>) => {
-        const amount1 = filterInput(values.amount1 ?? '', undefined, permittedDecimalSeparator);
-        const amount2 = filterInput(values.amount2 ?? '', undefined, permittedDecimalSeparator);
-        const amount3 = filterInput(values.amount3 ?? '', undefined, permittedDecimalSeparator);
-
-        const validateCode = [amount1, amount2, amount3].join(',');
-
-        // Send valid amounts to BankAccountAPI::validateBankAccount in Web-Expensify
-        if (bankAccountID) {
-            validateBankAccount(bankAccountID, validateCode, policyID);
-        }
-    };
-    // On android autoCapitalize="words" is necessary when keyboardType="decimal-pad" or inputMode="decimal" to prevent input lag.
-    // See https://github.com/Expensify/App/issues/51868 for more information
     return (
-        <FormProvider
+        <DynamicFormFlow
+            schema={getBankAccountValidationForm(translate)}
             formID={ONYXKEYS.FORMS.REIMBURSEMENT_ACCOUNT_FORM}
+            testID="ConnectBankAccount"
+            headerTitle={title}
+            // The step has no confirmation page, so this title only shows if the schema ever loses its page
+            confirmationTitle={title}
+            hasConfirmation={false}
             submitButtonText={translate('connectBankAccountStep.validateButtonText')}
-            onSubmit={submit}
-            validate={validate}
-            style={[styles.mh5, styles.flexGrow1]}
+            currency={policy?.outputCurrency ?? CONST.CURRENCY.USD}
+            buildRoute={(pageName, action) => ROUTES.BANK_ACCOUNT_USD_SETUP.getRoute({policyID, page: CONST.BANK_ACCOUNT.PAGE_NAMES.VALIDATION, subPage: pageName, action, backTo})}
+            onBack={onBackButtonPress}
+            validatePage={(page, values) => getBankAccountValidationErrors(values, translate)}
+            onSubmit={(answers) => {
+                if (!bankAccountID) {
+                    return;
+                }
+                validateBankAccount(bankAccountID, getValidateCode(answers), achData?.policyID);
+            }}
         >
-            <Text>{translate('connectBankAccountStep.description')}</Text>
-            <Text>{translate('connectBankAccountStep.descriptionCTA')}</Text>
-
-            <View style={[styles.mv5]}>
-                <InputWrapper
-                    InputComponent={TextInput}
-                    inputID={INPUT_IDS.AMOUNT1}
-                    shouldSaveDraft
-                    containerStyles={[styles.mb6]}
-                    inputMode={CONST.INPUT_MODE.DECIMAL}
-                    autoCapitalize="words"
-                    label={`${translate('connectBankAccountStep.validationInputLabel')} 1`}
-                    maxLength={CONST.VALIDATION_REIMBURSEMENT_INPUT_LIMIT}
-                />
-                <InputWrapper
-                    InputComponent={TextInput}
-                    inputID={INPUT_IDS.AMOUNT2}
-                    shouldSaveDraft
-                    containerStyles={[styles.mb6]}
-                    inputMode={CONST.INPUT_MODE.DECIMAL}
-                    autoCapitalize="words"
-                    label={`${translate('connectBankAccountStep.validationInputLabel')} 2`}
-                    maxLength={CONST.VALIDATION_REIMBURSEMENT_INPUT_LIMIT}
-                />
-                <InputWrapper
-                    InputComponent={TextInput}
-                    shouldSaveDraft
-                    inputID={INPUT_IDS.AMOUNT3}
-                    containerStyles={[styles.mb6]}
-                    inputMode={CONST.INPUT_MODE.DECIMAL}
-                    autoCapitalize="words"
-                    label={`${translate('connectBankAccountStep.validationInputLabel')} 3`}
-                    maxLength={CONST.VALIDATION_REIMBURSEMENT_INPUT_LIMIT}
-                />
-            </View>
             {!requiresTwoFactorAuth && (
                 <View style={[styles.mln5, styles.mrn5, styles.mt3]}>
                     <Enable2FACard />
                 </View>
             )}
-        </FormProvider>
+        </DynamicFormFlow>
     );
 }
 

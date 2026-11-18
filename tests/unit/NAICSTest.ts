@@ -1,9 +1,9 @@
 import CONST from '@src/CONST';
-import {ALL_NAICS, NAICS_MAPPING_WITH_ID} from '@src/NAICS';
+import {ALL_NAICS} from '@src/NAICS';
 
 describe('NAICS', () => {
     it('includes six-digit leaf codes in ALL_NAICS so they can be searched and shown as selected', () => {
-        // Given the flat NAICS list that IndustryCodeSelector searches by prefix
+        // Given the flat NAICS list the industry code options come from
         const ids = ALL_NAICS.map((item) => `${item.id}`);
 
         // When we look for the codes the industry code form accepts
@@ -21,18 +21,7 @@ describe('NAICS', () => {
         // When we remove duplicates
         const uniqueIds = new Set(ids);
 
-        // Then nothing was removed, so no row shows up twice in the selector
+        // Then nothing was removed, so no option shows up twice
         expect(uniqueIds.size).toBe(ids.length);
-    });
-
-    it('still maps a parent code to its child codes', () => {
-        // Given a parent code that has children in the NAICS tree
-        const children = NAICS_MAPPING_WITH_ID['11113'];
-
-        // When we read its children, which IndustryCodeSelector shows after the parent row is selected
-        const childIds = children?.map((child) => `${child.id}`);
-
-        // Then the six-digit leaf code is listed under its parent
-        expect(childIds).toContain('111130');
     });
 });

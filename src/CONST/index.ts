@@ -872,16 +872,7 @@ const CONST = {
         PLAID_WRONG_ACCOUNT_ERROR_FIELD: 'plaidWrongAccount',
         BENEFICIAL_OWNER_INFO_STEP: {
             BENEFICIAL_OWNER_DATA: {
-                BENEFICIAL_OWNER_KEYS: 'beneficialOwnerKeys',
                 PREFIX: 'beneficialOwner',
-                FIRST_NAME: 'firstName',
-                LAST_NAME: 'lastName',
-                DOB: 'dob',
-                SSN_LAST_4: 'ssnLast4',
-                STREET: 'street',
-                CITY: 'city',
-                STATE: 'state',
-                ZIP_CODE: 'zipCode',
             },
         },
         PLAID: {
@@ -931,7 +922,6 @@ const CONST = {
                 DATE_OF_BIRTH: 'date-of-birth',
                 SSN: 'ssn',
                 ADDRESS: 'address',
-                CONFIRMATION: 'confirmation',
             },
         },
         BUSINESS_INFO_STEP: {
@@ -945,25 +935,28 @@ const CONST = {
                 INCORPORATION_DATE: 'start-date',
                 INCORPORATION_STATE: 'incorporation-state',
                 INCORPORATION_CODE: 'code',
-                CONFIRMATION: 'confirmation',
             },
         },
         BENEFICIAL_OWNERS_STEP: {
             SUB_PAGE_NAMES: {
                 IS_USER_UBO: 'is-user-ubo',
                 IS_ANYONE_ELSE_UBO: 'is-anyone-else-ubo',
-                ARE_THERE_MORE_UBOS: 'are-there-more-ubos',
                 UBOS_LIST: 'ubos-list',
-                LEGAL_NAME: 'legal-name',
-                DATE_OF_BIRTH: 'date-of-birth',
-                SSN_LAST_4: 'ssn',
-                ADDRESS: 'address',
-                CONFIRMATION: 'confirmation',
             },
         },
         COMPLETE_VERIFICATION_STEP: {
             SUB_PAGE_NAMES: {
                 CONFIRM_AGREEMENTS: 'confirm-agreements',
+            },
+        },
+        KYB_DOCUMENTS_STEP: {
+            SUB_PAGE_NAMES: {
+                UPLOAD_DOCUMENTS: 'upload-documents',
+            },
+        },
+        VALIDATION_STEP: {
+            SUB_PAGE_NAMES: {
+                AMOUNTS: 'amounts',
             },
         },
         SUBSTEP: {
@@ -1034,7 +1027,6 @@ const CONST = {
     },
     CORPAY_DOCUMENT: {
         ALLOWED_FILE_TYPES: ['pdf', 'jpg', 'jpeg', 'png'],
-        FILE_LIMIT: 1,
         MAX_FILE_SIZE: 2097152,
     },
     DYNAMIC_FORM_DOCUMENT: {
@@ -1054,8 +1046,8 @@ const CONST = {
         /** Route segment of the confirmation page, which no page may take */
         CONFIRMATION_PAGE_KEY: 'confirm',
 
-        /** Links a schema may show: https only, on expensify.com or one of its subdomains, since a link opens outside the form */
-        ALLOWED_LINK_URL: /^https:\/\/([a-z0-9-]+\.)*expensify\.com(\/|$)/i,
+        /** Links a schema may show: https only, on expensify.com, corpay.com (the bank account partner's agreements) or their subdomains, since a link opens outside the form */
+        ALLOWED_LINK_URL: /^https:\/\/([a-z0-9-]+\.)*(expensify|corpay)\.com(\/|$)/i,
     },
     GLOBAL_REIMBURSEMENT_PROVIDER: {
         WISE: 'WISE',
@@ -1445,7 +1437,6 @@ const CONST = {
             SUB_PAGE_NAMES: {
                 BANK_ACCOUNT_DETAILS: 'bank-account-details',
                 ACCOUNT_HOLDER_DETAILS: 'account-holder-details',
-                CONFIRMATION: 'confirmation',
             },
         },
         BUSINESS_INFO_STEP: {
@@ -1460,7 +1451,6 @@ const CONST = {
                 BUSINESS_TYPE: 'business-type',
                 PAYMENT_VOLUME: 'payment-volume',
                 AVERAGE_REIMBURSEMENT: 'average-reimbursement',
-                CONFIRMATION: 'confirmation',
             },
             PICKLIST: {
                 ANNUAL_VOLUME_RANGE: 'AnnualVolumeRange',
@@ -1475,7 +1465,6 @@ const CONST = {
             SUB_PAGE_NAMES: {
                 IS_USER_BENEFICIAL_OWNER: 'is-user-beneficial-owner',
                 IS_ANYONE_ELSE_BENEFICIAL_OWNER: 'is-anyone-else-beneficial-owner',
-                ARE_THERE_MORE_BENEFICIAL_OWNERS: 'are-there-more-beneficial-owners',
                 BENEFICIAL_OWNERS_LIST: 'beneficial-owners-list',
                 NAME: 'name',
                 NATIONALITY: 'nationality',
@@ -1484,17 +1473,8 @@ const CONST = {
                 ADDRESS: 'address',
                 SSN: 'ssn',
                 DOCUMENTS: 'documents',
-                CONFIRMATION: 'confirmation',
-            },
-            SUBSTEP: {
-                IS_USER_BENEFICIAL_OWNER: 1,
-                IS_ANYONE_ELSE_BENEFICIAL_OWNER: 2,
-                BENEFICIAL_OWNER_DETAILS_FORM: 3,
-                ARE_THERE_MORE_BENEFICIAL_OWNERS: 4,
-                BENEFICIAL_OWNERS_LIST: 5,
             },
             BENEFICIAL_OWNER_DATA: {
-                BENEFICIAL_OWNER_KEYS: 'beneficialOwnerKeys',
                 PREFIX: 'beneficialOwner',
                 FIRST_NAME: 'firstName',
                 LAST_NAME: 'lastName',
@@ -1503,10 +1483,6 @@ const CONST = {
                 DOB: 'dob',
                 SSN: 'ssn',
                 STREET: 'street',
-                CITY: 'city',
-                STATE: 'state',
-                ZIP_CODE: 'zipCode',
-                COUNTRY: 'country',
                 PROOF_OF_OWNERSHIP: 'proofOfBeneficialOwner',
                 COPY_OF_ID: 'copyOfIDForBeneficialOwner',
                 ADDRESS_PROOF: 'addressProofForBeneficialOwner',
@@ -1526,34 +1502,26 @@ const CONST = {
                 DATE_OF_BIRTH: 'date-of-birth',
                 ADDRESS: 'address',
                 UPLOAD_DOCUMENTS: 'upload-documents',
-                CONFIRMATION: 'confirmation',
                 ENTER_EMAIL: 'enter-email',
                 HANG_TIGHT: 'hang-tight',
             },
-            SUBSTEP: {
-                IS_DIRECTOR: 1,
-                ENTER_EMAIL: 2,
-                SIGNER_DETAILS_FORM: 3,
-                DIRECTOR_DETAILS_FORM: 4,
-                HANG_TIGHT: 5,
-            },
             SIGNER_INFO_DATA: {
-                SIGNER_PREFIX: 'signer',
                 FULL_NAME: 'signerFullName',
                 DATE_OF_BIRTH: 'signerDateOfBirth',
                 JOB_TITLE: 'signerJobTitle',
                 EMAIL: 'signerEmail',
                 ADDRESS: 'signerCompleteResidentialAddress',
                 STREET: 'signer_street',
-                CITY: 'signer_city',
-                STATE: 'signer_state',
-                ZIP_CODE: 'signer_zipCode',
-                COUNTRY: 'signer_nationality',
                 PROOF_OF_DIRECTORS: 'proofOfDirectors',
                 COPY_OF_ID: 'signerCopyOfID',
                 ADDRESS_PROOF: 'signerAddressProof',
                 CODICE_FISCALE: 'signerCodiceFiscaleTaxID',
                 DOWNLOADED_PDS_AND_FSG: 'downloadedPDSandFSG',
+            },
+        },
+        AGREEMENTS_STEP: {
+            SUB_PAGE_NAMES: {
+                CONFIRM_AGREEMENTS: 'confirm-agreements',
             },
         },
         BANK_INFO_STEP_ACCOUNT_HOLDER_KEY_PREFIX: 'accountHolder',
@@ -1577,17 +1545,6 @@ const CONST = {
                 AVERAGE_REIMBURSEMENT: 'average-reimbursement',
                 CONFIRM: 'confirm',
             },
-        },
-    },
-    ENTER_SIGNER_INFO: {
-        ALLOWED_FILE_TYPES: ['pdf', 'jpg', 'jpeg', 'png'],
-        SUB_PAGE_NAMES: {
-            NAME: 'name',
-            JOB_TITLE: 'job-title',
-            DATE_OF_BIRTH: 'date-of-birth',
-            ADDRESS: 'address',
-            UPLOAD_DOCUMENTS: 'upload-documents',
-            CONFIRMATION: 'confirmation',
         },
     },
     INCORPORATION_TYPES: {
@@ -7980,8 +7937,6 @@ const CONST = {
      */
     ADDITIONAL_ALLOWED_CHARACTERS: 20,
 
-    VALIDATION_REIMBURSEMENT_INPUT_LIMIT: 20,
-
     REFERRAL_PROGRAM: {
         CONTENT_TYPES: {
             SUBMIT_EXPENSE: 'submitExpense',
@@ -8295,31 +8250,6 @@ const CONST = {
             errors: {},
             maxAttemptsReached: false,
             shouldShowResetModal: false,
-        },
-        SUBSTEP_INDEX: {
-            PERSONAL_INFO: {
-                LEGAL_NAME: 0,
-                DATE_OF_BIRTH: 1,
-                SSN: 2,
-                ADDRESS: 3,
-            },
-            BUSINESS_INFO: {
-                BUSINESS_NAME: 0,
-                TAX_ID_NUMBER: 1,
-                COMPANY_WEBSITE: 2,
-                PHONE_NUMBER: 3,
-                COMPANY_ADDRESS: 4,
-                COMPANY_TYPE: 5,
-                INCORPORATION_DATE: 6,
-                INCORPORATION_STATE: 7,
-                INCORPORATION_CODE: 8,
-            },
-            UBO: {
-                LEGAL_NAME: 0,
-                DATE_OF_BIRTH: 1,
-                SSN: 2,
-                ADDRESS: 3,
-            },
         },
     },
 

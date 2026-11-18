@@ -19,8 +19,8 @@ type DynamicFormShellProps = {
     /** Called when the user presses the header's back button */
     onBackButtonPress: () => void;
 
-    /** Unique page keys in order, for the step indicator */
-    stepNames: string[];
+    /** Unique step names in order, for the step indicator */
+    stepNames: readonly string[];
 
     /** Index of the highlighted step */
     stepIndex: number;
