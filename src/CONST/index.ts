@@ -944,7 +944,6 @@ const CONST = {
                 INCORPORATION_DATE: 'start-date',
                 INCORPORATION_STATE: 'incorporation-state',
                 INCORPORATION_CODE: 'code',
-                CONFIRMATION: 'confirmation',
             },
         },
         BENEFICIAL_OWNERS_STEP: {
@@ -8296,17 +8295,6 @@ const CONST = {
             shouldShowResetModal: false,
         },
         SUBSTEP_INDEX: {
-            BUSINESS_INFO: {
-                BUSINESS_NAME: 0,
-                TAX_ID_NUMBER: 1,
-                COMPANY_WEBSITE: 2,
-                PHONE_NUMBER: 3,
-                COMPANY_ADDRESS: 4,
-                COMPANY_TYPE: 5,
-                INCORPORATION_DATE: 6,
-                INCORPORATION_STATE: 7,
-                INCORPORATION_CODE: 8,
-            },
             UBO: {
                 LEGAL_NAME: 0,
                 DATE_OF_BIRTH: 1,

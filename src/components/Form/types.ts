@@ -36,7 +36,6 @@ import type {AccessibilityFocusTarget} from '@libs/Accessibility/moveAccessibili
 import type {ForwardedFSClassProps} from '@libs/Fullstory/types';
 
 import type ConstantSelector from '@pages/Debug/ConstantSelector';
-import type BusinessTypePicker from '@pages/ReimbursementAccount/USD/BusinessInfo/subSteps/TypeBusiness/BusinessTypePicker';
 import type DimensionTypeSelector from '@pages/workspace/accounting/intacct/import/DimensionTypeSelector';
 import type NetSuiteCustomFieldMappingPicker from '@pages/workspace/accounting/netsuite/import/NetSuiteImportCustomFieldNew/NetSuiteCustomFieldMappingPicker';
 import type NetSuiteCustomListPicker from '@pages/workspace/accounting/netsuite/import/NetSuiteImportCustomFieldNew/NetSuiteCustomListPicker';
@@ -76,7 +75,6 @@ type ValidInputs =
     | typeof AmountForm
     | typeof NumberWithSymbolForm
     | typeof PercentageForm
-    | typeof BusinessTypePicker
     | typeof DimensionTypeSelector
     | typeof StateSelector
     | typeof RoomNameInput

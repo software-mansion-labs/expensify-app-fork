@@ -1269,9 +1269,6 @@
 "../../src/pages/ReimbursementAccount/NonUSD/BeneficialOwnerInfo/BeneficialOwnerDetailsFormSubSteps/Address.tsx"	"@typescript-eslint/no-unsafe-type-assertion"	1
 "../../src/pages/ReimbursementAccount/NonUSD/BeneficialOwnerInfo/BeneficialOwnerDetailsFormSubSteps/Confirmation.tsx"	"@typescript-eslint/no-unsafe-type-assertion"	1
 "../../src/pages/ReimbursementAccount/NonUSD/BeneficialOwnerInfo/BeneficialOwnerDetailsFormSubSteps/Nationality.tsx"	"@typescript-eslint/no-unsafe-type-assertion"	1
-"../../src/pages/ReimbursementAccount/NonUSD/BusinessInfo/subSteps/Confirmation.tsx"	"@typescript-eslint/no-unsafe-type-assertion"	3
-"../../src/pages/ReimbursementAccount/NonUSD/BusinessInfo/subSteps/ContactInformation.tsx"	"@typescript-eslint/no-unsafe-type-assertion"	1
-"../../src/pages/ReimbursementAccount/NonUSD/BusinessInfo/subSteps/Website.tsx"	"@typescript-eslint/no-unsafe-type-assertion"	1
 "../../src/pages/ReimbursementAccount/NonUSD/Finish/index.tsx"	"no-restricted-imports"	1
 "../../src/pages/ReimbursementAccount/NonUSD/SignerInfo/HangTight.tsx"	"@typescript-eslint/no-unnecessary-type-assertion"	1
 "../../src/pages/ReimbursementAccount/NonUSD/SignerInfo/subSteps/Address.tsx"	"@typescript-eslint/no-unsafe-type-assertion"	1
@@ -1288,13 +1285,6 @@
 "../../src/pages/ReimbursementAccount/USD/BankInfo/BankInfo.tsx"	"@typescript-eslint/no-unsafe-type-assertion"	1
 "../../src/pages/ReimbursementAccount/USD/BeneficialOwnerInfo/BeneficialOwnersStep.tsx"	"@typescript-eslint/no-unnecessary-type-assertion"	1
 "../../src/pages/ReimbursementAccount/USD/BeneficialOwnerInfo/subSteps/BeneficialOwnerDetailsFormSubSteps/LegalNameUBO.tsx"	"@typescript-eslint/no-unsafe-type-assertion"	2
-"../../src/pages/ReimbursementAccount/USD/BusinessInfo/subSteps/ConfirmationBusiness.tsx"	"@typescript-eslint/no-unsafe-type-assertion"	2
-"../../src/pages/ReimbursementAccount/USD/BusinessInfo/subSteps/IncorporationDateBusiness.tsx"	"react-hooks/purity"	1
-"../../src/pages/ReimbursementAccount/USD/BusinessInfo/subSteps/IndustryCode/IndustryCodeSelector.tsx"	"react-hooks/set-state-in-effect"	1
-"../../src/pages/ReimbursementAccount/USD/BusinessInfo/subSteps/TypeBusiness/BusinessTypePicker/BusinessTypeSelectorModal.tsx"	"@typescript-eslint/no-unsafe-type-assertion"	1
-"../../src/pages/ReimbursementAccount/USD/BusinessInfo/subSteps/TypeBusiness/BusinessTypePicker/BusinessTypeSelectorModal.tsx"	"no-restricted-imports"	1
-"../../src/pages/ReimbursementAccount/USD/BusinessInfo/subSteps/TypeBusiness/BusinessTypePicker/index.tsx"	"@typescript-eslint/no-unsafe-type-assertion"	1
-"../../src/pages/ReimbursementAccount/USD/BusinessInfo/subSteps/WebsiteBusiness.tsx"	"@typescript-eslint/no-unsafe-type-assertion"	1
 "../../src/pages/ReimbursementAccount/USD/ConnectBankAccount/components/BankAccountValidationForm.tsx"	"unicorn/prefer-string-replace-all"	1
 "../../src/pages/ReimbursementAccount/USD/ConnectBankAccount/components/Enable2FACard.tsx"	"@typescript-eslint/no-unnecessary-type-assertion"	1
 "../../src/pages/ReimbursementAccount/USD/ConnectBankAccount/ConnectBankAccount.tsx"	"no-restricted-imports"	1

@@ -1,151 +1,117 @@
+import CheckboxWithLabel from '@components/CheckboxWithLabel';
+import DynamicFormFlow from '@components/DynamicForm';
+import useDraftPrefill from '@components/DynamicForm/hooks/useDraftPrefill';
+import type {DynamicFormValues} from '@components/DynamicForm/types';
+import toDynamicFormValues from '@components/DynamicForm/utils/toDynamicFormValues';
 import FullScreenLoadingIndicator from '@components/FullscreenLoadingIndicator';
-import InteractiveStepWrapper from '@components/InteractiveStepWrapper';
+import Text from '@components/Text';
+import TextLink from '@components/TextLink';
 
 import useLocalize from '@hooks/useLocalize';
 import useOnyx from '@hooks/useOnyx';
 import useReimbursementAccountSubmitCallback from '@hooks/useReimbursementAccountSubmitCallback';
-import useSubPage from '@hooks/useSubPage';
-import type {SubPageProps} from '@hooks/useSubPage/types';
 
-import Navigation from '@libs/Navigation/Navigation';
-import {parsePhoneNumber} from '@libs/PhoneNumber';
+import {getLatestErrorMessage} from '@libs/ErrorUtils';
 import {getBankAccountIDAsNumber} from '@libs/ReimbursementAccountUtils';
-import {isValidWebsite} from '@libs/ValidationUtils';
 
-import getInitialSubStepForBusinessInfo from '@pages/ReimbursementAccount/USD/utils/getInitialSubStepForBusinessInfo';
-import getSubStepValues from '@pages/ReimbursementAccount/utils/getSubStepValues';
+import type USDPageProps from '@pages/ReimbursementAccount/USD/types';
 
 import {updateCompanyInformationForBankAccount} from '@userActions/BankAccounts';
+import {saveDraftAnswers} from '@userActions/DynamicForm';
 
 import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';
 import ROUTES from '@src/ROUTES';
 import INPUT_IDS from '@src/types/form/ReimbursementAccountForm';
 
-import {Str} from 'expensify-common';
-import lodashPick from 'lodash/pick';
-import React from 'react';
+import React, {useState} from 'react';
 
-import AddressBusiness from './subSteps/AddressBusiness';
-import ConfirmationBusiness from './subSteps/ConfirmationBusiness';
-import IncorporationCode from './subSteps/IncorporationCode';
-import IncorporationDateBusiness from './subSteps/IncorporationDateBusiness';
-import IncorporationStateBusiness from './subSteps/IncorporationStateBusiness';
-import NameBusiness from './subSteps/NameBusiness';
-import PhoneNumberBusiness from './subSteps/PhoneNumberBusiness';
-import TaxIdBusiness from './subSteps/TaxIdBusiness';
-import TypeBusiness from './subSteps/TypeBusiness/TypeBusiness';
-import WebsiteBusiness from './subSteps/WebsiteBusiness';
+import getBusinessInfoForm, {getBusinessInfoParams, getBusinessInfoPrefill, getLockedBusinessInfoKeys} from './businessInfoForm';
 
-type BusinessInfoProps = {
-    /** Goes to the previous step */
-    onBackButtonPress: () => void;
+const FORM_ID = ONYXKEYS.FORMS.REIMBURSEMENT_ACCOUNT_FORM;
+const HAS_NO_CONNECTION_TO_CANNABIS_KEY = INPUT_IDS.BUSINESS_INFO_STEP.HAS_NO_CONNECTION_TO_CANNABIS;
 
-    /** Handles submit button press (URL-based navigation) */
-    onSubmit?: () => void;
+/** Where this step sits among `CONST.BANK_ACCOUNT.STEP_NAMES` */
+const STEP_INDEX = 4;
 
-    /** Back to URL for preserving navigation context */
-    backTo?: string;
-};
-
-const BUSINESS_INFO_STEP_KEYS = INPUT_IDS.BUSINESS_INFO_STEP;
-const PAGE_NAMES = CONST.BANK_ACCOUNT.PAGE_NAMES;
-const SUB_PAGE_NAMES = CONST.BANK_ACCOUNT.BUSINESS_INFO_STEP.SUB_PAGE_NAMES;
-
-const pages = [
-    {pageName: SUB_PAGE_NAMES.NAME, component: NameBusiness},
-    {pageName: SUB_PAGE_NAMES.TAX_ID, component: TaxIdBusiness},
-    {pageName: SUB_PAGE_NAMES.WEBSITE, component: WebsiteBusiness},
-    {pageName: SUB_PAGE_NAMES.PHONE, component: PhoneNumberBusiness},
-    {pageName: SUB_PAGE_NAMES.ADDRESS, component: AddressBusiness},
-    {pageName: SUB_PAGE_NAMES.TYPE, component: TypeBusiness},
-    {pageName: SUB_PAGE_NAMES.INCORPORATION_DATE, component: IncorporationDateBusiness},
-    {pageName: SUB_PAGE_NAMES.INCORPORATION_STATE, component: IncorporationStateBusiness},
-    {pageName: SUB_PAGE_NAMES.INCORPORATION_CODE, component: IncorporationCode},
-    {pageName: SUB_PAGE_NAMES.CONFIRMATION, component: ConfirmationBusiness},
-];
-
-function BusinessInfo({onBackButtonPress, onSubmit, backTo}: BusinessInfoProps) {
+/** Label of the checkbox where the user confirms the company is not on the list of restricted businesses, which it links to */
+function ConfirmCompanyLabel() {
     const {translate} = useLocalize();
+
+    return (
+        <Text>
+            {`${translate('businessInfoStep.confirmCompanyIsNot')} `}
+            <TextLink
+                sentryLabel={CONST.SENTRY_LABEL.REIMBURSEMENT_ACCOUNT.BUSINESS_INFO_RESTRICTED_BUSINESSES_LINK}
+                href={CONST.LIST_OF_RESTRICTED_BUSINESSES}
+            >{`${translate('businessInfoStep.listOfRestrictedBusinesses')}.`}</TextLink>
+        </Text>
+    );
+}
+
+/** The "Business info" step of the USD bank account setup. Each page is saved to the bank account as the user leaves it, and Confirm saves the whole step. */
+function BusinessInfo({onBackButtonPress, onSubmit, backTo}: USDPageProps) {
+    const {translate} = useLocalize();
+
     const [reimbursementAccount] = useOnyx(ONYXKEYS.REIMBURSEMENT_ACCOUNT);
-    const [reimbursementAccountDraft] = useOnyx(ONYXKEYS.FORMS.REIMBURSEMENT_ACCOUNT_FORM_DRAFT);
+    const [draft] = useOnyx(ONYXKEYS.FORMS.REIMBURSEMENT_ACCOUNT_FORM_DRAFT);
+    const [shouldShowRestrictedBusinessError, setShouldShowRestrictedBusinessError] = useState(false);
 
-    const getBankAccountFields = (fieldNames: string[]) => ({
-        ...lodashPick(reimbursementAccount?.achData, ...fieldNames),
-        ...lodashPick(reimbursementAccountDraft, ...fieldNames),
-    });
-
-    const policyID = reimbursementAccount?.achData?.policyID;
-    const bankAccountID = getBankAccountIDAsNumber(reimbursementAccount?.achData);
+    const achData = reimbursementAccount?.achData;
+    const policyID = achData?.policyID;
+    const draftValues = toDynamicFormValues(draft);
+    const lockedKeys = getLockedBusinessInfoKeys(achData);
     const markSubmitting = useReimbursementAccountSubmitCallback(onSubmit);
-    const values = getSubStepValues(BUSINESS_INFO_STEP_KEYS, reimbursementAccountDraft, reimbursementAccount);
+    const isPrefillPending = useDraftPrefill(FORM_ID, getBusinessInfoPrefill(achData), lockedKeys);
+    const hasNoConnectionToCannabis = !!draft?.[HAS_NO_CONNECTION_TO_CANNABIS_KEY];
 
-    const submit = (isConfirmPage: boolean) => {
-        const companyWebsite = Str.sanitizeURL(values.website, CONST.COMPANY_WEBSITE_DEFAULT_SCHEME);
-        updateCompanyInformationForBankAccount(
-            bankAccountID,
-            {
-                ...values,
-                ...getBankAccountFields(['routingNumber', 'accountNumber', 'bankName', 'plaidAccountID', 'plaidAccessToken', 'isSavings']),
-                companyTaxID: values.companyTaxID?.replaceAll(CONST.REGEX.NON_NUMERIC, ''),
-                companyPhone: parsePhoneNumber(values.companyPhone ?? '', {regionCode: CONST.COUNTRY.US}).number?.significant,
-                website: isValidWebsite(companyWebsite) ? companyWebsite : undefined,
-            },
-            policyID,
-            isConfirmPage,
-        );
+    const save = (answers: DynamicFormValues, isConfirmPage: boolean) => {
+        const params = {...getBusinessInfoParams(answers, achData, draft), [HAS_NO_CONNECTION_TO_CANNABIS_KEY]: hasNoConnectionToCannabis};
+        updateCompanyInformationForBankAccount(getBankAccountIDAsNumber(achData), params, policyID, isConfirmPage);
     };
 
-    const isBankAccountVerifying = reimbursementAccount?.achData?.state === CONST.BANK_ACCOUNT.STATE.VERIFYING;
-    const startFrom = isBankAccountVerifying ? 0 : getInitialSubStepForBusinessInfo(values);
-
-    const buildRoute = (pageName: string, action?: 'edit') => ROUTES.BANK_ACCOUNT_USD_SETUP.getRoute({policyID, page: PAGE_NAMES.COMPANY, subPage: pageName, action, backTo});
-
-    const {CurrentPage, isEditing, currentPageName, pageIndex, nextPage, prevPage, moveTo, isRedirecting} = useSubPage<SubPageProps>({
-        pages,
-        startFrom,
-        onFinished: () => {
-            submit(true);
-            markSubmitting();
-        },
-        onPageChange: () => submit(false),
-        buildRoute,
-    });
-
-    const handleBackButtonPress = () => {
-        if (isEditing) {
-            Navigation.goBack(buildRoute(SUB_PAGE_NAMES.CONFIRMATION));
-            return;
-        }
-
-        if (pageIndex === 0) {
-            onBackButtonPress();
-        } else {
-            prevPage();
-        }
+    // The tick is drafted like the answers, so it is kept when the user leaves the step and comes back
+    const toggleRestrictedBusinessConfirmation = (isChecked?: boolean) => {
+        saveDraftAnswers(FORM_ID, {[HAS_NO_CONNECTION_TO_CANNABIS_KEY]: !!isChecked});
+        setShouldShowRestrictedBusinessError(false);
     };
 
-    if (isRedirecting) {
-        return <FullScreenLoadingIndicator />;
+    if (isPrefillPending) {
+        return <FullScreenLoadingIndicator shouldUseGoBackButton />;
     }
 
     return (
-        <InteractiveStepWrapper
-            wrapperID="BusinessInfo"
-            shouldEnablePickerAvoiding={false}
-            shouldEnableMaxHeight
+        <DynamicFormFlow
+            schema={getBusinessInfoForm(lockedKeys)}
+            formID={FORM_ID}
+            testID="BusinessInfo"
             headerTitle={translate('businessInfoStep.businessInfo')}
-            handleBackButtonPress={handleBackButtonPress}
-            startStepIndex={4}
-            stepNames={CONST.BANK_ACCOUNT.STEP_NAMES}
+            confirmationTitle={translate('businessInfoStep.letsDoubleCheck')}
+            parentSteps={{names: CONST.BANK_ACCOUNT.STEP_NAMES, index: STEP_INDEX}}
+            buildRoute={(pageName, action) => ROUTES.BANK_ACCOUNT_USD_SETUP.getRoute({policyID, page: CONST.BANK_ACCOUNT.PAGE_NAMES.COMPANY, subPage: pageName, action, backTo})}
+            onBack={onBackButtonPress}
+            // The draft a page was opened with lacks that page's new answers, so they go on top
+            onPageSubmit={(page, answers) => save({...draftValues, ...answers}, false)}
+            // The flow keeps the answers when nothing is sent, so the user can tick the box and confirm again
+            onSubmit={(answers) => {
+                if (!hasNoConnectionToCannabis) {
+                    setShouldShowRestrictedBusinessError(true);
+                    return;
+                }
+                save(answers, true);
+                markSubmitting();
+            }}
+            isSubmitting={!!reimbursementAccount?.isLoading}
+            submitError={getLatestErrorMessage(reimbursementAccount ?? {})}
         >
-            <CurrentPage
-                isEditing={isEditing}
-                onNext={nextPage}
-                onMove={moveTo}
-                currentPageName={currentPageName}
+            <CheckboxWithLabel
+                value={hasNoConnectionToCannabis}
+                onInputChange={toggleRestrictedBusinessConfirmation}
+                accessibilityLabel={`${translate('businessInfoStep.confirmCompanyIsNot')} ${translate('businessInfoStep.listOfRestrictedBusinesses')}`}
+                LabelComponent={ConfirmCompanyLabel}
+                errorText={shouldShowRestrictedBusinessError ? translate('bankAccount.error.restrictedBusiness') : undefined}
             />
-        </InteractiveStepWrapper>
+        </DynamicFormFlow>
     );
 }
 

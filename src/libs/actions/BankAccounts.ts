@@ -471,10 +471,6 @@ function getVBBADataForOnyx(currentStep?: BankAccountStep, shouldShowLoading = t
     };
 }
 
-function addBusinessWebsiteForDraft(websiteUrl: string) {
-    Onyx.merge(ONYXKEYS.FORMS.REIMBURSEMENT_ACCOUNT_FORM_DRAFT, {website: websiteUrl});
-}
-
 /**
  * Get the Onyx data required to set the last used payment method to VBBA for a given policyID
  */
@@ -2133,7 +2129,6 @@ function pressLockedBankAccount(
 
 export {
     acceptACHContractForBankAccount,
-    addBusinessWebsiteForDraft,
     addPersonalBankAccount,
     clearOnfidoToken,
     clearPersonalBankAccount,

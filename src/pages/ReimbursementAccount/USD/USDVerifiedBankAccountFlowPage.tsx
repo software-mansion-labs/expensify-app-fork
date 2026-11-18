@@ -77,9 +77,9 @@ const pages: PageEntry[] = [
     {pageName: PAGE_NAMES.VERIFY_IDENTITY, component: VerifyIdentity as React.ComponentType<USDPageProps>},
     {
         pageName: PAGE_NAMES.COMPANY,
-        component: BusinessInfo as React.ComponentType<USDPageProps>,
+        component: BusinessInfo,
         firstSubPage: BUSINESS_INFO_SUB_PAGES.NAME,
-        lastSubPage: BUSINESS_INFO_SUB_PAGES.CONFIRMATION,
+        lastSubPage: CONST.DYNAMIC_FORM.CONFIRMATION_PAGE_KEY,
     },
     {
         pageName: PAGE_NAMES.BENEFICIAL_OWNERS,
