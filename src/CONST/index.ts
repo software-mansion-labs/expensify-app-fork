@@ -1047,8 +1047,8 @@ const CONST = {
         /** Route segment of the confirmation page, which no page may take */
         CONFIRMATION_PAGE_KEY: 'confirm',
 
-        /** Links a schema may show: https only, on expensify.com or one of its subdomains, since a link opens outside the form */
-        ALLOWED_LINK_URL: /^https:\/\/([a-z0-9-]+\.)*expensify\.com(\/|$)/i,
+        /** Links a schema may show: https only, on expensify.com, corpay.com (the bank account partner's agreements) or their subdomains, since a link opens outside the form */
+        ALLOWED_LINK_URL: /^https:\/\/([a-z0-9-]+\.)*(expensify|corpay)\.com(\/|$)/i,
     },
     GLOBAL_REIMBURSEMENT_PROVIDER: {
         WISE: 'WISE',
@@ -1545,6 +1545,11 @@ const CONST = {
                 ADDRESS_PROOF: 'signerAddressProof',
                 CODICE_FISCALE: 'signerCodiceFiscaleTaxID',
                 DOWNLOADED_PDS_AND_FSG: 'downloadedPDSandFSG',
+            },
+        },
+        AGREEMENTS_STEP: {
+            SUB_PAGE_NAMES: {
+                CONFIRM_AGREEMENTS: 'confirm-agreements',
             },
         },
         BANK_INFO_STEP_ACCOUNT_HOLDER_KEY_PREFIX: 'accountHolder',

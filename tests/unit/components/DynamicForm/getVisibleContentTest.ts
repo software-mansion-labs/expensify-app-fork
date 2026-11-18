@@ -84,6 +84,17 @@ describe('getVisibleContent', () => {
         expect(visibleContent).toEqual([email]);
     });
 
+    it('keeps a link to the agreements of Corpay, the bank account partner', () => {
+        // Given a link to the Corpay terms, which a user must read before accepting them in the bank account setup
+        const corpayTerms: DynamicFormLink = {...dataProtection, key: 'corpayTerms', url: 'https://www.corpay.com/cross-border/terms'};
+
+        // When the content is checked
+        const visibleContent = getVisibleContent([email, corpayTerms], {});
+
+        // Then the link stays, since Corpay is the only partner whose pages the forms link to
+        expect(visibleContent).toEqual([email, corpayTerms]);
+    });
+
     it('hides a link while its condition is not met', () => {
         // Given a link shown only for business recipients
         const businessLink: DynamicFormLink = {...dataProtection, showWhen: {key: 'legalType', equals: ['BUSINESS']}};

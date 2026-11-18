@@ -47,7 +47,7 @@ type DynamicFormLink = {
     /** Can match a field's key, since links and fields are told apart by `type` */
     key: string;
 
-    /** Address the link opens. Only https links to expensify.com or its subdomains are shown, since the link leaves the form. */
+    /** Address the link opens. Only https links to expensify.com, corpay.com or their subdomains are shown, since the link leaves the form. */
     url: string;
 
     /** The schema author's wording, shown when there is no textKey */

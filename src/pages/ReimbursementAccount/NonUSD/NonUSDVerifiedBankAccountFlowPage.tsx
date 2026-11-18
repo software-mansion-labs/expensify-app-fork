@@ -17,7 +17,7 @@ import {transition} from 'xstate';
 
 import type NonUSDPageProps from './types';
 
-import Agreements from './Agreements';
+import Agreements from './Agreements/Agreements';
 import BankInfo from './BankInfo/BankInfo';
 import BeneficialOwnerInfo from './BeneficialOwnerInfo/BeneficialOwnerInfo';
 import BusinessInfo from './BusinessInfo/BusinessInfo';
@@ -34,6 +34,7 @@ const BANK_INFO_SUB_PAGES = CONST.NON_USD_BANK_ACCOUNT.BANK_INFO_STEP.SUB_PAGE_N
 const BUSINESS_INFO_SUB_PAGES = CONST.NON_USD_BANK_ACCOUNT.BUSINESS_INFO_STEP.SUB_PAGE_NAMES;
 const BENEFICIAL_OWNER_INFO_SUB_PAGES = CONST.NON_USD_BANK_ACCOUNT.BENEFICIAL_OWNER_INFO_STEP.SUB_PAGE_NAMES;
 const SIGNER_INFO_SUB_PAGES = CONST.NON_USD_BANK_ACCOUNT.SIGNER_INFO_STEP.SUB_PAGE_NAMES;
+const AGREEMENTS_SUB_PAGES = CONST.NON_USD_BANK_ACCOUNT.AGREEMENTS_STEP.SUB_PAGE_NAMES;
 
 type PageEntry = {
     pageName: string;
@@ -55,7 +56,7 @@ const allPages: PageEntry[] = [
         lastSubPage: BENEFICIAL_OWNER_INFO_SUB_PAGES.BENEFICIAL_OWNERS_LIST,
     },
     {pageName: PAGE_NAME.SIGNER_INFO, component: SignerInfo, firstSubPage: SIGNER_INFO_SUB_PAGES.IS_DIRECTOR, lastSubPage: SIGNER_INFO_SUB_PAGES.CONFIRMATION},
-    {pageName: PAGE_NAME.AGREEMENTS, component: Agreements},
+    {pageName: PAGE_NAME.AGREEMENTS, component: Agreements, firstSubPage: AGREEMENTS_SUB_PAGES.CONFIRM_AGREEMENTS, lastSubPage: AGREEMENTS_SUB_PAGES.CONFIRM_AGREEMENTS},
     {pageName: PAGE_NAME.DOCUSIGN, component: Docusign},
     {pageName: PAGE_NAME.FINISH, component: Finish},
 ];

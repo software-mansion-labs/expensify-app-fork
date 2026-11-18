@@ -13,7 +13,10 @@ import useOnyx from './useOnyx';
  * @param pendingFlag - the flag the API action keeps true while its request is in flight
  * @returns markSubmitting - call this right after firing the API action
  */
-export default function useReimbursementAccountSubmitCallback(onSubmit?: () => void, pendingFlag: 'isLoading' | 'isSavingCorpayOnboardingCompanyFields' = 'isLoading') {
+export default function useReimbursementAccountSubmitCallback(
+    onSubmit?: () => void,
+    pendingFlag: 'isLoading' | 'isSavingCorpayOnboardingCompanyFields' | 'isFinishingCorpayBankAccountOnboarding' = 'isLoading',
+) {
     const [reimbursementAccount] = useOnyx(ONYXKEYS.REIMBURSEMENT_ACCOUNT);
     const isSubmittingRef = useRef(false);
     const isPending = !!reimbursementAccount?.[pendingFlag];
