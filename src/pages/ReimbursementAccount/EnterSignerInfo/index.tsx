@@ -1,22 +1,22 @@
-import FullScreenLoadingIndicator from '@components/FullscreenLoadingIndicator';
-import InteractiveStepWrapper from '@components/InteractiveStepWrapper';
+import DynamicFormFlow from '@components/DynamicForm';
 
 import useDynamicBackPath from '@hooks/useDynamicBackPath';
 import useLocalize from '@hooks/useLocalize';
 import useOnyx from '@hooks/useOnyx';
-import useSubPage from '@hooks/useSubPage';
-import type {SubPageProps} from '@hooks/useSubPage/types';
 
+import {getLatestErrorMessage} from '@libs/ErrorUtils';
+import mapCurrencyToCountry from '@libs/mapCurrencyToCountry';
 import createDynamicRoute from '@libs/Navigation/helpers/dynamicRoutesUtils/createDynamicRoute';
 
 import Navigation from '@navigation/Navigation';
 import type {PlatformStackScreenProps} from '@navigation/PlatformStackNavigation/types';
 import type {ReimbursementAccountEnterSignerInfoNavigatorParamList} from '@navigation/types';
 
+import getSignerDetailsForm, {getSignerDetailsParams} from '@pages/ReimbursementAccount/utils/getSignerDetailsForm';
+
 import {clearEnterSignerInformationFormSave, saveCorpayOnboardingDirectorInformation} from '@userActions/BankAccounts';
 import {clearErrors} from '@userActions/FormActions';
 
-import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';
 import {DYNAMIC_ROUTES} from '@src/ROUTES';
 import type SCREENS from '@src/SCREENS';
@@ -24,113 +24,56 @@ import type SCREENS from '@src/SCREENS';
 import {emailSelector} from '@selectors/Session';
 import React, {useEffect} from 'react';
 
-import Address from './subSteps/Address';
-import Confirmation from './subSteps/Confirmation';
-import DateOfBirth from './subSteps/DateOfBirth';
-import JobTitle from './subSteps/JobTitle';
-import Name from './subSteps/Name';
-import UploadDocuments from './subSteps/UploadDocuments';
-import getSignerDetailsAndSignerFiles from './utils/getSignerDetailsAndSignerFiles';
-
 type EnterSignerInfoProps = PlatformStackScreenProps<ReimbursementAccountEnterSignerInfoNavigatorParamList, typeof SCREENS.DYNAMIC_REIMBURSEMENT_ACCOUNT_ENTER_SIGNER_INFO>;
 
-type EnterSignerInfoFormSubPageProps = SubPageProps & {policyID: string};
-
-const SUB_PAGE_NAMES = CONST.ENTER_SIGNER_INFO.SUB_PAGE_NAMES;
-
-const pages = [
-    {pageName: SUB_PAGE_NAMES.NAME, component: Name},
-    {pageName: SUB_PAGE_NAMES.JOB_TITLE, component: JobTitle},
-    {pageName: SUB_PAGE_NAMES.DATE_OF_BIRTH, component: DateOfBirth},
-    {pageName: SUB_PAGE_NAMES.ADDRESS, component: Address},
-    {pageName: SUB_PAGE_NAMES.UPLOAD_DOCUMENTS, component: UploadDocuments},
-    {pageName: SUB_PAGE_NAMES.CONFIRMATION, component: Confirmation},
-];
-
-const confirmationIndex = pages.findIndex((page) => page.pageName === SUB_PAGE_NAMES.CONFIRMATION);
+const FORM_ID = ONYXKEYS.FORMS.ENTER_SINGER_INFO_FORM;
 
 function EnterSignerInfo({route}: EnterSignerInfoProps) {
     const {translate} = useLocalize();
-    const bankAccountID = Number(route.params.bankAccountID);
-    const policyID = route.params.policyID;
+    const {policyID, bankAccountID} = route.params;
     const [signerEmail = ''] = useOnyx(ONYXKEYS.SESSION, {selector: emailSelector});
-    const [enterSignerInfoForm] = useOnyx(ONYXKEYS.FORMS.ENTER_SINGER_INFO_FORM);
-    const [enterSignerInfoFormDraft] = useOnyx(ONYXKEYS.FORMS.ENTER_SINGER_INFO_FORM_DRAFT);
+    const [enterSignerInfoForm] = useOnyx(FORM_ID);
+    const [reimbursementAccountDraft] = useOnyx(ONYXKEYS.FORMS.REIMBURSEMENT_ACCOUNT_FORM_DRAFT);
+    const [policy] = useOnyx(`${ONYXKEYS.COLLECTION.POLICY}${policyID}`);
 
-    const submit = () => {
-        const {signerDetails, signerFiles} = getSignerDetailsAndSignerFiles(enterSignerInfoFormDraft, signerEmail);
-
-        saveCorpayOnboardingDirectorInformation({
-            inputs: JSON.stringify(signerDetails),
-            ...signerFiles,
-            bankAccountID,
-        });
-    };
+    const currency = policy?.outputCurrency ?? reimbursementAccountDraft?.currency ?? '';
+    const schema = getSignerDetailsForm({currency, country: mapCurrencyToCountry(currency) ?? reimbursementAccountDraft?.country ?? '', isUserOwner: false});
 
     const basePath = useDynamicBackPath(DYNAMIC_ROUTES.BANK_ACCOUNT_ENTER_SIGNER_INFO.path);
-    const buildRoute = (pageName: string, action?: 'edit') =>
-        createDynamicRoute(DYNAMIC_ROUTES.BANK_ACCOUNT_ENTER_SIGNER_INFO.getRoute(policyID, route.params.bankAccountID, route.params.isCompleted === 'true', pageName, action), basePath);
-
-    const {
-        CurrentPage: EnterSignerInfoForm,
-        isEditing,
-        pageIndex,
-        nextPage,
-        prevPage,
-        moveTo,
-        isRedirecting,
-    } = useSubPage<EnterSignerInfoFormSubPageProps>({pages, startFrom: 0, onFinished: submit, buildRoute});
+    const buildRoute = (subPage: string, action?: 'edit') =>
+        createDynamicRoute(DYNAMIC_ROUTES.BANK_ACCOUNT_ENTER_SIGNER_INFO.getRoute(policyID, bankAccountID, route.params.isCompleted === 'true', subPage, action), basePath);
 
     useEffect(() => {
         if (enterSignerInfoForm?.errors || enterSignerInfoForm?.isSavingSignerInformation || !enterSignerInfoForm?.isSuccess) {
             return;
         }
-
-        if (enterSignerInfoForm?.isSuccess) {
-            clearEnterSignerInformationFormSave();
-            Navigation.closeRHPFlow();
-        }
-
-        return () => {
-            clearEnterSignerInformationFormSave();
-        };
+        clearEnterSignerInformationFormSave();
+        Navigation.closeRHPFlow();
     }, [enterSignerInfoForm?.errors, enterSignerInfoForm?.isSavingSignerInformation, enterSignerInfoForm?.isSuccess]);
 
     useEffect(() => {
-        return clearErrors(ONYXKEYS.FORMS.ENTER_SINGER_INFO_FORM);
+        clearErrors(FORM_ID);
     }, []);
 
-    const handleBackButtonPress = () => {
-        clearErrors(ONYXKEYS.FORMS.ENTER_SINGER_INFO_FORM);
-        if (isEditing) {
-            moveTo(confirmationIndex, false);
-            return;
-        }
-
-        if (pageIndex > 0) {
-            prevPage();
-        } else {
-            Navigation.goBack(basePath);
-        }
-    };
-
-    if (isRedirecting) {
-        return <FullScreenLoadingIndicator />;
-    }
-
     return (
-        <InteractiveStepWrapper
-            wrapperID="EnterSignerInfo"
-            handleBackButtonPress={handleBackButtonPress}
+        <DynamicFormFlow
+            schema={schema}
+            formID={FORM_ID}
+            testID="EnterSignerInfo"
             headerTitle={translate('signerInfoStep.signerInfo')}
-        >
-            <EnterSignerInfoForm
-                isEditing={isEditing}
-                onNext={nextPage}
-                onMove={moveTo}
-                policyID={policyID}
-            />
-        </InteractiveStepWrapper>
+            confirmationTitle={translate('signerInfoStep.letsDoubleCheck')}
+            buildRoute={buildRoute}
+            onBack={() => {
+                clearErrors(FORM_ID);
+                Navigation.goBack(basePath);
+            }}
+            onSubmit={(answers) => {
+                const {signerDetails, signerFiles} = getSignerDetailsParams(answers, signerEmail);
+                saveCorpayOnboardingDirectorInformation({inputs: JSON.stringify(signerDetails), ...signerFiles, bankAccountID: Number(bankAccountID)});
+            }}
+            isSubmitting={!!enterSignerInfoForm?.isSavingSignerInformation}
+            submitError={getLatestErrorMessage(enterSignerInfoForm)}
+        />
     );
 }
 

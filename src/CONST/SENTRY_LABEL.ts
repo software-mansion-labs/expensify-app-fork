@@ -3476,7 +3476,6 @@ const SENTRY_LABEL = {
         CONNECT_BANK_ACCOUNT_FINISH_IN_CHAT: 'ReimbursementAccount-ConnectBankAccountFinishInChat',
         CONNECT_BANK_ACCOUNT_START_OVER: 'ReimbursementAccount-ConnectBankAccountStartOver',
         CONNECT_BANK_ACCOUNT_UPDATE_DETAILS: 'ReimbursementAccount-ConnectBankAccountUpdateDetails',
-        ENTER_SIGNER_INFO_DOWNLOAD_PDS_AND_FSG: 'ReimbursementAccount-EnterSignerInfoDownloadPDSAndFSG',
         ENTRY_POINT_CHANGE_BANK_ACCOUNT: 'ReimbursementAccount-EntryPointChangeBankAccount',
         ENTRY_POINT_CONNECT_MANUALLY: 'ReimbursementAccount-EntryPointConnectManually',
         ENTRY_POINT_CONNECT_WITH_PLAID: 'ReimbursementAccount-EntryPointConnectWithPlaid',

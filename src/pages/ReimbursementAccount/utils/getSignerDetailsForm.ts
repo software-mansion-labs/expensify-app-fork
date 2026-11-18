@@ -1,6 +1,6 @@
 /**
- * The signer details of the "Signer info" step of the non-USD bank account setup as a DynamicForm schema.
- * Page keys are the sub page names in the URL, and field keys are the draft keys. The documents asked for depend on the currency and the bank's country.
+ * The signer details of the non-USD bank account setup as a DynamicForm schema, shared by the "Signer info" step and the page a second signer opens.
+ * Page keys are the sub page names in the URL, and field keys are the draft keys of both forms. The documents asked for depend on the currency and the bank's country.
  * The answers go to the API as one JSON string of details plus the first file of each document, in the shape the older pages sent.
  */
 import type {DynamicFormValues} from '@components/DynamicForm/types';
