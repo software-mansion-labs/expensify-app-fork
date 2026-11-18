@@ -13,6 +13,7 @@ import type {SubPageProps} from '@hooks/useSubPage/types';
 import useTheme from '@hooks/useTheme';
 import useThemeStyles from '@hooks/useThemeStyles';
 
+import {getRegistrationNumberHelpURL} from '@libs/BankAccountUtils';
 import {getFieldRequiredErrors, isValidRegistrationNumber} from '@libs/ValidationUtils';
 
 import CONST from '@src/CONST';
@@ -50,7 +51,7 @@ function RegistrationNumberStepImpl({formID, onSubmit, inputID, defaultValue, is
     const icons = useMemoizedLazyExpensifyIcons(['QuestionMark']);
     const {inputCallbackRef} = useAutoFocusInput();
 
-    const helpLink = CONST.REGISTRATION_NUMBER_HELP_URL[country as keyof typeof CONST.REGISTRATION_NUMBER_HELP_URL] ?? CONST.REGISTRATION_NUMBER_HELP_URL.EU;
+    const helpLink = getRegistrationNumberHelpURL(country);
 
     const validate = (values: FormOnyxValues<keyof OnyxFormValuesMapping>): FormInputErrors<keyof OnyxFormValuesMapping> => {
         const errors = getFieldRequiredErrors(values, [inputID], translate);

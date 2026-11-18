@@ -47,7 +47,7 @@ const countryPage: PageEntry = {pageName: PAGE_NAME.CURRENCY_AND_COUNTRY, compon
 const allPages: PageEntry[] = [
     countryPage,
     {pageName: PAGE_NAME.BANK_INFO, component: BankInfo, firstSubPage: BANK_INFO_SUB_PAGES.BANK_ACCOUNT_DETAILS, lastSubPage: CONST.DYNAMIC_FORM.CONFIRMATION_PAGE_KEY},
-    {pageName: PAGE_NAME.BUSINESS_INFO, component: BusinessInfo, firstSubPage: BUSINESS_INFO_SUB_PAGES.NAME, lastSubPage: BUSINESS_INFO_SUB_PAGES.CONFIRMATION},
+    {pageName: PAGE_NAME.BUSINESS_INFO, component: BusinessInfo, firstSubPage: BUSINESS_INFO_SUB_PAGES.NAME, lastSubPage: CONST.DYNAMIC_FORM.CONFIRMATION_PAGE_KEY},
     {
         pageName: PAGE_NAME.BENEFICIAL_OWNER_INFO,
         component: BeneficialOwnerInfo,

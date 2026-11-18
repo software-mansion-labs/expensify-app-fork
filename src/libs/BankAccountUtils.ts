@@ -34,6 +34,11 @@ function getDefaultCompanyWebsite(session: OnyxEntry<OnyxTypes.Session>, account
     return account?.isFromPublicDomain && !shouldShowPublicDomain ? '' : `https://www.${Str.extractEmailDomain(session?.email ?? '')}`;
 }
 
+/** The help article on the registration number of the business's country, or the European one for a country without its own */
+function getRegistrationNumberHelpURL(country: string): string {
+    return Object.entries(CONST.REGISTRATION_NUMBER_HELP_URL).find(([helpCountry]) => helpCountry === country)?.[1] ?? CONST.REGISTRATION_NUMBER_HELP_URL.EU;
+}
+
 function getLastFourDigits(bankAccountNumber: string): string {
     return bankAccountNumber ? bankAccountNumber.slice(-4) : '';
 }
@@ -579,6 +584,7 @@ export {
     isWiseOnboardingMoreInfoNeeded,
     isWiseEnabledOrOnboarding,
     getDefaultCompanyWebsite,
+    getRegistrationNumberHelpURL,
     getBankAccountState,
     hasBankAccountAllowDebit,
     isConnectedViaPlaid,

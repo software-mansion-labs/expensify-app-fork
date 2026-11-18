@@ -1442,7 +1442,6 @@ const CONST = {
                 BUSINESS_TYPE: 'business-type',
                 PAYMENT_VOLUME: 'payment-volume',
                 AVERAGE_REIMBURSEMENT: 'average-reimbursement',
-                CONFIRMATION: 'confirmation',
             },
             PICKLIST: {
                 ANNUAL_VOLUME_RANGE: 'AnnualVolumeRange',

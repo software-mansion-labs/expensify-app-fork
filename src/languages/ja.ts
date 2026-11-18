@@ -4842,7 +4842,6 @@ ${integrationName === CONST.ONBOARDING_ACCOUNTING_MAPPING.other ? 'あなたの'
         },
         businessAddress: '会社住所',
         businessType: '事業形態',
-        incorporation: '法人化',
         incorporationCountry: '法人設立国',
         incorporationTypeName: '法人形態',
         businessCategory: '事業カテゴリ',
@@ -4854,15 +4853,11 @@ ${integrationName === CONST.ONBOARDING_ACCOUNTING_MAPPING.other ? 'あなたの'
         selectBusinessCategory: 'ビジネスカテゴリを選択',
         selectAnnualPaymentVolume: '年間支払額を選択',
         selectIncorporationCountry: '法人設立国を選択',
-        selectIncorporationState: '法人設立州を選択',
         selectAverageReimbursement: '平均払い戻し額を選択',
-        selectBusinessType: '事業形態を選択',
         findIncorporationType: '法人形態を検索',
         findBusinessCategory: 'ビジネスカテゴリを検索',
         findAnnualPaymentVolume: '年間支払額を見つける',
-        findIncorporationState: '法人設立州を検索',
         findAverageReimbursement: '平均払い戻し額を確認',
-        findBusinessType: '事業タイプを検索',
         error: {
             registrationNumber: '有効な登録番号を入力してください',
             taxIDEIN: (country: string) => {

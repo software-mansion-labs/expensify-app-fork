@@ -5122,7 +5122,6 @@ const translations = {
         },
         businessAddress: 'Business address',
         businessType: 'Business type',
-        incorporation: 'Incorporation',
         incorporationCountry: 'Incorporation country',
         incorporationTypeName: 'Incorporation type',
         businessCategory: 'Business category',
@@ -5134,15 +5133,11 @@ const translations = {
         selectBusinessCategory: 'Select business category',
         selectAnnualPaymentVolume: 'Select annual payment volume',
         selectIncorporationCountry: 'Select incorporation country',
-        selectIncorporationState: 'Select incorporation state',
         selectAverageReimbursement: 'Select average reimbursement amount',
-        selectBusinessType: 'Select business type',
         findIncorporationType: 'Find incorporation type',
         findBusinessCategory: 'Find business category',
         findAnnualPaymentVolume: 'Find annual payment volume',
-        findIncorporationState: 'Find incorporation state',
         findAverageReimbursement: 'Find average reimbursement amount',
-        findBusinessType: 'Find business type',
         error: {
             registrationNumber: 'Please provide a valid registration number',
             taxIDEIN: (country: string) => {
