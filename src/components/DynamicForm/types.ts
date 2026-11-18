@@ -34,7 +34,10 @@ type DynamicFormFlowProps = Pick<DynamicFormFieldsProps, 'currency' | 'maxFileSi
     /** Text under the confirmation page's title */
     confirmationSubtitle?: string;
 
-    /** Drawn on the confirmation page between the answers and Confirm, such as a terms checkbox. Confirm calls `onSubmit`, where the screen can check it before it sends anything. */
+    /**
+     * Drawn on the confirmation page between the answers and Confirm, such as a terms checkbox. Confirm calls `onSubmit`, where the screen can check it before it sends anything.
+     * Without a confirmation page it is drawn on the last page above its button instead.
+     */
     children?: ReactNode;
 
     /** testID of the screen wrapper */

@@ -23,7 +23,7 @@ import BusinessInfo from './BusinessInfo/BusinessInfo';
 import CompleteVerification from './CompleteVerification/CompleteVerification';
 import ConnectBankAccount from './ConnectBankAccount/ConnectBankAccount';
 import Country from './Country';
-import KYBDocuments from './KYBDocuments';
+import KYBDocuments from './KYBDocuments/KYBDocuments';
 import RequestorStep from './Requestor/RequestorStep';
 import VerifyIdentity from './Requestor/VerifyIdentity/VerifyIdentity';
 import usdBankAccountFlowMachine, {USD_BANK_ACCOUNT_FLOW_END} from './usdBankAccountFlowMachine';
@@ -34,6 +34,7 @@ const PERSONAL_INFO_SUB_PAGES = CONST.BANK_ACCOUNT.PERSONAL_INFO_STEP.SUB_PAGE_N
 const BUSINESS_INFO_SUB_PAGES = CONST.BANK_ACCOUNT.BUSINESS_INFO_STEP.SUB_PAGE_NAMES;
 const BENEFICIAL_OWNERS_SUB_PAGES = CONST.BANK_ACCOUNT.BENEFICIAL_OWNERS_STEP.SUB_PAGE_NAMES;
 const COMPLETE_VERIFICATION_SUB_PAGES = CONST.BANK_ACCOUNT.COMPLETE_VERIFICATION_STEP.SUB_PAGE_NAMES;
+const KYB_DOCUMENTS_SUB_PAGES = CONST.BANK_ACCOUNT.KYB_DOCUMENTS_STEP.SUB_PAGE_NAMES;
 
 type PageEntry = {
     pageName: string;
@@ -93,7 +94,12 @@ const pages: PageEntry[] = [
         firstSubPage: COMPLETE_VERIFICATION_SUB_PAGES.CONFIRM_AGREEMENTS,
         lastSubPage: COMPLETE_VERIFICATION_SUB_PAGES.CONFIRM_AGREEMENTS,
     },
-    {pageName: PAGE_NAMES.KYB_DOCS, component: KYBDocuments as React.ComponentType<USDPageProps>},
+    {
+        pageName: PAGE_NAMES.KYB_DOCS,
+        component: KYBDocuments,
+        firstSubPage: KYB_DOCUMENTS_SUB_PAGES.UPLOAD_DOCUMENTS,
+        lastSubPage: KYB_DOCUMENTS_SUB_PAGES.UPLOAD_DOCUMENTS,
+    },
     {pageName: PAGE_NAMES.VALIDATION, component: ConnectBankAccount as React.ComponentType<USDPageProps>},
 ];
 

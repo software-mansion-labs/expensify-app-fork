@@ -1,12 +1,16 @@
-import {render} from '@testing-library/react-native';
+import {render, screen} from '@testing-library/react-native';
 
 import DynamicFormFieldsPage from '@components/DynamicForm/components/DynamicFormFieldsPage';
 import FormProvider from '@components/Form/FormProvider';
+import Text from '@components/Text';
 
 import ONYXKEYS from '@src/ONYXKEYS';
 import type {DynamicFormPage} from '@src/types/onyx';
 
+import type {ReactNode} from 'react';
+
 import React from 'react';
+import {View} from 'react-native';
 
 jest.mock('@components/Form/FormProvider', () => jest.fn(() => null));
 jest.mock('@hooks/useLocalize', () => jest.fn(() => ({translate: (key: string) => key})));
@@ -14,7 +18,7 @@ jest.mock('@hooks/useThemeStyles', () => jest.fn(() => new Proxy({}, {get: () =>
 
 const page: DynamicFormPage = {key: 'identity', title: 'Identity', content: [{key: 'ssn', type: 'text', required: true, sensitive: true}]};
 
-function renderPage(isLastPage: boolean, shouldDisableNextWhenOffline?: boolean, validatePage?: (page: DynamicFormPage) => Record<string, string>) {
+function renderPage(isLastPage: boolean, shouldDisableNextWhenOffline?: boolean, validatePage?: (page: DynamicFormPage) => Record<string, string>, children?: ReactNode) {
     render(
         <DynamicFormFieldsPage
             isEditing={false}
@@ -33,7 +37,9 @@ function renderPage(isLastPage: boolean, shouldDisableNextWhenOffline?: boolean,
             confirmationTitle="Confirm"
             shouldDisableNextWhenOffline={shouldDisableNextWhenOffline}
             validatePage={validatePage}
-        />,
+        >
+            {children}
+        </DynamicFormFieldsPage>,
     );
     return jest.mocked(FormProvider).mock.lastCall?.[0];
 }
@@ -77,5 +83,27 @@ describe('DynamicFormFieldsPage', () => {
         // Then the screen's error blocks Next, and the missing SSN keeps its own error
         expect(validatePage).toHaveBeenCalledWith(page, expect.anything());
         expect(errors).toEqual({ssn: 'common.error.fieldRequired', other: 'Too many files'});
+    });
+
+    it("draws the screen's content above the button of the last page when no confirmation page follows", () => {
+        // Given the last page of a flow without a confirmation page, where the screen adds a way out such as finishing in a chat
+        const formProps = renderPage(true, false, undefined, <Text>Finish via chat</Text>);
+
+        // When the page's footer renders
+        render(<View>{formProps?.footerContent}</View>);
+
+        // Then the screen's content is there, since there is no confirmation page to draw it on
+        expect(screen.getByText('Finish via chat')).toBeOnTheScreen();
+    });
+
+    it("leaves the screen's content for the last page", () => {
+        // Given a page that a later page follows
+        const formProps = renderPage(false, false, undefined, <Text>Finish via chat</Text>);
+
+        // When the page's footer renders
+        render(<View>{formProps?.footerContent}</View>);
+
+        // Then the screen's content waits for the last page, where the form is sent
+        expect(screen.queryByText('Finish via chat')).not.toBeOnTheScreen();
     });
 });

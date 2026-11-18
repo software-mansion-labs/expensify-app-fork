@@ -949,6 +949,11 @@ const CONST = {
                 CONFIRM_AGREEMENTS: 'confirm-agreements',
             },
         },
+        KYB_DOCUMENTS_STEP: {
+            SUB_PAGE_NAMES: {
+                UPLOAD_DOCUMENTS: 'upload-documents',
+            },
+        },
         SUBSTEP: {
             MANUAL: 'manual',
             PLAID: 'plaid',

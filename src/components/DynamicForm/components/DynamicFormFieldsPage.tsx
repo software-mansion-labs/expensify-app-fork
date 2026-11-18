@@ -40,6 +40,7 @@ function DynamicFormFieldsPage({
     refreshError,
     shouldDisableNextWhenOffline,
     validatePage,
+    children,
 }: DynamicFormSubPageProps) {
     const {translate} = useLocalize();
     const styles = useThemeStyles();
@@ -78,13 +79,16 @@ function DynamicFormFieldsPage({
             // A refresh can change the fields on any page, so Next waits for it everywhere.
             isLoading={(isLastPage && !!isSubmitting) || !!isRefreshingRequirements}
             footerContent={
-                // Same message and spacing as the form's own alert, so an error from the server looks like one found locally. It announces itself.
-                pageError ? (
-                    <FormHelpMessage
-                        message={pageError}
-                        style={styles.mb3}
-                    />
-                ) : undefined
+                <>
+                    {isLastPage && children}
+                    {/* Same message and spacing as the form's own alert, so an error from the server looks like one found locally. It announces itself. */}
+                    {!!pageError && (
+                        <FormHelpMessage
+                            message={pageError}
+                            style={styles.mb3}
+                        />
+                    )}
+                </>
             }
             shouldRenderFooterAboveSubmit
         >
