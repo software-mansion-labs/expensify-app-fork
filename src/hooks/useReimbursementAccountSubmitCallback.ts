@@ -15,7 +15,7 @@ import useOnyx from './useOnyx';
  */
 export default function useReimbursementAccountSubmitCallback(
     onSubmit?: () => void,
-    pendingFlag: 'isLoading' | 'isSavingCorpayOnboardingCompanyFields' | 'isFinishingCorpayBankAccountOnboarding' = 'isLoading',
+    pendingFlag: 'isLoading' | 'isSavingCorpayOnboardingCompanyFields' | 'isSavingCorpayOnboardingBeneficialOwnersFields' | 'isFinishingCorpayBankAccountOnboarding' = 'isLoading',
 ) {
     const [reimbursementAccount] = useOnyx(ONYXKEYS.REIMBURSEMENT_ACCOUNT);
     const isSubmittingRef = useRef(false);

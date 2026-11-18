@@ -628,31 +628,6 @@ function isValidZipCodeInternational(zipCode: string): boolean {
 }
 
 /**
- * Validates the given value if it is correct ownership percentage
- * @param value
- * @param totalOwnedPercentage
- * @param ownerBeingModifiedID
- */
-function isValidOwnershipPercentage(value: string, totalOwnedPercentage: Record<string, number>, ownerBeingModifiedID: string): boolean {
-    const parsedValue = Number(value);
-    const isValidNumber = !Number.isNaN(parsedValue) && parsedValue >= 25 && parsedValue <= 100;
-
-    let totalOwnedPercentageSum = 0;
-    const totalOwnedPercentageKeys = Object.keys(totalOwnedPercentage);
-    for (const key of totalOwnedPercentageKeys) {
-        if (key === ownerBeingModifiedID) {
-            continue;
-        }
-
-        totalOwnedPercentageSum += totalOwnedPercentage[key];
-    }
-
-    const isTotalSumValid = totalOwnedPercentageSum + parsedValue <= 100;
-
-    return isValidNumber && isTotalSumValid;
-}
-
-/**
  * Validates the given value if it is correct ABN number - https://abr.business.gov.au/Help/AbnFormat
  * @param registrationNumber - number to validate.
  */
@@ -951,7 +926,6 @@ export {
     isValidEmailWithTLD,
     isValidPhoneInternational,
     isValidZipCodeInternational,
-    isValidOwnershipPercentage,
     isValidRegistrationNumber,
     isValidInputLength,
     isValidTaxIDEINNumber,

@@ -1,275 +1,80 @@
-import InteractiveStepWrapper from '@components/InteractiveStepWrapper';
-import YesNoStep from '@components/SubStepForms/YesNoStep';
+import DynamicFormFlow from '@components/DynamicForm';
+import useDraftPrefill from '@components/DynamicForm/hooks/useDraftPrefill';
 
 import useLocalize from '@hooks/useLocalize';
 import useOnyx from '@hooks/useOnyx';
+import useReimbursementAccountSubmitCallback from '@hooks/useReimbursementAccountSubmitCallback';
 
-import Navigation from '@libs/Navigation/Navigation';
+import {getLatestErrorMessage} from '@libs/ErrorUtils';
 
 import type NonUSDPageProps from '@pages/ReimbursementAccount/NonUSD/types';
-import getDraftValuesForBeneficialOwners from '@pages/ReimbursementAccount/NonUSD/utils/getDraftValuesForBeneficialOwners';
-import getOwnerDetailsAndOwnerFilesForBeneficialOwners from '@pages/ReimbursementAccount/NonUSD/utils/getOwnerDetailsAndOwnerFilesForBeneficialOwners';
+import getCurrencyForNonUSDBankAccount from '@pages/ReimbursementAccount/NonUSD/utils/getCurrencyForNonUSDBankAccount';
 
 import {clearReimbursementAccountSaveCorpayOnboardingBeneficialOwners, saveCorpayOnboardingBeneficialOwners} from '@userActions/BankAccounts';
-import {clearErrors, setDraftValues} from '@userActions/FormActions';
 
 import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';
 import ROUTES from '@src/ROUTES';
 import INPUT_IDS from '@src/types/form/ReimbursementAccountForm';
 
-import {SafeString, Str} from 'expensify-common';
-import React, {useEffect, useRef} from 'react';
+import React from 'react';
 
-import BeneficialOwnerDetailsFormPages from './BeneficialOwnerDetailsFormPages';
-import BeneficialOwnersList from './BeneficialOwnersList';
+import getBeneficialOwnerInfoForm, {getBeneficialOwnerInfoParams, getBeneficialOwnerInfoPrefill, getOwnershipTotalErrors} from './getBeneficialOwnerInfoForm';
 
-const {PAGE_NAME, BENEFICIAL_OWNER_INFO_STEP} = CONST.NON_USD_BANK_ACCOUNT;
-const SUB_PAGE_NAMES = BENEFICIAL_OWNER_INFO_STEP.SUB_PAGE_NAMES;
-const {OWNERSHIP_PERCENTAGE, PREFIX} = BENEFICIAL_OWNER_INFO_STEP.BENEFICIAL_OWNER_DATA;
-const {OWNS_MORE_THAN_25_PERCENT, ANY_INDIVIDUAL_OWN_25_PERCENT_OR_MORE, BENEFICIAL_OWNERS, COMPANY_NAME} = INPUT_IDS.ADDITIONAL_DATA.CORPAY;
+const FORM_ID = ONYXKEYS.FORMS.REIMBURSEMENT_ACCOUNT_FORM;
+const {COMPANY_NAME, OWNS_MORE_THAN_25_PERCENT} = INPUT_IDS.ADDITIONAL_DATA.CORPAY;
 
-const OUTER_SUB_PAGES = new Set<string>([
-    SUB_PAGE_NAMES.IS_USER_BENEFICIAL_OWNER,
-    SUB_PAGE_NAMES.IS_ANYONE_ELSE_BENEFICIAL_OWNER,
-    SUB_PAGE_NAMES.ARE_THERE_MORE_BENEFICIAL_OWNERS,
-    SUB_PAGE_NAMES.BENEFICIAL_OWNERS_LIST,
-]);
+/** Where this step sits among the steps of the non-USD bank account setup */
+const STEP_INDEX = 3;
 
-function BeneficialOwnerInfo({onBackButtonPress, onSubmit, stepNames, currentSubPage, backTo}: NonUSDPageProps) {
+/** The "Beneficial owners" step of the non-USD bank account setup. The documents Corpay asks of each owner depend on the bank account's currency and country. */
+function BeneficialOwnerInfo({onBackButtonPress, onSubmit, policyID: policyIDProp, stepNames, backTo}: NonUSDPageProps) {
     const {translate} = useLocalize();
 
     const [reimbursementAccount] = useOnyx(ONYXKEYS.REIMBURSEMENT_ACCOUNT);
     const [reimbursementAccountDraft] = useOnyx(ONYXKEYS.FORMS.REIMBURSEMENT_ACCOUNT_FORM_DRAFT);
-
+    const policyID = policyIDProp ?? reimbursementAccount?.achData?.policyID;
+    const [policy] = useOnyx(`${ONYXKEYS.COLLECTION.POLICY}${policyID}`);
+    const {country, currency} = getCurrencyForNonUSDBankAccount(policy, reimbursementAccountDraft, reimbursementAccount);
     const companyName = reimbursementAccount?.achData?.corpay?.[COMPANY_NAME] ?? reimbursementAccountDraft?.[COMPANY_NAME] ?? '';
+    const isUserOwner = !!reimbursementAccountDraft?.[OWNS_MORE_THAN_25_PERCENT];
     const bankAccountID = reimbursementAccount?.achData?.bankAccountID ?? CONST.DEFAULT_NUMBER_ID;
-    const policyID = reimbursementAccount?.achData?.policyID;
 
-    const isUserOwner = reimbursementAccount?.achData?.corpay?.[OWNS_MORE_THAN_25_PERCENT] ?? reimbursementAccountDraft?.[OWNS_MORE_THAN_25_PERCENT] ?? false;
-    const isAnyoneElseOwner = reimbursementAccount?.achData?.corpay?.[ANY_INDIVIDUAL_OWN_25_PERCENT_OR_MORE] ?? reimbursementAccountDraft?.[ANY_INDIVIDUAL_OWN_25_PERCENT_OR_MORE] ?? false;
-    const savedBeneficialOwnerValues = getDraftValuesForBeneficialOwners(reimbursementAccount);
-    const ownerKeys = reimbursementAccountDraft?.beneficialOwnerKeys ?? savedBeneficialOwnerValues.beneficialOwnerKeys;
+    const isPrefillPending = useDraftPrefill(FORM_ID, getBeneficialOwnerInfoPrefill(reimbursementAccount?.achData?.corpay));
 
-    // Populate the form draft with beneficial owner data from the server.
-    // Skip if draft values already exist (beneficialOwnerKeys is set) or if there are no saved owners to populate.
-    useEffect(() => {
-        if (reimbursementAccountDraft?.beneficialOwnerKeys || savedBeneficialOwnerValues.beneficialOwnerKeys.length === 0) {
+    // A failed request does not always come back with an error, so the step only moves on once the owners are saved
+    const markSubmitting = useReimbursementAccountSubmitCallback(() => {
+        if (!reimbursementAccount?.isSuccess) {
             return;
         }
-        setDraftValues(ONYXKEYS.FORMS.REIMBURSEMENT_ACCOUNT_FORM, savedBeneficialOwnerValues);
-    }, [reimbursementAccountDraft?.beneficialOwnerKeys, savedBeneficialOwnerValues]);
-
-    const totalOwnedPercentageSum = ownerKeys.reduce((acc, key) => {
-        const percentageKey = `${PREFIX}_${key}_${OWNERSHIP_PERCENTAGE}` as const;
-        return acc + (Number(SafeString(reimbursementAccountDraft?.[percentageKey])) || 0);
-    }, 0);
-
-    const canAddMoreOwners = totalOwnedPercentageSum <= 75;
-
-    const isSubmittingRef = useRef(false);
-
-    const submit = ({anyIndividualOwn25PercentOrMore}: {anyIndividualOwn25PercentOrMore?: boolean} = {}) => {
-        const currentOwnerKeys = reimbursementAccountDraft?.beneficialOwnerKeys ?? [];
-        const {ownerDetails, ownerFiles} = getOwnerDetailsAndOwnerFilesForBeneficialOwners(currentOwnerKeys, reimbursementAccountDraft);
-
-        setDraftValues(ONYXKEYS.FORMS.REIMBURSEMENT_ACCOUNT_FORM, {
-            [OWNS_MORE_THAN_25_PERCENT]: isUserOwner,
-            [ANY_INDIVIDUAL_OWN_25_PERCENT_OR_MORE]: isAnyoneElseOwner,
-            [BENEFICIAL_OWNERS]: JSON.stringify(ownerDetails),
-        });
-
-        isSubmittingRef.current = true;
-        saveCorpayOnboardingBeneficialOwners({
-            inputs: JSON.stringify({...ownerDetails, anyIndividualOwn25PercentOrMore}),
-            ...ownerFiles,
-            beneficialOwnerIDs: currentOwnerKeys.length > 0 ? currentOwnerKeys.join(',') : undefined,
-            bankAccountID,
-        });
-    };
-
-    useEffect(() => {
-        if (reimbursementAccount?.errors || reimbursementAccount?.isSavingCorpayOnboardingBeneficialOwnersFields || !reimbursementAccount?.isSuccess) {
-            return;
-        }
-
-        // We need to check value of local isSubmittingRef because on initial render reimbursementAccount?.isSuccess is still true after submitting the previous step
-        if (reimbursementAccount?.isSuccess && isSubmittingRef.current) {
-            isSubmittingRef.current = false;
-            onSubmit();
-            clearReimbursementAccountSaveCorpayOnboardingBeneficialOwners();
-        }
-
-        return () => {
-            clearReimbursementAccountSaveCorpayOnboardingBeneficialOwners();
-        };
-    }, [reimbursementAccount?.errors, reimbursementAccount?.isSavingCorpayOnboardingBeneficialOwnersFields, reimbursementAccount?.isSuccess, onSubmit]);
-
-    const prepareOwnerDetailsForm = (ownerID: string) => {
-        setDraftValues(ONYXKEYS.FORMS.REIMBURSEMENT_ACCOUNT_FORM, {ownerBeingModifiedID: ownerID});
-        Navigation.navigate(ROUTES.BANK_ACCOUNT_NON_USD_SETUP.getRoute({policyID, page: PAGE_NAME.BENEFICIAL_OWNER_INFO, subPage: SUB_PAGE_NAMES.NAME, backTo}));
-    };
-
-    const handleOwnerDetailsFormFinished = () => {
-        const ownerBeingModifiedID = reimbursementAccountDraft?.ownerBeingModifiedID ?? CONST.NON_USD_BANK_ACCOUNT.CURRENT_USER_KEY;
-        const currentOwnerKeys = reimbursementAccountDraft?.beneficialOwnerKeys ?? [];
-        const isFreshOwner = !currentOwnerKeys.includes(ownerBeingModifiedID);
-        const isEditingCreatedOwner = reimbursementAccountDraft?.isEditingCreatedOwner ?? false;
-        const isUserEnteringHisOwnData = ownerBeingModifiedID === CONST.NON_USD_BANK_ACCOUNT.CURRENT_USER_KEY;
-
-        let updatedOwnerKeys = currentOwnerKeys;
-        if (isFreshOwner) {
-            updatedOwnerKeys = [...currentOwnerKeys, ownerBeingModifiedID];
-            setDraftValues(ONYXKEYS.FORMS.REIMBURSEMENT_ACCOUNT_FORM, {beneficialOwnerKeys: updatedOwnerKeys});
-        }
-
-        const updatedTotalSum = updatedOwnerKeys.reduce((acc, key) => {
-            const percentageKey = `${PREFIX}_${key}_${OWNERSHIP_PERCENTAGE}` as const;
-            return acc + (Number(SafeString(reimbursementAccountDraft?.[percentageKey])) || 0);
-        }, 0);
-        const canAddMore = updatedTotalSum <= 75;
-
-        if (isEditingCreatedOwner || !canAddMore) {
-            setDraftValues(ONYXKEYS.FORMS.REIMBURSEMENT_ACCOUNT_FORM, {isEditingCreatedOwner: false});
-            Navigation.navigate(ROUTES.BANK_ACCOUNT_NON_USD_SETUP.getRoute({policyID, page: PAGE_NAME.BENEFICIAL_OWNER_INFO, subPage: SUB_PAGE_NAMES.BENEFICIAL_OWNERS_LIST, backTo}));
-        } else if (isUserEnteringHisOwnData) {
-            Navigation.navigate(
-                ROUTES.BANK_ACCOUNT_NON_USD_SETUP.getRoute({policyID, page: PAGE_NAME.BENEFICIAL_OWNER_INFO, subPage: SUB_PAGE_NAMES.IS_ANYONE_ELSE_BENEFICIAL_OWNER, backTo}),
-            );
-        } else {
-            Navigation.navigate(
-                ROUTES.BANK_ACCOUNT_NON_USD_SETUP.getRoute({policyID, page: PAGE_NAME.BENEFICIAL_OWNER_INFO, subPage: SUB_PAGE_NAMES.ARE_THERE_MORE_BENEFICIAL_OWNERS, backTo}),
-            );
-        }
-    };
-
-    const handleOwnerEdit = (ownerID: string) => {
-        setDraftValues(ONYXKEYS.FORMS.REIMBURSEMENT_ACCOUNT_FORM, {ownerBeingModifiedID: ownerID, isEditingCreatedOwner: true});
-        Navigation.navigate(ROUTES.BANK_ACCOUNT_NON_USD_SETUP.getRoute({policyID, page: PAGE_NAME.BENEFICIAL_OWNER_INFO, subPage: SUB_PAGE_NAMES.NAME, backTo}));
-    };
-
-    const handleIsUserOwnerSelected = (value: boolean) => {
-        const currentOwnerKeys = reimbursementAccountDraft?.beneficialOwnerKeys ?? [];
-        setDraftValues(ONYXKEYS.FORMS.REIMBURSEMENT_ACCOUNT_FORM, {[OWNS_MORE_THAN_25_PERCENT]: value});
-
-        if (value) {
-            if (currentOwnerKeys.length >= 4) {
-                setDraftValues(ONYXKEYS.FORMS.REIMBURSEMENT_ACCOUNT_FORM, {beneficialOwnerKeys: currentOwnerKeys.slice(0, 3)});
-            }
-            setDraftValues(ONYXKEYS.FORMS.REIMBURSEMENT_ACCOUNT_FORM, {ownerBeingModifiedID: CONST.NON_USD_BANK_ACCOUNT.CURRENT_USER_KEY});
-            Navigation.navigate(ROUTES.BANK_ACCOUNT_NON_USD_SETUP.getRoute({policyID, page: PAGE_NAME.BENEFICIAL_OWNER_INFO, subPage: SUB_PAGE_NAMES.NAME, backTo}));
-        } else {
-            const filteredKeys = currentOwnerKeys.filter((key) => key !== CONST.NON_USD_BANK_ACCOUNT.CURRENT_USER_KEY);
-            setDraftValues(ONYXKEYS.FORMS.REIMBURSEMENT_ACCOUNT_FORM, {beneficialOwnerKeys: filteredKeys});
-            Navigation.navigate(
-                ROUTES.BANK_ACCOUNT_NON_USD_SETUP.getRoute({policyID, page: PAGE_NAME.BENEFICIAL_OWNER_INFO, subPage: SUB_PAGE_NAMES.IS_ANYONE_ELSE_BENEFICIAL_OWNER, backTo}),
-            );
-        }
-    };
-
-    const handleIsAnyoneElseOwnerSelected = (value: boolean) => {
-        setDraftValues(ONYXKEYS.FORMS.REIMBURSEMENT_ACCOUNT_FORM, {[ANY_INDIVIDUAL_OWN_25_PERCENT_OR_MORE]: value});
-
-        if (!value && !isUserOwner) {
-            setDraftValues(ONYXKEYS.FORMS.REIMBURSEMENT_ACCOUNT_FORM, {beneficialOwnerKeys: []});
-            submit({anyIndividualOwn25PercentOrMore: false});
-            return;
-        }
-
-        if (!value && isUserOwner) {
-            setDraftValues(ONYXKEYS.FORMS.REIMBURSEMENT_ACCOUNT_FORM, {beneficialOwnerKeys: [CONST.NON_USD_BANK_ACCOUNT.CURRENT_USER_KEY]});
-            Navigation.navigate(ROUTES.BANK_ACCOUNT_NON_USD_SETUP.getRoute({policyID, page: PAGE_NAME.BENEFICIAL_OWNER_INFO, subPage: SUB_PAGE_NAMES.BENEFICIAL_OWNERS_LIST, backTo}));
-            return;
-        }
-
-        if (!canAddMoreOwners) {
-            Navigation.navigate(ROUTES.BANK_ACCOUNT_NON_USD_SETUP.getRoute({policyID, page: PAGE_NAME.BENEFICIAL_OWNER_INFO, subPage: SUB_PAGE_NAMES.BENEFICIAL_OWNERS_LIST, backTo}));
-            return;
-        }
-
-        prepareOwnerDetailsForm(Str.guid());
-    };
-
-    const handleAreThereMoreSelected = (value: boolean) => {
-        if (!value || !canAddMoreOwners) {
-            Navigation.navigate(ROUTES.BANK_ACCOUNT_NON_USD_SETUP.getRoute({policyID, page: PAGE_NAME.BENEFICIAL_OWNER_INFO, subPage: SUB_PAGE_NAMES.BENEFICIAL_OWNERS_LIST, backTo}));
-            return;
-        }
-
-        setDraftValues(ONYXKEYS.FORMS.REIMBURSEMENT_ACCOUNT_FORM, {[ANY_INDIVIDUAL_OWN_25_PERCENT_OR_MORE]: true});
-        prepareOwnerDetailsForm(Str.guid());
-    };
-
-    const handleBackButtonPress = () => {
-        clearErrors(ONYXKEYS.FORMS.REIMBURSEMENT_ACCOUNT_FORM);
-        if (currentSubPage === SUB_PAGE_NAMES.IS_USER_BENEFICIAL_OWNER) {
-            onBackButtonPress();
-        } else if (currentSubPage === SUB_PAGE_NAMES.IS_ANYONE_ELSE_BENEFICIAL_OWNER) {
-            Navigation.goBack(ROUTES.BANK_ACCOUNT_NON_USD_SETUP.getRoute({policyID, page: PAGE_NAME.BENEFICIAL_OWNER_INFO, subPage: SUB_PAGE_NAMES.IS_USER_BENEFICIAL_OWNER, backTo}));
-        } else if (currentSubPage === SUB_PAGE_NAMES.ARE_THERE_MORE_BENEFICIAL_OWNERS) {
-            Navigation.goBack(ROUTES.BANK_ACCOUNT_NON_USD_SETUP.getRoute({policyID, page: PAGE_NAME.BENEFICIAL_OWNER_INFO, subPage: SUB_PAGE_NAMES.IS_ANYONE_ELSE_BENEFICIAL_OWNER, backTo}));
-        } else if (currentSubPage === SUB_PAGE_NAMES.BENEFICIAL_OWNERS_LIST) {
-            Navigation.goBack(ROUTES.BANK_ACCOUNT_NON_USD_SETUP.getRoute({policyID, page: PAGE_NAME.BENEFICIAL_OWNER_INFO, subPage: SUB_PAGE_NAMES.CONFIRMATION, backTo}));
-        } else {
-            Navigation.goBack();
-        }
-    };
-
-    if (currentSubPage && !OUTER_SUB_PAGES.has(currentSubPage)) {
-        return (
-            <BeneficialOwnerDetailsFormPages
-                stepNames={stepNames}
-                policyID={policyID}
-                onFinished={handleOwnerDetailsFormFinished}
-                backTo={backTo}
-            />
-        );
-    }
+        onSubmit();
+        clearReimbursementAccountSaveCorpayOnboardingBeneficialOwners();
+    }, 'isSavingCorpayOnboardingBeneficialOwnersFields');
 
     return (
-        <InteractiveStepWrapper
-            wrapperID="BeneficialOwnerInfo"
-            handleBackButtonPress={handleBackButtonPress}
+        <DynamicFormFlow
+            schema={getBeneficialOwnerInfoForm(translate, companyName, isUserOwner, currency, country)}
+            formID={FORM_ID}
+            testID="BeneficialOwnerInfo"
             headerTitle={translate('ownershipInfoStep.ownerInfo')}
-            stepNames={stepNames}
-            shouldShowOfflineIndicatorInWideScreen={currentSubPage === SUB_PAGE_NAMES.BENEFICIAL_OWNERS_LIST}
-            startStepIndex={3}
-        >
-            {currentSubPage === SUB_PAGE_NAMES.IS_USER_BENEFICIAL_OWNER && (
-                <YesNoStep
-                    title={translate('ownershipInfoStep.doYouOwn', companyName)}
-                    description={translate('ownershipInfoStep.regulationsRequire')}
-                    defaultValue={isUserOwner}
-                    onSelectedValue={handleIsUserOwnerSelected}
-                    isLoading={reimbursementAccount?.isSavingCorpayOnboardingBeneficialOwnersFields}
-                />
-            )}
-            {currentSubPage === SUB_PAGE_NAMES.IS_ANYONE_ELSE_BENEFICIAL_OWNER && (
-                <YesNoStep
-                    title={translate('ownershipInfoStep.doesAnyoneOwn', companyName)}
-                    description={translate('ownershipInfoStep.regulationsRequire')}
-                    defaultValue={isAnyoneElseOwner}
-                    onSelectedValue={handleIsAnyoneElseOwnerSelected}
-                    isLoading={reimbursementAccount?.isSavingCorpayOnboardingBeneficialOwnersFields}
-                />
-            )}
-            {currentSubPage === SUB_PAGE_NAMES.ARE_THERE_MORE_BENEFICIAL_OWNERS && (
-                <YesNoStep
-                    title={translate('ownershipInfoStep.areThereOther', companyName)}
-                    description={translate('ownershipInfoStep.regulationsRequire')}
-                    defaultValue={false}
-                    onSelectedValue={handleAreThereMoreSelected}
-                    isLoading={reimbursementAccount?.isSavingCorpayOnboardingBeneficialOwnersFields}
-                />
-            )}
-            {currentSubPage === SUB_PAGE_NAMES.BENEFICIAL_OWNERS_LIST && (
-                <BeneficialOwnersList
-                    handleConfirmation={submit}
-                    handleOwnerEdit={handleOwnerEdit}
-                    ownerKeys={ownerKeys}
-                />
-            )}
-        </InteractiveStepWrapper>
+            confirmationTitle={translate('beneficialOwnerInfoStep.letsDoubleCheck')}
+            confirmationSubtitle={translate('beneficialOwnerInfoStep.regulationRequiresUsToVerifyTheIdentity')}
+            parentSteps={{names: stepNames ?? CONST.NON_USD_BANK_ACCOUNT.STEP_NAMES, index: STEP_INDEX}}
+            maxFileSize={CONST.CORPAY_DOCUMENT.MAX_FILE_SIZE}
+            buildRoute={(pageName, action) =>
+                ROUTES.BANK_ACCOUNT_NON_USD_SETUP.getRoute({policyID, page: CONST.NON_USD_BANK_ACCOUNT.PAGE_NAME.BENEFICIAL_OWNER_INFO, subPage: pageName, action, backTo})
+            }
+            onBack={onBackButtonPress}
+            onSubmit={(answers) => {
+                saveCorpayOnboardingBeneficialOwners(getBeneficialOwnerInfoParams(answers, bankAccountID));
+                markSubmitting();
+            }}
+            validatePage={(page, values) => getOwnershipTotalErrors(page, values, translate)}
+            // The flow picks the first unanswered page when it mounts, so it waits for the saved owners to reach the draft
+            isLoading={isPrefillPending}
+            isSubmitting={!!reimbursementAccount?.isSavingCorpayOnboardingBeneficialOwnersFields}
+            submitError={getLatestErrorMessage(reimbursementAccount ?? {})}
+        />
     );
 }
 

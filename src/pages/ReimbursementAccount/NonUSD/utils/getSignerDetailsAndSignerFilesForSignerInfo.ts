@@ -1,3 +1,5 @@
+import getAddressInputKeys from '@components/DynamicForm/utils/getAddressInputKeys';
+
 import CONST from '@src/CONST';
 import type {ReimbursementAccountForm} from '@src/types/form';
 import type {BeneficialOwnerDataKey} from '@src/types/form/ReimbursementAccountForm';
@@ -9,20 +11,13 @@ import {SafeString} from 'expensify-common';
 
 const {FULL_NAME, EMAIL, JOB_TITLE, DATE_OF_BIRTH, ADDRESS, STREET, CITY, STATE, ZIP_CODE, PROOF_OF_DIRECTORS, ADDRESS_PROOF, COPY_OF_ID, CODICE_FISCALE, DOWNLOADED_PDS_AND_FSG} =
     CONST.NON_USD_BANK_ACCOUNT.SIGNER_INFO_STEP.SIGNER_INFO_DATA;
-const {
-    PREFIX: BENEFICIAL_PREFIX,
-    FIRST_NAME,
-    LAST_NAME,
-    DOB,
-    STREET: BENEFICIAL_STREET,
-    CITY: BENEFICIAL_CITY,
-    STATE: BENEFICIAL_STATE,
-    ZIP_CODE: BENEFICIAL_ZIP_CODE,
-} = CONST.NON_USD_BANK_ACCOUNT.BENEFICIAL_OWNER_INFO_STEP.BENEFICIAL_OWNER_DATA;
+const {PREFIX: BENEFICIAL_PREFIX, FIRST_NAME, LAST_NAME, DOB, STREET: BENEFICIAL_STREET} = CONST.NON_USD_BANK_ACCOUNT.BENEFICIAL_OWNER_INFO_STEP.BENEFICIAL_OWNER_DATA;
+const beneficialOwnerAddressKeys = getAddressInputKeys(BENEFICIAL_STREET);
+const beneficialOwnerAddressFields = [beneficialOwnerAddressKeys.street, beneficialOwnerAddressKeys.city, beneficialOwnerAddressKeys.state, beneficialOwnerAddressKeys.zipCode];
 
 const signerDetailsFields = [FULL_NAME, EMAIL, JOB_TITLE, DATE_OF_BIRTH, STREET, CITY, STATE, ZIP_CODE, DOWNLOADED_PDS_AND_FSG];
 const signerFilesFields = [PROOF_OF_DIRECTORS, ADDRESS_PROOF, COPY_OF_ID, CODICE_FISCALE];
-const beneficialOwnerFields = [FIRST_NAME, LAST_NAME, DOB, BENEFICIAL_STREET, BENEFICIAL_CITY, BENEFICIAL_STATE, BENEFICIAL_ZIP_CODE];
+const beneficialOwnerFields = [FIRST_NAME, LAST_NAME, DOB, ...beneficialOwnerAddressFields];
 
 // These fields are required by the backend and must always be included in the request
 // so that proper validation errors can be returned if they're missing
@@ -82,7 +77,7 @@ function getSignerDetailsAndSignerFilesForSignerInfo(reimbursementAccountDraft: 
                 continue;
             }
 
-            if (fieldName === BENEFICIAL_STREET || fieldName === BENEFICIAL_CITY || fieldName === BENEFICIAL_STATE || fieldName === BENEFICIAL_ZIP_CODE) {
+            if (beneficialOwnerAddressFields.includes(fieldName)) {
                 signerDetails[ADDRESS] = signerDetails[ADDRESS]
                     ? `${SafeString(signerDetails[ADDRESS])}, ${SafeString(reimbursementAccountDraft?.[beneficialFieldKey])}`
                     : SafeString(reimbursementAccountDraft?.[beneficialFieldKey]);
