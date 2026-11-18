@@ -24,6 +24,8 @@ import type {RunScenarioAction} from '@userActions/MultifactorAuthentication/pro
 
 import type CONST from '@src/CONST';
 
+import type {ValueOf} from 'type-fest';
+
 /**
  * The machine's context: every field the flow owns and writes. The legacy reducer that used to hold
  * the not-yet-migrated fields has been fully retired, so this is now the flow's only state - there is
@@ -108,6 +110,12 @@ type MfaContext = {
 
     /** How many times the current signed request was re-sent after its answer was lost. A fresh challenge starts it over. */
     resendAttempts: number;
+
+    /** Why each scenario action re-send in this flow happened, across every signed challenge. Reported with the outcome. */
+    resendReasons: ResendReason[];
+
+    /** How many times the user tried again with a fresh challenge after the app couldn't confirm the result. */
+    userRetries: number;
 };
 
 /** The steps whose failure a fresh key registration can fix. */
@@ -115,6 +123,8 @@ type RecoverableStep = typeof CONST.MULTIFACTOR_AUTHENTICATION.MFA_STATE.SIGNING
 
 /** See `MfaContext.recoveredFrom`. */
 type RecoveredFrom = {reason: MultifactorAuthenticationReason; step: RecoverableStep};
+/** See `MfaContext.resendReasons`. */
+type ResendReason = ValueOf<typeof CONST.MULTIFACTOR_AUTHENTICATION.RESEND_REASON>;
 
 /** See `MfaContext.promptPresentationPhase`. */
 type PromptPresentationPhase =
@@ -235,6 +245,9 @@ type FinalizeOutcomeInput = {
     isCancelConfirmed: boolean;
     recoveryAttempts: number;
     recoveredFrom: RecoveredFrom | undefined;
+    challengeRetries: number;
+    resendReasons: ResendReason[];
+    userRetries: number;
 };
 
 /**
@@ -282,5 +295,6 @@ export type {
     RegisterCredentialOutput,
     RequestRegistrationChallengeInput,
     RequestRegistrationChallengeOutput,
+    ResendReason,
     ValidateDeviceInput,
 };

@@ -18,7 +18,7 @@ import {createLocalMFAError, createMFAErrorFromApiResponse} from '@libs/Multifac
 
 import variables from '@styles/variables';
 
-import {authorizeTransaction, denyTransaction, fireAndForgetDenyTransaction} from '@userActions/MultifactorAuthentication';
+import {authorizeTransaction, denyTransaction, fireAndForgetDenyTransaction, forgetLocallyProcessed3DSTransactionReview} from '@userActions/MultifactorAuthentication';
 
 import CONST from '@src/CONST';
 
@@ -118,11 +118,16 @@ export default {
 
     // AuthorizeTransaction's callback navigates to the outcome screen, but if it knows the user is going to see an error outcome, we explicitly deny the transaction to make sure the user can't re-approve it on another device.
     // A confirmed cancel already sent its deny from `onCancel`, so no second one goes out then. Neither does one for an
-    // unconfirmed approve: it may have gone through, and the user closed without asking to deny it.
+    // unconfirmed approve: it may have gone through, and the user closed without asking to deny it. Instead the Review
+    // comes back if the server still has the transaction pending.
     callback: async (isSuccessful, callbackInput, payload) => {
-        const isUnconfirmed = callbackInput.reason === CONST.MULTIFACTOR_AUTHENTICATION.REASON.LOCAL_ERRORS.UNCONFIRMED;
         // isAuthorizeTransactionPayload is a type guard - we know that payload here will always be an AuthorizeTransaction Payload, but the type guard lets Typescript guarantee it
-        if (!isSuccessful && !callbackInput.isCancelConfirmed && !isUnconfirmed && isAuthorizeTransactionPayload(payload)) {
+        if (isSuccessful || !isAuthorizeTransactionPayload(payload)) {
+            return CONST.MULTIFACTOR_AUTHENTICATION.CALLBACK_RESPONSE.SHOW_OUTCOME_SCREEN;
+        }
+        if (callbackInput.reason === CONST.MULTIFACTOR_AUTHENTICATION.REASON.LOCAL_ERRORS.UNCONFIRMED) {
+            forgetLocallyProcessed3DSTransactionReview(payload.transactionID);
+        } else if (!callbackInput.isCancelConfirmed) {
             fireAndForgetDenyTransaction({transactionID: payload.transactionID});
         }
 

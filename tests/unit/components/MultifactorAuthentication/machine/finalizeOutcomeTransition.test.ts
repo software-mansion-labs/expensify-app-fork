@@ -84,7 +84,15 @@ describe('MFA outcome finalization', () => {
                     receivedInput = input;
                     return new Promise(() => {});
                 }),
-                {softPromptApproved: true, isRegistrationComplete: true, recoveryAttempts: 1, recoveredFrom: RECOVERED_FROM},
+                {
+                    softPromptApproved: true,
+                    isRegistrationComplete: true,
+                    recoveryAttempts: 1,
+                    recoveredFrom: RECOVERED_FROM,
+                    challengeRetries: 1,
+                    resendReasons: [CONST.MULTIFACTOR_AUTHENTICATION.RESEND_REASON.TIMEOUT],
+                    userRetries: 1,
+                },
             );
 
             sendAuthorizationSuccess(actor);
@@ -105,6 +113,9 @@ describe('MFA outcome finalization', () => {
                 isCancelConfirmed: false,
                 recoveryAttempts: 1,
                 recoveredFrom: RECOVERED_FROM,
+                challengeRetries: 1,
+                resendReasons: [CONST.MULTIFACTOR_AUTHENTICATION.RESEND_REASON.TIMEOUT],
+                userRetries: 1,
             });
 
             actor.stop();
