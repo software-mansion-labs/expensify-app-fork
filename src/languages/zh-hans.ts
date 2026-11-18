@@ -204,7 +204,7 @@ const translations: TranslationDeepObject<typeof en> = {
         whatThis: '这是什么？',
         iAcceptThe: '我接受',
         acceptTermsAndPrivacy: `我接受<a href="${CONST.OLD_DOT_PUBLIC_URLS.TERMS_URL}">Expensify 服务条款</a>和<a href="${CONST.OLD_DOT_PUBLIC_URLS.PRIVACY_URL}">隐私政策</a>`,
-        acceptTermsAndConditions: `我接受<a href="${CONST.OLD_DOT_PUBLIC_URLS.ACH_TERMS_URL}">条款和条件</a>`,
+        acceptTermsAndConditions: '我接受条款和条件',
         acceptTermsOfService: `我接受<a href="${CONST.OLD_DOT_PUBLIC_URLS.TERMS_URL}">Expensify 服务条款</a>`,
         downloadFailedEmptyReportDescription: () => ({
             one: '您无法导出空报告。',
@@ -4846,9 +4846,7 @@ ${amount}，商户：${merchant} - 日期：${date}`,
         completeVerification: '完成验证',
         confirmAgreements: '请确认以下协议。',
         certifyTrueAndAccurate: '本人证明所提供的信息真实准确',
-        certifyTrueAndAccurateError: '请确认所提供的信息真实且准确',
         isAuthorizedToUseBankAccount: '我被授权将此企业银行账户用于业务支出',
-        isAuthorizedToUseBankAccountError: '您必须是拥有操作该企业银行账户授权的控制负责人',
         termsAndConditions: '条款和条件',
     },
     connectBankAccountStep: {

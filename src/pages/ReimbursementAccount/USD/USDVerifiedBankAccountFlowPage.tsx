@@ -89,7 +89,7 @@ const pages: PageEntry[] = [
     },
     {
         pageName: PAGE_NAMES.ACH_CONTRACT,
-        component: CompleteVerification as React.ComponentType<USDPageProps>,
+        component: CompleteVerification,
         firstSubPage: COMPLETE_VERIFICATION_SUB_PAGES.CONFIRM_AGREEMENTS,
         lastSubPage: COMPLETE_VERIFICATION_SUB_PAGES.CONFIRM_AGREEMENTS,
     },

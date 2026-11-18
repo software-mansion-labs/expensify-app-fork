@@ -204,7 +204,7 @@ const translations: TranslationDeepObject<typeof en> = {
         whatThis: 'Was ist das?',
         iAcceptThe: 'Ich akzeptiere die',
         acceptTermsAndPrivacy: `Ich akzeptiere die <a href="${CONST.OLD_DOT_PUBLIC_URLS.TERMS_URL}">Expensify-Nutzungsbedingungen</a> und die <a href="${CONST.OLD_DOT_PUBLIC_URLS.PRIVACY_URL}">Datenschutzrichtlinie</a>`,
-        acceptTermsAndConditions: `Ich akzeptiere die <a href="${CONST.OLD_DOT_PUBLIC_URLS.ACH_TERMS_URL}">Allgemeinen Geschäftsbedingungen</a>`,
+        acceptTermsAndConditions: 'Ich akzeptiere die Allgemeinen Geschäftsbedingungen',
         acceptTermsOfService: `Ich akzeptiere die <a href="${CONST.OLD_DOT_PUBLIC_URLS.TERMS_URL}">Expensify-Nutzungsbedingungen</a>`,
         downloadFailedEmptyReportDescription: () => ({
             one: 'Sie können keinen leeren Bericht exportieren.',
@@ -5031,9 +5031,7 @@ ${amount} für ${merchant} – ${date}`,
         completeVerification: 'Verifizierung abschließen',
         confirmAgreements: 'Bitte bestätige die untenstehenden Vereinbarungen.',
         certifyTrueAndAccurate: 'Ich bestätige, dass die angegebenen Informationen wahr und korrekt sind',
-        certifyTrueAndAccurateError: 'Bitte bestätigen Sie, dass die Angaben wahrheitsgemäß und korrekt sind',
         isAuthorizedToUseBankAccount: 'Ich bin berechtigt, dieses Geschäftskonto für Geschäftsausgaben zu verwenden',
-        isAuthorizedToUseBankAccountError: 'Sie müssen eine vertretungsberechtigte Führungskraft mit Vollmacht zur Führung des Geschäftskontos sein',
         termsAndConditions: 'Allgemeine Geschäftsbedingungen',
     },
     connectBankAccountStep: {

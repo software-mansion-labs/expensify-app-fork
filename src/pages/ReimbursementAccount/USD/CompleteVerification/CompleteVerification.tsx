@@ -1,70 +1,67 @@
-import InteractiveStepWrapper from '@components/InteractiveStepWrapper';
+import DynamicFormFlow from '@components/DynamicForm';
+import useDraftPrefill from '@components/DynamicForm/hooks/useDraftPrefill';
+import FullScreenLoadingIndicator from '@components/FullscreenLoadingIndicator';
 
 import useLocalize from '@hooks/useLocalize';
 import useOnyx from '@hooks/useOnyx';
 import useReimbursementAccountSubmitCallback from '@hooks/useReimbursementAccountSubmitCallback';
 
+import {getLatestErrorMessage} from '@libs/ErrorUtils';
 import {getBankAccountIDAsNumber} from '@libs/ReimbursementAccountUtils';
 
-import getSubStepValues from '@pages/ReimbursementAccount/utils/getSubStepValues';
+import type USDPageProps from '@pages/ReimbursementAccount/USD/types';
 
 import {acceptACHContractForBankAccount} from '@userActions/BankAccounts';
 
 import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';
-import INPUT_IDS from '@src/types/form/ReimbursementAccountForm';
+import ROUTES from '@src/ROUTES';
 
 import React from 'react';
 
-import ConfirmAgreements from './subSteps/ConfirmAgreements';
+import completeVerificationForm, {getCompleteVerificationParams, getCompleteVerificationPrefill} from './completeVerificationForm';
 
-type CompleteVerificationProps = {
-    onBackButtonPress: () => void;
+const FORM_ID = ONYXKEYS.FORMS.REIMBURSEMENT_ACCOUNT_FORM;
 
-    /** Handles submit button press (URL-based navigation) */
-    onSubmit?: () => void;
-};
+/** Where this step sits among `CONST.BANK_ACCOUNT.STEP_NAMES` */
+const STEP_INDEX = 6;
 
-const COMPLETE_VERIFICATION_KEYS = INPUT_IDS.COMPLETE_VERIFICATION;
-
-function CompleteVerification({onBackButtonPress, onSubmit}: CompleteVerificationProps) {
+/** The "Complete verification" step of the USD bank account setup, where the user accepts the agreements and the bank account is sent for verification */
+function CompleteVerification({onBackButtonPress, onSubmit, backTo}: USDPageProps) {
     const {translate} = useLocalize();
 
     const [reimbursementAccount] = useOnyx(ONYXKEYS.REIMBURSEMENT_ACCOUNT);
-    const [reimbursementAccountDraft] = useOnyx(ONYXKEYS.FORMS.REIMBURSEMENT_ACCOUNT_FORM_DRAFT);
     const [lastPaymentMethod] = useOnyx(ONYXKEYS.NVP_LAST_PAYMENT_METHOD);
 
-    const values = getSubStepValues(COMPLETE_VERIFICATION_KEYS, reimbursementAccountDraft, reimbursementAccount);
-    const policyID = reimbursementAccount?.achData?.policyID;
-    const bankAccountID = getBankAccountIDAsNumber(reimbursementAccount?.achData);
+    const achData = reimbursementAccount?.achData;
+    const policyID = achData?.policyID;
     const markSubmitting = useReimbursementAccountSubmitCallback(onSubmit);
+    const isPrefillPending = useDraftPrefill(FORM_ID, getCompleteVerificationPrefill(achData));
+    const title = translate('completeVerificationStep.completeVerification');
 
-    const submit = () => {
-        acceptACHContractForBankAccount(
-            bankAccountID,
-            {
-                isAuthorizedToUseBankAccount: values.isAuthorizedToUseBankAccount,
-                certifyTrueInformation: values.certifyTrueInformation,
-                acceptTermsAndConditions: (values.acceptTermsAndConditions || reimbursementAccount?.achData?.acceptTerms) ?? false,
-            },
-            policyID,
-            policyID ? lastPaymentMethod?.[policyID] : undefined,
-        );
-        markSubmitting();
-    };
+    if (isPrefillPending) {
+        return <FullScreenLoadingIndicator shouldUseGoBackButton />;
+    }
 
     return (
-        <InteractiveStepWrapper
-            wrapperID="CompleteVerification"
-            shouldEnablePickerAvoiding={false}
-            shouldEnableMaxHeight
-            headerTitle={translate('completeVerificationStep.completeVerification')}
-            handleBackButtonPress={onBackButtonPress}
-            startStepIndex={6}
-            stepNames={CONST.BANK_ACCOUNT.STEP_NAMES}
-        >
-            <ConfirmAgreements onNext={submit} />
-        </InteractiveStepWrapper>
+        <DynamicFormFlow
+            schema={completeVerificationForm}
+            formID={FORM_ID}
+            testID="CompleteVerification"
+            headerTitle={title}
+            // The step has no confirmation page, so this title only shows if the schema ever loses its page
+            confirmationTitle={title}
+            parentSteps={{names: CONST.BANK_ACCOUNT.STEP_NAMES, index: STEP_INDEX}}
+            hasConfirmation={false}
+            buildRoute={(pageName, action) => ROUTES.BANK_ACCOUNT_USD_SETUP.getRoute({policyID, page: CONST.BANK_ACCOUNT.PAGE_NAMES.ACH_CONTRACT, subPage: pageName, action, backTo})}
+            onBack={onBackButtonPress}
+            onSubmit={(answers) => {
+                acceptACHContractForBankAccount(getBankAccountIDAsNumber(achData), getCompleteVerificationParams(answers), policyID, policyID ? lastPaymentMethod?.[policyID] : undefined);
+                markSubmitting();
+            }}
+            isSubmitting={!!reimbursementAccount?.isLoading}
+            submitError={getLatestErrorMessage(reimbursementAccount ?? {})}
+        />
     );
 }
 

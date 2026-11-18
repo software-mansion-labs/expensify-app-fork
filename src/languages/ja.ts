@@ -204,7 +204,7 @@ const translations: TranslationDeepObject<typeof en> = {
         whatThis: 'これは何ですか？',
         iAcceptThe: '私は以下に同意します',
         acceptTermsAndPrivacy: `私は、<a href="${CONST.OLD_DOT_PUBLIC_URLS.TERMS_URL}">Expensify 利用規約</a>と<a href="${CONST.OLD_DOT_PUBLIC_URLS.PRIVACY_URL}">プライバシーポリシー</a>に同意します`,
-        acceptTermsAndConditions: `<a href="${CONST.OLD_DOT_PUBLIC_URLS.ACH_TERMS_URL}">利用規約</a>に同意します`,
+        acceptTermsAndConditions: '利用規約に同意します',
         acceptTermsOfService: `<a href="${CONST.OLD_DOT_PUBLIC_URLS.TERMS_URL}">Expensify 利用規約</a>に同意します`,
         downloadFailedEmptyReportDescription: () => ({
             one: '空のレポートはエクスポートできません。',
@@ -4960,9 +4960,7 @@ ${integrationName === CONST.ONBOARDING_ACCOUNTING_MAPPING.other ? 'あなたの'
         completeVerification: '認証を完了',
         confirmAgreements: '以下の契約内容を確認してください。',
         certifyTrueAndAccurate: '提供された情報が真実かつ正確であることを証明します',
-        certifyTrueAndAccurateError: '情報が真実かつ正確であることを証明してください',
         isAuthorizedToUseBankAccount: '私は、このビジネス支出のためにこの法人銀行口座を利用する権限があります',
-        isAuthorizedToUseBankAccountError: 'ビジネス用銀行口座を操作する権限を持つ管理責任者である必要があります',
         termsAndConditions: '利用規約',
     },
     connectBankAccountStep: {

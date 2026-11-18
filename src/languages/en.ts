@@ -274,7 +274,7 @@ const translations = {
         whatThis: "What's this?",
         iAcceptThe: 'I accept the ',
         acceptTermsAndPrivacy: `I accept the <a href="${CONST.OLD_DOT_PUBLIC_URLS.TERMS_URL}">Expensify Terms of Service</a> and <a href="${CONST.OLD_DOT_PUBLIC_URLS.PRIVACY_URL}">Privacy Policy</a>`,
-        acceptTermsAndConditions: `I accept the <a href="${CONST.OLD_DOT_PUBLIC_URLS.ACH_TERMS_URL}">terms and conditions</a>`,
+        acceptTermsAndConditions: 'I accept the terms and conditions',
         acceptTermsOfService: `I accept the <a href="${CONST.OLD_DOT_PUBLIC_URLS.TERMS_URL}">Expensify Terms of Service</a>`,
         downloadFailedEmptyReportDescription: () => ({
             one: "You can't export an empty report.",
@@ -5240,10 +5240,8 @@ const translations = {
         completeVerification: 'Complete verification',
         confirmAgreements: 'Please confirm the agreements below.',
         certifyTrueAndAccurate: 'I certify that the information provided is true and accurate',
-        certifyTrueAndAccurateError: 'Please certify that the information is true and accurate',
         isAuthorizedToUseBankAccount: 'I am authorized to use this business bank account for business spend',
-        isAuthorizedToUseBankAccountError: 'You must be a controlling officer with authorization to operate the business bank account',
-        termsAndConditions: 'terms and conditions',
+        termsAndConditions: 'Terms and conditions',
     },
     connectBankAccountStep: {
         validateYourBankAccount: 'Validate your bank account',
