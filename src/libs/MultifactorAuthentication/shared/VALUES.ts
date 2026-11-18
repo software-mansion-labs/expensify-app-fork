@@ -14,6 +14,8 @@ const BACKEND_MESSAGE = {
     TRANSACTION_ALREADY_APPROVED: 'Transaction already approved',
     TRANSACTION_ALREADY_DENIED: 'Transaction already denied',
     TRANSACTION_ALREADY_REVIEWED: 'Transaction already reviewed',
+    /** The signed challenge is unknown or already used: Auth deletes it once a signature is verified. */
+    AUTHENTICATION_REQUIRED: 'Authentication required',
 } as const;
 
 const REASON = {
@@ -34,6 +36,8 @@ const REASON = {
         ALREADY_DENIED_DENY_ATTEMPTED: 'Client: Already denied, deny attempted',
         ALREADY_DENIED_APPROVE_ATTEMPTED: 'Client: Already denied, approve attempted',
         ALREADY_REVIEWED: 'Client: Transaction already reviewed',
+        /** The server doesn't know the signed challenge, e.g. because an earlier copy of the same request already used it. */
+        AUTHENTICATION_REQUIRED: 'Client: Authentication required',
         /** Unrecognized 4xx response from the backend with no specific handler. */
         UNRECOGNIZED: 'Client: Unrecognized client error',
     },
@@ -50,6 +54,8 @@ const REASON = {
         UNHANDLED_API_RESPONSE: 'Local: Missing HTTP status in API response',
         /** The request got no answer (the connection dropped, or Web-Expensify timed out waiting for Auth), so the server may or may not have it. */
         NO_RESPONSE: 'Local: No response from the server',
+        /** The scenario action's answer was lost and re-sending it didn't settle it, so the user left without knowing whether it went through. */
+        UNCONFIRMED: 'Local: Scenario action result unconfirmed',
         /** Updating the local passkey credential list failed before backend registration. */
         LOCAL_CREDENTIAL_UPDATE_FAILED: 'Local: Failed to update passkey credentials',
         WEBAUTHN: {
@@ -270,6 +276,8 @@ const MFA_STATE = {
     EXECUTING_SCENARIO_ACTION: 'executingScenarioAction',
     AWAITING_RESULT: 'awaitingResult',
     CANCELLING_IN_FLIGHT: 'cancellingInFlight',
+    RESEND_PENDING: 'resendPending',
+    DECISION_UNCONFIRMED: 'decisionUnconfirmed',
     OUTCOME: 'outcome',
     FINALIZING_OUTCOME: 'finalizingOutcome',
     SUCCESS: 'success',
@@ -380,6 +388,9 @@ const SHARED_VALUES = {
         OUTCOME_SCREEN: 'MultifactorAuthenticationOutcomeScreen',
         OUTCOME_CONFIRM_BUTTON: 'MultifactorAuthenticationOutcomeConfirmButton',
         PROMPT_CONFIRM_BUTTON: 'MultifactorAuthenticationPromptConfirmButton',
+        UNCONFIRMED_SCREEN: 'MultifactorAuthenticationUnconfirmedScreen',
+        UNCONFIRMED_RETRY_BUTTON: 'MultifactorAuthenticationUnconfirmedRetryButton',
+        UNCONFIRMED_CLOSE_BUTTON: 'MultifactorAuthenticationUnconfirmedCloseButton',
         CANCEL_DIALOG_CONFIRM_BUTTON: 'MultifactorAuthenticationCancelDialogConfirmButton',
         CANCEL_DIALOG_DISMISS_BUTTON: 'MultifactorAuthenticationCancelDialogDismissButton',
         VALIDATE_CODE_INPUT: 'MultifactorAuthenticationValidateCodeInput',

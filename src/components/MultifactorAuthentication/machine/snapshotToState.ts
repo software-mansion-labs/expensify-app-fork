@@ -37,6 +37,15 @@ type MfaState = MfaContext & {
 
     /** Whether the flow holds its next request until the device is back online, so the screen shows the offline view. */
     isWaitingForNetwork: boolean;
+
+    /** Whether the flow re-sends a scenario action whose answer was lost, so the screen says it is trying again. */
+    isResending: boolean;
+
+    /** Whether the app can't tell whether the scenario action went through, so the screen asks the user to check or try again. */
+    isDecisionUnconfirmed: boolean;
+
+    /** Whether the unconfirmed screen offers trying again with a fresh challenge (idempotent scenarios only). */
+    canRetryUnconfirmed: boolean;
 };
 
 function getModalState(snapshot: MfaSnapshot): MfaModalState {
@@ -64,6 +73,13 @@ function snapshotToState(snapshot: MfaSnapshot): MfaState {
         isProcessingPrompt: snapshot.context.promptPresentationPhase === MFA_STATE.CREATING_CREDENTIAL || snapshot.context.promptPresentationPhase === MFA_STATE.AUTHORIZING,
         isAuthorizing: snapshot.context.promptPresentationPhase === MFA_STATE.AUTHORIZING,
         isWaitingForNetwork: snapshot.hasTag('waitingForNetwork') && snapshot.matches({[MFA_STATE.OPEN]: {[MFA_STATE.NETWORK]: MFA_STATE.OFFLINE}}),
+        isResending:
+            snapshot.context.resendAttempts > 0 &&
+            snapshot.matches({
+                [MFA_STATE.OPEN]: {[MFA_STATE.FLOW]: {[MFA_STATE.PROMPT]: {[MFA_STATE.AUTHORIZING]: {[MFA_STATE.EXECUTING_SCENARIO_ACTION]: MFA_STATE.AWAITING_RESULT}}}},
+            }),
+        isDecisionUnconfirmed: snapshot.matches({[MFA_STATE.OPEN]: {[MFA_STATE.FLOW]: {[MFA_STATE.PROMPT]: {[MFA_STATE.AUTHORIZING]: MFA_STATE.DECISION_UNCONFIRMED}}}}),
+        canRetryUnconfirmed: snapshot.can({type: 'RETRY_WITH_NEW_CHALLENGE'}),
         isCancelConfirmVisible: snapshot.matches({[MFA_STATE.OPEN]: {[MFA_STATE.CANCEL_CONFIRM]: MFA_STATE.CANCEL_CONFIRM_VISIBLE}}),
         showsInvalidCodeError: snapshot.matches({
             [MFA_STATE.OPEN]: {

@@ -708,6 +708,16 @@ const translations: TranslationDeepObject<typeof en> = {
             confirmationPromptThisDevice: '你确定吗？你将在此设备上的下一次验证中需要输入安全码。',
             confirmationPromptMultiple: '您确定吗？下次在这些设备上进行验证时，您需要输入安全代码。',
         },
+        unconfirmed: {
+            retrying: '连接已断开。正在重试…',
+            title: '我们无法确认操作是否已完成',
+            retrySubtitle: '在收到回复之前连接已断开。请重试以确保操作已完成。',
+            checkSubtitle: '在收到回复之前连接已断开，因此操作可能已经完成。请先检查后再重试。',
+            decisionTitle: '我们无法确认您的决定',
+            decisionSubtitle: '发送时连接已断开，因此您的决定可能已保存。请重试以进行确认。',
+            cardOrderTitle: '我们无法确认您的卡片订单',
+            cardOrderSubtitle: '在收到回复之前连接已断开，因此您的卡片可能已在寄送途中。请先在钱包中查看您的卡片，然后再重新订购。',
+        },
         unsupportedDevice: {
             unsupportedDevice: '不支持的设备',
             pleaseDownloadMobileApp: `您的设备不支持此操作。请从<a href="${CONST.APP_DOWNLOAD_LINKS.IOS}">App Store</a>或<a href="${CONST.APP_DOWNLOAD_LINKS.ANDROID}">Google Play 商店</a>下载 Expensify 应用，然后重试。`,

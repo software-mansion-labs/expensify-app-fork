@@ -618,6 +618,17 @@ const translations: TranslationDeepObject<typeof en> = {
             alreadyReviewedSubtitle:
                 'Ya ha revisado esta transacción. Por favor, revise su <transaction-history-link>historial de transacciones</transaction-history-link> o contacte a <concierge-link>Concierge</concierge-link> para reportar cualquier problema.',
         },
+        unconfirmed: {
+            retrying: 'Se perdió la conexión. Reintentando…',
+            title: 'No pudimos confirmar que se completó',
+            retrySubtitle: 'La conexión se cortó antes de recibir respuesta. Inténtalo de nuevo para asegurarte de que se completó.',
+            checkSubtitle: 'La conexión se cortó antes de recibir respuesta, así que es posible que ya se haya completado. Compruébalo antes de volver a intentarlo.',
+            decisionTitle: 'No pudimos confirmar tu decisión',
+            decisionSubtitle: 'La conexión se cortó mientras la enviábamos, así que es posible que ya se haya guardado. Inténtalo de nuevo para comprobarlo.',
+            cardOrderTitle: 'No pudimos confirmar el pedido de tu tarjeta',
+            cardOrderSubtitle:
+                'La conexión se cortó antes de recibir respuesta, así que es posible que tu tarjeta ya esté en camino. Comprueba tu tarjeta en la Billetera antes de volver a pedirla.',
+        },
         unsupportedDevice: {
             unsupportedDevice: 'Dispositivo no compatible',
             pleaseDownloadMobileApp: `Esta acción no está soportada en tu dispositivo. Por favor descarga la aplicación de Expensify desde la <a href="${CONST.APP_DOWNLOAD_LINKS.IOS}">App Store</a> o <a href="${CONST.APP_DOWNLOAD_LINKS.ANDROID}">Google Play Store</a> e inténtalo de nuevo.`,

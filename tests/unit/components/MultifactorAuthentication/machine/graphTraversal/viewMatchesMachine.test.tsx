@@ -190,8 +190,13 @@ function createMfaEventExecutors(executeScenario: ExecuteScenario) {
             fireEvent.changeText(screen.getByTestId(TEST_ID.VALIDATE_CODE_INPUT), '1');
             await waitForBatchedUpdatesWithAct();
         },
+        // The unconfirmed screen closes through its own button, which sends the same event as back.
         REQUEST_CANCEL: async () => {
-            fireEvent.press(screen.getByTestId(TEST_ID.MODAL_BACKDROP));
+            fireEvent.press(screen.queryByTestId(TEST_ID.UNCONFIRMED_CLOSE_BUTTON) ?? screen.getByTestId(TEST_ID.MODAL_BACKDROP));
+            await waitForBatchedUpdatesWithAct();
+        },
+        RETRY_WITH_NEW_CHALLENGE: async () => {
+            fireEvent.press(screen.getByTestId(TEST_ID.UNCONFIRMED_RETRY_BUTTON));
             await waitForBatchedUpdatesWithAct();
         },
         DISMISS_CANCEL: async () => {
@@ -333,9 +338,11 @@ const testConfig = {
             expect(mfaNavigationRef.getCurrentRoute()?.name).toBe(SCREENS.MULTIFACTOR_AUTHENTICATION.PROMPT);
             // The prompt stays mounted while authorizing, same as credential creation, and shows the loader instead of the confirm action.
             expect(screen.queryByTestId(TEST_ID.PROMPT_CONFIRM_BUTTON)).not.toBeOnTheScreen();
-            if (isWaitingForNetwork(state)) {
+            // The unconfirmed screen replaces the prompt content, and its own leaf asserts it.
+            if (isWaitingForNetwork(state) || snapshotToState(state).isDecisionUnconfirmed) {
                 return;
             }
+            expect(screen.queryAllByText(translateLocal('multifactorAuthentication.unconfirmed.retrying'))).toHaveLength(snapshotToState(state).isResending ? 1 : 0);
             // The prompt copy bridges into authorization along the three arrival routes - see the
             // override logic in `PromptPage`.
             if (!state.context.softPromptApproved) {
@@ -345,6 +352,14 @@ const testConfig = {
             } else {
                 expect(screen.getByText(translateLocal('multifactorAuthentication.verifyYourself.biometrics'))).toBeOnTheScreen();
             }
+        },
+        // The test scenario is idempotent, so the screen offers trying again next to Close.
+        [`${MFA_STATE.OPEN}.${MFA_STATE.FLOW}.${MFA_STATE.PROMPT}.${MFA_STATE.AUTHORIZING}.${MFA_STATE.DECISION_UNCONFIRMED}`]: () => {
+            expect(screen.getByTestId(TEST_ID.UNCONFIRMED_SCREEN)).toBeOnTheScreen();
+            expect(screen.getByText(translateLocal('multifactorAuthentication.unconfirmed.title'))).toBeOnTheScreen();
+            expect(screen.getByText(translateLocal('multifactorAuthentication.unconfirmed.retrySubtitle'))).toBeOnTheScreen();
+            expect(screen.getByTestId(TEST_ID.UNCONFIRMED_RETRY_BUTTON)).toBeOnTheScreen();
+            expect(screen.getByTestId(TEST_ID.UNCONFIRMED_CLOSE_BUTTON)).toBeOnTheScreen();
         },
         // The screen the user cancelled from stays mounted while the scenario's cancel logic runs, busy so it can't be used meanwhile.
         [`${MFA_STATE.OPEN}.${MFA_STATE.FLOW}.${MFA_STATE.CANCELLING}`]: (state: MfaSnapshot) => {

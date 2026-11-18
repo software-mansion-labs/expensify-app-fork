@@ -724,6 +724,16 @@ const translations: TranslationDeepObject<typeof en> = {
             confirmationPromptThisDevice: 'Tem certeza? Você vai precisar de um código de segurança para a próxima verificação neste dispositivo.',
             confirmationPromptMultiple: 'Tem certeza? Você vai precisar de um código de segurança na próxima verificação nesses dispositivos.',
         },
+        unconfirmed: {
+            retrying: 'Conexão perdida. Tentando novamente…',
+            title: 'Não conseguimos confirmar que foi concluído',
+            retrySubtitle: 'A conexão caiu antes de recebermos uma resposta. Tente novamente para garantir que foi concluído.',
+            checkSubtitle: 'A conexão caiu antes de recebermos uma resposta, então pode ser que já tenha sido concluído. Verifique antes de tentar novamente.',
+            decisionTitle: 'Não conseguimos confirmar sua decisão',
+            decisionSubtitle: 'A conexão caiu enquanto a enviávamos, então pode ser que ela já tenha sido salva. Tente novamente para verificar.',
+            cardOrderTitle: 'Não conseguimos confirmar o pedido do seu cartão',
+            cardOrderSubtitle: 'A conexão caiu antes de recebermos uma resposta, então seu cartão pode já estar a caminho. Verifique seu cartão na Carteira antes de pedir novamente.',
+        },
         unsupportedDevice: {
             unsupportedDevice: 'Dispositivo não compatível',
             pleaseDownloadMobileApp: `Esta ação não é compatível com seu dispositivo. Baixe o app do Expensify na <a href="${CONST.APP_DOWNLOAD_LINKS.IOS}">App Store</a> ou na <a href="${CONST.APP_DOWNLOAD_LINKS.ANDROID}">Google Play Store</a> e tente novamente.`,

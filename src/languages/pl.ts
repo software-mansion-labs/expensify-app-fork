@@ -726,6 +726,16 @@ const translations: TranslationDeepObject<typeof en> = {
             confirmationPromptThisDevice: 'Na pewno? Będziesz potrzebować kodu zabezpieczającego przy następnym potwierdzeniu na tym urządzeniu.',
             confirmationPromptMultiple: 'Na pewno? Będziesz potrzebować kodu zabezpieczającego przy następnej weryfikacji na tych urządzeniach.',
         },
+        unconfirmed: {
+            retrying: 'Utracono połączenie. Próbujemy ponownie…',
+            title: 'Nie udało się potwierdzić, że operacja się powiodła',
+            retrySubtitle: 'Połączenie zostało przerwane, zanim otrzymaliśmy odpowiedź. Spróbuj ponownie, aby mieć pewność, że wszystko się udało.',
+            checkSubtitle: 'Połączenie zostało przerwane, zanim otrzymaliśmy odpowiedź, więc operacja mogła już się powieść. Sprawdź to, zanim spróbujesz ponownie.',
+            decisionTitle: 'Nie udało się potwierdzić Twojej decyzji',
+            decisionSubtitle: 'Połączenie zostało przerwane podczas wysyłania, więc decyzja mogła już zostać zapisana. Spróbuj ponownie, aby to sprawdzić.',
+            cardOrderTitle: 'Nie udało się potwierdzić zamówienia karty',
+            cardOrderSubtitle: 'Połączenie zostało przerwane, zanim otrzymaliśmy odpowiedź, więc Twoja karta może już być w drodze. Sprawdź kartę w Portfelu, zanim zamówisz ją ponownie.',
+        },
         unsupportedDevice: {
             unsupportedDevice: 'Nieobsługiwane urządzenie',
             pleaseDownloadMobileApp: `Ta akcja nie jest obsługiwana na Twoim urządzeniu. Pobierz aplikację Expensify z <a href="${CONST.APP_DOWNLOAD_LINKS.IOS}">App Store</a> lub <a href="${CONST.APP_DOWNLOAD_LINKS.ANDROID}">Sklepu Google Play</a> i spróbuj ponownie.`,
