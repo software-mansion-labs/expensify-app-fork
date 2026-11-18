@@ -10,6 +10,8 @@ import {
     isValidDisplayName,
     isValidPastDate,
     isValidPhoneInternational,
+    isValidUSPhone,
+    isValidWebsite,
     isValidZipCodeForCountry,
     meetsMaximumAgeRequirement,
     meetsMinimumAgeRequirement,
@@ -27,6 +29,8 @@ import type {
     DynamicFormSchemaField,
     DynamicFormTextField,
 } from '@src/types/onyx';
+
+import {Str} from 'expensify-common';
 
 import getAddressInputKeys, {getAddressCountry, getStateOptions, isStateAsked} from './getAddressInputKeys';
 import getAnswerKeys from './getAnswerKeys';
@@ -168,8 +172,11 @@ const VALIDATORS: {[TType in DynamicFormFieldType]: FieldValidator<TType>} = {
         if (field.rule === 'legalName') {
             messages.push(...getLegalNameErrors(value, translate));
         }
-        if (field.rule === 'phone' && !isValidPhoneInternational(value)) {
+        if ((field.rule === 'phone' && !isValidPhoneInternational(value)) || (field.rule === 'usPhone' && !isValidUSPhone(value, true))) {
             messages.push(translate('common.error.phoneNumber'));
+        }
+        if (field.rule === 'website' && !isValidWebsite(Str.sanitizeURL(value, CONST.COMPANY_WEBSITE_DEFAULT_SCHEME))) {
+            messages.push(translate('bankAccount.error.website'));
         }
         return messages;
     },
@@ -186,6 +193,9 @@ const VALIDATORS: {[TType in DynamicFormFieldType]: FieldValidator<TType>} = {
         const value = getStringAnswer(field, values);
         if (!isValidDate(value)) {
             return [translate('common.error.dateInvalid')];
+        }
+        if (field.rule === 'pastDate') {
+            return isValidPastDate(value) ? [] : [translate('common.error.dateInvalid')];
         }
         if (field.rule !== 'dateOfBirth') {
             return [];

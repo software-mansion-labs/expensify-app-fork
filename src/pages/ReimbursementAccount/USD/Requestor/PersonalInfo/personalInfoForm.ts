@@ -82,9 +82,9 @@ function getPersonalInfoParams(answers: DynamicFormValues, isOnfidoSetupComplete
     };
 }
 
-/** The answers the bank account already holds and the draft does not, under the form's draft keys. A key the draft has is the user's, even when they cleared it. */
-function getMissingPersonalInfoPrefill(saved: Partial<RequestorStepProps> | undefined, draft: DynamicFormValues): DynamicFormValues {
-    const savedAnswers: DynamicFormValues = {
+/** The answers the bank account already holds, under the form's draft keys */
+function getPersonalInfoPrefill(saved: Partial<RequestorStepProps> | undefined): DynamicFormValues {
+    return {
         [KEYS.FIRST_NAME]: saved?.[KEYS.FIRST_NAME],
         [KEYS.LAST_NAME]: saved?.[KEYS.LAST_NAME],
         [KEYS.DOB]: saved?.[KEYS.DOB],
@@ -94,8 +94,7 @@ function getMissingPersonalInfoPrefill(saved: Partial<RequestorStepProps> | unde
         [ADDRESS_KEYS.state]: saved?.[KEYS.STATE],
         [ADDRESS_KEYS.zipCode]: saved?.[KEYS.ZIP_CODE],
     };
-    return Object.fromEntries(Object.entries(savedAnswers).filter(([key, answer]) => !!answer && draft[key] === undefined));
 }
 
 export default personalInfoForm;
-export {getMissingPersonalInfoPrefill, getPersonalInfoParams};
+export {getPersonalInfoParams, getPersonalInfoPrefill};

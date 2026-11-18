@@ -1,4 +1,5 @@
 import DynamicFormFlow from '@components/DynamicForm';
+import useDraftPrefill from '@components/DynamicForm/hooks/useDraftPrefill';
 import type {DynamicFormValues} from '@components/DynamicForm/types';
 import toDynamicFormValues from '@components/DynamicForm/utils/toDynamicFormValues';
 import FullScreenLoadingIndicator from '@components/FullscreenLoadingIndicator';
@@ -13,17 +14,15 @@ import {getLatestErrorMessage} from '@libs/ErrorUtils';
 import {getBankAccountIDAsNumber} from '@libs/ReimbursementAccountUtils';
 
 import {updatePersonalInformationForBankAccount} from '@userActions/BankAccounts';
-import {saveDraftAnswers} from '@userActions/DynamicForm';
 
 import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';
 import ROUTES from '@src/ROUTES';
-import {isEmptyObject} from '@src/types/utils/EmptyObject';
 
-import React, {useEffect} from 'react';
+import React from 'react';
 import {View} from 'react-native';
 
-import personalInfoForm, {getMissingPersonalInfoPrefill, getPersonalInfoParams} from './personalInfoForm';
+import personalInfoForm, {getPersonalInfoParams, getPersonalInfoPrefill} from './personalInfoForm';
 
 type PersonalInfoProps = {
     /** Goes to the previous step */
@@ -54,15 +53,7 @@ function PersonalInfo({onBackButtonPress, onSubmit, backTo}: PersonalInfoProps) 
     const draftValues = toDynamicFormValues(draft);
     const markSubmitting = useReimbursementAccountSubmitCallback(onSubmit);
 
-    // The form reads its answers from the draft and picks its first page from them, so the ones the bank account already holds are copied there before the form mounts
-    const missingPrefill = getMissingPersonalInfoPrefill(achData, draftValues);
-    const isPrefillPending = !isEmptyObject(missingPrefill);
-    useEffect(() => {
-        if (!isPrefillPending) {
-            return;
-        }
-        saveDraftAnswers(FORM_ID, missingPrefill);
-    }, [isPrefillPending, missingPrefill]);
+    const isPrefillPending = useDraftPrefill(FORM_ID, getPersonalInfoPrefill(achData));
 
     const save = (answers: DynamicFormValues, isConfirmPage: boolean) => {
         updatePersonalInformationForBankAccount(getBankAccountIDAsNumber(achData), getPersonalInfoParams(answers, !!achData?.isOnfidoSetupComplete), policyID, isConfirmPage);

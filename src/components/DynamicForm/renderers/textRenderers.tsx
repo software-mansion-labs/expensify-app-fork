@@ -2,6 +2,7 @@ import AmountForm from '@components/AmountForm';
 import CurrencyPicker from '@components/CurrencyPicker';
 import DatePicker from '@components/DatePicker';
 import DynamicFormOnFileTextInput from '@components/DynamicForm/components/DynamicFormOnFileTextInput';
+import type {DynamicFormFieldOfType} from '@components/DynamicForm/types';
 import getLocalizedText, {getFieldLabel, getInputLabel} from '@components/DynamicForm/utils/getLocalizedText';
 import hasProvidedAnswer from '@components/DynamicForm/utils/hasProvidedAnswer';
 import InputWrapper from '@components/Form/InputWrapper';
@@ -32,10 +33,22 @@ function getTextInputMode(field: DynamicFormTextField): InputModeOptions | undef
     if (field.keyboard) {
         return field.keyboard;
     }
-    if (field.rule === 'phone') {
+    if (field.rule === 'phone' || field.rule === 'usPhone') {
         return CONST.INPUT_MODE.TEL;
     }
+    if (field.rule === 'website') {
+        return CONST.INPUT_MODE.URL;
+    }
     return field.regex && DIGITS_ONLY_REGEX.test(field.regex) ? CONST.INPUT_MODE.NUMERIC : undefined;
+}
+
+/** The dates the picker offers, so only dates getDynamicFieldErrors accepts can be picked */
+function getDateRange(field: DynamicFormFieldOfType<'date'>): {minDate?: Date; maxDate?: Date} {
+    const today = new Date();
+    if (field.rule === 'dateOfBirth') {
+        return {minDate: subYears(today, CONST.DATE_BIRTH.MAX_AGE), maxDate: subYears(today, CONST.DATE_BIRTH.MIN_AGE_FOR_PAYMENT)};
+    }
+    return field.rule === 'pastDate' ? {maxDate: today} : {};
 }
 
 function getTextHint(field: DynamicFormTextField | DynamicFormNumberField, translate: LocalizedTranslate): string | undefined {
@@ -82,27 +95,22 @@ function renderTextInput(
 const TEXT_RENDERERS: Pick<DynamicFieldRendererMap, 'text' | 'number' | 'date' | 'amount' | 'percent'> = {
     text: (field, context, inputProps) => renderTextInput(field, context, inputProps, getTextInputMode(field), field.multiline),
     number: (field, context, inputProps) => renderTextInput(field, context, inputProps, CONST.INPUT_MODE.NUMERIC),
-    date: (field, {translate, styles}, inputProps) => {
-        const isDateOfBirth = field.rule === 'dateOfBirth';
-        return {
-            isMenuRow: false,
-            showsDescription: true,
-            input: (
-                <InputWrapper
-                    InputComponent={DatePicker}
-                    {...inputProps}
-                    label={getInputLabel(field, translate)}
-                    hint={getLocalizedText(translate, field.descriptionKey, field.description)}
-                    placeholder={translate('common.dateFormat')}
-                    // DatePicker adds its own vertical margin, while the field row already spaces it like every other input
-                    wrapperStyle={styles.mv0}
-                    // A date of birth can only be picked within the ages getDynamicFieldErrors accepts
-                    minDate={isDateOfBirth ? subYears(new Date(), CONST.DATE_BIRTH.MAX_AGE) : undefined}
-                    maxDate={isDateOfBirth ? subYears(new Date(), CONST.DATE_BIRTH.MIN_AGE_FOR_PAYMENT) : undefined}
-                />
-            ),
-        };
-    },
+    date: (field, {translate, styles}, inputProps) => ({
+        isMenuRow: false,
+        showsDescription: true,
+        input: (
+            <InputWrapper
+                InputComponent={DatePicker}
+                {...inputProps}
+                label={getInputLabel(field, translate)}
+                hint={getLocalizedText(translate, field.descriptionKey, field.description)}
+                placeholder={translate('common.dateFormat')}
+                // DatePicker adds its own vertical margin, while the field row already spaces it like every other input
+                wrapperStyle={styles.mv0}
+                {...getDateRange(field)}
+            />
+        ),
+    }),
     amount: (field, {values, translate, styles, currency}, inputProps) => {
         const chosenCurrency = field.currencyKey ? values[field.currencyKey] : undefined;
         const amountCurrency = typeof chosenCurrency === 'string' && chosenCurrency !== '' ? chosenCurrency : currency;

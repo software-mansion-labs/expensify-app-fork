@@ -1,6 +1,4 @@
-import getAddressInputKeys from '@components/DynamicForm/utils/getAddressInputKeys';
-
-import {getMissingPersonalInfoPrefill, getPersonalInfoParams} from '@pages/ReimbursementAccount/USD/Requestor/PersonalInfo/personalInfoForm';
+import {getPersonalInfoParams, getPersonalInfoPrefill} from '@pages/ReimbursementAccount/USD/Requestor/PersonalInfo/personalInfoForm';
 
 import type {RequestorStepProps} from '@src/types/form/ReimbursementAccountForm';
 
@@ -18,24 +16,11 @@ const SAVED: RequestorStepProps = {
 
 describe('personalInfoForm', () => {
     it('sends back what the bank account holds when the user changes nothing', () => {
-        // Given a bank account with a saved personal info step and an empty draft
-        // When the saved answers are copied to the draft and the draft is turned into API params
-        const draft = getMissingPersonalInfoPrefill(SAVED, {});
+        // Given a bank account with a saved personal info step
+        // When its answers prefill the form and the form's answers are turned into API params
+        const answers = getPersonalInfoPrefill(SAVED);
 
         // Then the params equal what was saved, so the address parts survive the move under the street's key and back
-        expect(getPersonalInfoParams(draft, SAVED.isOnfidoSetupComplete)).toEqual(SAVED);
-    });
-
-    it('keeps the answers the draft already has', () => {
-        // Given a draft where the user retyped the first name and cleared the city
-        const draft = {firstName: 'Bertha', [getAddressInputKeys('requestorAddressStreet').city]: ''};
-
-        // When the saved answers are compared with the draft
-        const missingPrefill = getMissingPersonalInfoPrefill(SAVED, draft);
-
-        // Then neither is prefilled, since a key the draft holds is the user's newest answer
-        expect(missingPrefill).not.toHaveProperty('firstName');
-        expect(missingPrefill).not.toHaveProperty(getAddressInputKeys('requestorAddressStreet').city);
-        expect(missingPrefill).toHaveProperty('lastName', 'Charleson');
+        expect(getPersonalInfoParams(answers, SAVED.isOnfidoSetupComplete)).toEqual(SAVED);
     });
 });

@@ -1,5 +1,6 @@
 import type {DynamicFormValues} from '@components/DynamicForm/types';
 import getAddressInputKeys from '@components/DynamicForm/utils/getAddressInputKeys';
+import getMissingDraftAnswers from '@components/DynamicForm/utils/getMissingDraftAnswers';
 import {getHiddenProvidedKeys} from '@components/DynamicForm/utils/hasProvidedAnswer';
 import isCountryCode from '@components/DynamicForm/utils/isCountryCode';
 import {getAllFields, getPages} from '@components/DynamicForm/utils/paginate';
@@ -123,25 +124,9 @@ function getWiseBusinessOnboardingPrefill(
     return Object.fromEntries(Object.entries(prefill).filter(([key]) => !hiddenProvidedKeys.has(key)));
 }
 
-/**
- * The prefill answers the draft does not hold yet. A key the draft already has is the user's, even when they cleared it.
- * Read-only rows are the exception: the user cannot change them, so they follow the bank account.
- */
+/** The prefill answers the draft does not hold yet. The read-only rows follow the bank account, since the user cannot change them. */
 function getMissingPrefill(prefill: DynamicFormValues, draft: DynamicFormValues): DynamicFormValues {
-    const missing: DynamicFormValues = {};
-    for (const [key, value] of Object.entries(prefill)) {
-        if (READONLY_KEYS.has(key)) {
-            const readonlyValue = value ?? '';
-            if ((draft[key] ?? '') !== readonlyValue) {
-                missing[key] = readonlyValue;
-            }
-            continue;
-        }
-        if ((value || value === false) && draft[key] === undefined) {
-            missing[key] = value;
-        }
-    }
-    return missing;
+    return getMissingDraftAnswers(prefill, draft, READONLY_KEYS);
 }
 
 export default getWiseBusinessOnboardingPrefill;

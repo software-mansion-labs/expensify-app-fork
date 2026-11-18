@@ -125,14 +125,14 @@ type DynamicFormTextField = DynamicFormFieldBase & {
     /** Sample value, shown as a hint and in the format error */
     example?: string;
 
-    /** Keyboard the input opens. Without it, `rule: 'phone'` opens the phone keyboard and a digits-only `regex` the numeric one. */
+    /** Keyboard the input opens. Without it, a phone rule opens the phone keyboard, `rule: 'website'` the URL one and a digits-only `regex` the numeric one. */
     keyboard?: Extract<InputModeOptions, 'email' | 'tel' | 'url' | 'numeric'>;
 
     /** Grows with its content, for descriptions */
     multiline?: boolean;
 
-    /** A named check on top of the others: `legalName` for a person's legal name, `phone` for an international phone number */
-    rule?: 'legalName' | 'phone';
+    /** A named check on top of the others: `legalName` for a person's legal name, `phone` for an international phone number, `usPhone` for a US one that may leave out the country code, `website` for a URL that may leave out the scheme */
+    rule?: 'legalName' | 'phone' | 'usPhone' | 'website';
 };
 
 /** Text that must parse as a finite number, typed on the numeric keyboard */
@@ -167,8 +167,8 @@ type DynamicFormDateField = DynamicFormFieldBase & {
     /** Tells the field types apart */
     type: 'date';
 
-    /** `dateOfBirth` takes only a past date within the allowed age range */
-    rule?: 'dateOfBirth';
+    /** `dateOfBirth` takes only a past date within the allowed age range, `pastDate` only today or an earlier date */
+    rule?: 'dateOfBirth' | 'pastDate';
 };
 
 /** A postal address. The street is the field's value, and the other parts are stored under `<key>.<part>`. */
