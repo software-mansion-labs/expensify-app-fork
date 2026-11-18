@@ -1428,7 +1428,6 @@ const CONST = {
             SUB_PAGE_NAMES: {
                 BANK_ACCOUNT_DETAILS: 'bank-account-details',
                 ACCOUNT_HOLDER_DETAILS: 'account-holder-details',
-                CONFIRMATION: 'confirmation',
             },
         },
         BUSINESS_INFO_STEP: {
