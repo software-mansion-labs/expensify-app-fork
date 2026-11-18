@@ -15,6 +15,7 @@ import type {ComponentRef} from 'react';
 
 import React, {useRef} from 'react';
 import {View} from 'react-native';
+import {transition} from 'xstate';
 
 import type USDPageProps from './types';
 
@@ -27,6 +28,7 @@ import Country from './Country';
 import KYBDocuments from './KYBDocuments';
 import RequestorStep from './Requestor/RequestorStep';
 import VerifyIdentity from './Requestor/VerifyIdentity/VerifyIdentity';
+import usdBankAccountFlowMachine, {USD_BANK_ACCOUNT_FLOW_END} from './usdBankAccountFlowMachine';
 
 const PAGE_NAMES = CONST.BANK_ACCOUNT.PAGE_NAMES;
 const BANK_INFO_SUB_PAGES = CONST.BANK_ACCOUNT.BANK_INFO_STEP.SUB_PAGE_NAMES;
@@ -63,8 +65,10 @@ function BankInfoPage({onBackButtonPress, onSubmit, policyID}: USDPageProps) {
     );
 }
 
+const countryPage: PageEntry = {pageName: PAGE_NAMES.COUNTRY, component: CountryPage};
+
 const pages: PageEntry[] = [
-    {pageName: PAGE_NAMES.COUNTRY, component: CountryPage},
+    countryPage,
     {pageName: PAGE_NAMES.BANK_ACCOUNT, component: BankInfoPage, firstSubPage: BANK_INFO_SUB_PAGES.PLAID, lastSubPage: BANK_INFO_SUB_PAGES.PLAID},
     {
         pageName: PAGE_NAMES.REQUESTOR,
@@ -95,6 +99,10 @@ const pages: PageEntry[] = [
     {pageName: PAGE_NAMES.VALIDATION, component: ConnectBankAccount as React.ComponentType<USDPageProps>},
 ];
 
+function findPage(pageName: string | undefined) {
+    return pages.find((page) => page.pageName === pageName);
+}
+
 type USDVerifiedBankAccountFlowPageProps = PlatformStackScreenProps<ReimbursementAccountNavigatorParamList, typeof SCREENS.REIMBURSEMENT_ACCOUNT_USD>;
 
 function USDVerifiedBankAccountFlowPage({route}: USDVerifiedBankAccountFlowPageProps) {
@@ -107,52 +115,46 @@ function USDVerifiedBankAccountFlowPage({route}: USDVerifiedBankAccountFlowPageP
     const [reimbursementAccount] = useOnyx(ONYXKEYS.REIMBURSEMENT_ACCOUNT);
 
     const requestorStepRef = useRef<ComponentRef<typeof View>>(null);
-    const isOnfidoSetupComplete = reimbursementAccount?.achData?.isOnfidoSetupComplete;
-    const isKYBDocumentsRequired = getRequiredKYBDocuments(reimbursementAccount?.achData?.verifications?.externalApiResponses).length > 0;
 
-    const index = pages.findIndex((p) => p.pageName === currentPage);
-    const currentPageIndex = index >= 0 ? index : 0;
+    const currentEntry = findPage(currentPage) ?? countryPage;
+    const CurrentPage = currentEntry.component;
+    const isRequestorStep = currentEntry.pageName === PAGE_NAMES.REQUESTOR;
 
-    const currentEntry = pages.at(currentPageIndex);
-    const CurrentPage = currentEntry?.component ?? CountryPage;
-    const isRequestorStep = currentEntry?.pageName === PAGE_NAMES.REQUESTOR;
-
-    const shouldSkipVerifyIdentity = (pageName?: string) => pageName === PAGE_NAMES.VERIFY_IDENTITY && isOnfidoSetupComplete;
-
-    // Skip the KYB documents page unless the backend's verification checks flagged documents that still need to be uploaded.
-    const shouldSkipKYBDocs = (pageName?: string) => pageName === PAGE_NAMES.KYB_DOCS && !isKYBDocumentsRequired;
+    /** The state the flow machine moves to from the page in the route: another page, or one of the flow's ends */
+    const getTargetAfter = (eventType: 'NEXT' | 'BACK') => {
+        const achData = reimbursementAccount?.achData;
+        const snapshot = usdBankAccountFlowMachine.resolveState({
+            value: currentEntry.pageName,
+            context: {
+                isOnfidoSetupComplete: !!achData?.isOnfidoSetupComplete,
+                isKYBDocumentsRequired: getRequiredKYBDocuments(achData?.verifications?.externalApiResponses).length > 0,
+                isPendingValidation: achData?.state === CONST.BANK_ACCOUNT.STATE.PENDING,
+            },
+        });
+        const [{value}] = transition(usdBankAccountFlowMachine, snapshot, {type: eventType});
+        return value;
+    };
 
     // The bank-info step renders either the Plaid or the manual variant depending on the setup type the user
     // picked earlier in the flow
-    const getSubPageForNavigation = (page: PageEntry | undefined, fallbackSubPage: string | undefined) => {
+    const getPageRoute = (page: PageEntry, fallbackSubPage: string | undefined) => {
         const bankInfoSubStep = reimbursementAccount?.achData?.subStep;
-        if (page?.pageName === PAGE_NAMES.BANK_ACCOUNT && bankInfoSubStep) {
-            return bankInfoSubStep;
-        }
-        return fallbackSubPage;
+        const subPage = page.pageName === PAGE_NAMES.BANK_ACCOUNT && bankInfoSubStep ? bankInfoSubStep : fallbackSubPage;
+        return ROUTES.BANK_ACCOUNT_USD_SETUP.getRoute({policyID, page: page.pageName, subPage, backTo});
     };
 
     const onSubmit = () => {
-        let nextIndex = currentPageIndex + 1;
-        if (shouldSkipVerifyIdentity(pages.at(nextIndex)?.pageName)) {
-            nextIndex += 1;
-        }
-        if (shouldSkipKYBDocs(pages.at(nextIndex)?.pageName)) {
-            nextIndex += 1;
-        }
-        if (nextIndex >= pages.length) {
+        const nextPage = findPage(getTargetAfter('NEXT'));
+        if (!nextPage) {
             Navigation.goBack();
             return;
         }
-        const nextPage = pages.at(nextIndex);
-        Navigation.navigate(ROUTES.BANK_ACCOUNT_USD_SETUP.getRoute({policyID, page: nextPage?.pageName, subPage: getSubPageForNavigation(nextPage, nextPage?.firstSubPage), backTo}));
+        Navigation.navigate(getPageRoute(nextPage, nextPage.firstSubPage));
     };
 
     const onBackButtonPress = () => {
-        // When the bank account is pending validation it has already been submitted, so stepping back through the
-        // setup pages doesn't make sense. Leave the flow entirely rather than popping to ReimbursementAccountPage:
-        // that page redirects a pending account straight back here, so returning to it would trap the user in a loop.
-        if (currentEntry?.pageName === PAGE_NAMES.VALIDATION && reimbursementAccount?.achData?.state === CONST.BANK_ACCOUNT.STATE.PENDING) {
+        const target = getTargetAfter('BACK');
+        if (target === USD_BANK_ACCOUNT_FLOW_END.CLOSED) {
             if (backTo) {
                 Navigation.goBack(backTo);
             } else {
@@ -160,20 +162,12 @@ function USDVerifiedBankAccountFlowPage({route}: USDVerifiedBankAccountFlowPageP
             }
             return;
         }
-
-        let prevIndex = currentPageIndex - 1;
-        if (shouldSkipVerifyIdentity(pages.at(prevIndex)?.pageName)) {
-            prevIndex -= 1;
-        }
-        if (shouldSkipKYBDocs(pages.at(prevIndex)?.pageName)) {
-            prevIndex -= 1;
-        }
-        if (prevIndex < 0) {
+        const prevPage = findPage(target);
+        if (!prevPage) {
             Navigation.goBack();
             return;
         }
-        const prevPage = pages.at(prevIndex);
-        Navigation.goBack(ROUTES.BANK_ACCOUNT_USD_SETUP.getRoute({policyID, page: prevPage?.pageName, subPage: getSubPageForNavigation(prevPage, prevPage?.lastSubPage), backTo}));
+        Navigation.goBack(getPageRoute(prevPage, prevPage.lastSubPage));
     };
 
     return (
