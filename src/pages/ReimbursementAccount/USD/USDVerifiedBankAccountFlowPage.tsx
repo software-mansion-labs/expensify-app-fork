@@ -83,9 +83,9 @@ const pages: PageEntry[] = [
     },
     {
         pageName: PAGE_NAMES.BENEFICIAL_OWNERS,
-        component: BeneficialOwnersStep as React.ComponentType<USDPageProps>,
+        component: BeneficialOwnersStep,
         firstSubPage: BENEFICIAL_OWNERS_SUB_PAGES.IS_USER_UBO,
-        lastSubPage: undefined,
+        lastSubPage: CONST.DYNAMIC_FORM.CONFIRMATION_PAGE_KEY,
     },
     {
         pageName: PAGE_NAMES.ACH_CONTRACT,

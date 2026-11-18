@@ -3490,8 +3490,6 @@ const SENTRY_LABEL = {
         KYB_DOCUMENTS_FINISH_VIA_CHAT: 'ReimbursementAccount-KYBDocumentsFinishViaChat',
         SIGNER_INFO_DOWNLOAD_PDS_AND_FSG: 'ReimbursementAccount-SignerInfoDownloadPDSAndFSG',
         SIGNER_INFO_SEND_REMINDER: 'ReimbursementAccount-SignerInfoSendReminder',
-        UBO_CONFIRM: 'ReimbursementAccount-UBOConfirm',
-        UBO_ROW: 'ReimbursementAccount-UBORow',
         BUSINESS_INFO_RESTRICTED_BUSINESSES_LINK: 'ReimbursementAccount-BusinessInfoRestrictedBusinessesLink',
         CONNECT_BANK_ACCOUNT_CONTACT_US_LINK: 'ReimbursementAccount-ConnectBankAccountContactUsLink',
     },

@@ -872,16 +872,7 @@ const CONST = {
         PLAID_WRONG_ACCOUNT_ERROR_FIELD: 'plaidWrongAccount',
         BENEFICIAL_OWNER_INFO_STEP: {
             BENEFICIAL_OWNER_DATA: {
-                BENEFICIAL_OWNER_KEYS: 'beneficialOwnerKeys',
                 PREFIX: 'beneficialOwner',
-                FIRST_NAME: 'firstName',
-                LAST_NAME: 'lastName',
-                DOB: 'dob',
-                SSN_LAST_4: 'ssnLast4',
-                STREET: 'street',
-                CITY: 'city',
-                STATE: 'state',
-                ZIP_CODE: 'zipCode',
             },
         },
         PLAID: {
@@ -950,13 +941,7 @@ const CONST = {
             SUB_PAGE_NAMES: {
                 IS_USER_UBO: 'is-user-ubo',
                 IS_ANYONE_ELSE_UBO: 'is-anyone-else-ubo',
-                ARE_THERE_MORE_UBOS: 'are-there-more-ubos',
                 UBOS_LIST: 'ubos-list',
-                LEGAL_NAME: 'legal-name',
-                DATE_OF_BIRTH: 'date-of-birth',
-                SSN_LAST_4: 'ssn',
-                ADDRESS: 'address',
-                CONFIRMATION: 'confirmation',
             },
         },
         COMPLETE_VERIFICATION_STEP: {
@@ -8293,14 +8278,6 @@ const CONST = {
             errors: {},
             maxAttemptsReached: false,
             shouldShowResetModal: false,
-        },
-        SUBSTEP_INDEX: {
-            UBO: {
-                LEGAL_NAME: 0,
-                DATE_OF_BIRTH: 1,
-                SSN: 2,
-                ADDRESS: 3,
-            },
         },
     },
 

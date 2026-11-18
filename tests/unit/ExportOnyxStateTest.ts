@@ -683,7 +683,7 @@ describe('maskOnyxState', () => {
     it('should mask identity and credential fields saved in form drafts', () => {
         // Given wallet, bank account, Travel and accounting setup data that hold SSNs, dates of birth, tax IDs and credentials, including a beneficial owner's fields, which are keyed by owner ID
         const sensitiveValues = ['123456789', '1985-04-12', '6789', '1990-01-31', '4321', '98-7654321', '11-2233445', '55-6677889', 'IntacctPassword', 'NetSuiteTokenSecret'];
-        const {PREFIX, DOB, SSN_LAST_4} = CONST.BANK_ACCOUNT.BENEFICIAL_OWNER_INFO_STEP.BENEFICIAL_OWNER_DATA;
+        const {PREFIX} = CONST.BANK_ACCOUNT.BENEFICIAL_OWNER_INFO_STEP.BENEFICIAL_OWNER_DATA;
         const ownerID = '6f1c2b3a-1234-4bcd-9e8f-000000000001';
         const input = {
             session: mockSession,
@@ -693,8 +693,8 @@ describe('maskOnyxState', () => {
                 ssnLast4: '6789',
                 companyTaxID: '11-2233445',
                 taxIDEINNumber: '55-6677889',
-                [`${PREFIX}_${ownerID}_${DOB}`]: '1990-01-31',
-                [`${PREFIX}_${ownerID}_${SSN_LAST_4}`]: '4321',
+                [`${PREFIX}_${ownerID}_dob`]: '1990-01-31',
+                [`${PREFIX}_${ownerID}_ssnLast4`]: '4321',
                 beneficialOwnerKeys: [ownerID],
             },
             [ONYXKEYS.FORMS.SAGE_INTACCT_CREDENTIALS_FORM_DRAFT]: {password: 'IntacctPassword'},
