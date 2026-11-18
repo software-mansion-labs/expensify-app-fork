@@ -74,10 +74,10 @@ import {View} from 'react-native';
 import {initialTransition, transition} from 'xstate';
 
 import ConnectedVerifiedBankAccount from './ConnectedVerifiedBankAccount';
-import getStartPageForContinueSetup from './NonUSD/utils/getStartPageForContinueSetup';
 import pendingValidationRedirectMachine, {KEEPS_ACCOUNT_DATA_TAG, PENDING_VALIDATION_REDIRECT_ACTION} from './pendingValidationRedirectMachine';
 import getFieldsForStep from './USD/utils/getFieldsForStep';
 import getStepToOpenFromRouteParams from './USD/utils/getStepToOpenFromRouteParams';
+import getContinueSetupRoute from './utils/getContinueSetupRoute';
 import VerifiedBankAccountFlowEntryPoint from './VerifiedBankAccountFlowEntryPoint';
 
 type ReimbursementAccountPageProps = WithPolicyOnyxProps & PlatformStackScreenProps<ReimbursementAccountNavigatorParamList, typeof SCREENS.REIMBURSEMENT_ACCOUNT_ROOT>;
@@ -147,7 +147,6 @@ function ReimbursementAccountPage({route, policy, isLoadingPolicy}: Reimbursemen
             ? !isCurrencySupportedForECards(policyCurrency)
             : policyCurrency && !isCurrencySupportedForGlobalReimbursement(policyCurrency as CurrencyType);
 
-    const nonUSDCountryDraftValue = reimbursementAccountDraft?.country ?? '';
     let workspaceRoute = '';
     const isFocused = useIsFocused();
 
@@ -161,20 +160,8 @@ function ReimbursementAccountPage({route, policy, isLoadingPolicy}: Reimbursemen
     const isPreviousPolicy = !!policyIDParam && !!reimbursementAccount && policyIDParam === achData?.policyID;
     const hasConfirmedUSDCurrency = (reimbursementAccountDraft?.[INPUT_IDS.ADDITIONAL_DATA.COUNTRY] ?? '') !== '' || (achData?.accountNumber ?? '') !== '';
 
-    /**
-     We main rely on `achData.currentStep` to determine the step to display in USD flow.
-     This data is synchronized with the BE to know which step to resume/start from.
-     Except for the CountryStep which exists purely in the FE.
-     This function is to decide if we should start from the CountryStep.
-     */
-    const getInitialCurrentStep = () => {
-        if (!hasConfirmedUSDCurrency) {
-            return CONST.BANK_ACCOUNT.STEP.COUNTRY;
-        }
-
-        return achData?.currentStep ?? CONST.BANK_ACCOUNT.STEP.COUNTRY;
-    };
-    const currentStep = getInitialCurrentStep();
+    // The backend keeps the USD step to resume from, except for the country step, which exists only in the frontend.
+    const currentStep = hasConfirmedUSDCurrency ? (achData?.currentStep ?? CONST.BANK_ACCOUNT.STEP.COUNTRY) : CONST.BANK_ACCOUNT.STEP.COUNTRY;
     const [isNonUSDSetup, setIsNonUSDSetup] = useState(policy ? isNonUSDWorkspace : achData?.currency !== CONST.CURRENCY.USD || reimbursementAccountDraft?.currency !== CONST.CURRENCY.USD);
     const isConnectedVerifiedBankAccountData = isNonUSDSetup ? achData?.state === CONST.BANK_ACCOUNT.STATE.OPEN : achData?.currentStep === CONST.BANK_ACCOUNT.STEP.ENABLE;
 
@@ -477,31 +464,18 @@ function ReimbursementAccountPage({route, policy, isLoadingPolicy}: Reimbursemen
         ],
     );
 
-    const continueUSDVBBASetup = () => {
+    const continueSetup = () => {
+        const continueSetupRoute = getContinueSetupRoute({isNonUSDSetup, currentStep, achData, reimbursementAccountDraft, policyCurrency, policyID: policyIDParam, backTo});
+        if (isNonUSDSetup) {
+            if (isComingFromExpensifyCard) {
+                setDraftValues(ONYXKEYS.FORMS.REIMBURSEMENT_ACCOUNT_FORM, {isComingFromExpensifyCard});
+            }
+            Navigation.navigate(continueSetupRoute);
+            return;
+        }
         // If user comes back to the flow we never want to allow him to go through plaid again
         // so we're always showing manual setup with locked numbers he can not change
-        setBankAccountSubStep(CONST.BANK_ACCOUNT.SETUP_TYPE.MANUAL).then(() => {
-            const stepToPageName: Record<string, string> = {
-                [CONST.BANK_ACCOUNT.STEP.COUNTRY]: CONST.BANK_ACCOUNT.PAGE_NAMES.COUNTRY,
-                [CONST.BANK_ACCOUNT.STEP.BANK_ACCOUNT]: CONST.BANK_ACCOUNT.PAGE_NAMES.BANK_ACCOUNT,
-                [CONST.BANK_ACCOUNT.STEP.REQUESTOR]: CONST.BANK_ACCOUNT.PAGE_NAMES.REQUESTOR,
-                [CONST.BANK_ACCOUNT.STEP.COMPANY]: CONST.BANK_ACCOUNT.PAGE_NAMES.COMPANY,
-                [CONST.BANK_ACCOUNT.STEP.BENEFICIAL_OWNERS]: CONST.BANK_ACCOUNT.PAGE_NAMES.BENEFICIAL_OWNERS,
-                [CONST.BANK_ACCOUNT.STEP.ACH_CONTRACT]: CONST.BANK_ACCOUNT.PAGE_NAMES.ACH_CONTRACT,
-                [CONST.BANK_ACCOUNT.STEP.KYB_DOCS]: CONST.BANK_ACCOUNT.PAGE_NAMES.KYB_DOCS,
-                [CONST.BANK_ACCOUNT.STEP.VALIDATION]: CONST.BANK_ACCOUNT.PAGE_NAMES.VALIDATION,
-            };
-            const page = stepToPageName[currentStep] ?? CONST.BANK_ACCOUNT.PAGE_NAMES.COUNTRY;
-            Navigation.navigate(ROUTES.BANK_ACCOUNT_USD_SETUP.getRoute({policyID: policyIDParam, page, backTo}));
-        });
-    };
-
-    const continueNonUSDVBBASetup = () => {
-        const {page: startPage, subPage: startSubPage} = getStartPageForContinueSetup(achData, nonUSDCountryDraftValue, policyCurrency, reimbursementAccountDraft);
-        if (isComingFromExpensifyCard) {
-            setDraftValues(ONYXKEYS.FORMS.REIMBURSEMENT_ACCOUNT_FORM, {isComingFromExpensifyCard});
-        }
-        Navigation.navigate(ROUTES.BANK_ACCOUNT_NON_USD_SETUP.getRoute({policyID: policyIDParam ?? '', page: startPage, subPage: startSubPage, backTo}));
+        setBankAccountSubStep(CONST.BANK_ACCOUNT.SETUP_TYPE.MANUAL).then(() => Navigation.navigate(continueSetupRoute));
     };
 
     const goBack = () => {
@@ -680,7 +654,7 @@ function ReimbursementAccountPage({route, policy, isLoadingPolicy}: Reimbursemen
         <VerifiedBankAccountFlowEntryPoint
             setShouldShowContinueSetupButton={setShouldShowContinueSetupButton}
             reimbursementAccount={reimbursementAccount}
-            onContinuePress={isNonUSDSetup ? continueNonUSDVBBASetup : continueUSDVBBASetup}
+            onContinuePress={continueSetup}
             policyName={policyName}
             backTo={backTo}
             shouldShowContinueSetupButton={shouldShowContinueSetupButtonToDisplay}
