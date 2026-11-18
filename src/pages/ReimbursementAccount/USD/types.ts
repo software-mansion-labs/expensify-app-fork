@@ -6,7 +6,6 @@ type USDPageProps = {
 
     onBackButtonPress: () => void;
     policyID?: string;
-    currentSubPage?: string;
 
     /** Array of step names for the progress indicator */
     stepNames?: readonly string[];

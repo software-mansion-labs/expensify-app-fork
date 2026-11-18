@@ -1027,7 +1027,6 @@ const CONST = {
     },
     CORPAY_DOCUMENT: {
         ALLOWED_FILE_TYPES: ['pdf', 'jpg', 'jpeg', 'png'],
-        FILE_LIMIT: 1,
         MAX_FILE_SIZE: 2097152,
     },
     DYNAMIC_FORM_DOCUMENT: {

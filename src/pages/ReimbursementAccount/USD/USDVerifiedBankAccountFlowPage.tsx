@@ -103,7 +103,6 @@ function USDVerifiedBankAccountFlowPage({route}: USDVerifiedBankAccountFlowPageP
     const styles = useThemeStyles();
     const policyID = route.params?.policyID;
     const currentPage = route.params?.page;
-    const currentSubPage = route.params?.subPage;
     const backTo = route.params?.backTo;
 
     const [reimbursementAccount] = useOnyx(ONYXKEYS.REIMBURSEMENT_ACCOUNT);
@@ -167,7 +166,6 @@ function USDVerifiedBankAccountFlowPage({route}: USDVerifiedBankAccountFlowPageP
                 onSubmit={onSubmit}
                 onBackButtonPress={onBackButtonPress}
                 policyID={policyID}
-                currentSubPage={currentSubPage}
                 stepNames={CONST.BANK_ACCOUNT.STEP_NAMES}
                 backTo={backTo}
             />

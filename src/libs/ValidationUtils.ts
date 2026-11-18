@@ -620,14 +620,6 @@ function isValidPhoneInternational(phoneNumber: string): boolean {
 }
 
 /**
- * Validates the given value if it is correct zip code for international addresses.
- * @param zipCode
- */
-function isValidZipCodeInternational(zipCode: string): boolean {
-    return /^[a-z0-9][a-z0-9\- ]{0,10}[a-z0-9]$/.test(zipCode);
-}
-
-/**
  * Validates the given value if it is correct ABN number - https://abr.business.gov.au/Help/AbnFormat
  * @param registrationNumber - number to validate.
  */
@@ -904,7 +896,6 @@ export {
     isExistingRoomName,
     isValidRoomName,
     isValidRoomNameWithoutLimits,
-    isValidTaxID,
     isValidValidateCode,
     isValidCompanyName,
     isValidNameOnCard,
@@ -925,7 +916,6 @@ export {
     isValidEmail,
     isValidEmailWithTLD,
     isValidPhoneInternational,
-    isValidZipCodeInternational,
     isValidRegistrationNumber,
     isValidInputLength,
     isValidTaxIDEINNumber,
