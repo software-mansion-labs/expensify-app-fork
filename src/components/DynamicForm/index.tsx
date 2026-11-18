@@ -72,6 +72,7 @@ function DynamicFormFlow({
     layout = 'auto',
     parentSteps,
     hasConfirmation = true,
+    submitButtonText,
     shouldDisableNextWhenOffline,
     children,
 }: DynamicFormFlowProps) {
@@ -395,6 +396,7 @@ function DynamicFormFlow({
                     shouldShowFieldErrors={shouldShowFieldErrors}
                     shouldDisableNextWhenOffline={shouldDisableNextWhenOffline}
                     validatePage={validatePage}
+                    submitButtonText={submitButtonText}
                 >
                     {children}
                 </CurrentPage>

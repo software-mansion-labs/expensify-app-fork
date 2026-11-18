@@ -104,6 +104,9 @@ type DynamicFormFlowProps = Pick<DynamicFormFieldsProps, 'currency' | 'maxFileSi
     /** Whether a confirmation page follows the last page. On by default. A form with no page always gets one, since there has to be a page to land on. */
     hasConfirmation?: boolean;
 
+    /** Text of the last page's button when no confirmation page follows, `Confirm` when not set */
+    submitButtonText?: string;
+
     /**
      * Disables Next offline on every page, for flows that save each page to the server as the user leaves it, and shows the offline indicator on wide
      * screens too, so the user sees why. Off by default, so only the last page waits for a connection.
@@ -129,6 +132,7 @@ type DynamicFormSubPageProps = SubPageProps &
         | 'refreshError'
         | 'shouldDisableNextWhenOffline'
         | 'validatePage'
+        | 'submitButtonText'
     > & {
         pages: DynamicFormPage[];
 

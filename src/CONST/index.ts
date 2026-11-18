@@ -954,6 +954,11 @@ const CONST = {
                 UPLOAD_DOCUMENTS: 'upload-documents',
             },
         },
+        VALIDATION_STEP: {
+            SUB_PAGE_NAMES: {
+                AMOUNTS: 'amounts',
+            },
+        },
         SUBSTEP: {
             MANUAL: 'manual',
             PLAID: 'plaid',
@@ -7965,8 +7970,6 @@ const CONST = {
      * The count of characters we'll allow the user to type after reaching SEARCH_MAX_LENGTH in an input.
      */
     ADDITIONAL_ALLOWED_CHARACTERS: 20,
-
-    VALIDATION_REIMBURSEMENT_INPUT_LIMIT: 20,
 
     REFERRAL_PROGRAM: {
         CONTENT_TYPES: {
