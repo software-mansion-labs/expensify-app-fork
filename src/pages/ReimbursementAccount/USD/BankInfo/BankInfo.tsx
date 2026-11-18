@@ -9,9 +9,9 @@ import useThemeStyles from '@hooks/useThemeStyles';
 import getPlaidOAuthReceivedRedirectURI from '@libs/getPlaidOAuthReceivedRedirectURI';
 import {getBankAccountIDAsNumber} from '@libs/ReimbursementAccountUtils';
 
-import getSubStepValues from '@pages/ReimbursementAccount/utils/getSubStepValues';
+import type USDPageProps from '@pages/ReimbursementAccount/USD/types';
 
-import {connectBankAccountManually, connectBankAccountWithPlaid, deletePaymentBankAccount} from '@userActions/BankAccounts';
+import {connectBankAccountWithPlaid, deletePaymentBankAccount} from '@userActions/BankAccounts';
 import {hideBankAccountErrors} from '@userActions/ReimbursementAccount';
 
 import CONST from '@src/CONST';
@@ -19,35 +19,22 @@ import ONYXKEYS from '@src/ONYXKEYS';
 import type {ReimbursementAccountForm} from '@src/types/form';
 import INPUT_IDS from '@src/types/form/ReimbursementAccountForm';
 
-import React, {useEffect, useRef} from 'react';
+import React from 'react';
 import {View} from 'react-native';
 
-import Manual from './subSteps/Manual';
+import ManualBankInfo from './ManualBankInfo';
 import Plaid from './subSteps/Plaid';
-
-type BankInfoProps = {
-    /** Goes to the previous step */
-    onBackButtonPress: () => void;
-
-    /** Handles submit button press (URL-based navigation) */
-    onSubmit?: () => void;
-
-    policyID?: string;
-};
 
 const BANK_INFO_STEP_KEYS = INPUT_IDS.BANK_INFO_STEP;
 const receivedRedirectURI = getPlaidOAuthReceivedRedirectURI();
 
-function BankInfo({onBackButtonPress, onSubmit, policyID}: BankInfoProps) {
+/** The "Bank info" step of the USD bank account setup, in the Plaid or the manual variant the user picked */
+function BankInfo({onBackButtonPress, onSubmit, policyID, backTo}: USDPageProps) {
     const styles = useThemeStyles();
     const [reimbursementAccount] = useOnyx(ONYXKEYS.REIMBURSEMENT_ACCOUNT);
-    const [reimbursementAccountDraft] = useOnyx(ONYXKEYS.FORMS.REIMBURSEMENT_ACCOUNT_FORM_DRAFT);
     const [plaidLinkToken] = useOnyx(ONYXKEYS.RAM_ONLY_PLAID_LINK_TOKEN);
     const {translate} = useLocalize();
     const markSubmitting = useReimbursementAccountSubmitCallback(onSubmit);
-
-    const redirectedFromPlaidToManualRef = useRef(false);
-    const values = getSubStepValues(BANK_INFO_STEP_KEYS, reimbursementAccountDraft, reimbursementAccount ?? {});
 
     let setupType = reimbursementAccount?.achData?.subStep ?? '';
 
@@ -59,48 +46,29 @@ function BankInfo({onBackButtonPress, onSubmit, policyID}: BankInfoProps) {
     const bankAccountID = getBankAccountIDAsNumber(reimbursementAccount?.achData);
     const submit = (submitData: unknown) => {
         const data = submitData as ReimbursementAccountForm;
+        const previousPlaidAccountID = reimbursementAccount?.achData?.plaidAccountID;
+        const newPlaidAccountID = data[BANK_INFO_STEP_KEYS.PLAID_ACCOUNT_ID];
+        const plaidAccountIDChanged = !!bankAccountID && !!previousPlaidAccountID && previousPlaidAccountID !== newPlaidAccountID;
+        if (plaidAccountIDChanged) {
+            deletePaymentBankAccount(bankAccountID, undefined);
+        }
+        const didStartRequest = connectBankAccountWithPlaid(
+            plaidAccountIDChanged ? CONST.DEFAULT_NUMBER_ID : bankAccountID,
+            {
+                [BANK_INFO_STEP_KEYS.ROUTING_NUMBER]: data[BANK_INFO_STEP_KEYS.ROUTING_NUMBER] ?? '',
+                [BANK_INFO_STEP_KEYS.ACCOUNT_NUMBER]: data[BANK_INFO_STEP_KEYS.ACCOUNT_NUMBER] ?? '',
+                [BANK_INFO_STEP_KEYS.BANK_NAME]: data[BANK_INFO_STEP_KEYS.BANK_NAME] ?? '',
+                [BANK_INFO_STEP_KEYS.PLAID_ACCOUNT_ID]: data[BANK_INFO_STEP_KEYS.PLAID_ACCOUNT_ID] ?? '',
+                [BANK_INFO_STEP_KEYS.PLAID_ACCESS_TOKEN]: data[BANK_INFO_STEP_KEYS.PLAID_ACCESS_TOKEN] ?? '',
+                [BANK_INFO_STEP_KEYS.PLAID_MASK]: data[BANK_INFO_STEP_KEYS.PLAID_MASK] ?? '',
+                [BANK_INFO_STEP_KEYS.IS_SAVINGS]: data[BANK_INFO_STEP_KEYS.IS_SAVINGS] ?? false,
+            },
+            policyID,
+        );
 
         // Deferred navigation must only be armed when a bank account request was actually sent. The new Chase
         // Plaid flow sends nothing and switches to manual entry instead, so advancing there would move the user
         // to the next step with no bank account created.
-        let didStartRequest = false;
-        if (setupType === CONST.BANK_ACCOUNT.SETUP_TYPE.MANUAL) {
-            connectBankAccountManually(
-                bankAccountID,
-                {
-                    [BANK_INFO_STEP_KEYS.ROUTING_NUMBER]: data[BANK_INFO_STEP_KEYS.ROUTING_NUMBER] ?? '',
-                    [BANK_INFO_STEP_KEYS.ACCOUNT_NUMBER]: data[BANK_INFO_STEP_KEYS.ACCOUNT_NUMBER] ?? '',
-                    [BANK_INFO_STEP_KEYS.BANK_NAME]: data[BANK_INFO_STEP_KEYS.BANK_NAME] ?? values?.bankName ?? '',
-                    [BANK_INFO_STEP_KEYS.PLAID_ACCOUNT_ID]: data[BANK_INFO_STEP_KEYS.PLAID_ACCOUNT_ID] ?? values?.plaidAccountID,
-                    [BANK_INFO_STEP_KEYS.PLAID_ACCESS_TOKEN]: data[BANK_INFO_STEP_KEYS.PLAID_ACCESS_TOKEN] ?? values?.plaidAccessToken ?? '',
-                    [BANK_INFO_STEP_KEYS.PLAID_MASK]: data[BANK_INFO_STEP_KEYS.PLAID_MASK] ?? values?.mask ?? '',
-                    [BANK_INFO_STEP_KEYS.IS_SAVINGS]: data[BANK_INFO_STEP_KEYS.IS_SAVINGS] ?? false,
-                },
-                policyID,
-            );
-            didStartRequest = true;
-        } else if (setupType === CONST.BANK_ACCOUNT.SETUP_TYPE.PLAID) {
-            const previousPlaidAccountID = reimbursementAccount?.achData?.plaidAccountID;
-            const newPlaidAccountID = data[BANK_INFO_STEP_KEYS.PLAID_ACCOUNT_ID];
-            const plaidAccountIDChanged = !!bankAccountID && !!previousPlaidAccountID && previousPlaidAccountID !== newPlaidAccountID;
-            if (plaidAccountIDChanged) {
-                deletePaymentBankAccount(bankAccountID, undefined);
-            }
-            didStartRequest = connectBankAccountWithPlaid(
-                plaidAccountIDChanged ? CONST.DEFAULT_NUMBER_ID : bankAccountID,
-                {
-                    [BANK_INFO_STEP_KEYS.ROUTING_NUMBER]: data[BANK_INFO_STEP_KEYS.ROUTING_NUMBER] ?? '',
-                    [BANK_INFO_STEP_KEYS.ACCOUNT_NUMBER]: data[BANK_INFO_STEP_KEYS.ACCOUNT_NUMBER] ?? '',
-                    [BANK_INFO_STEP_KEYS.BANK_NAME]: data[BANK_INFO_STEP_KEYS.BANK_NAME] ?? '',
-                    [BANK_INFO_STEP_KEYS.PLAID_ACCOUNT_ID]: data[BANK_INFO_STEP_KEYS.PLAID_ACCOUNT_ID] ?? '',
-                    [BANK_INFO_STEP_KEYS.PLAID_ACCESS_TOKEN]: data[BANK_INFO_STEP_KEYS.PLAID_ACCESS_TOKEN] ?? '',
-                    [BANK_INFO_STEP_KEYS.PLAID_MASK]: data[BANK_INFO_STEP_KEYS.PLAID_MASK] ?? '',
-                    [BANK_INFO_STEP_KEYS.IS_SAVINGS]: data[BANK_INFO_STEP_KEYS.IS_SAVINGS] ?? false,
-                },
-                policyID,
-            );
-        }
-
         if (!didStartRequest) {
             return;
         }
@@ -108,37 +76,21 @@ function BankInfo({onBackButtonPress, onSubmit, policyID}: BankInfoProps) {
         markSubmitting();
     };
 
-    const renderBankInfo = () => {
-        switch (setupType) {
-            case CONST.BANK_ACCOUNT.SETUP_TYPE.PLAID:
-                return <Plaid onNext={submit} />;
-            case CONST.BANK_ACCOUNT.SETUP_TYPE.MANUAL:
-                return <Manual onNext={submit} />;
-            default:
-                return (
-                    <View style={[styles.flex1, styles.alignItemsCenter, styles.justifyContentCenter]}>
-                        <ActivityIndicator size={CONST.ACTIVITY_INDICATOR_SIZE.LARGE} />
-                    </View>
-                );
-        }
-    };
-
-    // Some services user connects to via Plaid return dummy account numbers and routing numbers e.g. Chase
-    // In this case we need to redirect user to manual flow to enter real account number and routing number
-    // and we need to do it only once so redirectedFromPlaidToManual flag is used
-    useEffect(() => {
-        if (redirectedFromPlaidToManualRef.current) {
-            return;
-        }
-        if (setupType === CONST.BANK_ACCOUNT.SETUP_TYPE.MANUAL && values.bankName !== '') {
-            redirectedFromPlaidToManualRef.current = true;
-        }
-    }, [setupType, values.bankName]);
-
     const handleBackButtonPress = () => {
         onBackButtonPress();
         hideBankAccountErrors();
     };
+
+    if (setupType === CONST.BANK_ACCOUNT.SETUP_TYPE.MANUAL) {
+        return (
+            <ManualBankInfo
+                onBackButtonPress={handleBackButtonPress}
+                onSubmit={onSubmit}
+                policyID={policyID}
+                backTo={backTo}
+            />
+        );
+    }
 
     return (
         <InteractiveStepWrapper
@@ -149,7 +101,13 @@ function BankInfo({onBackButtonPress, onSubmit, policyID}: BankInfoProps) {
             startStepIndex={1}
             stepNames={CONST.BANK_ACCOUNT.STEP_NAMES}
         >
-            {renderBankInfo()}
+            {setupType === CONST.BANK_ACCOUNT.SETUP_TYPE.PLAID ? (
+                <Plaid onNext={submit} />
+            ) : (
+                <View style={[styles.flex1, styles.alignItemsCenter, styles.justifyContentCenter]}>
+                    <ActivityIndicator size={CONST.ACTIVITY_INDICATOR_SIZE.LARGE} />
+                </View>
+            )}
         </InteractiveStepWrapper>
     );
 }

@@ -3185,8 +3185,6 @@ const SENTRY_LABEL = {
     },
     BANK_ACCOUNT: {
         DATA_SECURE_LINK: 'BankAccount-DataSecureLink',
-        ROUTING_NUMBER_INPUT: 'BankAccount-RoutingNumberInput',
-        ACCOUNT_NUMBER_INPUT: 'BankAccount-AccountNumberInput',
         PRIVACY_LINK: 'BankAccount-PrivacyLink',
     },
     EARLY_DISCOUNT_BANNER: {

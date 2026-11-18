@@ -54,21 +54,11 @@ function CountryPage({onBackButtonPress, onSubmit, stepNames, policyID}: USDPage
     );
 }
 
-function BankInfoPage({onBackButtonPress, onSubmit, policyID}: USDPageProps) {
-    return (
-        <BankInfo
-            onBackButtonPress={onBackButtonPress}
-            onSubmit={onSubmit}
-            policyID={policyID}
-        />
-    );
-}
-
 const countryPage: PageEntry = {pageName: PAGE_NAMES.COUNTRY, component: CountryPage};
 
 const pages: PageEntry[] = [
     countryPage,
-    {pageName: PAGE_NAMES.BANK_ACCOUNT, component: BankInfoPage, firstSubPage: BANK_INFO_SUB_PAGES.PLAID, lastSubPage: BANK_INFO_SUB_PAGES.PLAID},
+    {pageName: PAGE_NAMES.BANK_ACCOUNT, component: BankInfo, firstSubPage: BANK_INFO_SUB_PAGES.PLAID, lastSubPage: BANK_INFO_SUB_PAGES.PLAID},
     {
         pageName: PAGE_NAMES.REQUESTOR,
         component: RequestorStep,
