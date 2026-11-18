@@ -56,11 +56,7 @@ const INPUT_IDS = {
         SIGNER_DATE_OF_BIRTH: 'signerDateOfBirth',
         SIGNER_JOB_TITLE: 'signerJobTitle',
         SIGNER_EMAIL: 'signerEmail',
-        SIGNER_CITY: 'signer_city',
         SIGNER_STREET: 'signer_street',
-        SIGNER_STATE: 'signer_state',
-        SIGNER_ZIP_CODE: 'signer_zipCode',
-        SIGNER_COUNTRY: 'signer_nationality',
         SIGNER_COPY_OF_ID: 'signerCopyOfID',
         SIGNER_ADDRESS_PROOF: 'signerAddressProof',
         SIGNER_CODICE_FISCALE: 'signerCodiceFiscaleTaxID',
@@ -251,11 +247,7 @@ type SignerInfoStepProps = {
     [INPUT_IDS.SIGNER_INFO_STEP.SIGNER_DATE_OF_BIRTH]: string;
     [INPUT_IDS.SIGNER_INFO_STEP.SIGNER_JOB_TITLE]: string;
     [INPUT_IDS.SIGNER_INFO_STEP.SIGNER_EMAIL]: string;
-    [INPUT_IDS.SIGNER_INFO_STEP.SIGNER_CITY]: string;
     [INPUT_IDS.SIGNER_INFO_STEP.SIGNER_STREET]: string;
-    [INPUT_IDS.SIGNER_INFO_STEP.SIGNER_STATE]: string;
-    [INPUT_IDS.SIGNER_INFO_STEP.SIGNER_ZIP_CODE]: string;
-    [INPUT_IDS.SIGNER_INFO_STEP.SIGNER_COUNTRY]: string;
     [INPUT_IDS.SIGNER_INFO_STEP.DOWNLOADED_PDS_AND_FSG]: boolean;
     [INPUT_IDS.SIGNER_INFO_STEP.SIGNER_COPY_OF_ID]: FileObject[];
     [INPUT_IDS.SIGNER_INFO_STEP.SIGNER_ADDRESS_PROOF]: FileObject[];

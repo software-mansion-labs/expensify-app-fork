@@ -22,6 +22,7 @@ const SENTRY_LABEL = {
         TOGGLE_LINK: 'DynamicForm-ToggleLink',
         LINK_ROW: 'DynamicForm-LinkRow',
         FILE_TYPE_MENU_ITEM: 'DynamicForm-FileTypeMenuItem',
+        DOCUMENT_DOWNLOAD: 'DynamicForm-DocumentDownload',
     },
     APPROVE_MENU: {
         OPTION: {
@@ -3484,7 +3485,6 @@ const SENTRY_LABEL = {
         FINISH_CHAT_WITH_CONCIERGE: 'ReimbursementAccount-FinishChatWithConcierge',
         FINISH_ENABLE_TWO_FACTOR_AUTH: 'ReimbursementAccount-FinishEnableTwoFactorAuth',
         KYB_DOCUMENTS_FINISH_VIA_CHAT: 'ReimbursementAccount-KYBDocumentsFinishViaChat',
-        SIGNER_INFO_DOWNLOAD_PDS_AND_FSG: 'ReimbursementAccount-SignerInfoDownloadPDSAndFSG',
         SIGNER_INFO_SEND_REMINDER: 'ReimbursementAccount-SignerInfoSendReminder',
         BUSINESS_INFO_RESTRICTED_BUSINESSES_LINK: 'ReimbursementAccount-BusinessInfoRestrictedBusinessesLink',
         CONNECT_BANK_ACCOUNT_CONTACT_US_LINK: 'ReimbursementAccount-ConnectBankAccountContactUsLink',

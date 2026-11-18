@@ -55,7 +55,7 @@ const allPages: PageEntry[] = [
         firstSubPage: BENEFICIAL_OWNER_INFO_SUB_PAGES.IS_USER_BENEFICIAL_OWNER,
         lastSubPage: CONST.DYNAMIC_FORM.CONFIRMATION_PAGE_KEY,
     },
-    {pageName: PAGE_NAME.SIGNER_INFO, component: SignerInfo, firstSubPage: SIGNER_INFO_SUB_PAGES.IS_DIRECTOR, lastSubPage: SIGNER_INFO_SUB_PAGES.CONFIRMATION},
+    {pageName: PAGE_NAME.SIGNER_INFO, component: SignerInfo, firstSubPage: SIGNER_INFO_SUB_PAGES.IS_DIRECTOR, lastSubPage: CONST.DYNAMIC_FORM.CONFIRMATION_PAGE_KEY},
     {pageName: PAGE_NAME.AGREEMENTS, component: Agreements, firstSubPage: AGREEMENTS_SUB_PAGES.CONFIRM_AGREEMENTS, lastSubPage: AGREEMENTS_SUB_PAGES.CONFIRM_AGREEMENTS},
     {pageName: PAGE_NAME.DOCUSIGN, component: Docusign},
     {pageName: PAGE_NAME.FINISH, component: Finish},

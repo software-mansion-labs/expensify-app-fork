@@ -3,6 +3,7 @@
  * Field keys are the draft keys of the bank account form, and each answer is sent under the name the upload command takes.
  */
 import type {DynamicFormValues} from '@components/DynamicForm/types';
+import getFirstFile from '@components/DynamicForm/utils/getFirstFile';
 
 import type {UploadUserKYBDocsParams} from '@libs/API/parameters';
 
@@ -10,7 +11,6 @@ import CONST from '@src/CONST';
 import type {TranslationPaths} from '@src/languages/types';
 import INPUT_IDS from '@src/types/form/ReimbursementAccountForm';
 import type {DynamicFormSchema} from '@src/types/onyx';
-import type {FileObject} from '@src/types/utils/Attachment';
 
 type KYBDocumentFiles = Omit<UploadUserKYBDocsParams, 'bankAccountID'>;
 
@@ -60,10 +60,6 @@ function getKYBDocumentsForm(requiredDocumentKeys: readonly string[]) {
             },
         ],
     } satisfies DynamicFormSchema;
-}
-
-function getFirstFile(answer: DynamicFormValues[string]): FileObject | undefined {
-    return Array.isArray(answer) ? answer.find((item): item is FileObject => typeof item === 'object' && item !== null) : undefined;
 }
 
 /** The first file of each answered document, under the name the upload command takes it */

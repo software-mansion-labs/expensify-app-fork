@@ -231,7 +231,7 @@ type DynamicFormCountryField = DynamicFormFieldBase & {
     type: 'country' | 'countryMultiselect';
 };
 
-/** A Yes/No question, where No is an answer too, a checkbox that must be ticked when required, or a link that turns the answer on and off */
+/** A Yes/No question, where No is an answer too, a checkbox that must be ticked when required, a link that turns the answer on and off, or a document the user must download */
 type DynamicFormBooleanField = DynamicFormFieldBase & {
     /** Tells the field types apart */
     type: 'boolean';
@@ -239,8 +239,12 @@ type DynamicFormBooleanField = DynamicFormFieldBase & {
     /**
      * `yesNo`, the default, asks a question that No answers. `checkbox` asks for consent, such as accepting terms, which only a tick gives.
      * `link` is an opt-out the user taps, such as "I don't have a social security number", and taps again to undo.
+     * `download` is a button that opens `documentPath` and turns the answer on, so a required one is answered once the user has the document.
      */
-    presentation?: 'yesNo' | 'checkbox' | 'link';
+    presentation?: 'yesNo' | 'checkbox' | 'link' | 'download';
+
+    /** Where the document of a `download` sits in the App, such as `/pdfs/terms.pdf`. It opens from the App's own address, so a schema cannot send the user elsewhere. */
+    documentPath?: string;
 
     /** The schema author's wording of a `link` while the answer is on, shown when there is no toggledLabelKey */
     toggledLabel?: string;
