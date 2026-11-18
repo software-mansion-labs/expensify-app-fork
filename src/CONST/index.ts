@@ -931,7 +931,6 @@ const CONST = {
                 DATE_OF_BIRTH: 'date-of-birth',
                 SSN: 'ssn',
                 ADDRESS: 'address',
-                CONFIRMATION: 'confirmation',
             },
         },
         BUSINESS_INFO_STEP: {
@@ -8297,12 +8296,6 @@ const CONST = {
             shouldShowResetModal: false,
         },
         SUBSTEP_INDEX: {
-            PERSONAL_INFO: {
-                LEGAL_NAME: 0,
-                DATE_OF_BIRTH: 1,
-                SSN: 2,
-                ADDRESS: 3,
-            },
             BUSINESS_INFO: {
                 BUSINESS_NAME: 0,
                 TAX_ID_NUMBER: 1,

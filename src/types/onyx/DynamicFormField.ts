@@ -1,5 +1,6 @@
 import type {FormValue} from '@components/Form/types';
 
+import type {Country} from '@src/CONST';
 import type {TranslationPaths} from '@src/languages/types';
 import type {OnyxFormKey} from '@src/ONYXKEYS';
 
@@ -177,6 +178,9 @@ type DynamicFormAddressField = DynamicFormFieldBase & {
 
     /** Checks the zip against the format of the chosen country */
     rule?: 'zipCode';
+
+    /** The only country the address can be in, for forms tied to one country. The country is then not asked. */
+    country?: Country;
 };
 
 /** Uploaded documents */

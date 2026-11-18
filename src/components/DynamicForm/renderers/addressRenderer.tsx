@@ -10,7 +10,7 @@ import type {DynamicFieldRenderer} from './types';
 /** An address drawn as one input per part, each under its own draft key. Every part has its own label, so no heading is drawn above them */
 const renderAddress: DynamicFieldRenderer<'address'> = (field, {values, styles}, {shouldSaveDraft, forwardedFSClass, onValueChange, defaultValue, disabled}) => {
     const addressKeys = getAddressInputKeys(field.key);
-    const country = getAddressCountry(field.key, values);
+    const country = getAddressCountry(field, values);
     // The street arrives as the field's answer. The other parts of a sensitive address are not drafted either, so they start from memory too.
     const getSensitivePart = (key: string) => {
         const part = values[key];
@@ -33,9 +33,9 @@ const renderAddress: DynamicFieldRenderer<'address'> = (field, {values, styles},
                 // The city sits as far below the street as the field rows space any two inputs
                 cityContainerStyles={styles.mt4}
                 shouldSaveDraft={shouldSaveDraft}
-                shouldDisplayCountrySelector
+                shouldDisplayCountrySelector={!field.country}
                 // Only the country asks for a new form, so the rest of the address stays editable offline
-                shouldAllowCountryChange={!disabled}
+                shouldAllowCountryChange={!disabled && !field.country}
                 shouldDisplayStateSelector={isStateAsked(country)}
                 stateOptions={getStateOptions(country)}
                 // The pick can switch to any country with a state list, so the code is kept even while the current country has none

@@ -89,6 +89,15 @@ type DynamicFormFlowProps = Pick<DynamicFormFieldsProps, 'currency' | 'maxFileSi
     /** When the step indicator shows: `auto` from three shown pages on, `stepper` always, `pages` never */
     layout?: DynamicFormLayout;
 
+    /** The steps of a longer flow this form is one step of. The step indicator then shows them instead of the form's own pages, whatever the `layout`. */
+    parentSteps?: {
+        /** Unique names of the flow's steps, in order */
+        names: readonly string[];
+
+        /** Index of the step this form is */
+        index: number;
+    };
+
     /** Whether a confirmation page follows the last page. On by default. A form with no page always gets one, since there has to be a page to land on. */
     hasConfirmation?: boolean;
 

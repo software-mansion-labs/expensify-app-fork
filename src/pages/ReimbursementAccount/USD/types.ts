@@ -1,8 +1,5 @@
 import type {Route} from '@src/ROUTES';
 
-import type {ComponentRef, ForwardedRef} from 'react';
-import type {View} from 'react-native';
-
 type USDPageProps = {
     /** Handles submit button press */
     onSubmit: () => void;
@@ -13,9 +10,6 @@ type USDPageProps = {
 
     /** Array of step names for the progress indicator */
     stepNames?: readonly string[];
-
-    /** Reference to the outer element (used by RequestorStep) */
-    ref?: ForwardedRef<ComponentRef<typeof View>>;
 
     /** Back to URL for preserving navigation context */
     backTo?: Route;

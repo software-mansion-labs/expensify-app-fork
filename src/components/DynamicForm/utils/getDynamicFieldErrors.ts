@@ -226,12 +226,17 @@ function isStateAnswered(state: FormValue | undefined, country: Country | ''): b
 /** Each address part has its own input, so its errors go under its own draft key */
 function getAddressPartErrors(field: DynamicFormAddressField, values: DynamicFormValues, translate: LocalizedTranslate): Array<[inputID: string, message: string]> {
     const addressKeys = getAddressInputKeys(field.key);
-    const country = getAddressCountry(field.key, values);
+    const country = getAddressCountry(field, values);
     // A country whose zip format accepts an empty zip does not require one
     const isZipAsked = !country || !isValidZipCodeForCountry('', country);
     const partErrors: Array<[string, string]> = [];
     if (isAddressRequired(field, values)) {
-        const requiredPartKeys = [addressKeys.city, addressKeys.country, ...(isZipAsked ? [addressKeys.zipCode] : []), ...(isStateAsked(country) ? [addressKeys.state] : [])];
+        const requiredPartKeys = [
+            addressKeys.city,
+            ...(field.country ? [] : [addressKeys.country]),
+            ...(isZipAsked ? [addressKeys.zipCode] : []),
+            ...(isStateAsked(country) ? [addressKeys.state] : []),
+        ];
         for (const partKey of requiredPartKeys) {
             const isPartAnswered = partKey === addressKeys.state ? isStateAnswered(values[partKey], country) : isAnswered(values[partKey]);
             if (!isPartAnswered) {

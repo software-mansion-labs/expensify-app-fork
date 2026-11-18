@@ -11,9 +11,7 @@ import ONYXKEYS from '@src/ONYXKEYS';
 import ROUTES from '@src/ROUTES';
 import type SCREENS from '@src/SCREENS';
 
-import type {ComponentRef} from 'react';
-
-import React, {useRef} from 'react';
+import React from 'react';
 import {View} from 'react-native';
 import {transition} from 'xstate';
 
@@ -72,9 +70,9 @@ const pages: PageEntry[] = [
     {pageName: PAGE_NAMES.BANK_ACCOUNT, component: BankInfoPage, firstSubPage: BANK_INFO_SUB_PAGES.PLAID, lastSubPage: BANK_INFO_SUB_PAGES.PLAID},
     {
         pageName: PAGE_NAMES.REQUESTOR,
-        component: RequestorStep as React.ComponentType<USDPageProps>,
+        component: RequestorStep,
         firstSubPage: PERSONAL_INFO_SUB_PAGES.FULL_NAME,
-        lastSubPage: PERSONAL_INFO_SUB_PAGES.CONFIRMATION,
+        lastSubPage: CONST.DYNAMIC_FORM.CONFIRMATION_PAGE_KEY,
     },
     {pageName: PAGE_NAMES.VERIFY_IDENTITY, component: VerifyIdentity as React.ComponentType<USDPageProps>},
     {
@@ -114,11 +112,8 @@ function USDVerifiedBankAccountFlowPage({route}: USDVerifiedBankAccountFlowPageP
 
     const [reimbursementAccount] = useOnyx(ONYXKEYS.REIMBURSEMENT_ACCOUNT);
 
-    const requestorStepRef = useRef<ComponentRef<typeof View>>(null);
-
     const currentEntry = findPage(currentPage) ?? countryPage;
     const CurrentPage = currentEntry.component;
-    const isRequestorStep = currentEntry.pageName === PAGE_NAMES.REQUESTOR;
 
     /** The state the flow machine moves to from the page in the route: another page, or one of the flow's ends */
     const getTargetAfter = (eventType: 'NEXT' | 'BACK') => {
@@ -178,7 +173,6 @@ function USDVerifiedBankAccountFlowPage({route}: USDVerifiedBankAccountFlowPageP
                 policyID={policyID}
                 currentSubPage={currentSubPage}
                 stepNames={CONST.BANK_ACCOUNT.STEP_NAMES}
-                ref={isRequestorStep ? requestorStepRef : undefined}
                 backTo={backTo}
             />
         </View>

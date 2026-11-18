@@ -389,6 +389,23 @@ describe('getDynamicFieldErrors', () => {
         expect(codeErrors).toEqual({});
     });
 
+    it('takes the country of an address from the schema when it allows only one', () => {
+        // Given a required address that can only be in the US, answered without a country, since none is asked
+        const homeAddress: DynamicFormField = {key: 'homeAddress', type: 'address', required: true, rule: 'zipCode', country: CONST.COUNTRY.US};
+        const addressKeys = getAddressInputKeys(homeAddress.key);
+        const values = {homeAddress: '1 Main Street', [addressKeys.city]: 'Springfield', [addressKeys.state]: 'IL', [addressKeys.zipCode]: '62701'};
+
+        // When the form is validated with a US zip and with a UK postcode
+        const errors = getDynamicFieldErrors([homeAddress], values, translateLocal);
+        const postcodeErrors = getDynamicFieldErrors([homeAddress], {...values, [addressKeys.zipCode]: 'SW1A 1AA'}, translateLocal);
+
+        // Then the country is not flagged as missing, and the zip is checked against the US format
+        expect(errors).toEqual({});
+        expect(postcodeErrors).toEqual({
+            [addressKeys.zipCode]: translateLocal('privatePersonalDetails.error.incorrectZipFormat', getCountryZipRegexDetails(CONST.COUNTRY.US)?.samples),
+        });
+    });
+
     it('accepts US and international phone numbers and rejects incomplete ones', () => {
         // Given a phone field
         const phone: DynamicFormField = {key: 'phone', type: 'text', required: true, rule: 'phone'};

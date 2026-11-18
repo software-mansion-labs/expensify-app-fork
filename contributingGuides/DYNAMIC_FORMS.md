@@ -30,6 +30,7 @@ import DynamicFormFlow from "@components/DynamicForm";
 - A new visit resumes on the first page its draft leaves incomplete, or on the last page when nothing is missing.
 - `hasConfirmation` decides whether a confirmation page follows the last page. It is on by default; without it the last page's Confirm button submits.
 - `layout` decides the step indicator: `auto` shows it at three or more shown pages, `stepper` always, `pages` never.
+- `parentSteps` is for a form that is one step of a longer flow. The step indicator then shows the flow's steps instead of the form's own pages.
 - Answers are saved to the form draft as the user types, and again, cleaned, when they leave a page with Next.
 - `onPageSubmit` receives each page and its drafted answers, list entries included, when the user leaves it with Next, for flows that save page by page. Sensitive answers are not passed.
 - `onSubmit` receives the answers to every visible field, sensitive ones included. Answers left on fields that were hidden later are not sent.
@@ -86,7 +87,7 @@ A page is shown while its own `showWhen` matches and it has a visible field; a p
 | `country`            | `CountryPicker`                                                                                                                           |                                                                                                       |
 | `countryMultiselect` | `PushRowWithModal` with every country                                                                                                     |                                                                                                       |
 | `currency`           | `CurrencyPicker`                                                                                                                          |                                                                                                       |
-| `address`            | The standard address form. The street is the field's value; the other parts are stored under `<key>.city`, `<key>.zipCode` and so on.     | `rule: 'zipCode'`                                                                                     |
+| `address`            | The standard address form. The street is the field's value; the other parts are stored under `<key>.city`, `<key>.zipCode` and so on.     | `rule: 'zipCode'`, `country` (the only country allowed, which is then not asked)                      |
 | `file`               | `UploadFile` for PDF, JPG and PNG files, taking one file unless `maxFiles` allows more                                                    | `maxFiles`, `maxFileSize`                                                                             |
 | `amount`             | `AmountForm`. With `currencyKey`, a `CurrencyPicker` above it saves the currency under that key.                                          | `currencyKey`                                                                                         |
 | `percent`            | `PercentageForm`, from 1 to 100                                                                                                           |                                                                                                       |

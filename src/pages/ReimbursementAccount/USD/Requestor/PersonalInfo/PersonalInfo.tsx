@@ -1,129 +1,100 @@
-import ActivityIndicator from '@components/ActivityIndicator';
-import InteractiveStepWrapper from '@components/InteractiveStepWrapper';
+import DynamicFormFlow from '@components/DynamicForm';
+import type {DynamicFormValues} from '@components/DynamicForm/types';
+import toDynamicFormValues from '@components/DynamicForm/utils/toDynamicFormValues';
+import FullScreenLoadingIndicator from '@components/FullscreenLoadingIndicator';
+import RenderHTML from '@components/RenderHTML';
 
 import useLocalize from '@hooks/useLocalize';
 import useOnyx from '@hooks/useOnyx';
 import useReimbursementAccountSubmitCallback from '@hooks/useReimbursementAccountSubmitCallback';
-import useSubPage from '@hooks/useSubPage';
-import type {SubPageProps} from '@hooks/useSubPage/types';
 import useThemeStyles from '@hooks/useThemeStyles';
 
-import Navigation from '@libs/Navigation/Navigation';
+import {getLatestErrorMessage} from '@libs/ErrorUtils';
 import {getBankAccountIDAsNumber} from '@libs/ReimbursementAccountUtils';
 
-import getInitialSubStepForPersonalInfo from '@pages/ReimbursementAccount/USD/utils/getInitialSubStepForPersonalInfo';
-import getSubStepValues from '@pages/ReimbursementAccount/utils/getSubStepValues';
-
 import {updatePersonalInformationForBankAccount} from '@userActions/BankAccounts';
+import {saveDraftAnswers} from '@userActions/DynamicForm';
 
 import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';
 import ROUTES from '@src/ROUTES';
-import INPUT_IDS from '@src/types/form/ReimbursementAccountForm';
+import {isEmptyObject} from '@src/types/utils/EmptyObject';
 
-import type {ComponentRef, ForwardedRef} from 'react';
-
-import React from 'react';
+import React, {useEffect} from 'react';
 import {View} from 'react-native';
 
-import Address from './subSteps/Address';
-import Confirmation from './subSteps/Confirmation';
-import DateOfBirth from './subSteps/DateOfBirth';
-import FullName from './subSteps/FullName';
-import SocialSecurityNumber from './subSteps/SocialSecurityNumber';
+import personalInfoForm, {getMissingPersonalInfoPrefill, getPersonalInfoParams} from './personalInfoForm';
 
 type PersonalInfoProps = {
     /** Goes to the previous step */
     onBackButtonPress: () => void;
 
-    /** Handles submit button press (URL-based navigation) */
+    /** Goes to the next step, once the bank account has saved this one */
     onSubmit?: () => void;
-
-    ref?: ForwardedRef<ComponentRef<typeof View>>;
 
     /** Back to URL for preserving navigation context */
     backTo?: string;
 };
 
-const PERSONAL_INFO_STEP_KEYS = INPUT_IDS.PERSONAL_INFO_STEP;
-const PAGE_NAMES = CONST.BANK_ACCOUNT.PAGE_NAMES;
-const SUB_PAGE_NAMES = CONST.BANK_ACCOUNT.PERSONAL_INFO_STEP.SUB_PAGE_NAMES;
+const FORM_ID = ONYXKEYS.FORMS.REIMBURSEMENT_ACCOUNT_FORM;
 
-const pages = [
-    {pageName: SUB_PAGE_NAMES.FULL_NAME, component: FullName},
-    {pageName: SUB_PAGE_NAMES.DATE_OF_BIRTH, component: DateOfBirth},
-    {pageName: SUB_PAGE_NAMES.SSN, component: SocialSecurityNumber},
-    {pageName: SUB_PAGE_NAMES.ADDRESS, component: Address},
-    {pageName: SUB_PAGE_NAMES.CONFIRMATION, component: Confirmation},
-];
+/** Where this step sits among `CONST.BANK_ACCOUNT.STEP_NAMES` */
+const STEP_INDEX = 2;
 
-function PersonalInfo({onBackButtonPress, onSubmit, ref, backTo}: PersonalInfoProps) {
+/** The "Personal info" step of the USD bank account setup. Each page is saved to the bank account as the user leaves it, and Confirm saves the whole step. */
+function PersonalInfo({onBackButtonPress, onSubmit, backTo}: PersonalInfoProps) {
     const {translate} = useLocalize();
     const styles = useThemeStyles();
 
     const [reimbursementAccount] = useOnyx(ONYXKEYS.REIMBURSEMENT_ACCOUNT);
-    const [reimbursementAccountDraft] = useOnyx(ONYXKEYS.FORMS.REIMBURSEMENT_ACCOUNT_FORM_DRAFT);
+    const [draft] = useOnyx(ONYXKEYS.FORMS.REIMBURSEMENT_ACCOUNT_FORM_DRAFT);
 
-    const policyID = reimbursementAccount?.achData?.policyID;
-    const values = getSubStepValues(PERSONAL_INFO_STEP_KEYS, reimbursementAccountDraft, reimbursementAccount);
-    const bankAccountID = getBankAccountIDAsNumber(reimbursementAccount?.achData);
+    const achData = reimbursementAccount?.achData;
+    const policyID = achData?.policyID;
+    const draftValues = toDynamicFormValues(draft);
     const markSubmitting = useReimbursementAccountSubmitCallback(onSubmit);
-    const submit = (isConfirmPage: boolean) => {
-        updatePersonalInformationForBankAccount(bankAccountID, {...values}, policyID, isConfirmPage);
-    };
-    const isBankAccountVerifying = reimbursementAccount?.achData?.state === CONST.BANK_ACCOUNT.STATE.VERIFYING;
-    const startFrom = isBankAccountVerifying ? 0 : getInitialSubStepForPersonalInfo(values);
 
-    const buildRoute = (pageName: string, action?: 'edit') => ROUTES.BANK_ACCOUNT_USD_SETUP.getRoute({policyID, page: PAGE_NAMES.REQUESTOR, subPage: pageName, action, backTo});
-
-    const {CurrentPage, isEditing, currentPageName, pageIndex, nextPage, prevPage, moveTo, isRedirecting} = useSubPage<SubPageProps>({
-        pages,
-        startFrom,
-        onFinished: () => {
-            submit(true);
-            markSubmitting();
-        },
-        onPageChange: () => submit(false),
-        buildRoute,
-    });
-
-    const handleBackButtonPress = () => {
-        if (isEditing) {
-            Navigation.goBack(buildRoute(SUB_PAGE_NAMES.CONFIRMATION));
+    // The form reads its answers from the draft and picks its first page from them, so the ones the bank account already holds are copied there before the form mounts
+    const missingPrefill = getMissingPersonalInfoPrefill(achData, draftValues);
+    const isPrefillPending = !isEmptyObject(missingPrefill);
+    useEffect(() => {
+        if (!isPrefillPending) {
             return;
         }
+        saveDraftAnswers(FORM_ID, missingPrefill);
+    }, [isPrefillPending, missingPrefill]);
 
-        if (pageIndex === 0) {
-            onBackButtonPress();
-        } else {
-            prevPage();
-        }
+    const save = (answers: DynamicFormValues, isConfirmPage: boolean) => {
+        updatePersonalInformationForBankAccount(getBankAccountIDAsNumber(achData), getPersonalInfoParams(answers, !!achData?.isOnfidoSetupComplete), policyID, isConfirmPage);
     };
 
+    if (isPrefillPending) {
+        return <FullScreenLoadingIndicator shouldUseGoBackButton />;
+    }
+
     return (
-        <InteractiveStepWrapper
-            ref={ref}
-            wrapperID="PersonalInfo"
-            shouldEnablePickerAvoiding={false}
-            shouldEnableMaxHeight
+        <DynamicFormFlow
+            schema={personalInfoForm}
+            formID={FORM_ID}
+            testID="PersonalInfo"
             headerTitle={translate('personalInfoStep.personalInfo')}
-            handleBackButtonPress={handleBackButtonPress}
-            startStepIndex={2}
-            stepNames={CONST.BANK_ACCOUNT.STEP_NAMES}
+            confirmationTitle={translate('personalInfoStep.letsDoubleCheck')}
+            parentSteps={{names: CONST.BANK_ACCOUNT.STEP_NAMES, index: STEP_INDEX}}
+            buildRoute={(pageName, action) => ROUTES.BANK_ACCOUNT_USD_SETUP.getRoute({policyID, page: CONST.BANK_ACCOUNT.PAGE_NAMES.REQUESTOR, subPage: pageName, action, backTo})}
+            onBack={onBackButtonPress}
+            // The draft a page was opened with lacks that page's new answers, so they go on top
+            onPageSubmit={(page, answers) => save({...draftValues, ...answers}, false)}
+            onSubmit={(answers) => {
+                save(answers, true);
+                markSubmitting();
+            }}
+            isSubmitting={!!reimbursementAccount?.isLoading}
+            submitError={getLatestErrorMessage(reimbursementAccount ?? {})}
         >
-            {isRedirecting ? (
-                <View style={[styles.flex1, styles.fullScreenLoading]}>
-                    <ActivityIndicator size={CONST.ACTIVITY_INDICATOR_SIZE.LARGE} />
-                </View>
-            ) : (
-                <CurrentPage
-                    isEditing={isEditing}
-                    onNext={nextPage}
-                    onMove={moveTo}
-                    currentPageName={currentPageName}
-                />
-            )}
-        </InteractiveStepWrapper>
+            <View style={styles.renderHTML}>
+                <RenderHTML html={translate('onfidoStep.onfidoLinks', `${translate('personalInfoStep.byAddingThisBankAccount')} `)} />
+            </View>
+        </DynamicFormFlow>
     );
 }
 
