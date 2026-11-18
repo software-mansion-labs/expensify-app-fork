@@ -13,6 +13,7 @@ import INPUT_IDS from '@src/types/form/ReimbursementAccountForm';
 
 import React from 'react';
 import {View} from 'react-native';
+import {transition} from 'xstate';
 
 import type NonUSDPageProps from './types';
 
@@ -23,6 +24,7 @@ import BusinessInfo from './BusinessInfo/BusinessInfo';
 import Country from './Country';
 import Docusign from './Docusign';
 import Finish from './Finish';
+import nonUSDBankAccountFlowMachine from './nonUSDBankAccountFlowMachine';
 import SignerInfo from './SignerInfo';
 import getInitialSubPageForSignerInfoStep from './utils/getInitialSubPageForSignerInfoStep';
 import requiresDocusignStep from './utils/requiresDocusignStep';
@@ -40,8 +42,10 @@ type PageEntry = {
     lastSubPage?: string;
 };
 
+const countryPage: PageEntry = {pageName: PAGE_NAME.CURRENCY_AND_COUNTRY, component: Country};
+
 const allPages: PageEntry[] = [
-    {pageName: PAGE_NAME.CURRENCY_AND_COUNTRY, component: Country},
+    countryPage,
     {pageName: PAGE_NAME.BANK_INFO, component: BankInfo, firstSubPage: BANK_INFO_SUB_PAGES.BANK_ACCOUNT_DETAILS, lastSubPage: BANK_INFO_SUB_PAGES.CONFIRMATION},
     {pageName: PAGE_NAME.BUSINESS_INFO, component: BusinessInfo, firstSubPage: BUSINESS_INFO_SUB_PAGES.NAME, lastSubPage: BUSINESS_INFO_SUB_PAGES.CONFIRMATION},
     {
@@ -83,8 +87,7 @@ function NonUSDVerifiedBankAccountFlowPage({route}: NonUSDVerifiedBankAccountFlo
     const initialSignerSubPage = getInitialSubPageForSignerInfoStep(savedSignerEmail, savedSignerFullName, savedSecondSignerEmail, currency);
 
     const isAUD = currency === CONST.CURRENCY.AUD;
-    const filteredPages = isDocusignStepRequired ? allPages : allPages.filter((page) => page.pageName !== PAGE_NAME.DOCUSIGN);
-    const pages = filteredPages.map((page) => {
+    const pages = allPages.map((page) => {
         if (page.pageName !== PAGE_NAME.SIGNER_INFO) {
             return page;
         }
@@ -99,30 +102,34 @@ function NonUSDVerifiedBankAccountFlowPage({route}: NonUSDVerifiedBankAccountFlo
         };
     });
 
-    const index = pages.findIndex((p) => p.pageName === currentPage);
-    const currentPageIndex = index >= 0 ? index : 0;
+    const findPage = (pageName: string | undefined) => pages.find((page) => page.pageName === pageName);
 
-    const currentEntry = pages.at(currentPageIndex);
-    const CurrentPage = currentEntry?.component ?? Country;
+    const currentEntry = findPage(currentPage) ?? countryPage;
+    const CurrentPage = currentEntry.component;
+
+    /** The page the flow machine moves to from the page in the route, or nothing when the flow ends */
+    const getPageAfter = (eventType: 'NEXT' | 'BACK') => {
+        const snapshot = nonUSDBankAccountFlowMachine.resolveState({value: currentEntry.pageName, context: {isDocusignStepRequired}});
+        const [{value}] = transition(nonUSDBankAccountFlowMachine, snapshot, {type: eventType});
+        return findPage(value);
+    };
 
     const onSubmit = () => {
-        const nextIndex = currentPageIndex + 1;
-        if (nextIndex >= pages.length) {
+        const nextPage = getPageAfter('NEXT');
+        if (!nextPage) {
             Navigation.goBack();
             return;
         }
-        const nextPage = pages.at(nextIndex);
-        Navigation.navigate(ROUTES.BANK_ACCOUNT_NON_USD_SETUP.getRoute({policyID, page: nextPage?.pageName, subPage: nextPage?.firstSubPage, backTo}));
+        Navigation.navigate(ROUTES.BANK_ACCOUNT_NON_USD_SETUP.getRoute({policyID, page: nextPage.pageName, subPage: nextPage.firstSubPage, backTo}));
     };
 
     const onBackButtonPress = () => {
-        const prevIndex = currentPageIndex - 1;
-        if (prevIndex < 0) {
+        const prevPage = getPageAfter('BACK');
+        if (!prevPage) {
             Navigation.goBack();
             return;
         }
-        const prevPage = pages.at(prevIndex);
-        Navigation.goBack(ROUTES.BANK_ACCOUNT_NON_USD_SETUP.getRoute({policyID, page: prevPage?.pageName, subPage: prevPage?.lastSubPage, backTo}));
+        Navigation.goBack(ROUTES.BANK_ACCOUNT_NON_USD_SETUP.getRoute({policyID, page: prevPage.pageName, subPage: prevPage.lastSubPage, backTo}));
     };
 
     return (
