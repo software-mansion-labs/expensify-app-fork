@@ -7,10 +7,13 @@ import useThemeStyles from '@hooks/useThemeStyles';
 import type BankOnboardingLabParamList from '@libs/Navigation/paramLists/BankOnboardingLabParamList';
 import type {PlatformStackScreenProps} from '@libs/Navigation/PlatformStackNavigation/types';
 
+import FlowAccountGate from '@pages/SimplifiedBankOnboarding/flow/FlowAccountGate';
 import {findStep, getHeaderStepNames} from '@pages/SimplifiedBankOnboarding/flow/flowNavigation';
 import getFlowNavigationHandlers from '@pages/SimplifiedBankOnboarding/flow/getFlowNavigationHandlers';
+import type {FlowPosition} from '@pages/SimplifiedBankOnboarding/flow/types';
 import USD_FLOW from '@pages/SimplifiedBankOnboarding/flow/usdFlow';
 import type {USDPageName} from '@pages/SimplifiedBankOnboarding/flow/usdFlow';
+import useFlowAccount from '@pages/SimplifiedBankOnboarding/flow/useFlowAccount';
 import useFlowContext from '@pages/SimplifiedBankOnboarding/flow/useFlowContext';
 import SBO_CONST from '@pages/SimplifiedBankOnboarding/SBO_CONST';
 
@@ -57,26 +60,34 @@ function USDFlowPage({route}: USDFlowPageProps) {
     const currentStep = findStep(USD_FLOW, route.params?.page);
     const CurrentPage = STEP_COMPONENTS[currentStep.id];
 
-    const {goToNextPage, goToPreviousPage} = getFlowNavigationHandlers({
+    const getRoute = ({page, subPage}: FlowPosition<USDPageName>) => ROUTES.SETTINGS_BANK_ONBOARDING_LAB_USD_SETUP.getRoute({policyID, page, subPage, backTo});
+    const accountStatus = useFlowAccount({flow: USD_FLOW, context, pageName: currentStep.id, policyID, getRoute});
+
+    const {goToNextPage, goToPreviousPage, leaveFlow} = getFlowNavigationHandlers({
         flow: USD_FLOW,
         context,
         currentStep,
-        getRoute: ({page, subPage}) => ROUTES.SETTINGS_BANK_ONBOARDING_LAB_USD_SETUP.getRoute({policyID, page, subPage, backTo}),
+        getRoute,
         backTo,
     });
 
     return (
-        <View style={[styles.flex1, styles.appBG]}>
-            <CurrentPage
-                onSubmit={goToNextPage}
-                onBackButtonPress={goToPreviousPage}
-                policyID={policyID}
-                currentSubPage={route.params?.subPage}
-                stepNames={getHeaderStepNames(USD_FLOW, context)}
-                startStepIndex={currentStep.headerPosition}
-                backTo={backTo}
-            />
-        </View>
+        <FlowAccountGate
+            status={accountStatus}
+            onLeaveFlow={leaveFlow}
+        >
+            <View style={[styles.flex1, styles.appBG]}>
+                <CurrentPage
+                    onSubmit={goToNextPage}
+                    onBackButtonPress={goToPreviousPage}
+                    policyID={policyID}
+                    currentSubPage={route.params?.subPage}
+                    stepNames={getHeaderStepNames(USD_FLOW, context)}
+                    startStepIndex={currentStep.headerPosition}
+                    backTo={backTo}
+                />
+            </View>
+        </FlowAccountGate>
     );
 }
 

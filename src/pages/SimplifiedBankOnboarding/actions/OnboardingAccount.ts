@@ -21,7 +21,6 @@ const DEFAULT_ACCOUNT: OnboardingAccount = {
     errors: null,
     errorFields: null,
     maxAttemptsReached: false,
-    shouldShowResetModal: false,
 };
 
 function updateOnboardingAccount(achData: Partial<ACHData>) {
@@ -36,25 +35,8 @@ function clearOnboardingDraft() {
     Onyx.set(ONYXKEYS.FORMS.SIMPLIFIED_BANK_ONBOARDING_FORM_DRAFT, {});
 }
 
-function clearOnboardingAccount() {
-    Onyx.set(ONYXKEYS.SIMPLIFIED_BANK_ONBOARDING_ACCOUNT, DEFAULT_ACCOUNT);
-}
-
-function setOnboardingAccountLoading(isLoading: boolean) {
-    Onyx.merge(ONYXKEYS.SIMPLIFIED_BANK_ONBOARDING_ACCOUNT, {isLoading});
-}
-
 function clearOnboardingAccountErrors() {
     Onyx.merge(ONYXKEYS.SIMPLIFIED_BANK_ONBOARDING_ACCOUNT, {errors: null, pendingAction: null, errorFields: null});
-}
-
-/** Asks the entry page to show the modal that confirms starting over */
-function requestResetBankAccount() {
-    Onyx.merge(ONYXKEYS.SIMPLIFIED_BANK_ONBOARDING_ACCOUNT, {shouldShowResetModal: true});
-}
-
-function cancelResetBankAccount() {
-    Onyx.merge(ONYXKEYS.SIMPLIFIED_BANK_ONBOARDING_ACCOUNT, {shouldShowResetModal: false});
 }
 
 /** Remembers the setup type that the user picked, so the choice survives the detour through the verify-account page */
@@ -68,16 +50,4 @@ function prepareNewBankAccountSetup(policyID: string, currency: string) {
     Onyx.set(ONYXKEYS.FORMS.SIMPLIFIED_BANK_ONBOARDING_FORM_DRAFT, {currency});
 }
 
-export {
-    DEFAULT_ACCOUNT,
-    cancelResetBankAccount,
-    clearOnboardingAccount,
-    clearOnboardingAccountErrors,
-    clearOnboardingDraft,
-    prepareNewBankAccountSetup,
-    requestResetBankAccount,
-    setOnboardingAccountLoading,
-    setSetupOptionPressed,
-    updateOnboardingAccount,
-    updateOnboardingDraft,
-};
+export {DEFAULT_ACCOUNT, clearOnboardingAccountErrors, clearOnboardingDraft, prepareNewBankAccountSetup, setSetupOptionPressed, updateOnboardingAccount, updateOnboardingDraft};

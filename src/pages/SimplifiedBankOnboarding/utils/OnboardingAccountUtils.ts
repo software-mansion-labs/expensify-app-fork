@@ -7,6 +7,26 @@ import type {ACHData} from '@pages/SimplifiedBankOnboarding/types/onyx';
 
 const NO_BANK_ACCOUNT_ID = 0;
 
+/** What the URL of a page names. The bank account ID wins, because a page opened from the bank account list has no workspace. */
+type RouteIdentity = {
+    policyID?: string;
+    bankAccountID?: number;
+};
+
+/**
+ * The identity rule of the shared account key. The key holds the account of the page that read it last, and no page
+ * clears it when it closes, so a page trusts the data only when it names the bank account or the workspace of its URL.
+ */
+function isAccountForRoute(achData: ACHData | undefined, {policyID, bankAccountID}: RouteIdentity): boolean {
+    if (bankAccountID) {
+        return achData?.bankAccountID === bankAccountID;
+    }
+    if (policyID) {
+        return achData?.policyID === policyID;
+    }
+    return false;
+}
+
 /** Returns true when a USD bank account exists on the server and is not connected yet */
 function hasInProgressUSDSetup(achData?: ACHData): boolean {
     return !!achData?.bankAccountID && !!achData.state && achData.state !== SBO_CONST.STATE.OPEN;
@@ -48,4 +68,5 @@ function requiresDocusignStep(currency: string | undefined): boolean {
     return currency === SBO_CONST.CURRENCY.AUD;
 }
 
-export {getBankAccountParams, hasInProgressNonUSDSetup, hasInProgressSetup, hasInProgressUSDSetup, isAccountPastReview, isSupportedCurrency, requiresDocusignStep};
+export {getBankAccountParams, hasInProgressNonUSDSetup, hasInProgressSetup, isAccountForRoute, isAccountPastReview, isSupportedCurrency, requiresDocusignStep};
+export type {RouteIdentity};

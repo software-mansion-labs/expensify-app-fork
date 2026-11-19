@@ -1,11 +1,9 @@
 /**
- * The page that opens the bank onboarding of a workspace. It fetches the account, decides which screen the user sees
- * (a blocker, the connected account, the redirect to the pending validation, or the entry point) and stays mounted under
- * the flow pages, where its effects keep reacting to the shared account object.
+ * The page that opens the bank onboarding of a workspace. It reads the account once it opens, and `getEntryStatus`
+ * decides on every render which screen the user sees: a blocker, the connected account, the redirect to the pending
+ * validation, or the entry point. The flow pages load their own data, so this page holds nothing for them.
  * It mirrors `ReimbursementAccountPage`.
  */
-import FullPageNotFoundView from '@components/BlockingViews/FullPageNotFoundView';
-import FullPageOfflineBlockingView from '@components/BlockingViews/FullPageOfflineBlockingView';
 import FullScreenLoadingIndicator from '@components/FullscreenLoadingIndicator';
 import HeaderWithBackButtonAndTitle from '@components/Header/composed/HeaderWithBackButtonAndTitle';
 import ReimbursementAccountLoadingIndicator from '@components/ReimbursementAccountLoadingIndicator';
@@ -24,35 +22,39 @@ import Navigation from '@libs/Navigation/Navigation';
 import type BankOnboardingLabParamList from '@libs/Navigation/paramLists/BankOnboardingLabParamList';
 import type {PlatformStackScreenProps} from '@libs/Navigation/PlatformStackNavigation/types';
 
-import {clearOnboardingAccount, clearOnboardingDraft, DEFAULT_ACCOUNT, setOnboardingAccountLoading} from '@pages/SimplifiedBankOnboarding/actions/OnboardingAccount';
+import {clearOnboardingDraft} from '@pages/SimplifiedBankOnboarding/actions/OnboardingAccount';
 import {openOnboardingPage} from '@pages/SimplifiedBankOnboarding/actions/OnboardingPage';
+import NotFoundPage from '@pages/SimplifiedBankOnboarding/components/NotFoundPage';
+import OfflineBlockedPage from '@pages/SimplifiedBankOnboarding/components/OfflineBlockedPage';
 import {getResumePosition} from '@pages/SimplifiedBankOnboarding/flow/flowNavigation';
 import NON_USD_FLOW from '@pages/SimplifiedBankOnboarding/flow/nonUSDFlow';
 import USD_FLOW from '@pages/SimplifiedBankOnboarding/flow/usdFlow';
+import useFlowContext from '@pages/SimplifiedBankOnboarding/flow/useFlowContext';
+import useStepRequest from '@pages/SimplifiedBankOnboarding/requests/useStepRequest';
 import SBO_CONST from '@pages/SimplifiedBankOnboarding/SBO_CONST';
-import type {USDStep} from '@pages/SimplifiedBankOnboarding/types/onyx';
-import {hasInProgressSetup, hasInProgressUSDSetup, isSupportedCurrency} from '@pages/SimplifiedBankOnboarding/utils/OnboardingAccountUtils';
+import type {Workspaces} from '@pages/SimplifiedBankOnboarding/types/onyx';
+import {isAccountForRoute} from '@pages/SimplifiedBankOnboarding/utils/OnboardingAccountUtils';
 
 import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';
 import ROUTES from '@src/ROUTES';
 import type SCREENS from '@src/SCREENS';
-import {isEmptyObject} from '@src/types/utils/EmptyObject';
+
+import type {OnyxEntry} from 'react-native-onyx';
 
 import {useIsFocused} from '@react-navigation/native';
-import {deepEqual} from 'fast-equals';
-import React, {useEffect, useEffectEvent, useRef, useState} from 'react';
+import React, {useEffect, useEffectEvent} from 'react';
 import {View} from 'react-native';
 
 import ConnectedBankAccount from './ConnectedBankAccount';
+import getEntryStatus, {isNonUSDCurrency} from './getEntryStatus';
 import OnboardingFlowEntryPoint from './OnboardingFlowEntryPoint';
 
 type OnboardingEntryPageProps = PlatformStackScreenProps<BankOnboardingLabParamList, typeof SCREENS.SETTINGS.BANK_ONBOARDING_LAB.ENTRY>;
 
 const {STEP, PAGE_NAMES} = SBO_CONST.USD;
 
-/** The steps whose data is on the device, so they can be shown without a connection */
-const OFFLINE_ACCESSIBLE_STEPS: USDStep[] = [STEP.COUNTRY, STEP.BANK_ACCOUNT, STEP.REQUESTOR, STEP.COMPANY];
+const areWorkspacesLoadedSelector = (workspaces: OnyxEntry<Workspaces>) => !!workspaces;
 
 function OnboardingEntryPage({route}: OnboardingEntryPageProps) {
     const styles = useThemeStyles();
@@ -61,341 +63,180 @@ function OnboardingEntryPage({route}: OnboardingEntryPageProps) {
     const {environmentURL} = useEnvironment();
     const isFocused = useIsFocused();
 
-    const [account] = useOnyx(ONYXKEYS.SIMPLIFIED_BANK_ONBOARDING_ACCOUNT);
-    const [draft] = useOnyx(ONYXKEYS.FORMS.SIMPLIFIED_BANK_ONBOARDING_FORM_DRAFT);
-    const [workspaces] = useOnyx(ONYXKEYS.SIMPLIFIED_BANK_ONBOARDING_WORKSPACES);
-
     const policyID = route.params?.policyID;
     const bankAccountIDParam = route.params?.bankAccountID;
     const backTo = route.params?.backTo;
     const isChangingBankAccount = !!route.params?.isChangingBankAccount;
+    const routeIdentity = {policyID, bankAccountID: bankAccountIDParam ? Number(bankAccountIDParam) : undefined};
 
-    const isChangingBankAccountRef = useRef(isChangingBankAccount);
-    const hasShownConnectedBankAccountRef = useRef(false);
+    const [account] = useOnyx(ONYXKEYS.SIMPLIFIED_BANK_ONBOARDING_ACCOUNT);
+    const [areWorkspacesLoaded = false] = useOnyx(ONYXKEYS.SIMPLIFIED_BANK_ONBOARDING_WORKSPACES, {selector: areWorkspacesLoadedSelector});
+    const selectWorkspace = (workspaces: OnyxEntry<Workspaces>) => (policyID ? workspaces?.[policyID] : undefined);
+    const [workspace] = useOnyx(ONYXKEYS.SIMPLIFIED_BANK_ONBOARDING_WORKSPACES, {selector: selectWorkspace});
+    const context = useFlowContext(policyID);
+    const accountRead = useStepRequest();
 
-    // Keeps the redirect to the pending validation from firing twice while the transition is still running.
-    const hasRedirectedToPendingValidationRef = useRef(false);
+    const achData = context.server;
+    const currency = context.currency;
+    const isNonUSDWorkspace = isNonUSDCurrency(currency);
+    const isDataForRoute = isAccountForRoute(achData, routeIdentity);
 
-    // The redirect ref flips while this page is still focused, so a second ref records that the validation step really covered it.
-    const hasBlurredAfterPendingRedirectRef = useRef(false);
+    // A page opened by the bank account ID learns its workspace from the data, and the flow pages need it in their URL.
+    const flowPolicyID = policyID ?? achData?.policyID;
 
-    // Tells the unmount cleanup that the validation step is gone too, so nothing reads the account data anymore.
-    const isLeavingPendingValidationFlowRef = useRef(false);
+    const status = getEntryStatus({
+        achData,
+        throttledDate: account?.throttledDate,
+        workspace,
+        areWorkspacesLoaded,
+        route: routeIdentity,
+        currency,
+        isChangingBankAccount,
+        isOffline,
+        accountRead,
+    });
 
-    const prevAccount = usePrevious(account);
-    const prevIsOffline = usePrevious(isOffline);
+    // The data of a page that was covered, or of a connection that was lost, may be old, so the page reads it again then.
+    const hasRegainedFocus = usePrevious(isFocused) === false && isFocused;
+    const hasReconnected = usePrevious(isOffline) && !isOffline;
+    const isDeletingAccount = account?.pendingAction === CONST.RED_BRICK_ROAD_PENDING_ACTION.DELETE;
 
-    const workspace = policyID ? workspaces?.[policyID] : undefined;
-    const isLoadingWorkspaces = !workspaces;
-    const achData = account?.achData;
-    const policyCurrency = workspace ? workspace.outputCurrency : (achData?.currency ?? draft?.currency);
-    const isNonUSDWorkspace = !!policyCurrency && policyCurrency !== SBO_CONST.CURRENCY.USD;
-    const hasUnsupportedCurrency = !!policyCurrency && !isSupportedCurrency(policyCurrency);
-    const isAuthorized = workspace?.role === SBO_CONST.WORKSPACE_ROLE.ADMIN;
+    const readAccountIfNeeded = useEffectEvent(() => {
+        if (!isFocused || isOffline || isDeletingAccount || accountRead.isPending) {
+            return;
+        }
+        if (accountRead.hasFailed && !hasRegainedFocus && !hasReconnected) {
+            return;
+        }
+        // The replacement starts from the data of the connected account, so a read would bring back what it replaces.
+        if (isDataForRoute && (isChangingBankAccount || (accountRead.wasSent && !hasRegainedFocus && !hasReconnected))) {
+            return;
+        }
+        if (!routeIdentity.policyID && !routeIdentity.bankAccountID) {
+            return;
+        }
+        // The draft of another account must not prefill this one, because the draft wins over the server data. Missing
+        // data, for example after a failed reset, names no other account, so the draft stays.
+        if (achData && !isDataForRoute && !isChangingBankAccount) {
+            clearOnboardingDraft();
+        }
+        accountRead.send((requestID) => openOnboardingPage(requestID, routeIdentity));
+    });
 
-    // The account object is shared by every workspace, so it only belongs to this page when it carries the policy ID of the URL.
-    const isPreviousPolicy = !!policyID && !!account && policyID === achData?.policyID;
-    const hasConfirmedUSDCurrency = (draft?.country ?? '') !== '' || (achData?.accountNumber ?? '') !== '';
+    // Also reads again when a reset fails: the reset removed the data, and the server still holds the account.
+    useEffect(() => {
+        readAccountIfNeeded();
+    }, [isFocused, isOffline, isDeletingAccount, isDataForRoute]);
 
-    // The country step only exists on the client, so the server step counts once the user got past it.
-    const currentStep: USDStep = hasConfirmedUSDCurrency ? (achData?.currentStep ?? STEP.COUNTRY) : STEP.COUNTRY;
+    useEffect(
+        () => () => {
+            // The instance that replaces a bank account shares the draft with the instance under it, which still needs it.
+            if (isChangingBankAccount) {
+                return;
+            }
+            clearOnboardingDraft();
+        },
+        [isChangingBankAccount],
+    );
 
-    // A page opened by the bank account ID has no workspace, so the flow type is a state that an effect corrects once the currency arrives.
-    const [isNonUSDSetup, setIsNonUSDSetup] = useState(workspace ? isNonUSDWorkspace : achData?.currency !== SBO_CONST.CURRENCY.USD || draft?.currency !== SBO_CONST.CURRENCY.USD);
-    const isConnectedBankAccountData = isNonUSDSetup ? achData?.state === SBO_CONST.STATE.OPEN : achData?.currentStep === STEP.ENABLE;
+    const redirectToPendingValidation = useEffectEvent(() => {
+        if (!isFocused) {
+            return;
+        }
+        // A replace, so the back button of the validation step leaves the flow instead of landing on this page again.
+        Navigation.navigate(ROUTES.SETTINGS_BANK_ONBOARDING_LAB_USD_SETUP.getRoute({policyID, page: PAGE_NAMES.VALIDATION, backTo}), {forceReplace: true});
+    });
 
-    const shouldShowContinueSetupButtonValue = hasInProgressSetup(achData, isNonUSDWorkspace, policyID);
-    const hasLoadedData = !!achData && !deepEqual(account, DEFAULT_ACCOUNT) && !account?.isLoading;
+    useEffect(() => {
+        if (status !== 'pendingValidation') {
+            return;
+        }
+        redirectToPendingValidation();
+    }, [status, isFocused]);
 
-    // A pending USD account has nothing to pick on this page, so the page only redirects to the validation step.
-    // The policy ID must match because the account object is persisted and may still describe another workspace.
-    const shouldRedirectToPendingValidation =
-        policyCurrency === SBO_CONST.CURRENCY.USD &&
-        achData?.state === SBO_CONST.STATE.PENDING &&
-        hasLoadedData &&
-        !isChangingBankAccount &&
-        !!policyID &&
-        achData?.policyID === policyID &&
-        isAuthorized;
+    const continueSetup = () => {
+        if (isNonUSDWorkspace) {
+            const {page, subPage} = getResumePosition(NON_USD_FLOW, context);
+            Navigation.navigate(ROUTES.SETTINGS_BANK_ONBOARDING_LAB_NON_USD_SETUP.getRoute({policyID: flowPolicyID, page, subPage, backTo}));
+            return;
+        }
+        const {page, subPage} = getResumePosition(USD_FLOW, context);
+        Navigation.navigate(ROUTES.SETTINGS_BANK_ONBOARDING_LAB_USD_SETUP.getRoute({policyID: flowPolicyID, page, subPage, backTo}));
+    };
 
-    // These three copy values that are also derived above. They exist because the data arrives after the first render,
-    // and because the reset modal and the back handler change them directly.
-    const [hasACHDataBeenLoaded, setHasACHDataBeenLoaded] = useState(hasLoadedData);
-    const [shouldShowContinueSetupButton, setShouldShowContinueSetupButton] = useState(shouldShowContinueSetupButtonValue);
-    const [shouldShowConnectedBankAccount, setShouldShowConnectedBankAccount] = useState(false);
-
-    const leavePendingValidationFlow = () => {
-        isLeavingPendingValidationFlowRef.current = true;
-        if (backTo) {
+    const goBackFromCurrentStep = () => {
+        // The country step only exists on the client, so the server step counts once the user got past it.
+        const hasConfirmedUSDCurrency = !!context.draft?.country || !!achData?.accountNumber;
+        const currentStep = hasConfirmedUSDCurrency ? (achData?.currentStep ?? STEP.COUNTRY) : STEP.COUNTRY;
+        if (currentStep === STEP.COUNTRY || (currentStep === STEP.VALIDATION && achData?.state !== SBO_CONST.STATE.PENDING)) {
             Navigation.goBack(backTo);
             return;
         }
         Navigation.dismissModal();
     };
 
-    const fetchData = () => {
-        if (!policyID && !bankAccountIDParam) {
-            return;
-        }
-        if (bankAccountIDParam) {
-            openOnboardingPage({bankAccountID: Number(bankAccountIDParam)});
-            return;
-        }
-        openOnboardingPage({policyID});
-    };
-
-    useEffect(() => {
-        const isChangingBankAccountInstance = isChangingBankAccountRef.current;
-        return () => {
-            // The instance that replaces a bank account shares the data with the instance under it, which still needs it.
-            if (isChangingBankAccountInstance) {
-                return;
-            }
-            clearOnboardingDraft();
-
-            // The validation step reads the account data and fetches nothing, so the data must survive the redirect into it.
-            if (!hasRedirectedToPendingValidationRef.current || isLeavingPendingValidationFlowRef.current) {
-                clearOnboardingAccount();
-            }
-        };
-    }, []);
-
-    useEffect(() => {
-        if (!policyCurrency || isNonUSDSetup === (policyCurrency !== SBO_CONST.CURRENCY.USD)) {
-            return;
-        }
-        // eslint-disable-next-line react-hooks/set-state-in-effect -- The lab reproduces the mirrored state of the real entry page on purpose
-        setIsNonUSDSetup(policyCurrency !== SBO_CONST.CURRENCY.USD);
-    }, [policyCurrency, isNonUSDSetup]);
-
-    const openPageForWorkspace = useEffectEvent(() => {
-        if (isPreviousPolicy && !!account) {
-            return;
-        }
-        if (policyID) {
-            setOnboardingAccountLoading(true);
-            clearOnboardingDraft();
-        }
-        fetchData();
-    });
-
-    // The response of the fetch makes the account belong to this workspace, which is the only change that this effect waits for.
-    useEffect(() => {
-        openPageForWorkspace();
-    }, [isPreviousPolicy]);
-
-    const refetchAfterAbandonedChange = useEffectEvent(() => {
-        fetchData();
-    });
-
-    // Replacing a bank account clears the shared data. When the user backs out of the replacement, the focus returns
-    // here without the connected account that this page was showing, so the page fetches it again.
-    useEffect(() => {
-        if (isChangingBankAccount || !isFocused) {
-            return;
-        }
-        if (isConnectedBankAccountData) {
-            hasShownConnectedBankAccountRef.current = true;
-            return;
-        }
-        if (!shouldShowContinueSetupButtonValue && hasShownConnectedBankAccountRef.current) {
-            refetchAfterAbandonedChange();
-        }
-    }, [isFocused, isChangingBankAccount, isConnectedBankAccountData, shouldShowContinueSetupButtonValue]);
-
-    useEffect(() => {
-        if (policyID && !isPreviousPolicy) {
-            return;
-        }
-
-        // A push and not a replace: replacing unmounts this page, and its cleanup clears the data that the validation step reads.
-        if (shouldRedirectToPendingValidation && !hasRedirectedToPendingValidationRef.current) {
-            hasRedirectedToPendingValidationRef.current = true;
-            Navigation.navigate(ROUTES.SETTINGS_BANK_ONBOARDING_LAB_USD_SETUP.getRoute({policyID, page: PAGE_NAMES.VALIDATION, backTo}));
-            return;
-        }
-
-        // eslint-disable-next-line react-hooks/set-state-in-effect -- The lab reproduces the mirrored state of the real entry page on purpose
-        setShouldShowConnectedBankAccount(isConnectedBankAccountData);
-        setShouldShowContinueSetupButton(shouldShowContinueSetupButtonValue);
-    }, [policyID, shouldShowContinueSetupButtonValue, isConnectedBankAccountData, isPreviousPolicy, shouldRedirectToPendingValidation, backTo]);
-
-    const leaveFlowWhenFocusReturnsAfterRedirect = useEffectEvent(() => {
-        if (!hasRedirectedToPendingValidationRef.current) {
-            return;
-        }
-        if (!isFocused) {
-            hasBlurredAfterPendingRedirectRef.current = true;
-            return;
-        }
-
-        // The user came back onto this page, for example with the back button of the browser. The page would only show
-        // its loader for a pending account, so it leaves the flow instead.
-        if (!hasBlurredAfterPendingRedirectRef.current || !shouldRedirectToPendingValidation) {
-            return;
-        }
-        leavePendingValidationFlow();
-    });
-
-    // Declared after the redirect effect, so that it sees the blur flag unset on the commit where the redirect fires.
-    useEffect(() => {
-        leaveFlowWhenFocusReturnsAfterRedirect();
-    }, [isFocused, shouldRedirectToPendingValidation]);
-
-    const syncWithAccountChanges = useEffectEvent(() => {
-        const isBackOnline = prevIsOffline && !isOffline;
-        if (isBackOnline && prevAccount && prevAccount.pendingAction !== CONST.RED_BRICK_ROAD_PENDING_ACTION.DELETE) {
-            fetchData();
-        }
-
-        if (!hasACHDataBeenLoaded) {
-            if (hasLoadedData) {
-                setHasACHDataBeenLoaded(true);
-            }
-            return;
-        }
-
-        // The reset request finished, so the account on the server is gone or the request failed and it is still there.
-        if (prevAccount?.pendingAction === CONST.RED_BRICK_ROAD_PENDING_ACTION.DELETE && account?.pendingAction !== prevAccount.pendingAction) {
-            setShouldShowContinueSetupButton(hasInProgressUSDSetup(achData));
-        }
-    });
-
-    useEffect(() => {
-        // eslint-disable-next-line react-hooks/set-state-in-effect -- The lab reproduces the mirrored state of the real entry page on purpose
-        syncWithAccountChanges();
-    }, [isOffline, account?.pendingAction, account?.isLoading, hasACHDataBeenLoaded, shouldShowContinueSetupButton, currentStep]);
-
-    const continueUSDSetup = () => {
-        const {page, subPage} = getResumePosition(USD_FLOW, {currency: policyCurrency, server: achData, draft});
-        Navigation.navigate(ROUTES.SETTINGS_BANK_ONBOARDING_LAB_USD_SETUP.getRoute({policyID, page, subPage, backTo}));
-    };
-
-    const continueNonUSDSetup = () => {
-        const {page, subPage} = getResumePosition(NON_USD_FLOW, {currency: policyCurrency, server: achData, draft});
-        Navigation.navigate(ROUTES.SETTINGS_BANK_ONBOARDING_LAB_NON_USD_SETUP.getRoute({policyID, page, subPage, backTo}));
-    };
-
-    const goBackFromCurrentStep = () => {
-        switch (currentStep) {
-            case STEP.COUNTRY:
-                if (hasInProgressUSDSetup(achData)) {
-                    setShouldShowContinueSetupButton(true);
-                }
-                Navigation.goBack(backTo);
-                break;
-            case STEP.VALIDATION:
-                if (achData?.state === SBO_CONST.STATE.PENDING) {
-                    Navigation.dismissModal();
-                    break;
-                }
-                Navigation.goBack(backTo);
-                break;
-            default:
-                Navigation.dismissModal();
-        }
-    };
-
-    // The requests of the steps follow their own IDs, so `isLoading` only covers the reads of this page.
-    const isLoading = !!account?.isLoading;
-    // Offline, only the steps that send nothing can be shown, and only with the data that was loaded before.
-    const shouldShowOfflineLoader = !(hasLoadedData && isOffline && OFFLINE_ACCESSIBLE_STEPS.some((step) => step === currentStep));
-
-    // Matched the way `fetchData` opens the account. An account without the ID of the route counts as another one.
-    const isOtherAccount = bankAccountIDParam ? achData?.bankAccountID !== Number(bankAccountIDParam) : !!policyID && achData?.policyID !== policyID;
-
-    // `hasLoadedData` only proves that the object differs from the default one. Offline, the actions of the mount effect
-    // already cause that with nothing loaded, so the data must also belong to this page.
-    const hasACHDataForThisPage = !isEmptyObject(achData) && !deepEqual(achData, DEFAULT_ACCOUNT.achData) && !isOtherAccount;
-
-    if (isOffline && (!hasLoadedData || !hasACHDataForThisPage)) {
-        return (
-            <ScreenWrapper testID="SimplifiedBankOnboardingEntryPage">
-                <HeaderWithBackButtonAndTitle
-                    title={translate('bankAccount.addBankAccount')}
+    switch (status) {
+        case 'offlineBlocked':
+            return <OfflineBlockedPage onBackButtonPress={() => Navigation.goBack(backTo)} />;
+        case 'loadingWorkspaces':
+            return <FullScreenLoadingIndicator onGoBack={() => Navigation.goBack(backTo)} />;
+        case 'loading':
+            return <ReimbursementAccountLoadingIndicator onBackButtonPress={goBackFromCurrentStep} />;
+        case 'notFound':
+        case 'notAuthorized':
+            return (
+                <NotFoundPage
                     onBackButtonPress={() => Navigation.goBack(backTo)}
+                    isNotAuthorized={status === 'notAuthorized'}
                 />
-                <FullPageOfflineBlockingView>{null}</FullPageOfflineBlockingView>
-            </ScreenWrapper>
-        );
-    }
-
-    if (isLoadingWorkspaces) {
-        return <FullScreenLoadingIndicator onGoBack={() => Navigation.goBack(backTo)} />;
-    }
-
-    if ((!!policyID || !!bankAccountIDParam) && !isChangingBankAccount && (!hasACHDataBeenLoaded || isLoading) && shouldShowOfflineLoader) {
-        return <ReimbursementAccountLoadingIndicator onBackButtonPress={goBackFromCurrentStep} />;
-    }
-
-    // A page without a workspace ID is not checked, like the real page that the Wallet opens by the bank account ID.
-    if (!!policyID && !isLoading && (!workspace || !isAuthorized)) {
-        return (
-            <ScreenWrapper testID="SimplifiedBankOnboardingEntryPage">
-                <FullPageNotFoundView
-                    shouldShow
-                    onBackButtonPress={() => Navigation.goBack(backTo)}
-                    onLinkPress={() => Navigation.goBack(backTo)}
-                    subtitleKey={workspace ? 'workspace.common.notAuthorized' : undefined}
+            );
+        case 'throttled':
+        case 'unsupportedCurrency':
+            return (
+                <ScreenWrapper testID="SimplifiedBankOnboardingEntryPage">
+                    <HeaderWithBackButtonAndTitle
+                        title={translate('bankAccount.addBankAccount')}
+                        subtitle={workspace?.name}
+                        onBackButtonPress={() => Navigation.goBack(backTo)}
+                    />
+                    <View style={[styles.m5, styles.mv3, styles.flex1]}>
+                        {status === 'throttled' ? (
+                            <Text>{translate('bankAccount.hasBeenThrottledError')}</Text>
+                        ) : (
+                            <RenderHTML html={translate('bankAccount.hasCurrencyError', `${environmentURL}/${ROUTES.SETTINGS_BANK_ONBOARDING_LAB}`)} />
+                        )}
+                    </View>
+                </ScreenWrapper>
+            );
+        case 'connected':
+            return (
+                <ConnectedBankAccount
+                    account={account}
+                    onBackButtonPress={goBackFromCurrentStep}
+                    isNonUSDWorkspace={isNonUSDWorkspace}
                 />
-            </ScreenWrapper>
-        );
-    }
-
-    let errorText;
-    if (account?.throttledDate) {
-        errorText = <Text>{translate('bankAccount.hasBeenThrottledError')}</Text>;
-    } else if (hasUnsupportedCurrency) {
-        errorText = <RenderHTML html={translate('bankAccount.hasCurrencyError', `${environmentURL}/${ROUTES.SETTINGS_BANK_ONBOARDING_LAB}`)} />;
-    }
-
-    if (errorText) {
-        return (
-            <ScreenWrapper testID="SimplifiedBankOnboardingEntryPage">
-                <HeaderWithBackButtonAndTitle
-                    title={translate('bankAccount.addBankAccount')}
-                    subtitle={workspace?.name}
-                    onBackButtonPress={() => Navigation.goBack(backTo)}
+            );
+        // The loader stays up while the page replaces itself with the validation step, so the entry point is never painted.
+        case 'pendingValidation':
+            return <ReimbursementAccountLoadingIndicator onBackButtonPress={() => Navigation.goBack(backTo)} />;
+        case 'continueSetup':
+        case 'chooseSetup':
+            return (
+                <OnboardingFlowEntryPoint
+                    account={account}
+                    onContinuePress={continueSetup}
+                    policyName={workspace?.name}
+                    policyID={flowPolicyID}
+                    currency={currency}
+                    backTo={backTo}
+                    shouldShowContinueSetupButton={status === 'continueSetup'}
+                    isNonUSDWorkspace={isNonUSDWorkspace}
+                    isChangingBankAccount={isChangingBankAccount}
                 />
-                <View style={[styles.m5, styles.mv3, styles.flex1]}>{errorText}</View>
-            </ScreenWrapper>
-        );
+            );
+        default:
+            return null;
     }
-
-    // The instance that replaces the bank account shows the setup options, although the shared data still describes the connected account.
-    if (shouldShowConnectedBankAccount && isConnectedBankAccountData && !isChangingBankAccount) {
-        return (
-            <ConnectedBankAccount
-                account={account}
-                setShouldShowConnectedBankAccount={setShouldShowConnectedBankAccount}
-                onBackButtonPress={goBackFromCurrentStep}
-                isNonUSDWorkspace={isNonUSDSetup}
-            />
-        );
-    }
-
-    // The loader stays up for a pending USD account, so the entry point is never painted on the way to the validation step.
-    if (shouldRedirectToPendingValidation) {
-        return <ReimbursementAccountLoadingIndicator onBackButtonPress={leavePendingValidationFlow} />;
-    }
-
-    // Once the data has loaded, the derived value is used, because the copy in the state is one render behind it.
-    const shouldShowContinueSetupButtonToDisplay = !isChangingBankAccount && (hasLoadedData ? shouldShowContinueSetupButtonValue : shouldShowContinueSetupButton);
-
-    return (
-        <OnboardingFlowEntryPoint
-            account={account}
-            onContinuePress={isNonUSDSetup ? continueNonUSDSetup : continueUSDSetup}
-            policyName={workspace?.name}
-            policyID={policyID}
-            currency={policyCurrency}
-            backTo={backTo}
-            shouldShowContinueSetupButton={shouldShowContinueSetupButtonToDisplay}
-            isNonUSDWorkspace={isNonUSDSetup}
-            setShouldShowContinueSetupButton={setShouldShowContinueSetupButton}
-            isChangingBankAccount={isChangingBankAccount}
-        />
-    );
 }
 
 export default OnboardingEntryPage;

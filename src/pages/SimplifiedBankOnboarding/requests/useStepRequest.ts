@@ -78,6 +78,10 @@ function useStepRequest({mode = 'confirmed', onSuccess}: UseStepRequestParams = 
     return {
         send,
         isPending,
+        hasFailed: status === FAILED,
+
+        /** True once this screen sent a request, also after its entry was removed on success */
+        wasSent: requestID !== undefined,
         errorMessage: status === FAILED ? getLatestErrorMessage(request) : '',
     };
 }

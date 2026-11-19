@@ -109,6 +109,27 @@ describe('useStepRequest', () => {
         expect(result.current.isPending).toBe(true);
     });
 
+    it('tells whether the own request was sent and whether it failed', async () => {
+        // Given a page that has not read its data yet
+        const {result} = await renderStepRequest();
+        expect(result.current.wasSent).toBe(false);
+        expect(result.current.hasFailed).toBe(false);
+
+        // When the page sends its read and the read fails
+        const requestID = sendRequest(result.current.send);
+        await act(async () => {
+            await waitForBatchedUpdates();
+        });
+        const wasSentWhilePending = result.current.wasSent;
+        await setRequest(requestID, {status: FAILED, errors: {[ERROR_TIME]: ERROR_MESSAGE}});
+
+        // Then the page knows not to read again on its own, and can show that the data could not be loaded
+        expect(wasSentWhilePending).toBe(true);
+        expect(result.current.wasSent).toBe(true);
+        expect(result.current.hasFailed).toBe(true);
+        expect(result.current.isPending).toBe(false);
+    });
+
     it('ignores a second send while the own request is pending', async () => {
         // Given a step whose request is still pending
         const {result} = await renderStepRequest();

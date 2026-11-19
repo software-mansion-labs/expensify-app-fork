@@ -16,7 +16,7 @@ import {useMemoizedLazyExpensifyIcons} from '@hooks/useLazyAsset';
 import useLocalize from '@hooks/useLocalize';
 import useThemeStyles from '@hooks/useThemeStyles';
 
-import {clearOnboardingAccountErrors, requestResetBankAccount} from '@pages/SimplifiedBankOnboarding/actions/OnboardingAccount';
+import {clearOnboardingAccountErrors} from '@pages/SimplifiedBankOnboarding/actions/OnboardingAccount';
 import useResetOnboardingModal from '@pages/SimplifiedBankOnboarding/hooks/useResetOnboardingModal';
 import type {OnboardingAccount} from '@pages/SimplifiedBankOnboarding/types/onyx';
 
@@ -34,15 +34,12 @@ type ConnectedBankAccountProps = {
     /** The shared account object. The entry page reads it and passes it down, like the real flow does. */
     account: OnyxEntry<OnboardingAccount>;
     onBackButtonPress: () => void;
-
-    /** Lets the reset modal leave this view once the bank account is disconnected */
-    setShouldShowConnectedBankAccount: (shouldShowConnectedBankAccount: boolean) => void;
     isNonUSDWorkspace: boolean;
 };
 
 const VISIBLE_ACCOUNT_NUMBER_DIGITS = 4;
 
-function ConnectedBankAccount({account, onBackButtonPress, setShouldShowConnectedBankAccount, isNonUSDWorkspace}: ConnectedBankAccountProps) {
+function ConnectedBankAccount({account, onBackButtonPress, isNonUSDWorkspace}: ConnectedBankAccountProps) {
     const styles = useThemeStyles();
     const {translate} = useLocalize();
     const icons = useMemoizedLazyExpensifyIcons(['Bank', 'Close']);
@@ -56,7 +53,7 @@ function ConnectedBankAccount({account, onBackButtonPress, setShouldShowConnecte
     const accountNumber = achData?.accountNumber ?? achData?.corpay?.iban ?? achData?.corpay?.accountNumber ?? '';
     const formattedAccountNumber = accountNumber ? `${translate('bankAccount.accountEnding')} ${accountNumber.slice(-VISIBLE_ACCOUNT_NUMBER_DIGITS)}` : '';
 
-    useResetOnboardingModal({account, isNonUSDWorkspace, setShouldShowConnectedBankAccount});
+    const showResetModal = useResetOnboardingModal({account, isNonUSDWorkspace});
 
     return (
         <ScreenWrapper
@@ -96,7 +93,7 @@ function ConnectedBankAccount({account, onBackButtonPress, setShouldShowConnecte
                                 sentryLabel={CONST.SENTRY_LABEL.BANK_ONBOARDING_LAB.START_OVER}
                                 title={translate('workspace.bankAccount.disconnectBankAccount')}
                                 icon={icons.Close}
-                                onPress={requestResetBankAccount}
+                                onPress={showResetModal}
                                 isDisabled={isDisabled}
                             />
                         </View>

@@ -1,4 +1,4 @@
-import buildTrackedRequestData from '@pages/SimplifiedBankOnboarding/requests/buildTrackedRequestData';
+import buildTrackedRequestData, {buildTrackedReadData} from '@pages/SimplifiedBankOnboarding/requests/buildTrackedRequestData';
 import SBO_CONST from '@pages/SimplifiedBankOnboarding/SBO_CONST';
 
 import ONYXKEYS from '@src/ONYXKEYS';
@@ -50,5 +50,18 @@ describe('buildTrackedRequestData', () => {
 
         // Then the success data does not touch the draft
         expect(successData).not.toContainEqual(expect.objectContaining({key: ONYXKEYS.FORMS.SIMPLIFIED_BANK_ONBOARDING_FORM_DRAFT}));
+    });
+});
+
+describe('buildTrackedReadData', () => {
+    it('writes only the status entry of the read', () => {
+        // Given the read of an entry or flow page, whose response replaces the account data
+        // When the action builds its Onyx data
+        const {optimisticData, successData, failureData} = buildTrackedReadData(REQUEST_ID, COMMAND, ERRORS);
+
+        // Then the page can follow its own read, and nothing else is written, so the read keeps the account and the draft
+        expect(optimisticData).toEqual([expect.objectContaining({key: ONYXKEYS.RAM_ONLY_SIMPLIFIED_BANK_ONBOARDING_REQUESTS, value: {[REQUEST_ID]: {command: COMMAND, status: PENDING}}})]);
+        expect(successData).toEqual([expect.objectContaining({key: ONYXKEYS.RAM_ONLY_SIMPLIFIED_BANK_ONBOARDING_REQUESTS, value: {[REQUEST_ID]: {status: SUCCEEDED}}})]);
+        expect(failureData).toEqual([expect.objectContaining({key: ONYXKEYS.RAM_ONLY_SIMPLIFIED_BANK_ONBOARDING_REQUESTS, value: {[REQUEST_ID]: {status: FAILED, errors: ERRORS}}})]);
     });
 });

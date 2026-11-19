@@ -1,5 +1,5 @@
 /**
- * Builds the next and back handlers that a flow page passes to its current step. The flow definition picks the target
+ * Builds the next and back handlers that a flow page passes to its current step, and the handler that leaves the flow. The flow definition picks the target
  * step and its sub page, and the flow page only says how a position becomes a route.
  */
 import Navigation from '@libs/Navigation/Navigation';
@@ -32,13 +32,17 @@ function getFlowNavigationHandlers<TPageName extends string>({flow, context, cur
         Navigation.navigate(getRoute(getEntryPosition(nextStep, context, 'forward')));
     };
 
+    const leaveFlow = () => {
+        if (backTo) {
+            Navigation.goBack(backTo);
+            return;
+        }
+        Navigation.dismissModal();
+    };
+
     const goToPreviousPage = () => {
         if (currentStep.leavesFlowOnBack?.(context)) {
-            if (backTo) {
-                Navigation.goBack(backTo);
-            } else {
-                Navigation.dismissModal();
-            }
+            leaveFlow();
             return;
         }
 
@@ -50,7 +54,7 @@ function getFlowNavigationHandlers<TPageName extends string>({flow, context, cur
         Navigation.goBack(getRoute(getEntryPosition(previousStep, context, 'backward')));
     };
 
-    return {goToNextPage, goToPreviousPage};
+    return {goToNextPage, goToPreviousPage, leaveFlow};
 }
 
 export default getFlowNavigationHandlers;
