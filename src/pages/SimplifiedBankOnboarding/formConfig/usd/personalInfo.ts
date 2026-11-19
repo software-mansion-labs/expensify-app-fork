@@ -1,9 +1,14 @@
+/**
+ * The USD personal info step as plan config. The pages, their validation and the request that saves the answers live
+ * here, so the controller and the renderer stay generic.
+ */
 import {isValidSSNLastFour} from '@libs/ValidationUtils';
 
 import getDateOfBirthField from '@pages/SimplifiedBankOnboarding/formConfig/fields/getDateOfBirthField';
 import getLegalNameFields from '@pages/SimplifiedBankOnboarding/formConfig/fields/getLegalNameFields';
-import type {FieldConfig, FormPageConfig, StepConfig} from '@pages/SimplifiedBankOnboarding/formConfig/types';
-import isFormPageComplete from '@pages/SimplifiedBankOnboarding/formConfig/validation/isFormPageComplete';
+import getFormPage from '@pages/SimplifiedBankOnboarding/formConfig/getFormPage';
+import type {StepConfig} from '@pages/SimplifiedBankOnboarding/formConfig/types';
+import {getOwnerFullName} from '@pages/SimplifiedBankOnboarding/model/owners/ownerNames';
 import REQUEST_NAMES from '@pages/SimplifiedBankOnboarding/requests/REQUEST_NAMES';
 import savePersonalInfo from '@pages/SimplifiedBankOnboarding/requests/usd/savePersonalInfo';
 import SBO_CONST from '@pages/SimplifiedBankOnboarding/SBO_CONST';
@@ -17,13 +22,10 @@ import hasPassedServerStep from './hasPassedServerStep';
 
 const SUB_PAGES = SBO_CONST.USD.PERSONAL_INFO_SUB_PAGES;
 
-function getFormPage(id: string, title: string, fields: FieldConfig[], {translate}: USDStepInput): FormPageConfig {
-    return {kind: 'form', id, title, fields, isComplete: isFormPageComplete(fields, translate), enabledWhenOffline: true};
-}
-
 /** The user's legal name, date of birth and the last four digits of the SSN, sent together after the confirmation */
 function getPersonalInfoStep(input: USDStepInput): StepConfig {
     const {answers, achData, bankAccount, translate} = input;
+    const pageOptions = {translate, enabledWhenOffline: true};
     const hasServerPersonalInfo = !!achData?.firstName && !!achData.lastName && !!achData.dob && !!achData.ssnLast4;
 
     return {
@@ -36,9 +38,9 @@ function getPersonalInfoStep(input: USDStepInput): StepConfig {
                 SUB_PAGES.FULL_NAME,
                 translate('personalInfoStep.enterYourLegalFirstAndLast'),
                 getLegalNameFields({firstName: INPUT_IDS.FIRST_NAME, lastName: INPUT_IDS.LAST_NAME}, answers, translate),
-                input,
+                pageOptions,
             ),
-            getFormPage(SUB_PAGES.DATE_OF_BIRTH, translate('personalInfoStep.enterYourDateOfBirth'), [getDateOfBirthField(INPUT_IDS.DOB, answers.dob, translate)], input),
+            getFormPage(SUB_PAGES.DATE_OF_BIRTH, translate('personalInfoStep.enterYourDateOfBirth'), [getDateOfBirthField(INPUT_IDS.DOB, answers.dob, translate)], pageOptions),
             getFormPage(
                 SUB_PAGES.SSN,
                 translate('personalInfoStep.enterTheLast4'),
@@ -55,7 +57,7 @@ function getPersonalInfoStep(input: USDStepInput): StepConfig {
                         validate: (value) => (isValidSSNLastFour(value) ? undefined : translate('bankAccount.error.ssnLast4')),
                     },
                 ],
-                input,
+                pageOptions,
             ),
             {
                 kind: 'confirmation',
@@ -63,7 +65,7 @@ function getPersonalInfoStep(input: USDStepInput): StepConfig {
                 isComplete: true,
                 title: translate('personalInfoStep.letsDoubleCheck'),
                 rows: [
-                    {id: 'legalName', label: translate('personalInfoStep.legalName'), value: `${answers.firstName} ${answers.lastName}`.trim(), editPageID: SUB_PAGES.FULL_NAME},
+                    {id: 'legalName', label: translate('personalInfoStep.legalName'), value: getOwnerFullName(answers), editPageID: SUB_PAGES.FULL_NAME},
                     {id: 'dob', label: translate('common.dob'), value: answers.dob, editPageID: SUB_PAGES.DATE_OF_BIRTH},
                     {id: 'ssnLast4', label: translate('personalInfoStep.last4SSN'), value: answers.ssnLast4, editPageID: SUB_PAGES.SSN},
                 ],

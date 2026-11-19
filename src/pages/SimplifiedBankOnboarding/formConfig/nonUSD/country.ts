@@ -1,3 +1,7 @@
+/**
+ * The NonUSD country step as plan config. The user confirms the currency of the workspace and the country of the
+ * bank, because the country decides which bank inputs the server asks for.
+ */
 import type {LocalizedTranslate} from '@components/LocaleContextProvider';
 
 import type {PicklistOption, StepConfig} from '@pages/SimplifiedBankOnboarding/formConfig/types';

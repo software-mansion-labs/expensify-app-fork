@@ -69,15 +69,15 @@ dependencies: a folder imports only from the folders above it.
 | Folder | Content |
 | --- | --- |
 | `types/`, `SBO_CONST.ts` | The draft type, the Onyx types, step and page IDs, mock values |
-| `model/` | Pure checks on the server data (`setupStatus.ts`), the answers of a flow built from the draft and the server data (`answers/`), owner helpers (`owners/`), the server-driven bank fields (`bankFields/`) |
-| `requests/` | Every request of the flow through `runRequest`, the request status hook `useRequestState`, the draft writes |
+| `model/` | The `FlowData` type, pure checks on the server data (`setupStatus.ts`), the answers of a flow built from the draft and the server data (`answers/`), the NonUSD workspace, currency and answers in one helper (`getNonUSDFlowState.ts`), owner helpers (`owners/`), the server-driven bank fields (`bankFields/`) |
+| `requests/` | Every request of the flow through `runRequest`, the request status hook `useRequestState`, the account read of a screen (`entry/useAccountRead.ts`), the draft writes |
 | `formConfig/` | The plan builders: the steps, the pages and the fields of each flow, built from the answers. Shared page groups for the owners and the signer, and the field validation |
 | `flow/` | Pure helpers over a plan: positions, the resume position, reachability, the moves between positions |
 | `navigation/` | The only place that calls `Navigation`: the mapping between a position and a route (`routes.ts`), the moves of a flow, the moves of the entry page |
-| `controller/` | The generic flow screen (`OnboardingFlowPage`) and its hook (`useOnboardingFlow`), the data source of a flow and the gate of a cold deep link (`useFlowAccountRead`) |
+| `controller/` | The generic flow screen (`OnboardingFlowPage`) and its hook (`useOnboardingFlow`), the data source of a flow, a read of the same data for handlers (`useReadFlowData`) and the gate of a cold deep link (`useFlowAccountRead`) |
 | `form/` | The generic renderer: one component per page kind and per field type. It knows nothing of the flows |
 | `steps/` | The custom pages that are not forms: Plaid, Onfido, the validation of the deposits, Docusign, the waiting page, the finish page |
-| `flows/` | The USD and NonUSD flow descriptors and their screens, and `openFlowAtResume` |
+| `flows/` | The USD and NonUSD flow descriptors, the shared screen body `SetupFlowPage` with the NonUSD server list gate, the route screens and `openFlowAtResume` |
 | `entry/` | The entry page: the account reference, the pure screen state, one view per state, the start over modal, the verify-account page |
 | `enterSignerInfo/` | The separate flow that a director opens from an email, on the same controller with its own form |
 | `actions/`, `utils/` | Old import paths that the frozen landing pages and the mock server panel still use. They only forward |
@@ -115,21 +115,22 @@ flags to the account key.
 
 ### One generic controller
 
-A flow is a `FlowDescriptor`: its form ID, its draft write, its plan builder, its step names and its custom steps. The
+A flow is a `FlowDescriptor`: its form ID, its draft write, its plan builder, its step names and the component of its
+custom steps (`CustomStep`), which the controller renders as an element keyed by the page ID. The
 controller knows nothing else about a flow, so the USD flow, the NonUSD flow and the invited director page share it.
 Custom steps never navigate: they report through `onComplete` and `goToStep`.
 
 ### Dependency direction
 
 `model` <- `requests` <- `formConfig` <- `flow` <- `navigation` <- `controller` <- `steps`, `flows`, `entry`,
-`enterSignerInfo`. `form/` depends only on `formConfig/` (the plan types and the field validation). One type import
-points back: the NonUSD plan builder takes the `FlowData` type of `controller/types.ts`.
+`enterSignerInfo`. `form/` is the generic renderer and may import only `formConfig/types`, `formConfig/validation`
+and `types/form`.
 
 ### The entry page
 
 `getEntryState` is a pure function of the account, the workspaces, the draft, the network and the route. It returns a
 discriminated union (offline, loading, not found, throttled, unsupported currency, connected, pending validation,
-options), and the page renders one view per state with a `switch`. The page keeps no mirrored state and no navigation
+resume setup, new setup), and the page renders one view per state with a `switch`. The page keeps no mirrored state and no navigation
 refs. `getAccountRef` turns `policyID` and `bankAccountID` into one account reference, so both entries resolve the same
 account. The page reads the account on every focus and on reconnect.
 
@@ -202,13 +203,13 @@ pattern.
 | --- | --- | --- |
 | Chain of early returns that picks the screen | `R/ReimbursementAccountPage.tsx` | `entry/getEntryState.ts` (a pure union), `entry/OnboardingEntryPage.tsx` (one view per state) |
 | USD or NonUSD flow chosen by the workspace currency | `R/ReimbursementAccountPage.tsx` | `model/getNonUSDCurrency.ts`, `entry/getEntryState.ts` |
-| One account key shared by every workspace, guarded by `achData.policyID === policyID` | `R/ReimbursementAccountPage.tsx` (`isPreviousPolicy`) | `entry/getAccountRef.ts`, `controller/useFlowAccountRead.ts` (the gate of a cold deep link) |
+| One account key shared by every workspace, guarded by `achData.policyID === policyID` | `R/ReimbursementAccountPage.tsx` (`isPreviousPolicy`) | `entry/getAccountRef.ts`, `requests/entry/useAccountRead.ts`, `controller/useFlowAccountRead.ts` (the gate of a cold deep link) |
 | State that mirrors derived values through effects | `R/ReimbursementAccountPage.tsx` | Gone: `entry/getEntryState.ts` derives everything in render |
 | Refetch after reconnect | `R/ReimbursementAccountPage.tsx` (`fetchData(true)`) | `entry/OnboardingEntryPage.tsx` (`onReconnect`) |
 | Cleanup of the shared keys on unmount | `R/ReimbursementAccountPage.tsx` | Gone: the draft of another account is cleared on focus |
 | Redirect of a pending USD account straight to the validation step | `R/ReimbursementAccountPage.tsx` | `entry/views/PendingValidationView.tsx` renders the flow at its resume position |
-| Fresh setup: Plaid or manual. Started setup: continue, change bank account, start over | `R/VerifiedBankAccountFlowEntryPoint.tsx` | `entry/views/EntryOptionsView.tsx` |
-| Validation gate | `R/VerifiedBankAccountFlowEntryPoint.tsx`, `R/DynamicReimbursementAccountVerifyAccountPage.tsx` | `entry/views/EntryOptionsView.tsx` saves the setup type first, `entry/VerifyAccountPage.tsx` awaits the validation and replaces itself with the flow |
+| Fresh setup: Plaid or manual. Started setup: continue, change bank account, start over | `R/VerifiedBankAccountFlowEntryPoint.tsx` | `entry/views/options/NewSetupOptions.tsx`, `entry/views/options/ResumeSetupOptions.tsx` |
+| Validation gate | `R/VerifiedBankAccountFlowEntryPoint.tsx`, `R/DynamicReimbursementAccountVerifyAccountPage.tsx` | the option views save the setup type first and open the flow through `entry/views/options/useOpenSetup.ts`, `entry/VerifyAccountPage.tsx` awaits the validation and replaces itself with the flow |
 | Reset modal requested through a flag on the account object | `src/hooks/useResetBankAccountModal.tsx` | `entry/reset/useStartOverModal.tsx`, opened by a direct call |
 | Change bank account: a second instance of the entry page marked by a route param | `src/hooks/useChangeBankAccount.ts` | `navigation/entryNavigation.ts` (`goToChangeBankAccount`), `requests/draft.ts` (`prepareNewBankAccountSetup`) |
 | Connected account view | `R/ConnectedVerifiedBankAccount.tsx` | `entry/views/ConnectedBankAccountView.tsx` |
@@ -240,7 +241,7 @@ pattern.
 | Default values read in a different order by different steps | `getSubStepValues`, the business and owner sub pages | `model/answers/` (one rule for every value) |
 | Fields locked once the account passed review | `R/USD/BusinessInfo/subSteps/*` | `formConfig/usd/businessInfo.ts` (`isLocked`) |
 | Validators written inside the component | most sub pages | `formConfig/validation/` |
-| Fields, rules and picklists sent by the server | `R/NonUSD/BankInfo/*`, `R/NonUSD/BusinessInfo/subSteps/BusinessType.tsx` | `model/bankFields/`, `formConfig/nonUSD/getBankFieldConfig.ts`, `flows/useNonUSDServerLists.ts` |
+| Fields, rules and picklists sent by the server | `R/NonUSD/BankInfo/*`, `R/NonUSD/BusinessInfo/subSteps/BusinessType.tsx` | `model/bankFields/`, `formConfig/nonUSD/getBankFieldConfig.ts`, `flows/useNonUSDServerLists.ts`, `flows/NonUSDServerListsGate.tsx` |
 | The form key and the account key are the same Onyx string | `ONYXKEYS.REIMBURSEMENT_ACCOUNT` and `FORMS.REIMBURSEMENT_ACCOUNT_FORM` | Separate keys: `FORMS.SIMPLIFIED_BANK_ONBOARDING_FORM` |
 | File uploads kept in local state and in the draft | `R/USD/KYBDocuments`, `R/NonUSD/Docusign` | `form/fields/FileField.tsx` |
 | A file that one step collects and a later step sends | bank statement in `R/NonUSD/Agreements`, sent by `R/NonUSD/Docusign` | `formConfig/nonUSD/agreements.ts`, `formConfig/nonUSD/docusign.ts` |

@@ -1,3 +1,7 @@
+/**
+ * The detail pages of one USD owner for the shared owner step. The owner step is the same for both flows, so each
+ * flow only supplies the pages that collect its owner details.
+ */
 import getDateOfBirthField from '@pages/SimplifiedBankOnboarding/formConfig/fields/getDateOfBirthField';
 import getLegalNameFields from '@pages/SimplifiedBankOnboarding/formConfig/fields/getLegalNameFields';
 import type {OwnerDetailsPage} from '@pages/SimplifiedBankOnboarding/formConfig/owners/types';

@@ -1,11 +1,11 @@
-import type {FlowData, FlowDescriptor} from '@pages/SimplifiedBankOnboarding/controller/types';
+import type {FlowDescriptor} from '@pages/SimplifiedBankOnboarding/controller/types';
 import buildNonUSDPlan from '@pages/SimplifiedBankOnboarding/formConfig/nonUSD/buildNonUSDPlan';
-import getNonUSDCurrency from '@pages/SimplifiedBankOnboarding/model/getNonUSDCurrency';
+import getNonUSDFlowState from '@pages/SimplifiedBankOnboarding/model/getNonUSDFlowState';
 import {requiresDocusignStep} from '@pages/SimplifiedBankOnboarding/model/setupStatus';
-import {openEnterSignerInfo} from '@pages/SimplifiedBankOnboarding/navigation/flowNavigation';
+import type FlowData from '@pages/SimplifiedBankOnboarding/model/types';
 import {saveDraft} from '@pages/SimplifiedBankOnboarding/requests/draft';
 import SBO_CONST from '@pages/SimplifiedBankOnboarding/SBO_CONST';
-import renderNonUSDCustomStep from '@pages/SimplifiedBankOnboarding/steps/nonUSD/renderNonUSDCustomStep';
+import NonUSDCustomStep from '@pages/SimplifiedBankOnboarding/steps/nonUSD/NonUSDCustomStep';
 
 import ONYXKEYS from '@src/ONYXKEYS';
 
@@ -14,13 +14,12 @@ const nonUSDFlow: FlowDescriptor<FlowData> = {
     wrapperID: 'SimplifiedBankOnboardingNonUSDFlow',
     formID: ONYXKEYS.FORMS.SIMPLIFIED_BANK_ONBOARDING_FORM,
     saveDraft,
-    getStepNames: ({workspaces, account, draft}, {policyID}) => {
-        const achData = account?.achData;
-        const currency = getNonUSDCurrency(workspaces, policyID ?? achData?.policyID, achData, draft);
+    getStepNames: (data, {policyID}) => {
+        const {currency} = getNonUSDFlowState(data, policyID);
         return requiresDocusignStep(currency) ? SBO_CONST.NON_USD.DOCUSIGN_REQUIRED_STEP_NAMES : SBO_CONST.NON_USD.STEP_NAMES;
     },
     buildPlan: buildNonUSDPlan,
-    renderCustomStep: (props) => renderNonUSDCustomStep({...props, openSignerForm: openEnterSignerInfo}),
+    CustomStep: NonUSDCustomStep,
 };
 
 export default nonUSDFlow;

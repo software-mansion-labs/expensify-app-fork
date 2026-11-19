@@ -2,8 +2,8 @@ import type {LocalizedTranslate} from '@components/LocaleContextProvider';
 
 import {isValidLegalName} from '@libs/ValidationUtils';
 
+import getFormPage from '@pages/SimplifiedBankOnboarding/formConfig/getFormPage';
 import type {FieldConfig, FormPageConfig, PageID} from '@pages/SimplifiedBankOnboarding/formConfig/types';
-import isFormPageComplete from '@pages/SimplifiedBankOnboarding/formConfig/validation/isFormPageComplete';
 import INPUT_IDS from '@pages/SimplifiedBankOnboarding/types/form';
 
 function getSignerNamePage(id: PageID, fullName: string, translate: LocalizedTranslate): FormPageConfig {
@@ -17,7 +17,7 @@ function getSignerNamePage(id: PageID, fullName: string, translate: LocalizedTra
             validate: (value) => (isValidLegalName(value) ? undefined : translate('bankAccount.error.fullName')),
         },
     ];
-    return {kind: 'form', id, isComplete: isFormPageComplete(fields, translate), title: translate('signerInfoStep.whatsYourName'), fields, enabledWhenOffline: true};
+    return getFormPage(id, translate('signerInfoStep.whatsYourName'), fields, {translate, enabledWhenOffline: true});
 }
 
 export default getSignerNamePage;

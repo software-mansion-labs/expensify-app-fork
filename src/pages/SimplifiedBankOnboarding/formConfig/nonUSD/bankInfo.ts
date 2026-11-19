@@ -1,14 +1,15 @@
+import getFormPage from '@pages/SimplifiedBankOnboarding/formConfig/getFormPage';
 /**
  * The bank step. The server describes its inputs for the country and the currency, and they split into the bank page
  * and the account holder page. Until the inputs arrive the bank page shows a loader. The request at the end creates the
  * bank account.
  */
 import type {ConfirmationRow, FormPageConfig, PageConfig, PageID, StepConfig} from '@pages/SimplifiedBankOnboarding/formConfig/types';
-import isFormPageComplete from '@pages/SimplifiedBankOnboarding/formConfig/validation/isFormPageComplete';
 import areBankFieldsLoaded from '@pages/SimplifiedBankOnboarding/model/bankFields/areBankFieldsLoaded';
 import getBankFieldOptionLabel from '@pages/SimplifiedBankOnboarding/model/bankFields/getBankFieldOptionLabel';
 import {getAccountHolderDetailsFields, getBankAccountDetailsFields} from '@pages/SimplifiedBankOnboarding/model/bankFields/splitBankFields';
 import {isGlobalAccountCreated} from '@pages/SimplifiedBankOnboarding/model/setupStatus';
+import failRequest from '@pages/SimplifiedBankOnboarding/requests/failRequest';
 import createGlobalBankAccount from '@pages/SimplifiedBankOnboarding/requests/nonUSD/createGlobalBankAccount';
 import REQUEST_NAMES from '@pages/SimplifiedBankOnboarding/requests/REQUEST_NAMES';
 import SBO_CONST from '@pages/SimplifiedBankOnboarding/SBO_CONST';
@@ -35,7 +36,7 @@ function getFieldGroups({bankFields, translate}: NonUSDStepInput): BankFieldGrou
 
 function getGroupPage({pageID, title, fields}: BankFieldGroup, {answers, translate}: NonUSDStepInput): FormPageConfig {
     const fieldConfigs = fields.map((field) => getBankFieldConfig(field, answers[field.id]));
-    return {kind: 'form', id: pageID, isComplete: isFormPageComplete(fieldConfigs, translate), title, fields: fieldConfigs, enabledWhenOffline: true};
+    return getFormPage(pageID, title, fieldConfigs, {translate, enabledWhenOffline: true});
 }
 
 function getConfirmationRows(groups: BankFieldGroup[], {answers}: NonUSDStepInput): ConfirmationRow[] {
@@ -75,9 +76,10 @@ function getBankInfoStep(input: NonUSDStepInput): StepConfig {
         isComplete: isGlobalAccountCreated(achData),
         pages: getPages(input),
         submit: () => {
-            // The account belongs to a workspace, so a flow opened without one cannot create it
+            // The account belongs to a workspace, so a flow opened without one cannot create it. The entry always opens
+            // the flow with a workspace, so the page shows an error instead of a Next that does nothing.
             if (!policyID) {
-                return Promise.resolve({status: 'skipped'});
+                return failRequest(REQUEST_NAMES.CREATE_GLOBAL_BANK_ACCOUNT);
             }
             return createGlobalBankAccount({policyID, country: answers.country, currency, fields: getBankFieldValues(input)});
         },

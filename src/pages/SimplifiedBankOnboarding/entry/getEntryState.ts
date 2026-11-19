@@ -30,14 +30,9 @@ type EntryState =
     | {kind: 'unsupportedCurrency'}
     | {kind: 'connected'; isNonUSD: boolean}
     | {kind: 'pendingValidation'}
-    | {
-          kind: 'options';
-          isNonUSD: boolean;
-          currency: string;
-
-          /** A setup was started before, so the options are continue, change and start over */
-          isSetupInProgress: boolean;
-      };
+    /** A setup was started before, so the options are continue, change and start over */
+    | {kind: 'resumeSetup'; isNonUSD: boolean}
+    | {kind: 'newSetup'; isNonUSD: boolean; currency: string};
 
 type EntryStateInput = {
     ref: AccountRef;
@@ -102,7 +97,10 @@ function getEntryState(input: EntryStateInput): EntryState {
     if (!isChangingBankAccount && currency === SBO_CONST.CURRENCY.USD && isPendingValidation(achData) && !!ref.policyID) {
         return {kind: 'pendingValidation'};
     }
-    return {kind: 'options', isNonUSD, currency, isSetupInProgress: !isChangingBankAccount && hasInProgressSetup(achData, isNonUSD, ref.policyID)};
+    if (!isChangingBankAccount && hasInProgressSetup(achData, isNonUSD, ref.policyID)) {
+        return {kind: 'resumeSetup', isNonUSD};
+    }
+    return {kind: 'newSetup', isNonUSD, currency};
 }
 
 export default getEntryState;

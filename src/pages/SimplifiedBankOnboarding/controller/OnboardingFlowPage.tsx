@@ -10,7 +10,6 @@ import useThemeStyles from '@hooks/useThemeStyles';
 
 import NotFoundPage from '@pages/ErrorPage/NotFoundPage';
 import PageRenderer from '@pages/SimplifiedBankOnboarding/form/pages/PageRenderer';
-import type {CustomPageConfig} from '@pages/SimplifiedBankOnboarding/formConfig/types';
 import type {FlowRouteParams, FlowRouteTarget} from '@pages/SimplifiedBankOnboarding/navigation/routes';
 
 import CONST from '@src/CONST';
@@ -51,15 +50,45 @@ function OnboardingFlowPage<TData>({flow, target, routeParams, dataSource, dataS
         return <FullScreenLoadingIndicator onGoBack={goBack} />;
     }
 
-    const renderCustom = (customPage: CustomPageConfig) =>
-        flow.renderCustomStep({
-            page: customPage,
-            policyID: target.policyID,
-            isSubmitting,
-            errorText: errorText || undefined,
-            onComplete: (values) => submitPage(values ?? {}),
-            goToStep,
-        });
+    const {CustomStep} = flow;
+
+    const renderPage = () => {
+        if (page.isLoading) {
+            return (
+                <View style={[styles.flex1, styles.alignItemsCenter, styles.justifyContentCenter]}>
+                    <ActivityIndicator size={CONST.ACTIVITY_INDICATOR_SIZE.LARGE} />
+                </View>
+            );
+        }
+        if (page.kind === 'custom') {
+            if (!CustomStep) {
+                return null;
+            }
+            return (
+                <CustomStep
+                    key={page.id}
+                    page={page}
+                    policyID={target.policyID}
+                    isSubmitting={isSubmitting}
+                    errorText={errorText || undefined}
+                    onComplete={(values) => submitPage(values ?? {})}
+                    goToStep={goToStep}
+                />
+            );
+        }
+        return (
+            <PageRenderer
+                formID={flow.formID}
+                page={page}
+                isEditing={position.isEditing}
+                isLoading={isSubmitting}
+                errorText={errorText || undefined}
+                onSubmit={submitPage}
+                onEdit={editPage}
+                onRowPress={pressRow}
+            />
+        );
+    };
 
     return (
         <InteractiveStepWrapper
@@ -71,23 +100,7 @@ function OnboardingFlowPage<TData>({flow, target, routeParams, dataSource, dataS
             shouldEnableMaxHeight
             shouldRemountSubHeaderOnStepChange
         >
-            {page.isLoading ? (
-                <View style={[styles.flex1, styles.alignItemsCenter, styles.justifyContentCenter]}>
-                    <ActivityIndicator size={CONST.ACTIVITY_INDICATOR_SIZE.LARGE} />
-                </View>
-            ) : (
-                <PageRenderer
-                    formID={flow.formID}
-                    page={page}
-                    isEditing={position.isEditing}
-                    isLoading={isSubmitting}
-                    errorText={errorText || undefined}
-                    onSubmit={submitPage}
-                    onEdit={editPage}
-                    onRowPress={pressRow}
-                    renderCustom={renderCustom}
-                />
-            )}
+            {renderPage()}
         </InteractiveStepWrapper>
     );
 }

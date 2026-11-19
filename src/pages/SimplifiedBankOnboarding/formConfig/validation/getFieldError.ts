@@ -1,3 +1,7 @@
+/**
+ * The validation of one field, shared by the form renderer and the completeness check of the plan. Both must agree,
+ * or the resume position would point at a page that the user cannot submit.
+ */
 import type {LocalizedTranslate} from '@components/LocaleContextProvider';
 
 import {isRequiredFulfilled} from '@libs/ValidationUtils';

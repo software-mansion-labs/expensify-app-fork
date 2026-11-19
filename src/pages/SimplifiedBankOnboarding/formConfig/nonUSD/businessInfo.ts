@@ -1,5 +1,10 @@
+/**
+ * The NonUSD business step as plan config. It is separate from the USD one because the business types come from the
+ * server picklists of the country.
+ */
 import {isValidCompanyName} from '@libs/ValidationUtils';
 
+import getFormPage from '@pages/SimplifiedBankOnboarding/formConfig/getFormPage';
 import type {FieldConfig, FormPageConfig, PicklistOption, StepConfig} from '@pages/SimplifiedBankOnboarding/formConfig/types';
 import isFormPageComplete from '@pages/SimplifiedBankOnboarding/formConfig/validation/isFormPageComplete';
 import saveGlobalCompany from '@pages/SimplifiedBankOnboarding/requests/nonUSD/saveGlobalCompany';
@@ -26,7 +31,7 @@ function getNamePage({answers, translate}: NonUSDStepInput): FormPageConfig {
             validate: (value) => (isValidCompanyName(value) ? undefined : translate('bankAccount.error.companyName')),
         },
     ];
-    return {kind: 'form', id: SUB_PAGES.NAME, isComplete: isFormPageComplete(fields, translate), title: translate('businessInfoStep.whatsTheBusinessName'), fields, enabledWhenOffline: true};
+    return getFormPage(SUB_PAGES.NAME, translate('businessInfoStep.whatsTheBusinessName'), fields, {translate, enabledWhenOffline: true});
 }
 
 /** The business types come from the server. The page waits for them, unless it already has a value to show. */

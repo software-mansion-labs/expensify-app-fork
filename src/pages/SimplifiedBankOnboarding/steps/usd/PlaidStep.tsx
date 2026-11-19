@@ -30,11 +30,14 @@ import ONYXKEYS from '@src/ONYXKEYS';
 import React, {useEffect} from 'react';
 import {View} from 'react-native';
 
-type PlaidStepProps = Pick<CustomStepProps, 'isSubmitting' | 'errorText' | 'onComplete'>;
+type PlaidStepProps = Pick<CustomStepProps, 'isSubmitting' | 'errorText' | 'onComplete'> & {
+    /** An account was picked, so the bank step has an account to send */
+    canComplete: boolean;
+};
 
 const MOCK_PUBLIC_TOKEN = 'mock-public-token';
 
-function PlaidStep({isSubmitting, errorText, onComplete}: PlaidStepProps) {
+function PlaidStep({canComplete, isSubmitting, errorText, onComplete}: PlaidStepProps) {
     const {translate} = useLocalize();
     const styles = useThemeStyles();
     const [draft] = useOnyx(ONYXKEYS.FORMS.SIMPLIFIED_BANK_ONBOARDING_FORM_DRAFT);
@@ -76,7 +79,7 @@ function PlaidStep({isSubmitting, errorText, onComplete}: PlaidStepProps) {
                 onPress={() => {
                     openPlaidBankAccountSelector(MOCK_PUBLIC_TOKEN);
                 }}
-                sentryLabel={CONST.SENTRY_LABEL.BANK_ONBOARDING_LAB.SELECT_SETUP_OPTION}
+                sentryLabel={CONST.SENTRY_LABEL.BANK_ONBOARDING_LAB.PLAID_LOGIN}
             >
                 <Button.Text>[mock] Log in to the bank</Button.Text>
             </Button>
@@ -95,7 +98,7 @@ function PlaidStep({isSubmitting, errorText, onComplete}: PlaidStepProps) {
                 submitButtonText={translate('common.next')}
                 style={styles.flexGrow1}
                 submitButtonStyles={styles.mh5}
-                isSubmitDisabled={!selectedPlaidAccountID}
+                isSubmitDisabled={!canComplete}
                 isLoading={isSubmitting}
                 shouldHideFixErrorsAlert
                 sentryLabel={CONST.SENTRY_LABEL.BANK_ONBOARDING_LAB.SUBMIT_STEP}

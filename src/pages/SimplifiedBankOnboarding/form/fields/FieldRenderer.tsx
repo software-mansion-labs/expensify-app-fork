@@ -1,3 +1,7 @@
+/**
+ * The form pages only know field configs, not input components. This file maps each field type to the input that
+ * renders it, so a plan can describe a form without importing any UI.
+ */
 import type {FieldConfig} from '@pages/SimplifiedBankOnboarding/formConfig/types';
 import type {OnboardingFormID} from '@pages/SimplifiedBankOnboarding/formConfig/validation/types';
 

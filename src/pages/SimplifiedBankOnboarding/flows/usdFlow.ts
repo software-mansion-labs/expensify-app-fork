@@ -1,8 +1,9 @@
-import type {FlowData, FlowDescriptor} from '@pages/SimplifiedBankOnboarding/controller/types';
+import type {FlowDescriptor} from '@pages/SimplifiedBankOnboarding/controller/types';
 import buildUSDPlan from '@pages/SimplifiedBankOnboarding/formConfig/usd/buildUSDPlan';
+import type FlowData from '@pages/SimplifiedBankOnboarding/model/types';
 import {saveDraft} from '@pages/SimplifiedBankOnboarding/requests/draft';
 import SBO_CONST from '@pages/SimplifiedBankOnboarding/SBO_CONST';
-import renderUSDCustomStep from '@pages/SimplifiedBankOnboarding/steps/usd/renderUSDCustomStep';
+import USDCustomStep from '@pages/SimplifiedBankOnboarding/steps/usd/USDCustomStep';
 
 import ONYXKEYS from '@src/ONYXKEYS';
 
@@ -13,7 +14,7 @@ const usdFlow: FlowDescriptor<FlowData> = {
     saveDraft,
     getStepNames: () => SBO_CONST.USD.STEP_NAMES,
     buildPlan: (data, context) => buildUSDPlan(data.draft, data.account, context),
-    renderCustomStep: renderUSDCustomStep,
+    CustomStep: USDCustomStep,
 };
 
 export default usdFlow;

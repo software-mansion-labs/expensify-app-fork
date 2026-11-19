@@ -13,9 +13,11 @@ import type {FlowPlan, PageConfig, PageID, PlanContext, StepConfig, StepID} from
 import {exitFlow, goBackToEntry, goBackToPosition, goToPosition, replacePosition} from '@pages/SimplifiedBankOnboarding/navigation/flowNavigation';
 import {getPositionFromParams} from '@pages/SimplifiedBankOnboarding/navigation/routes';
 import type {FlowRouteParams, FlowRouteTarget} from '@pages/SimplifiedBankOnboarding/navigation/routes';
+import type {RequestName} from '@pages/SimplifiedBankOnboarding/requests/REQUEST_NAMES';
 import useRequestState from '@pages/SimplifiedBankOnboarding/requests/useRequestState';
 import type {OnboardingDraft} from '@pages/SimplifiedBankOnboarding/types/form';
 
+import ONYXKEYS from '@src/ONYXKEYS';
 import {isEmptyObject} from '@src/types/utils/EmptyObject';
 
 /**
@@ -26,6 +28,7 @@ import {isEmptyObject} from '@src/types/utils/EmptyObject';
  */
 import {useIsFocused} from '@react-navigation/native';
 import {useEffect, useEffectEvent, useRef} from 'react';
+import Onyx from 'react-native-onyx';
 
 import type {FlowDataSource, FlowDataStatus, FlowDescriptor} from './types';
 
@@ -86,6 +89,16 @@ function useOnboardingFlow<TData>({flow, target, routeParams, dataSource, dataSt
     // After a draft write or a request the plan of the last render is stale, so handlers rebuild it from what Onyx holds now
     const rebuildPlan = async () => flow.buildPlan(await readData(), context);
 
+    // The status of the last render belongs to the request of the open page, which may not be the request the handler
+    // sends, and it may be stale. A handler reads the status of its own request before it sends it again.
+    const isRequestPending = async (name: RequestName | undefined) => {
+        if (!name) {
+            return false;
+        }
+        const requests = await Onyx.get(ONYXKEYS.SIMPLIFIED_BANK_ONBOARDING_REQUESTS);
+        return requests?.[name]?.status === 'pending';
+    };
+
     const leavePosition = (from: FlowPosition, navigate: () => void) => {
         leftPositionKeyRef.current = getPositionKey(from);
         navigate();
@@ -111,7 +124,7 @@ function useOnboardingFlow<TData>({flow, target, routeParams, dataSource, dataSt
         if (!submittedPage?.submit) {
             return currentPlan;
         }
-        if (isOffline || requestState.isPending) {
+        if (isOffline || (await isRequestPending(submittedPage.requestName))) {
             return undefined;
         }
         const outcome = await submittedPage.submit();
@@ -129,7 +142,7 @@ function useOnboardingFlow<TData>({flow, target, routeParams, dataSource, dataSt
         }
         if (finishedStep.submit) {
             // Offline the write stays queued and its Promise pending, so the step waits for the connection
-            if (isOffline || requestState.isPending) {
+            if (isOffline || (await isRequestPending(finishedStep.requestName))) {
                 return;
             }
             const outcome = await finishedStep.submit();
@@ -143,7 +156,8 @@ function useOnboardingFlow<TData>({flow, target, routeParams, dataSource, dataSt
     };
 
     const submitPage = (values: OnboardingDraft) => {
-        if (!position || !page) {
+        // A custom page that is not ready yet, such as Plaid before an account is picked, has nothing to submit
+        if (!position || !page || (page.kind === 'custom' && page.canComplete === false)) {
             return;
         }
         const from = position;

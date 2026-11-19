@@ -19,9 +19,12 @@ import getBankAccountParams from '@pages/SimplifiedBankOnboarding/requests/getBa
 import {sendSignerReminder} from '@pages/SimplifiedBankOnboarding/requests/nonUSD/signerInfo';
 import REQUEST_NAMES from '@pages/SimplifiedBankOnboarding/requests/REQUEST_NAMES';
 import useRequestState from '@pages/SimplifiedBankOnboarding/requests/useRequestState';
+import type {OnboardingAccount} from '@pages/SimplifiedBankOnboarding/types/onyx';
 
 import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';
+
+import type {OnyxEntry} from 'react-native-onyx';
 
 import React from 'react';
 import {View} from 'react-native';
@@ -34,16 +37,16 @@ type HangTightStepProps = Pick<CustomStepProps, 'policyID' | 'onComplete'> & {
     openSignerForm: (policyID: string | undefined, bankAccountID: number | undefined) => void;
 };
 
+const bankAccountIDSelector = (account: OnyxEntry<OnboardingAccount>) => account?.achData?.bankAccountID;
+
 function HangTightStep({policyID, canContinue, openSignerForm, onComplete}: HangTightStepProps) {
     const {translate} = useLocalize();
     const styles = useThemeStyles();
-    const [account] = useOnyx(ONYXKEYS.SIMPLIFIED_BANK_ONBOARDING_ACCOUNT);
+    const [bankAccountID] = useOnyx(ONYXKEYS.SIMPLIFIED_BANK_ONBOARDING_ACCOUNT, {selector: bankAccountIDSelector});
     const reminderState = useRequestState(REQUEST_NAMES.SEND_SIGNER_REMINDER);
 
-    const achData = account?.achData;
-
     const sendReminder = () => {
-        sendSignerReminder(getBankAccountParams(policyID, achData));
+        sendSignerReminder(getBankAccountParams(policyID, {bankAccountID}));
     };
 
     return (
@@ -55,8 +58,8 @@ function HangTightStep({policyID, canContinue, openSignerForm, onComplete}: Hang
             <View style={[styles.ph5, styles.gap3]}>
                 <FormHelpMessage message={getLatestErrorMessage({errors: reminderState.errors})} />
                 <Button
-                    onPress={() => openSignerForm(policyID, achData?.bankAccountID)}
-                    sentryLabel={CONST.SENTRY_LABEL.BANK_ONBOARDING_LAB.CHANGE_MOCK_SERVER}
+                    onPress={() => openSignerForm(policyID, bankAccountID)}
+                    sentryLabel={CONST.SENTRY_LABEL.BANK_ONBOARDING_LAB.OPEN_SIGNER_FORM}
                 >
                     <Button.Text>[mock] Open the form that the director received</Button.Text>
                 </Button>

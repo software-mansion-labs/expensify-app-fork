@@ -1,7 +1,11 @@
+/**
+ * The USD business step as plan config. The pages, their validation and the request that saves the company live
+ * here, so the controller and the renderer stay generic.
+ */
 import {isValidCompanyName, isValidTaxID} from '@libs/ValidationUtils';
 
-import type {FieldConfig, FormPageConfig, StepConfig} from '@pages/SimplifiedBankOnboarding/formConfig/types';
-import isFormPageComplete from '@pages/SimplifiedBankOnboarding/formConfig/validation/isFormPageComplete';
+import getFormPage from '@pages/SimplifiedBankOnboarding/formConfig/getFormPage';
+import type {StepConfig} from '@pages/SimplifiedBankOnboarding/formConfig/types';
 import {areCompanyDetailsLocked} from '@pages/SimplifiedBankOnboarding/model/setupStatus';
 import REQUEST_NAMES from '@pages/SimplifiedBankOnboarding/requests/REQUEST_NAMES';
 import saveCompany from '@pages/SimplifiedBankOnboarding/requests/usd/saveCompany';
@@ -15,10 +19,6 @@ import type USDStepInput from './types';
 import hasPassedServerStep from './hasPassedServerStep';
 
 const SUB_PAGES = SBO_CONST.USD.BUSINESS_INFO_SUB_PAGES;
-
-function getFormPage(id: string, title: string, fields: FieldConfig[], {translate}: USDStepInput): FormPageConfig {
-    return {kind: 'form', id, title, fields, isComplete: isFormPageComplete(fields, translate)};
-}
 
 /** The company name, tax ID and type. Once the server checked the company, the name and the tax ID are locked. */
 function getBusinessInfoStep(input: USDStepInput): StepConfig {

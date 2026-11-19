@@ -4,10 +4,10 @@
  */
 import useNetwork from '@hooks/useNetwork';
 
-import type {FlowData} from '@pages/SimplifiedBankOnboarding/controller/types';
-import getNonUSDAnswers from '@pages/SimplifiedBankOnboarding/model/answers/getNonUSDAnswers';
 import areBankFieldsLoaded from '@pages/SimplifiedBankOnboarding/model/bankFields/areBankFieldsLoaded';
-import getNonUSDCurrency from '@pages/SimplifiedBankOnboarding/model/getNonUSDCurrency';
+import arePicklistsLoaded from '@pages/SimplifiedBankOnboarding/model/bankFields/arePicklistsLoaded';
+import getNonUSDFlowState from '@pages/SimplifiedBankOnboarding/model/getNonUSDFlowState';
+import type FlowData from '@pages/SimplifiedBankOnboarding/model/types';
 import {getBankAccountFields, getOnboardingFields} from '@pages/SimplifiedBankOnboarding/requests/nonUSD/bankFields';
 import REQUEST_NAMES from '@pages/SimplifiedBankOnboarding/requests/REQUEST_NAMES';
 import useRequestState from '@pages/SimplifiedBankOnboarding/requests/useRequestState';
@@ -19,19 +19,27 @@ type NonUSDServerLists = {
     hasBankFieldsReadFailed: boolean;
 };
 
-function useNonUSDServerLists({draft, account, workspaces, bankFields}: FlowData, policyID: string | undefined): NonUSDServerLists {
-    const achData = account?.achData;
-    const currency = getNonUSDCurrency(workspaces, policyID, achData, draft);
-    const {country} = getNonUSDAnswers(draft, account, currency);
-    const isBankFieldsLoaded = areBankFieldsLoaded(bankFields, country, currency);
+function useNonUSDServerLists(data: FlowData, policyID: string | undefined): NonUSDServerLists {
+    const {
+        currency,
+        answers: {country},
+    } = getNonUSDFlowState(data, policyID);
+    const isBankFieldsLoaded = areBankFieldsLoaded(data.bankFields, country, currency);
+    const isPicklistsLoaded = arePicklistsLoaded(data.picklists);
     const bankFieldsRequest = useRequestState(REQUEST_NAMES.GET_BANK_ACCOUNT_FIELDS);
 
+    // A read made offline is not sent, so each list that is still missing is read again with the connection
     useNetwork({
         onReconnect: () => {
             if (!country) {
                 return;
             }
-            getBankAccountFields(country, currency);
+            if (!isBankFieldsLoaded) {
+                getBankAccountFields(country, currency);
+            }
+            if (!isPicklistsLoaded) {
+                getOnboardingFields(country);
+            }
         },
     });
 

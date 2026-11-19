@@ -1,8 +1,10 @@
-import type {LocalizedTranslate} from '@components/LocaleContextProvider';
-
+/**
+ * Builds the whole USD plan from the draft and the server data. It is the one place that decides which steps the USD
+ * flow has, so the controller never skips a step on its own.
+ */
+import getBaseStepInput from '@pages/SimplifiedBankOnboarding/formConfig/getBaseStepInput';
 import type {FlowPlan, PlanContext} from '@pages/SimplifiedBankOnboarding/formConfig/types';
 import getUSDAnswers from '@pages/SimplifiedBankOnboarding/model/answers/getUSDAnswers';
-import getBankAccountParams from '@pages/SimplifiedBankOnboarding/requests/getBankAccountParams';
 import type {OnboardingDraft} from '@pages/SimplifiedBankOnboarding/types/form';
 import type {OnboardingAccount} from '@pages/SimplifiedBankOnboarding/types/onyx';
 
@@ -20,25 +22,12 @@ import getPersonalInfoStep from './personalInfo';
 import getValidationStep from './validation';
 import getVerifyIdentityStep from './verifyIdentity';
 
-function getStepInput(draft: OnboardingDraft | undefined, account: OnyxEntry<OnboardingAccount>, policyID: string | undefined, translate: LocalizedTranslate): USDStepInput {
-    const achData = account?.achData;
-    const resolvedPolicyID = policyID ?? achData?.policyID;
-    return {
-        answers: getUSDAnswers(draft, account),
-        account,
-        achData,
-        policyID: resolvedPolicyID,
-        bankAccount: getBankAccountParams(resolvedPolicyID, achData),
-        translate,
-    };
-}
-
 /**
  * The USD flow as a plan. The identity check and the documents step are only in the plan while the server asks for
  * them, so no transition has to skip them.
  */
 function buildUSDPlan(draft: OnboardingDraft | undefined, account: OnyxEntry<OnboardingAccount>, {translate, policyID}: PlanContext): FlowPlan {
-    const input = getStepInput(draft, account, policyID, translate);
+    const input: USDStepInput = {...getBaseStepInput(account, policyID, translate), answers: getUSDAnswers(draft, account)};
     const requiredDocuments = input.achData?.requiredKYBDocuments ?? [];
 
     return {

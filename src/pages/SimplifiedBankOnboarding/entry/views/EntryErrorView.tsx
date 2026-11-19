@@ -1,6 +1,11 @@
+/**
+ * The entry page cannot offer a setup when the server throttled the account or the workspace pays in a currency that the
+ * flows do not support. This view explains the blocker instead of the setup options.
+ */
 import HeaderWithBackButtonAndTitle from '@components/Header/composed/HeaderWithBackButtonAndTitle';
 import RenderHTML from '@components/RenderHTML';
 import ScreenWrapper from '@components/ScreenWrapper';
+import ScrollView from '@components/ScrollView';
 import Text from '@components/Text';
 
 import useEnvironment from '@hooks/useEnvironment';
@@ -34,13 +39,15 @@ function EntryErrorView({reason, workspaceName, backTo}: EntryErrorViewProps) {
                 subtitle={workspaceName}
                 onBackButtonPress={() => leaveEntry(backTo)}
             />
-            <View style={[styles.m5, styles.mv3, styles.flex1]}>
-                {reason === 'throttled' ? (
-                    <Text>{translate('bankAccount.hasBeenThrottledError')}</Text>
-                ) : (
-                    <RenderHTML html={translate('bankAccount.hasCurrencyError', `${environmentURL}/${CURRENCY_SETTINGS_ROUTE}`)} />
-                )}
-            </View>
+            <ScrollView style={styles.flex1}>
+                <View style={[styles.m5, styles.mv3]}>
+                    {reason === 'throttled' ? (
+                        <Text>{translate('bankAccount.hasBeenThrottledError')}</Text>
+                    ) : (
+                        <RenderHTML html={translate('bankAccount.hasCurrencyError', `${environmentURL}/${CURRENCY_SETTINGS_ROUTE}`)} />
+                    )}
+                </View>
+            </ScrollView>
         </ScreenWrapper>
     );
 }

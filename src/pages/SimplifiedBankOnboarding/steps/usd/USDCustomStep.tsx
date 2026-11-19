@@ -10,11 +10,12 @@ import OnfidoStep from './OnfidoStep';
 import PlaidStep from './PlaidStep';
 import ValidationStep from './validation/ValidationStep';
 
-function renderUSDCustomStep({page, policyID, isSubmitting, errorText, onComplete, goToStep}: CustomStepProps) {
+function USDCustomStep({page, policyID, isSubmitting, errorText, onComplete, goToStep}: CustomStepProps) {
     switch (page.component) {
         case 'plaid':
             return (
                 <PlaidStep
+                    canComplete={page.canComplete ?? true}
                     isSubmitting={isSubmitting}
                     errorText={errorText}
                     onComplete={onComplete}
@@ -44,4 +45,4 @@ function renderUSDCustomStep({page, policyID, isSubmitting, errorText, onComplet
     }
 }
 
-export default renderUSDCustomStep;
+export default USDCustomStep;

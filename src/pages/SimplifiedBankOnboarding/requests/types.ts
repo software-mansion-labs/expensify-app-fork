@@ -1,4 +1,4 @@
-import type {ReadCommand, ReadCommandParams, WriteCommand, WriteCommandParams} from '@pages/SimplifiedBankOnboarding/mockBackend/commands';
+import type {BankAccountParams, ReadCommand, ReadCommandParams, WriteCommand, WriteCommandParams} from '@pages/SimplifiedBankOnboarding/mockBackend/commands';
 
 /** `skipped`: the request was not sent (a read made offline), or a newer request or a reset replaced its status entry */
 type RequestOutcome = {status: 'succeeded'} | {status: 'failed'} | {status: 'skipped'};
@@ -14,4 +14,4 @@ type WriteRequest = {
 
 type MockRequest = ReadRequest | WriteRequest;
 
-export type {MockRequest, ReadRequest, RequestOutcome, WriteRequest};
+export type {BankAccountParams, MockRequest, ReadRequest, RequestOutcome, WriteRequest};

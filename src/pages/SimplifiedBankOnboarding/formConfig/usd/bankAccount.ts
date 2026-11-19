@@ -1,5 +1,10 @@
+/**
+ * The USD bank step as plan config. The setup type that the entry page saved decides between the Plaid page and the
+ * manual form, and the step request connects the account.
+ */
 import type {FieldConfig, FormPageConfig, PageConfig, StepConfig} from '@pages/SimplifiedBankOnboarding/formConfig/types';
 import isFormPageComplete from '@pages/SimplifiedBankOnboarding/formConfig/validation/isFormPageComplete';
+import failRequest from '@pages/SimplifiedBankOnboarding/requests/failRequest';
 import REQUEST_NAMES from '@pages/SimplifiedBankOnboarding/requests/REQUEST_NAMES';
 import type {RequestOutcome} from '@pages/SimplifiedBankOnboarding/requests/types';
 import {connectBankAccountManually, connectBankAccountWithPlaid} from '@pages/SimplifiedBankOnboarding/requests/usd/connectBankAccount';
@@ -13,8 +18,6 @@ import type USDStepInput from './types';
 import hasPassedServerStep from './hasPassedServerStep';
 
 const ROUTING_NUMBER_PATTERN = /^\d{9}$/;
-
-const SKIPPED: RequestOutcome = {status: 'skipped'};
 
 function getManualPage({answers, achData, translate}: USDStepInput): FormPageConfig {
     const isLocked = !!achData?.bankAccountID;
@@ -56,18 +59,26 @@ function getManualPage({answers, achData, translate}: USDStepInput): FormPageCon
 
 function getBankPage(input: USDStepInput): PageConfig {
     if (input.answers.setupType === SBO_CONST.SETUP_TYPE.PLAID) {
-        return {kind: 'custom', id: SBO_CONST.USD.BANK_INFO_SUB_PAGES.PLAID, component: 'plaid', isComplete: !!input.achData?.bankAccountID};
+        // The bank step sends the picked account, so the page cannot be completed before the user picks one
+        return {
+            kind: 'custom',
+            id: SBO_CONST.USD.BANK_INFO_SUB_PAGES.PLAID,
+            component: 'plaid',
+            isComplete: !!input.achData?.bankAccountID,
+            canComplete: !!input.answers.plaidAccountID,
+        };
     }
     return getManualPage(input);
 }
 
+/** The entry opens a flow with a workspace and the Plaid page blocks Next until an account is picked, so the failures are only a guard */
 function submitBankAccount({answers, policyID}: USDStepInput): Promise<RequestOutcome> {
     if (!policyID) {
-        return Promise.resolve(SKIPPED);
+        return failRequest(REQUEST_NAMES.CONNECT_BANK_ACCOUNT);
     }
     if (answers.setupType === SBO_CONST.SETUP_TYPE.PLAID) {
         if (!answers.plaidAccountID) {
-            return Promise.resolve(SKIPPED);
+            return failRequest(REQUEST_NAMES.CONNECT_BANK_ACCOUNT);
         }
         return connectBankAccountWithPlaid({policyID, plaidAccountID: answers.plaidAccountID});
     }

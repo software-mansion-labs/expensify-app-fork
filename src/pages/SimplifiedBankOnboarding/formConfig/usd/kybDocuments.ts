@@ -1,3 +1,7 @@
+/**
+ * The USD documents step as plan config. The server asks for documents only when its automatic checks fail, so the
+ * plan holds this step only while the account lists required documents.
+ */
 import getCorpayFileField from '@pages/SimplifiedBankOnboarding/formConfig/fields/getCorpayFileField';
 import type {FileFieldConfig, StepConfig} from '@pages/SimplifiedBankOnboarding/formConfig/types';
 import isFormPageComplete from '@pages/SimplifiedBankOnboarding/formConfig/validation/isFormPageComplete';

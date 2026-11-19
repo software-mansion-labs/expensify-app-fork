@@ -9,8 +9,11 @@ import useOnyx from '@hooks/useOnyx';
 import type {CustomStepProps} from '@pages/SimplifiedBankOnboarding/controller/types';
 import {isPendingValidation, isVerifying} from '@pages/SimplifiedBankOnboarding/model/setupStatus';
 import SBO_CONST from '@pages/SimplifiedBankOnboarding/SBO_CONST';
+import type {ACHData, OnboardingAccount} from '@pages/SimplifiedBankOnboarding/types/onyx';
 
 import ONYXKEYS from '@src/ONYXKEYS';
+
+import type {OnyxEntry} from 'react-native-onyx';
 
 import React from 'react';
 
@@ -21,14 +24,25 @@ import MaxAttemptsReachedMessage from './MaxAttemptsReachedMessage';
 
 type ValidationStepProps = Pick<CustomStepProps, 'policyID' | 'isSubmitting' | 'errorText' | 'onComplete' | 'goToStep'>;
 
+type ValidationState = {
+    /** The state picks the screen and the bank account ID goes with the deposit amounts */
+    achData: Pick<ACHData, 'state' | 'bankAccountID'>;
+    hasReachedMaxAttempts: boolean;
+};
+
+const validationStateSelector = (account: OnyxEntry<OnboardingAccount>): ValidationState => ({
+    achData: {state: account?.achData?.state, bankAccountID: account?.achData?.bankAccountID},
+    hasReachedMaxAttempts: !!account?.maxAttemptsReached,
+});
+
 function ValidationStep({policyID, isSubmitting, errorText, onComplete, goToStep}: ValidationStepProps) {
-    const [account] = useOnyx(ONYXKEYS.SIMPLIFIED_BANK_ONBOARDING_ACCOUNT);
-    const achData = account?.achData;
+    const [validationState] = useOnyx(ONYXKEYS.SIMPLIFIED_BANK_ONBOARDING_ACCOUNT, {selector: validationStateSelector});
+    const achData = validationState?.achData;
 
     if (achData?.state === SBO_CONST.STATE.OPEN) {
         return <ConnectedBankAccount onComplete={onComplete} />;
     }
-    if (account?.maxAttemptsReached) {
+    if (validationState?.hasReachedMaxAttempts) {
         return <MaxAttemptsReachedMessage />;
     }
     if (isPendingValidation(achData)) {

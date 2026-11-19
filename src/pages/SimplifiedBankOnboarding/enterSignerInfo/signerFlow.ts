@@ -54,7 +54,6 @@ const signerFlow: FlowDescriptor<SignerData> = {
     saveDraft: saveSignerDraft,
     getStepNames: () => [],
     buildPlan: buildSignerPlan,
-    renderCustomStep: () => null,
 };
 
 export default signerFlow;

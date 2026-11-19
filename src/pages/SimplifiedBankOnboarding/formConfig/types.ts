@@ -61,11 +61,8 @@ type DateFieldConfig = RequiredFieldProps & {
     label: string;
     defaultValue: string;
 
-    /** The youngest age the date may give, such as 18 for a date of birth */
-    minAge?: number;
-
-    /** The oldest age the date may give */
-    maxAge?: number;
+    /** The date must give an age between the payment minimum and the maximum of CONST.DATE_BIRTH */
+    isDateOfBirth?: boolean;
 };
 
 type PicklistOption = {
@@ -231,7 +228,7 @@ type CustomPageConfig = PageBase & {
     kind: 'custom';
     component: CustomStepName;
 
-    /** False while the page waits for something outside the flow, such as the other directors. Defaults to true. */
+    /** False while the page waits for an input it does not have yet, such as the account picked in Plaid or the other directors. Defaults to true. */
     canComplete?: boolean;
 };
 

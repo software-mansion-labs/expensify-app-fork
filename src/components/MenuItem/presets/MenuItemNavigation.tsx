@@ -6,6 +6,7 @@ import MenuItemTrailing from '@components/MenuItem/layout/MenuItemTrailing';
 import MenuItemTitle from '@components/MenuItem/leaves/content/MenuItemTitle';
 import MenuItemIcon from '@components/MenuItem/leaves/leading/MenuItemIcon';
 import MenuItemChevron from '@components/MenuItem/leaves/trailing/icons/MenuItemChevron';
+import MenuItemLoadingIndicator from '@components/MenuItem/leaves/trailing/icons/MenuItemLoadingIndicator';
 
 import useOnyx from '@hooks/useOnyx';
 
@@ -34,18 +35,21 @@ type MenuItemNavigationProps = WithSentryLabel &
 
         /** Whether the menu item is disabled */
         isDisabled?: boolean;
+
+        /** The action of the row is running. The row shows a spinner instead of the chevron and cannot be pressed again. */
+        isLoading?: boolean;
     };
 
 /**
  * The navigation MenuItem preset — a tappable row with a leading icon, a title, and a trailing
  * chevron signaling that pressing it takes the user somewhere else
  */
-function MenuItemNavigation({title, icon, onPress, isDisabled = false, sentryLabel, testID}: MenuItemNavigationProps) {
+function MenuItemNavigation({title, icon, onPress, isDisabled = false, isLoading = false, sentryLabel, testID}: MenuItemNavigationProps) {
     const [session] = useOnyx(ONYXKEYS.SESSION, {selector: authTokenTypeSelector});
     return (
         <MenuItemRoot
             onPress={callIfAuthenticated(onPress, session)}
-            isDisabled={isDisabled}
+            isDisabled={isDisabled || isLoading}
             sentryLabel={sentryLabel}
             testID={testID}
             accessibilityLabel={title}
@@ -57,9 +61,7 @@ function MenuItemNavigation({title, icon, onPress, isDisabled = false, sentryLab
                 <MenuItemContent>
                     <MenuItemTitle>{title}</MenuItemTitle>
                 </MenuItemContent>
-                <MenuItemTrailing>
-                    <MenuItemChevron />
-                </MenuItemTrailing>
+                <MenuItemTrailing>{isLoading ? <MenuItemLoadingIndicator /> : <MenuItemChevron />}</MenuItemTrailing>
             </MenuItemRow>
         </MenuItemRoot>
     );

@@ -1,3 +1,7 @@
+/**
+ * Requests do not keep their state in components, so a page that remounts still sees a pending request or its error.
+ * This hook reads that state for one request name from the request status key.
+ */
 import useOnyx from '@hooks/useOnyx';
 
 import type {OnboardingRequests} from '@pages/SimplifiedBankOnboarding/types/onyx';

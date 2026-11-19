@@ -19,7 +19,7 @@ import {getLatestErrorMessage} from '@libs/ErrorUtils';
 import type BankOnboardingLabParamList from '@libs/Navigation/paramLists/BankOnboardingLabParamList';
 import type {PlatformStackScreenProps} from '@libs/Navigation/PlatformStackNavigation/types';
 
-import useFlowData from '@pages/SimplifiedBankOnboarding/controller/useFlowData';
+import useReadFlowData from '@pages/SimplifiedBankOnboarding/controller/useReadFlowData';
 import openFlowAtResume from '@pages/SimplifiedBankOnboarding/flows/openFlowAtResume';
 import {leaveVerifyAccount} from '@pages/SimplifiedBankOnboarding/navigation/entryNavigation';
 import validateUser, {clearValidateUserErrors} from '@pages/SimplifiedBankOnboarding/requests/entry/validateUser';
@@ -38,7 +38,7 @@ type VerifyAccountPageProps = PlatformStackScreenProps<BankOnboardingLabParamLis
 function VerifyAccountPage({route}: VerifyAccountPageProps) {
     const styles = useThemeStyles();
     const {translate} = useLocalize();
-    const {readData} = useFlowData();
+    const readFlowData = useReadFlowData();
     const {isPending, errors} = useRequestState(REQUEST_NAMES.VALIDATE_USER);
     const [validateCode, setValidateCode] = useState('');
 
@@ -70,7 +70,7 @@ function VerifyAccountPage({route}: VerifyAccountPageProps) {
         if (outcome.status !== 'succeeded') {
             return;
         }
-        openFlowAtResume({data: await readData(), context: {translate, policyID}, backTo, shouldReplace: true});
+        openFlowAtResume({data: await readFlowData(), context: {translate, policyID}, backTo, shouldReplace: true});
     };
 
     return (

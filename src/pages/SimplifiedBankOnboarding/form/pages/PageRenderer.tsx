@@ -1,12 +1,10 @@
 /**
- * Renders one page of a plan by its kind. The pages that are not forms belong to the flow, so the caller renders them
- * through `renderCustom`. Each page is keyed by its ID, so moving to another page starts it with fresh local state.
+ * Renders one generic page of a plan by its kind. Custom pages belong to the flow, so the flow screen renders them
+ * itself. Each page is keyed by its ID, so moving to another page starts it with fresh local state.
  */
 import type {CustomPageConfig, PageConfig, PageID} from '@pages/SimplifiedBankOnboarding/formConfig/types';
 import type {OnboardingFormID} from '@pages/SimplifiedBankOnboarding/formConfig/validation/types';
 import type {OnboardingDraft} from '@pages/SimplifiedBankOnboarding/types/form';
-
-import type {ReactNode} from 'react';
 
 import React from 'react';
 
@@ -18,7 +16,7 @@ import QuestionPage from './QuestionPage';
 type PageRendererProps = {
     /** The form that the form pages render */
     formID: OnboardingFormID;
-    page: PageConfig;
+    page: Exclude<PageConfig, CustomPageConfig>;
     isEditing: boolean;
 
     /** The request of the page is running */
@@ -35,10 +33,9 @@ type PageRendererProps = {
 
     /** A row of a list page was pressed */
     onRowPress: (rowID: string) => void;
-    renderCustom: (page: CustomPageConfig) => ReactNode;
 };
 
-function PageRenderer({formID, page, isEditing, isLoading, errorText, onSubmit, onEdit, onRowPress, renderCustom}: PageRendererProps) {
+function PageRenderer({formID, page, isEditing, isLoading, errorText, onSubmit, onEdit, onRowPress}: PageRendererProps) {
     switch (page.kind) {
         case 'form':
             return (
@@ -84,8 +81,6 @@ function PageRenderer({formID, page, isEditing, isLoading, errorText, onSubmit, 
                     onRowPress={onRowPress}
                 />
             );
-        case 'custom':
-            return renderCustom(page);
         default:
             return null;
     }

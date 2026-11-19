@@ -1,23 +1,8 @@
 import type {CustomPageConfig, FlowPlan, PlanContext, StepID} from '@pages/SimplifiedBankOnboarding/formConfig/types';
 import type {OnboardingFormID} from '@pages/SimplifiedBankOnboarding/formConfig/validation/types';
 import type {OnboardingDraft} from '@pages/SimplifiedBankOnboarding/types/form';
-import type {BankFields, OnboardingAccount, OnboardingPicklists, Workspaces} from '@pages/SimplifiedBankOnboarding/types/onyx';
 
-import type {ReactNode} from 'react';
-import type {OnyxEntry} from 'react-native-onyx';
-
-/** The Onyx values that a plan is built from. A flow reads the ones it needs, such as the server lists of the NonUSD flow. */
-type FlowData = {
-    draft: OnboardingDraft | undefined;
-    account: OnyxEntry<OnboardingAccount>;
-
-    /** The currency of a workspace decides the NonUSD steps */
-    workspaces: OnyxEntry<Workspaces>;
-
-    /** The bank inputs that the server describes for a country */
-    bankFields: OnyxEntry<BankFields>;
-    picklists: OnyxEntry<OnboardingPicklists>;
-};
+import type {ComponentType} from 'react';
 
 /**
  * The data that a screen renders and a read of the same keys for its handlers. After a write the data of the last render
@@ -68,7 +53,9 @@ type FlowDescriptor<TData> = {
     /** The names of the step counter of the header */
     getStepNames: (data: TData, context: PlanContext) => readonly string[];
     buildPlan: (data: TData, context: PlanContext) => FlowPlan;
-    renderCustomStep: (props: CustomStepProps) => ReactNode;
+
+    /** Renders the custom pages of the plan. A flow without custom pages has none. */
+    CustomStep?: ComponentType<CustomStepProps>;
 };
 
-export type {CustomStepProps, FlowData, FlowDataSource, FlowDataStatus, FlowDescriptor};
+export type {CustomStepProps, FlowDataSource, FlowDataStatus, FlowDescriptor};

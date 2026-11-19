@@ -1,3 +1,7 @@
+/**
+ * The summary page that closes most steps. It renders the rows of the plan with the shared confirmation step, so a
+ * flow only describes the rows and the page that edits each one.
+ */
 import ConfirmationStep from '@components/SubStepForms/ConfirmationStep';
 
 import type {ConfirmationPageConfig, ConfirmationRow, PageID} from '@pages/SimplifiedBankOnboarding/formConfig/types';

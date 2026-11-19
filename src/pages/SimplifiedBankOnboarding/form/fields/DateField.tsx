@@ -27,8 +27,8 @@ function DateField({field, shouldSaveDraft}: DateFieldProps) {
             label={field.label}
             placeholder={translate('common.dateFormat')}
             defaultValue={field.defaultValue}
-            minDate={field.maxAge === undefined ? undefined : subYears(today, field.maxAge)}
-            maxDate={field.minAge === undefined ? undefined : subYears(today, field.minAge)}
+            minDate={field.isDateOfBirth ? subYears(today, CONST.DATE_BIRTH.MAX_AGE) : undefined}
+            maxDate={field.isDateOfBirth ? subYears(today, CONST.DATE_BIRTH.MIN_AGE_FOR_PAYMENT) : undefined}
             shouldSaveDraft={shouldSaveDraft}
             forwardedFSClass={CONST.FULLSTORY.CLASS.MASK}
         />

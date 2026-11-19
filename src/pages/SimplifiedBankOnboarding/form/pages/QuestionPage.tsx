@@ -1,3 +1,7 @@
+/**
+ * The yes or no pages of the plan, such as the owner questions. It renders them with the shared yes or no step and
+ * saves the answer to one boolean input.
+ */
 import FormHelpMessage from '@components/FormHelpMessage';
 import YesNoStep from '@components/SubStepForms/YesNoStep';
 
