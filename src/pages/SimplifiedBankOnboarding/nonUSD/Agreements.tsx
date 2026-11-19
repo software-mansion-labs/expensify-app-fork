@@ -22,6 +22,7 @@ import {finishGlobalBankAccountOnboarding} from '@pages/SimplifiedBankOnboarding
 import useStepRequest from '@pages/SimplifiedBankOnboarding/requests/useStepRequest';
 import INPUT_IDS from '@pages/SimplifiedBankOnboarding/types/form';
 import {getBankAccountParams, requiresDocusignStep} from '@pages/SimplifiedBankOnboarding/utils/OnboardingAccountUtils';
+import {FIELDS_TO_CLEAR as AGREEMENT_FIELDS_TO_CLEAR, resolveAgreements} from '@pages/SimplifiedBankOnboarding/values/codecs/nonUSDAgreements';
 
 import {clearErrors} from '@userActions/FormActions';
 
@@ -33,7 +34,6 @@ import React, {useRef, useState} from 'react';
 import type NonUSDPageProps from './types';
 
 import DraftFileInput from './DraftFileInput';
-import getAgreementValues from './getAgreementValues';
 
 const STEP_FIELDS = [INPUT_IDS.AUTHORIZED_TO_BIND_CLIENT_TO_AGREEMENT, INPUT_IDS.AGREE_TO_TERMS_AND_CONDITIONS, INPUT_IDS.CONSENT_TO_PRIVACY_NOTICE];
 
@@ -43,7 +43,7 @@ function Agreements({onBackButtonPress, onSubmit, policyID, currency, stepNames,
     const [account] = useOnyx(ONYXKEYS.SIMPLIFIED_BANK_ONBOARDING_ACCOUNT);
     const [draft] = useOnyx(ONYXKEYS.FORMS.SIMPLIFIED_BANK_ONBOARDING_FORM_DRAFT);
 
-    const agreementValues = getAgreementValues(draft, account);
+    const agreementValues = resolveAgreements(draft, account?.achData);
     const isDocusignStepRequired = requiresDocusignStep(currency);
     const formRef = useRef<FormRef | null>(null);
     const [bankStatements, setBankStatements] = useState<FileObject[]>(draft?.bankStatement ?? []);
@@ -55,7 +55,7 @@ function Agreements({onBackButtonPress, onSubmit, policyID, currency, stepNames,
             onSubmit();
             return;
         }
-        send((requestID) => finishGlobalBankAccountOnboarding(requestID, getBankAccountParams(policyID, account?.achData), agreementValues));
+        send((requestID) => finishGlobalBankAccountOnboarding(requestID, getBankAccountParams(policyID, account?.achData), agreementValues, AGREEMENT_FIELDS_TO_CLEAR));
     };
 
     const validate = (values: FormOnyxValues<typeof ONYXKEYS.FORMS.SIMPLIFIED_BANK_ONBOARDING_FORM>): FormInputErrors<typeof ONYXKEYS.FORMS.SIMPLIFIED_BANK_ONBOARDING_FORM> => {

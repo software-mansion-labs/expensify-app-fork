@@ -5,25 +5,16 @@
 import ConfirmationStep from '@components/SubStepForms/ConfirmationStep';
 
 import useLocalize from '@hooks/useLocalize';
-import useOnyx from '@hooks/useOnyx';
 
-import type StepRequestSubPageProps from '@pages/SimplifiedBankOnboarding/requests/types';
 import SBO_CONST from '@pages/SimplifiedBankOnboarding/SBO_CONST';
-import BUSINESS_INFO_KEYS from '@pages/SimplifiedBankOnboarding/usd/BusinessInfo/BUSINESS_INFO_KEYS';
-import getSubStepValues from '@pages/SimplifiedBankOnboarding/utils/getSubStepValues';
-
-import ONYXKEYS from '@src/ONYXKEYS';
+import type BusinessInfoSubPageProps from '@pages/SimplifiedBankOnboarding/usd/BusinessInfo/types';
 
 import React from 'react';
 
 const SUBSTEP_INDEX = SBO_CONST.USD.SUBSTEP_INDEX.BUSINESS_INFO;
 
-function Confirmation({onNext, onMove, isEditing, isRequestPending, requestErrorMessage}: StepRequestSubPageProps) {
+function Confirmation({onNext, onMove, isEditing, isRequestPending, requestErrorMessage, values}: BusinessInfoSubPageProps) {
     const {translate} = useLocalize();
-    const [account] = useOnyx(ONYXKEYS.SIMPLIFIED_BANK_ONBOARDING_ACCOUNT);
-    const [draft] = useOnyx(ONYXKEYS.FORMS.SIMPLIFIED_BANK_ONBOARDING_FORM_DRAFT);
-
-    const values = getSubStepValues(BUSINESS_INFO_KEYS, draft, account);
 
     const summaryItems = [
         {

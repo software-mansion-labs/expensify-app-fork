@@ -9,18 +9,15 @@ import ScrollView from '@components/ScrollView';
 import Text from '@components/Text';
 
 import useLocalize from '@hooks/useLocalize';
-import useOnyx from '@hooks/useOnyx';
 import useThemeStyles from '@hooks/useThemeStyles';
 
 import Navigation from '@libs/Navigation/Navigation';
 
 import {sendReminderForSignerInformation} from '@pages/SimplifiedBankOnboarding/actions/GlobalBankAccount';
+import type {BankAccountParams} from '@pages/SimplifiedBankOnboarding/mockBackend/commands';
 import useStepRequest from '@pages/SimplifiedBankOnboarding/requests/useStepRequest';
-import SBO_CONST from '@pages/SimplifiedBankOnboarding/SBO_CONST';
-import {getBankAccountParams} from '@pages/SimplifiedBankOnboarding/utils/OnboardingAccountUtils';
 
 import CONST from '@src/CONST';
-import ONYXKEYS from '@src/ONYXKEYS';
 import ROUTES from '@src/ROUTES';
 
 import React from 'react';
@@ -28,28 +25,28 @@ import {View} from 'react-native';
 
 type HangTightProps = {
     policyID: string | undefined;
-    currency: string;
+
+    /** The bank account that the reminder is about */
+    bankAccountParams: BankAccountParams;
+
+    /** Whether the server holds the data of every director that the currency needs */
+    haveDirectorsFilledInData: boolean;
 
     /** Goes to the next step once the directors filled in their data */
     onContinue: () => void;
 };
 
-function HangTight({policyID, currency, onContinue}: HangTightProps) {
+function HangTight({policyID, bankAccountParams, haveDirectorsFilledInData, onContinue}: HangTightProps) {
     const {translate} = useLocalize();
     const styles = useThemeStyles();
-    const [account] = useOnyx(ONYXKEYS.SIMPLIFIED_BANK_ONBOARDING_ACCOUNT);
-
-    const corpay = account?.achData?.corpay;
     const {send, isPending: isSendingReminder, errorMessage: error} = useStepRequest();
-    const hasSecondSignerIfNeeded = currency !== SBO_CONST.CURRENCY.AUD || !!corpay?.secondSignerFullName;
-    const haveDirectorsFilledInData = !!corpay?.signerFullName && hasSecondSignerIfNeeded;
 
     const sendReminder = () => {
-        send((requestID) => sendReminderForSignerInformation(requestID, getBankAccountParams(policyID, account?.achData)));
+        send((requestID) => sendReminderForSignerInformation(requestID, bankAccountParams));
     };
 
     const openDirectorForm = () => {
-        Navigation.navigate(ROUTES.SETTINGS_BANK_ONBOARDING_LAB_ENTER_SIGNER_INFO.getRoute({policyID, bankAccountID: account?.achData?.bankAccountID}));
+        Navigation.navigate(ROUTES.SETTINGS_BANK_ONBOARDING_LAB_ENTER_SIGNER_INFO.getRoute({policyID, bankAccountID: bankAccountParams.bankAccountID}));
     };
 
     return (

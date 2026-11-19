@@ -14,12 +14,12 @@ import Navigation from '@libs/Navigation/Navigation';
 import {getOnboardingFields, saveOnboardingCompanyDetails} from '@pages/SimplifiedBankOnboarding/actions/GlobalBankAccount';
 import SubPageRedirectIndicator from '@pages/SimplifiedBankOnboarding/components/SubPageRedirectIndicator';
 import type NonUSDPageProps from '@pages/SimplifiedBankOnboarding/nonUSD/types';
-import type StepRequestSubPageProps from '@pages/SimplifiedBankOnboarding/requests/types';
 import useStepRequest from '@pages/SimplifiedBankOnboarding/requests/useStepRequest';
 import SBO_CONST from '@pages/SimplifiedBankOnboarding/SBO_CONST';
-import getSubStepValues from '@pages/SimplifiedBankOnboarding/utils/getSubStepValues';
-import type {SubStepValues} from '@pages/SimplifiedBankOnboarding/utils/getSubStepValues';
 import {getBankAccountParams} from '@pages/SimplifiedBankOnboarding/utils/OnboardingAccountUtils';
+import {BUSINESS_INFO_KEYS, FIELDS_TO_CLEAR} from '@pages/SimplifiedBankOnboarding/values/codecs/nonUSDBusinessInfo';
+import type {BusinessInfoValues} from '@pages/SimplifiedBankOnboarding/values/codecs/nonUSDBusinessInfo';
+import {resolveValues} from '@pages/SimplifiedBankOnboarding/values/resolveValue';
 
 import {clearErrors} from '@userActions/FormActions';
 
@@ -28,7 +28,8 @@ import ROUTES from '@src/ROUTES';
 
 import React, {useEffect} from 'react';
 
-import BUSINESS_INFO_KEYS from './BUSINESS_INFO_KEYS';
+import type BusinessInfoSubPageProps from './types';
+
 import BusinessType from './subSteps/BusinessType';
 import Confirmation from './subSteps/Confirmation';
 import Name from './subSteps/Name';
@@ -42,7 +43,7 @@ const pages = [
 ];
 
 /** Returns the index of the first sub page with an empty input, or the confirmation page when every input has a value */
-function getInitialSubPageIndex(values: SubStepValues<(typeof BUSINESS_INFO_KEYS)[keyof typeof BUSINESS_INFO_KEYS]>): number {
+function getInitialSubPageIndex(values: BusinessInfoValues): number {
     if (!values.companyName) {
         return SBO_CONST.NON_USD.SUBSTEP_INDEX.BUSINESS_INFO.NAME;
     }
@@ -58,7 +59,7 @@ function BusinessInfo({onBackButtonPress, onSubmit, policyID, stepNames, startSt
     const [draft] = useOnyx(ONYXKEYS.FORMS.SIMPLIFIED_BANK_ONBOARDING_FORM_DRAFT);
 
     const country = draft?.country ?? account?.achData?.country ?? '';
-    const values = getSubStepValues(BUSINESS_INFO_KEYS, draft, account);
+    const values = resolveValues(BUSINESS_INFO_KEYS, draft, account?.achData);
     const startFrom = getInitialSubPageIndex(values);
     const {send, isPending, errorMessage} = useStepRequest({onSuccess: onSubmit});
 
@@ -67,13 +68,15 @@ function BusinessInfo({onBackButtonPress, onSubmit, policyID, stepNames, startSt
     }, [country]);
 
     const submit = () => {
-        send((requestID) => saveOnboardingCompanyDetails(requestID, getBankAccountParams(policyID, account?.achData), {companyName: values.companyName, businessType: values.businessType}));
+        send((requestID) =>
+            saveOnboardingCompanyDetails(requestID, getBankAccountParams(policyID, account?.achData), {companyName: values.companyName, businessType: values.businessType}, FIELDS_TO_CLEAR),
+        );
     };
 
     const buildRoute = (pageName: string, action?: 'edit') =>
         ROUTES.SETTINGS_BANK_ONBOARDING_LAB_NON_USD_SETUP.getRoute({policyID, page: PAGE_NAMES.BUSINESS_INFO, subPage: pageName, action, backTo});
 
-    const {CurrentPage, isEditing, currentPageName, pageIndex, nextPage, prevPage, moveTo, isRedirecting} = useSubPage<StepRequestSubPageProps>({
+    const {CurrentPage, isEditing, currentPageName, pageIndex, nextPage, prevPage, moveTo, isRedirecting} = useSubPage<BusinessInfoSubPageProps>({
         pages,
         startFrom,
         onFinished: submit,
@@ -111,6 +114,7 @@ function BusinessInfo({onBackButtonPress, onSubmit, policyID, stepNames, startSt
                     currentPageName={currentPageName}
                     isRequestPending={isPending}
                     requestErrorMessage={errorMessage}
+                    values={values}
                 />
             )}
         </InteractiveStepWrapper>

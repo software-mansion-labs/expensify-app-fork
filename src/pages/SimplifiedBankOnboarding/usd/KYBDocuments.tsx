@@ -36,6 +36,9 @@ type KYBDocumentsProps = Pick<USDPageProps, 'onSubmit' | 'onBackButtonPress'>;
 
 type KYBInputID = typeof INPUT_IDS.COMPANY_TAX_ID_DOCUMENT | typeof INPUT_IDS.COMPANY_ADDRESS_DOCUMENT;
 
+/** The server keeps only the document names, so the picked files leave the draft once the server saved them */
+const KYB_FIELDS_TO_CLEAR: KYBInputID[] = [INPUT_IDS.COMPANY_TAX_ID_DOCUMENT, INPUT_IDS.COMPANY_ADDRESS_DOCUMENT];
+
 type UploadedFiles = Record<KYBInputID, FileObject[]>;
 
 const DOCUMENTS_CONFIG = [
@@ -94,7 +97,7 @@ function KYBDocuments({onSubmit, onBackButtonPress}: KYBDocumentsProps) {
 
     const submit = () => {
         const documentNames = requiredDocuments.map((document) => uploadedFiles[document.inputID].at(0)?.name ?? '').filter((documentName) => !!documentName);
-        send((requestID) => uploadKYBDocuments(requestID, getBankAccountParams(achData?.policyID, achData), documentNames));
+        send((requestID) => uploadKYBDocuments(requestID, getBankAccountParams(achData?.policyID, achData), documentNames, KYB_FIELDS_TO_CLEAR));
     };
 
     return (

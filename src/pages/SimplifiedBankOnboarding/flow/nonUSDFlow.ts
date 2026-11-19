@@ -6,6 +6,7 @@ import SBO_CONST from '@pages/SimplifiedBankOnboarding/SBO_CONST';
 import INPUT_IDS from '@pages/SimplifiedBankOnboarding/types/form';
 import getInitialSubPageForSignerInfo from '@pages/SimplifiedBankOnboarding/utils/getInitialSubPageForSignerInfo';
 import {requiresDocusignStep} from '@pages/SimplifiedBankOnboarding/utils/OnboardingAccountUtils';
+import {resolveAgreements} from '@pages/SimplifiedBankOnboarding/values/codecs/nonUSDAgreements';
 
 import type {ValueOf} from 'type-fest';
 
@@ -32,12 +33,7 @@ function areSignersKnown({server, currency}: FlowContext): boolean {
 
 /** The agreements are only sent by the last request, so until then the draft holds the answers */
 function areAllAgreementsChecked({server, draft}: FlowContext): boolean {
-    const corpay = server?.corpay;
-    return (
-        !!(draft?.authorizedToBindClientToAgreement ?? corpay?.authorizedToBindClientToAgreement) &&
-        !!(draft?.agreeToTermsAndConditions ?? corpay?.agreeToTermsAndConditions) &&
-        !!(draft?.consentToPrivacyNotice ?? corpay?.consentToPrivacyNotice)
-    );
+    return Object.values(resolveAgreements(draft, server)).every(Boolean);
 }
 
 /** The bank statement is collected on the agreements page and only lives in the draft until the docusign page sends it */

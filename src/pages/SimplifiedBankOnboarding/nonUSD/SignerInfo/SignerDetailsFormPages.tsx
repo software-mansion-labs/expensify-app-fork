@@ -6,13 +6,13 @@
 import InteractiveStepWrapper from '@components/InteractiveStepWrapper';
 
 import useLocalize from '@hooks/useLocalize';
-import useOnyx from '@hooks/useOnyx';
 import useSubPage from '@hooks/useSubPage';
 
 import Navigation from '@libs/Navigation/Navigation';
 
 import SubPageRedirectIndicator from '@pages/SimplifiedBankOnboarding/components/SubPageRedirectIndicator';
 import SBO_CONST from '@pages/SimplifiedBankOnboarding/SBO_CONST';
+import type {SignerValues} from '@pages/SimplifiedBankOnboarding/values/codecs/nonUSDSigner';
 
 import {clearErrors} from '@userActions/FormActions';
 
@@ -36,6 +36,12 @@ const pages = [
 ];
 
 type SignerDetailsFormPagesProps = {
+    /** The signer fields, from the draft first and then from the saved director */
+    values: SignerValues;
+
+    /** Whether the user is also an owner, whose name the owner step already collected */
+    isUserOwner: boolean;
+
     /** Goes back to the question whether the user is the director */
     onBackToIsDirector: () => void;
 
@@ -49,12 +55,19 @@ type SignerDetailsFormPagesProps = {
     backTo?: string;
 } & Pick<SignerDetailsSubPageProps, 'isRequestPending' | 'requestErrorMessage'>;
 
-function SignerDetailsFormPages({onBackToIsDirector, onFinished, stepNames, startStepIndex, policyID, backTo, isRequestPending, requestErrorMessage}: SignerDetailsFormPagesProps) {
+function SignerDetailsFormPages({
+    values,
+    isUserOwner,
+    onBackToIsDirector,
+    onFinished,
+    stepNames,
+    startStepIndex,
+    policyID,
+    backTo,
+    isRequestPending,
+    requestErrorMessage,
+}: SignerDetailsFormPagesProps) {
     const {translate} = useLocalize();
-    const [account] = useOnyx(ONYXKEYS.SIMPLIFIED_BANK_ONBOARDING_ACCOUNT);
-    const [draft] = useOnyx(ONYXKEYS.FORMS.SIMPLIFIED_BANK_ONBOARDING_FORM_DRAFT);
-
-    const isUserOwner = account?.achData?.corpay?.ownsMoreThan25Percent ?? draft?.ownsMoreThan25Percent ?? false;
     const skipPages: string[] = isUserOwner ? [SUB_PAGE_NAMES.NAME] : [];
 
     const buildRoute = (pageName: string, action?: 'edit') =>
@@ -104,6 +117,8 @@ function SignerDetailsFormPages({onBackToIsDirector, onFinished, stepNames, star
                     onMove={moveTo}
                     currentPageName={currentPageName}
                     formID={ONYXKEYS.FORMS.SIMPLIFIED_BANK_ONBOARDING_FORM}
+                    values={values}
+                    isNamePageSkipped={isUserOwner}
                     isRequestPending={isRequestPending}
                     requestErrorMessage={requestErrorMessage}
                 />

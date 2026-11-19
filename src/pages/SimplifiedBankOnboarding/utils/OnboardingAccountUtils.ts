@@ -33,6 +33,12 @@ function getBankAccountParams(policyID: string | undefined, achData: ACHData | u
     return {policyID, bankAccountID: achData?.bankAccountID ?? fallbackBankAccountID};
 }
 
+/** Returns true once the server holds the account past the review, when the saved company name and tax ID stay as they are */
+function isAccountPastReview(achData: ACHData | undefined): boolean {
+    const state = achData?.state;
+    return !!achData?.bankAccountID && state !== SBO_CONST.STATE.SETUP && state !== SBO_CONST.STATE.VERIFYING;
+}
+
 function isSupportedCurrency(currency: string | undefined): boolean {
     return SBO_CONST.SUPPORTED_CURRENCIES.some((supportedCurrency) => supportedCurrency === currency);
 }
@@ -42,4 +48,4 @@ function requiresDocusignStep(currency: string | undefined): boolean {
     return currency === SBO_CONST.CURRENCY.AUD;
 }
 
-export {getBankAccountParams, hasInProgressNonUSDSetup, hasInProgressSetup, hasInProgressUSDSetup, isSupportedCurrency, requiresDocusignStep};
+export {getBankAccountParams, hasInProgressNonUSDSetup, hasInProgressSetup, hasInProgressUSDSetup, isAccountPastReview, isSupportedCurrency, requiresDocusignStep};

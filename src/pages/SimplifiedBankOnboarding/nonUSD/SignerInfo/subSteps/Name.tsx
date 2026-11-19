@@ -11,7 +11,6 @@ import useStepFormSubmit from '@hooks/useStepFormSubmit';
 import {getFieldRequiredErrors, isValidLegalName} from '@libs/ValidationUtils';
 
 import type {SignerDetailsSubPageProps, SignerFormID} from '@pages/SimplifiedBankOnboarding/nonUSD/SignerInfo/types';
-import useSignerDraftValue from '@pages/SimplifiedBankOnboarding/nonUSD/SignerInfo/useSignerDraftValue';
 import {SIGNER_INPUT_IDS} from '@pages/SimplifiedBankOnboarding/types/form';
 
 import CONST from '@src/CONST';
@@ -20,13 +19,12 @@ import React from 'react';
 
 const STEP_FIELDS = [SIGNER_INPUT_IDS.SIGNER_FULL_NAME];
 
-function Name({onNext, onMove, isEditing, formID}: SignerDetailsSubPageProps) {
+function Name({onNext, onMove, isEditing, formID, values}: SignerDetailsSubPageProps) {
     const {translate} = useLocalize();
-    const defaultValue = useSignerDraftValue(formID, SIGNER_INPUT_IDS.SIGNER_FULL_NAME);
 
-    const validate = (values: FormOnyxValues<SignerFormID>): FormInputErrors<SignerFormID> => {
-        const errors = getFieldRequiredErrors(values, STEP_FIELDS, translate);
-        if (values.signerFullName && !isValidLegalName(values.signerFullName)) {
+    const validate = (formValues: FormOnyxValues<SignerFormID>): FormInputErrors<SignerFormID> => {
+        const errors = getFieldRequiredErrors(formValues, STEP_FIELDS, translate);
+        if (formValues.signerFullName && !isValidLegalName(formValues.signerFullName)) {
             errors.signerFullName = translate('bankAccount.error.fullName');
         }
         return errors;
@@ -46,7 +44,7 @@ function Name({onNext, onMove, isEditing, formID}: SignerDetailsSubPageProps) {
             inputId={SIGNER_INPUT_IDS.SIGNER_FULL_NAME}
             inputLabel={translate('signerInfoStep.fullName')}
             inputMode={CONST.INPUT_MODE.TEXT}
-            defaultValue={defaultValue}
+            defaultValue={values.signerFullName}
             shouldShowHelpLinks={false}
             shouldDelayAutoFocus
         />

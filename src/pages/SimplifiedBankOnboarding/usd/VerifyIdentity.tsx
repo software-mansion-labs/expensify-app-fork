@@ -1,7 +1,7 @@
 /**
  * The identity check of the USD flow. A fake Onfido widget keeps the real sequence: a token on mount, then the check result.
  * Unlike the real step, which moves on at once, it waits for the answer to the result like the other steps, and only then
- * marks the check as done in the draft and moves on. When the check was already done, for example after direct URL
+ * moves on. The server marks the check as done. When the check was already done, for example after direct URL
  * navigation, it skips itself on mount like the real step.
  */
 import ActivityIndicator from '@components/ActivityIndicator';
@@ -15,7 +15,6 @@ import useLocalize from '@hooks/useLocalize';
 import useOnyx from '@hooks/useOnyx';
 import useThemeStyles from '@hooks/useThemeStyles';
 
-import {updateOnboardingDraft} from '@pages/SimplifiedBankOnboarding/actions/OnboardingAccount';
 import {openIdentityCheckFlow, verifyIdentity} from '@pages/SimplifiedBankOnboarding/actions/USDBankAccount';
 import useStepRequest from '@pages/SimplifiedBankOnboarding/requests/useStepRequest';
 import {getBankAccountParams} from '@pages/SimplifiedBankOnboarding/utils/OnboardingAccountUtils';
@@ -51,12 +50,7 @@ function VerifyIdentity({onSubmit, onBackButtonPress, stepNames, startStepIndex}
         openIdentityCheckFlow(policyIDRef.current ?? '');
     }, []);
 
-    const {send, isPending, errorMessage} = useStepRequest({
-        onSuccess: () => {
-            updateOnboardingDraft({isOnfidoSetupComplete: true});
-            onSubmit();
-        },
-    });
+    const {send, isPending, errorMessage} = useStepRequest({onSuccess: onSubmit});
 
     const passIdentityCheck = () => {
         send((requestID) => verifyIdentity(requestID, getBankAccountParams(policyID, account?.achData), MOCK_ONFIDO_DATA));

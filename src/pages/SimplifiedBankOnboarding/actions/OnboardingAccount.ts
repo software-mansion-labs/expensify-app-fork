@@ -30,8 +30,6 @@ function updateOnboardingAccount(achData: Partial<ACHData>) {
 
 function updateOnboardingDraft(values: Partial<OnboardingForm>) {
     Onyx.merge(ONYXKEYS.FORMS.SIMPLIFIED_BANK_ONBOARDING_FORM_DRAFT, values);
-    // It mirrors `updateReimbursementAccountDraft`. Onyx ignores an undefined value, so this merge leaves `draftStep` as it is.
-    Onyx.merge(ONYXKEYS.SIMPLIFIED_BANK_ONBOARDING_ACCOUNT, {draftStep: undefined});
 }
 
 function clearOnboardingDraft() {

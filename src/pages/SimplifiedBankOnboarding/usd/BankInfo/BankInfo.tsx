@@ -15,8 +15,10 @@ import {getBankAccountSubPage} from '@pages/SimplifiedBankOnboarding/flow/usdFlo
 import useStepRequest from '@pages/SimplifiedBankOnboarding/requests/useStepRequest';
 import SBO_CONST from '@pages/SimplifiedBankOnboarding/SBO_CONST';
 import type {OnboardingForm} from '@pages/SimplifiedBankOnboarding/types/form';
-import type {OnboardingAccount} from '@pages/SimplifiedBankOnboarding/types/onyx';
+import type {ACHData, OnboardingAccount} from '@pages/SimplifiedBankOnboarding/types/onyx';
 import type USDPageProps from '@pages/SimplifiedBankOnboarding/usd/types';
+import {FIELDS_TO_CLEAR, MANUAL_KEYS} from '@pages/SimplifiedBankOnboarding/values/codecs/usdBankAccount';
+import {resolveValues} from '@pages/SimplifiedBankOnboarding/values/resolveValue';
 
 import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';
@@ -33,22 +35,23 @@ import Plaid from './subSteps/Plaid';
 
 type BankInfoProps = Pick<USDPageProps, 'onSubmit' | 'onBackButtonPress' | 'policyID' | 'currentSubPage' | 'stepNames' | 'startStepIndex'>;
 
-function selectBankAccountID(account: OnyxEntry<OnboardingAccount>) {
-    return account?.achData?.bankAccountID;
+function selectSavedBankAccount(account: OnyxEntry<OnboardingAccount>): Pick<ACHData, 'bankAccountID' | 'routingNumber' | 'accountNumber'> {
+    return {bankAccountID: account?.achData?.bankAccountID, routingNumber: account?.achData?.routingNumber, accountNumber: account?.achData?.accountNumber};
 }
 
-function selectSetupType(draft: OnyxEntry<OnboardingForm>) {
-    return draft?.setupType;
+function selectBankDraft(draft: OnyxEntry<OnboardingForm>): Partial<Pick<OnboardingForm, 'setupType' | 'routingNumber' | 'accountNumber'>> {
+    return {setupType: draft?.setupType, routingNumber: draft?.routingNumber, accountNumber: draft?.accountNumber};
 }
 
 function BankInfo({onSubmit, onBackButtonPress, policyID, currentSubPage, stepNames, startStepIndex}: BankInfoProps) {
     const {translate} = useLocalize();
     const styles = useThemeStyles();
-    const [bankAccountID] = useOnyx(ONYXKEYS.SIMPLIFIED_BANK_ONBOARDING_ACCOUNT, {selector: selectBankAccountID});
-    const [draftSetupType] = useOnyx(ONYXKEYS.FORMS.SIMPLIFIED_BANK_ONBOARDING_FORM_DRAFT, {selector: selectSetupType});
+    const [savedBankAccount] = useOnyx(ONYXKEYS.SIMPLIFIED_BANK_ONBOARDING_ACCOUNT, {selector: selectSavedBankAccount});
+    const [bankDraft] = useOnyx(ONYXKEYS.FORMS.SIMPLIFIED_BANK_ONBOARDING_FORM_DRAFT, {selector: selectBankDraft});
     const {send, isPending, errorMessage} = useStepRequest({onSuccess: onSubmit});
 
-    const setupType = currentSubPage ?? getBankAccountSubPage(bankAccountID, draftSetupType);
+    const bankAccountID = savedBankAccount?.bankAccountID;
+    const setupType = currentSubPage ?? getBankAccountSubPage(bankAccountID, bankDraft?.setupType);
 
     const submit = (values: BankAccountValues) => {
         if (!policyID) {
@@ -56,9 +59,9 @@ function BankInfo({onSubmit, onBackButtonPress, policyID, currentSubPage, stepNa
         }
         const {plaidAccountID} = values;
         if (setupType === SBO_CONST.SETUP_TYPE.MANUAL) {
-            send((requestID) => connectBankAccountManually(requestID, policyID, values.routingNumber ?? '', values.accountNumber ?? ''));
+            send((requestID) => connectBankAccountManually(requestID, policyID, values.routingNumber ?? '', values.accountNumber ?? '', FIELDS_TO_CLEAR));
         } else if (setupType === SBO_CONST.SETUP_TYPE.PLAID && plaidAccountID) {
-            send((requestID) => connectBankAccountWithPlaid(requestID, policyID, plaidAccountID));
+            send((requestID) => connectBankAccountWithPlaid(requestID, policyID, plaidAccountID, FIELDS_TO_CLEAR));
         }
     };
 
@@ -78,6 +81,8 @@ function BankInfo({onSubmit, onBackButtonPress, policyID, currentSubPage, stepNa
                         onNext={submit}
                         isRequestPending={isPending}
                         requestErrorMessage={errorMessage}
+                        values={resolveValues(MANUAL_KEYS, bankDraft, savedBankAccount)}
+                        isLocked={!!bankAccountID}
                     />
                 );
             default:

@@ -1,6 +1,7 @@
 /**
  * The requests of the global (NonUSD) flow. They mirror the Corpay actions of `libs/actions/BankAccounts`. Every write
- * takes the ID that the step created for it, and the step follows that request with `useStepRequest`.
+ * takes the ID that the step created for it, and the step follows that request with `useStepRequest`. A write also
+ * takes the draft fields that the step saves, which its success removes from the draft.
  */
 /* eslint-disable rulesdir/prefer-actions-set-data -- This file is the action layer of an isolated research module, so it lives outside src/libs/actions */
 import {getMicroSecondOnyxErrorWithTranslationKey} from '@libs/ErrorUtils';
@@ -9,6 +10,7 @@ import {READ_COMMANDS, WRITE_COMMANDS} from '@pages/SimplifiedBankOnboarding/moc
 import type {BankAccountParams, WriteCommandParams} from '@pages/SimplifiedBankOnboarding/mockBackend/commands';
 import {read, write} from '@pages/SimplifiedBankOnboarding/mockBackend/mockApi';
 import buildTrackedRequestData from '@pages/SimplifiedBankOnboarding/requests/buildTrackedRequestData';
+import type {DraftFields} from '@pages/SimplifiedBankOnboarding/requests/buildTrackedRequestData';
 
 import ONYXKEYS from '@src/ONYXKEYS';
 import type {OnyxData} from '@src/types/onyx/Request';
@@ -23,8 +25,8 @@ type SignerEmails = Omit<WriteCommandParams[typeof WRITE_COMMANDS.ASK_FOR_SIGNER
 type FinishDetails = Omit<WriteCommandParams[typeof WRITE_COMMANDS.FINISH_GLOBAL_BANK_ACCOUNT_ONBOARDING], keyof BankAccountParams>;
 
 /** The Onyx data of a NonUSD request that a step waits for under its own ID */
-function getTrackedRequestData(requestID: string, command: string) {
-    return buildTrackedRequestData({requestID, command, errors: getMicroSecondOnyxErrorWithTranslationKey('common.genericErrorMessage')});
+function getTrackedRequestData(requestID: string, command: string, draftFieldsToClear: DraftFields = []) {
+    return buildTrackedRequestData({requestID, command, errors: getMicroSecondOnyxErrorWithTranslationKey('common.genericErrorMessage'), draftFieldsToClear});
 }
 
 /** Asks the server which bank inputs the country needs */
@@ -46,38 +48,46 @@ function getOnboardingFields(countryISO: string) {
     read(READ_COMMANDS.GET_ONBOARDING_FIELDS, {countryISO}, onyxData);
 }
 
-function createGlobalBankAccount(requestID: string, details: GlobalBankAccountDetails) {
-    write(WRITE_COMMANDS.CREATE_GLOBAL_BANK_ACCOUNT, details, getTrackedRequestData(requestID, WRITE_COMMANDS.CREATE_GLOBAL_BANK_ACCOUNT));
+function createGlobalBankAccount(requestID: string, details: GlobalBankAccountDetails, draftFieldsToClear: DraftFields) {
+    write(WRITE_COMMANDS.CREATE_GLOBAL_BANK_ACCOUNT, details, getTrackedRequestData(requestID, WRITE_COMMANDS.CREATE_GLOBAL_BANK_ACCOUNT, draftFieldsToClear));
 }
 
-function saveOnboardingCompanyDetails(requestID: string, bankAccount: BankAccountParams, details: CompanyDetails) {
-    write(WRITE_COMMANDS.SAVE_ONBOARDING_COMPANY_DETAILS, {...bankAccount, ...details}, getTrackedRequestData(requestID, WRITE_COMMANDS.SAVE_ONBOARDING_COMPANY_DETAILS));
+function saveOnboardingCompanyDetails(requestID: string, bankAccount: BankAccountParams, details: CompanyDetails, draftFieldsToClear: DraftFields) {
+    write(WRITE_COMMANDS.SAVE_ONBOARDING_COMPANY_DETAILS, {...bankAccount, ...details}, getTrackedRequestData(requestID, WRITE_COMMANDS.SAVE_ONBOARDING_COMPANY_DETAILS, draftFieldsToClear));
 }
 
-function saveOnboardingBeneficialOwners(requestID: string, bankAccount: BankAccountParams, details: GlobalBeneficialOwnersDetails) {
-    write(WRITE_COMMANDS.SAVE_ONBOARDING_BENEFICIAL_OWNERS, {...bankAccount, ...details}, getTrackedRequestData(requestID, WRITE_COMMANDS.SAVE_ONBOARDING_BENEFICIAL_OWNERS));
+function saveOnboardingBeneficialOwners(requestID: string, bankAccount: BankAccountParams, details: GlobalBeneficialOwnersDetails, draftFieldsToClear: DraftFields) {
+    write(
+        WRITE_COMMANDS.SAVE_ONBOARDING_BENEFICIAL_OWNERS,
+        {...bankAccount, ...details},
+        getTrackedRequestData(requestID, WRITE_COMMANDS.SAVE_ONBOARDING_BENEFICIAL_OWNERS, draftFieldsToClear),
+    );
 }
 
 /** Saves the director. The signer step of the onboarding and the page that an invited director opens both send it. */
-function saveOnboardingDirectorInformation(requestID: string, bankAccount: BankAccountParams, directorInformation: DirectorInformation) {
+function saveOnboardingDirectorInformation(requestID: string, bankAccount: BankAccountParams, directorInformation: DirectorInformation, draftFieldsToClear: DraftFields) {
     write(
         WRITE_COMMANDS.SAVE_ONBOARDING_DIRECTOR_INFORMATION,
         {...bankAccount, ...directorInformation},
-        getTrackedRequestData(requestID, WRITE_COMMANDS.SAVE_ONBOARDING_DIRECTOR_INFORMATION),
+        getTrackedRequestData(requestID, WRITE_COMMANDS.SAVE_ONBOARDING_DIRECTOR_INFORMATION, draftFieldsToClear),
     );
 }
 
 /** Emails a director who is not the current user */
-function askForSignerInformation(requestID: string, bankAccount: BankAccountParams, signerEmails: SignerEmails) {
-    write(WRITE_COMMANDS.ASK_FOR_SIGNER_INFORMATION, {...bankAccount, ...signerEmails}, getTrackedRequestData(requestID, WRITE_COMMANDS.ASK_FOR_SIGNER_INFORMATION));
+function askForSignerInformation(requestID: string, bankAccount: BankAccountParams, signerEmails: SignerEmails, draftFieldsToClear: DraftFields) {
+    write(WRITE_COMMANDS.ASK_FOR_SIGNER_INFORMATION, {...bankAccount, ...signerEmails}, getTrackedRequestData(requestID, WRITE_COMMANDS.ASK_FOR_SIGNER_INFORMATION, draftFieldsToClear));
 }
 
 function sendReminderForSignerInformation(requestID: string, bankAccount: BankAccountParams) {
     write(WRITE_COMMANDS.SEND_REMINDER_FOR_SIGNER_INFORMATION, bankAccount, getTrackedRequestData(requestID, WRITE_COMMANDS.SEND_REMINDER_FOR_SIGNER_INFORMATION));
 }
 
-function finishGlobalBankAccountOnboarding(requestID: string, bankAccount: BankAccountParams, details: FinishDetails) {
-    write(WRITE_COMMANDS.FINISH_GLOBAL_BANK_ACCOUNT_ONBOARDING, {...bankAccount, ...details}, getTrackedRequestData(requestID, WRITE_COMMANDS.FINISH_GLOBAL_BANK_ACCOUNT_ONBOARDING));
+function finishGlobalBankAccountOnboarding(requestID: string, bankAccount: BankAccountParams, details: FinishDetails, draftFieldsToClear: DraftFields) {
+    write(
+        WRITE_COMMANDS.FINISH_GLOBAL_BANK_ACCOUNT_ONBOARDING,
+        {...bankAccount, ...details},
+        getTrackedRequestData(requestID, WRITE_COMMANDS.FINISH_GLOBAL_BANK_ACCOUNT_ONBOARDING, draftFieldsToClear),
+    );
 }
 
 export {

@@ -18,7 +18,8 @@ import type NonUSDPageProps from '@pages/SimplifiedBankOnboarding/nonUSD/types';
 import useStepRequest from '@pages/SimplifiedBankOnboarding/requests/useStepRequest';
 import SBO_CONST from '@pages/SimplifiedBankOnboarding/SBO_CONST';
 import {getInitialSubStepForBankInfo, getInputKeysForBankInfoStep} from '@pages/SimplifiedBankOnboarding/utils/BankFieldUtils';
-import getSubStepValues from '@pages/SimplifiedBankOnboarding/utils/getSubStepValues';
+import {getFieldsToClear} from '@pages/SimplifiedBankOnboarding/values/codecs/nonUSDBankInfo';
+import {resolveValues} from '@pages/SimplifiedBankOnboarding/values/resolveValue';
 
 import {clearErrors} from '@userActions/FormActions';
 
@@ -49,7 +50,7 @@ function BankInfo({onBackButtonPress, onSubmit, policyID, currency = '', stepNam
 
     const country = draft?.country ?? account?.achData?.country ?? '';
     const inputKeys = getInputKeysForBankInfoStep(bankFields);
-    const values = getSubStepValues(inputKeys, draft, account);
+    const values = resolveValues(inputKeys, draft, account?.achData);
     const startFrom = getInitialSubStepForBankInfo(values, bankFields);
     const {send, isPending, errorMessage} = useStepRequest({onSuccess: onSubmit});
 
@@ -57,7 +58,7 @@ function BankInfo({onBackButtonPress, onSubmit, policyID, currency = '', stepNam
         if (!policyID) {
             return;
         }
-        send((requestID) => createGlobalBankAccount(requestID, {policyID, country, currency, fields: values}));
+        send((requestID) => createGlobalBankAccount(requestID, {policyID, country, currency, fields: values}, getFieldsToClear(inputKeys)));
     };
 
     useNetwork({
@@ -122,6 +123,7 @@ function BankInfo({onBackButtonPress, onSubmit, policyID, currency = '', stepNam
                     onMove={moveTo}
                     currentPageName={currentPageName}
                     bankFields={bankFields}
+                    values={values}
                     isRequestPending={isPending}
                     requestErrorMessage={errorMessage}
                 />

@@ -116,9 +116,6 @@ type OnboardingAccount = {
     errorFields?: OnyxCommon.ErrorFields | null;
     pendingAction?: OnyxCommon.PendingAction;
 
-    /** The step that the success data of the last USD request stored */
-    draftStep?: USDStep;
-
     /** Set by the start-over and disconnect buttons. A hook watches it and opens the confirmation modal. */
     shouldShowResetModal?: boolean;
 

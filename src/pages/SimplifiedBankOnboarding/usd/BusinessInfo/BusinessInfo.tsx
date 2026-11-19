@@ -14,30 +14,27 @@ import useSubPage from '@hooks/useSubPage';
 import Navigation from '@libs/Navigation/Navigation';
 
 import {updateCompanyInformation} from '@pages/SimplifiedBankOnboarding/actions/USDBankAccount';
-import type StepRequestSubPageProps from '@pages/SimplifiedBankOnboarding/requests/types';
 import useStepRequest from '@pages/SimplifiedBankOnboarding/requests/useStepRequest';
 import SBO_CONST from '@pages/SimplifiedBankOnboarding/SBO_CONST';
-import type INPUT_IDS from '@pages/SimplifiedBankOnboarding/types/form';
 import type USDPageProps from '@pages/SimplifiedBankOnboarding/usd/types';
-import getSubStepValues from '@pages/SimplifiedBankOnboarding/utils/getSubStepValues';
-import type {SubStepValues} from '@pages/SimplifiedBankOnboarding/utils/getSubStepValues';
-import {getBankAccountParams} from '@pages/SimplifiedBankOnboarding/utils/OnboardingAccountUtils';
+import {getBankAccountParams, isAccountPastReview} from '@pages/SimplifiedBankOnboarding/utils/OnboardingAccountUtils';
+import {BUSINESS_INFO_KEYS, FIELDS_TO_CLEAR, toParams} from '@pages/SimplifiedBankOnboarding/values/codecs/usdBusinessInfo';
+import type {BusinessInfoValues} from '@pages/SimplifiedBankOnboarding/values/codecs/usdBusinessInfo';
+import {resolveValues} from '@pages/SimplifiedBankOnboarding/values/resolveValue';
 
-import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';
 import ROUTES from '@src/ROUTES';
 
 import React from 'react';
 
-import BUSINESS_INFO_KEYS from './BUSINESS_INFO_KEYS';
+import type BusinessInfoSubPageProps from './types';
+
 import Confirmation from './subSteps/Confirmation';
 import IncorporationType from './subSteps/IncorporationType';
 import Name from './subSteps/Name';
 import TaxID from './subSteps/TaxID';
 
 type BusinessInfoProps = Pick<USDPageProps, 'onSubmit' | 'onBackButtonPress' | 'stepNames' | 'startStepIndex' | 'backTo'>;
-
-type BusinessInfoValues = SubStepValues<typeof INPUT_IDS.COMPANY_NAME | typeof INPUT_IDS.COMPANY_TAX_ID | typeof INPUT_IDS.INCORPORATION_TYPE>;
 
 const {PAGE_NAMES, BUSINESS_INFO_SUB_PAGES: SUB_PAGE_NAMES} = SBO_CONST.USD;
 const SUBSTEP_INDEX = SBO_CONST.USD.SUBSTEP_INDEX.BUSINESS_INFO;
@@ -70,16 +67,11 @@ function BusinessInfo({onBackButtonPress, onSubmit, stepNames, startStepIndex, b
     const [draft] = useOnyx(ONYXKEYS.FORMS.SIMPLIFIED_BANK_ONBOARDING_FORM_DRAFT);
 
     const policyID = account?.achData?.policyID;
-    const values = getSubStepValues(BUSINESS_INFO_KEYS, draft, account);
+    const values = resolveValues(BUSINESS_INFO_KEYS, draft, account?.achData);
     const {send, isPending, errorMessage} = useStepRequest({onSuccess: onSubmit});
 
     const submit = () => {
-        const companyInformation = {
-            companyName: values.companyName,
-            companyTaxID: values.companyTaxID.replaceAll(CONST.REGEX.NON_NUMERIC, ''),
-            incorporationType: values.incorporationType,
-        };
-        send((requestID) => updateCompanyInformation(requestID, getBankAccountParams(policyID, account?.achData), companyInformation));
+        send((requestID) => updateCompanyInformation(requestID, getBankAccountParams(policyID, account?.achData), toParams(values), FIELDS_TO_CLEAR));
     };
 
     const isBankAccountVerifying = account?.achData?.state === SBO_CONST.STATE.VERIFYING;
@@ -87,7 +79,7 @@ function BusinessInfo({onBackButtonPress, onSubmit, stepNames, startStepIndex, b
 
     const buildRoute = (pageName: string, action?: 'edit') => ROUTES.SETTINGS_BANK_ONBOARDING_LAB_USD_SETUP.getRoute({policyID, page: PAGE_NAMES.COMPANY, subPage: pageName, action, backTo});
 
-    const {CurrentPage, isEditing, currentPageName, pageIndex, nextPage, prevPage, moveTo, isRedirecting} = useSubPage<StepRequestSubPageProps>({
+    const {CurrentPage, isEditing, currentPageName, pageIndex, nextPage, prevPage, moveTo, isRedirecting} = useSubPage<BusinessInfoSubPageProps>({
         pages,
         startFrom,
         onFinished: submit,
@@ -127,6 +119,8 @@ function BusinessInfo({onBackButtonPress, onSubmit, stepNames, startStepIndex, b
                 currentPageName={currentPageName}
                 isRequestPending={isPending}
                 requestErrorMessage={errorMessage}
+                values={values}
+                isLocked={isAccountPastReview(account?.achData)}
             />
         </InteractiveStepWrapper>
     );

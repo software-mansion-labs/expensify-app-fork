@@ -1,18 +1,18 @@
 /**
- * The details form of one NonUSD owner: a `useSubPage` flow nested in the owner step, on the same URL page. It reads
- * the owner being changed from the draft and passes the shares of all owners to the percentage page, like the real
+ * The details form of one NonUSD owner: a `useSubPage` flow nested in the owner step, on the same URL page. It passes
+ * the owner that the step resolved and the shares of all owners to its sub pages, like the real
  * `BeneficialOwnerDetailsFormPages`.
  */
 import InteractiveStepWrapper from '@components/InteractiveStepWrapper';
 
 import useLocalize from '@hooks/useLocalize';
-import useOnyx from '@hooks/useOnyx';
 import useSubPage from '@hooks/useSubPage';
 
 import Navigation from '@libs/Navigation/Navigation';
 
 import SubPageRedirectIndicator from '@pages/SimplifiedBankOnboarding/components/SubPageRedirectIndicator';
 import SBO_CONST from '@pages/SimplifiedBankOnboarding/SBO_CONST';
+import type {GlobalOwnerValues} from '@pages/SimplifiedBankOnboarding/values/codecs/nonUSDBeneficialOwners';
 
 import {clearErrors, setDraftValues} from '@userActions/FormActions';
 
@@ -26,10 +26,21 @@ import type BeneficialOwnerSubPageProps from './types';
 import Confirmation from './BeneficialOwnerDetailsFormSubSteps/Confirmation';
 import Name from './BeneficialOwnerDetailsFormSubSteps/Name';
 import OwnershipPercentage from './BeneficialOwnerDetailsFormSubSteps/OwnershipPercentage';
-import getTotalOwnedPercentage from './utils/getTotalOwnedPercentage';
 
 type BeneficialOwnerDetailsFormPagesProps = {
     policyID?: string;
+
+    /** The owner that the form changes. The page shows a loader while the draft has not stored it yet. */
+    ownerBeingModifiedID: string | undefined;
+
+    /** The fields of that owner that the step resolved */
+    ownerValues: GlobalOwnerValues | undefined;
+
+    /** Whether the user opened the form from the list to change an owner that is already added */
+    isEditingCreatedOwner: boolean;
+
+    /** The share of every owner in the list and of the owner being modified, by owner ID */
+    totalOwnedPercentage: Record<string, number>;
 
     /** Called after the confirmation page */
     onFinished: () => void;
@@ -48,13 +59,18 @@ const pages = [
     {pageName: SUB_PAGE_NAMES.CONFIRMATION, component: Confirmation},
 ];
 
-function BeneficialOwnerDetailsFormPages({policyID, onFinished, stepNames, startStepIndex, backTo}: BeneficialOwnerDetailsFormPagesProps) {
+function BeneficialOwnerDetailsFormPages({
+    policyID,
+    ownerBeingModifiedID,
+    ownerValues,
+    isEditingCreatedOwner,
+    totalOwnedPercentage,
+    onFinished,
+    stepNames,
+    startStepIndex,
+    backTo,
+}: BeneficialOwnerDetailsFormPagesProps) {
     const {translate} = useLocalize();
-    const [draft] = useOnyx(ONYXKEYS.FORMS.SIMPLIFIED_BANK_ONBOARDING_FORM_DRAFT);
-
-    const ownerBeingModifiedID = draft?.ownerBeingModifiedID;
-    const isEditingCreatedOwner = draft?.isEditingCreatedOwner ?? false;
-    const totalOwnedPercentage = getTotalOwnedPercentage(draft?.beneficialOwnerKeys ?? [], draft);
 
     const buildRoute = (pageName: string, action?: 'edit') =>
         ROUTES.SETTINGS_BANK_ONBOARDING_LAB_NON_USD_SETUP.getRoute({policyID, page: PAGE_NAMES.BENEFICIAL_OWNER_INFO, subPage: pageName, action, backTo});
@@ -92,7 +108,7 @@ function BeneficialOwnerDetailsFormPages({policyID, onFinished, stepNames, start
             stepNames={stepNames}
             startStepIndex={startStepIndex}
         >
-            {isRedirecting || !ownerBeingModifiedID ? (
+            {isRedirecting || !ownerBeingModifiedID || !ownerValues ? (
                 <SubPageRedirectIndicator />
             ) : (
                 <CurrentPage
@@ -101,6 +117,7 @@ function BeneficialOwnerDetailsFormPages({policyID, onFinished, stepNames, start
                     onMove={moveTo}
                     currentPageName={currentPageName}
                     ownerBeingModifiedID={ownerBeingModifiedID}
+                    ownerValues={ownerValues}
                     totalOwnedPercentage={totalOwnedPercentage}
                 />
             )}

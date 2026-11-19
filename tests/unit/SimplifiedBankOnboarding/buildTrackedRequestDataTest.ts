@@ -32,4 +32,23 @@ describe('buildTrackedRequestData', () => {
         expect(optimisticData).toContainEqual(expect.objectContaining({key: ONYXKEYS.SIMPLIFIED_BANK_ONBOARDING_ACCOUNT, value: {errors: null}}));
         expect(failureData).toContainEqual(expect.objectContaining({key: ONYXKEYS.SIMPLIFIED_BANK_ONBOARDING_ACCOUNT, value: {errors: ERRORS}}));
     });
+
+    it('removes the saved fields of the step from the draft only when the request succeeds', () => {
+        // Given a confirmed request of the personal info step
+        // When the action builds its Onyx data with the fields of the step
+        const {optimisticData, successData, failureData} = buildTrackedRequestData({requestID: REQUEST_ID, command: COMMAND, errors: ERRORS, draftFieldsToClear: ['firstName', 'lastName']});
+
+        // Then the server becomes the only source after a success, and a failure keeps the edits of the user
+        expect(successData).toContainEqual(expect.objectContaining({key: ONYXKEYS.FORMS.SIMPLIFIED_BANK_ONBOARDING_FORM_DRAFT, value: {firstName: null, lastName: null}}));
+        expect([...optimisticData, ...failureData]).not.toContainEqual(expect.objectContaining({key: ONYXKEYS.FORMS.SIMPLIFIED_BANK_ONBOARDING_FORM_DRAFT}));
+    });
+
+    it('leaves the draft alone when the request saves no fields', () => {
+        // Given a background save or a request that sends no input of the draft
+        // When the action builds its Onyx data without fields
+        const {successData} = buildTrackedRequestData({requestID: REQUEST_ID, command: COMMAND, errors: ERRORS});
+
+        // Then the success data does not touch the draft
+        expect(successData).not.toContainEqual(expect.objectContaining({key: ONYXKEYS.FORMS.SIMPLIFIED_BANK_ONBOARDING_FORM_DRAFT}));
+    });
 });

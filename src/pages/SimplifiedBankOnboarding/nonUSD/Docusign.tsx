@@ -19,6 +19,7 @@ import {finishGlobalBankAccountOnboarding} from '@pages/SimplifiedBankOnboarding
 import useStepRequest from '@pages/SimplifiedBankOnboarding/requests/useStepRequest';
 import INPUT_IDS from '@pages/SimplifiedBankOnboarding/types/form';
 import {getBankAccountParams} from '@pages/SimplifiedBankOnboarding/utils/OnboardingAccountUtils';
+import {FIELDS_TO_CLEAR as AGREEMENT_FIELDS_TO_CLEAR, resolveAgreements} from '@pages/SimplifiedBankOnboarding/values/codecs/nonUSDAgreements';
 
 import {clearErrors} from '@userActions/FormActions';
 
@@ -30,7 +31,6 @@ import React, {useRef, useState} from 'react';
 import type NonUSDPageProps from './types';
 
 import DraftFileInput from './DraftFileInput';
-import getAgreementValues from './getAgreementValues';
 
 const STEP_FIELDS = [INPUT_IDS.ACH_AUTHORIZATION_FORM];
 
@@ -46,11 +46,11 @@ function Docusign({onBackButtonPress, onSubmit, policyID, stepNames, startStepIn
 
     const submit = () => {
         const agreementValues = {
-            ...getAgreementValues(draft, account),
+            ...resolveAgreements(draft, account?.achData),
             bankStatementName: draft?.bankStatement?.at(0)?.name,
             achAuthorizationFormName: authorizationForms.at(0)?.name,
         };
-        send((requestID) => finishGlobalBankAccountOnboarding(requestID, getBankAccountParams(policyID, account?.achData), agreementValues));
+        send((requestID) => finishGlobalBankAccountOnboarding(requestID, getBankAccountParams(policyID, account?.achData), agreementValues, AGREEMENT_FIELDS_TO_CLEAR));
     };
 
     const validate = (values: FormOnyxValues<typeof ONYXKEYS.FORMS.SIMPLIFIED_BANK_ONBOARDING_FORM>): FormInputErrors<typeof ONYXKEYS.FORMS.SIMPLIFIED_BANK_ONBOARDING_FORM> =>

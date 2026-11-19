@@ -1,15 +1,15 @@
 /**
- * The legal name sub page. Its default values come from the server data only, while the sibling sub pages also look at
- * the draft. The real flow has the same difference between sub pages of one step.
+ * The legal name sub page. It shows the values that the step resolved.
  */
 import FullNameStep from '@components/SubStepForms/FullNameStep';
 
 import useLocalize from '@hooks/useLocalize';
-import useOnyx from '@hooks/useOnyx';
 import type {SubPageProps} from '@hooks/useSubPage/types';
 
 import useOnboardingStepFormSubmit from '@pages/SimplifiedBankOnboarding/hooks/useOnboardingStepFormSubmit';
 import INPUT_IDS from '@pages/SimplifiedBankOnboarding/types/form';
+import type {PersonalInfoValues} from '@pages/SimplifiedBankOnboarding/values/codecs/usdPersonalInfo';
+import type ResolvedValuesProps from '@pages/SimplifiedBankOnboarding/values/types';
 
 import ONYXKEYS from '@src/ONYXKEYS';
 
@@ -17,13 +17,12 @@ import React from 'react';
 
 const STEP_FIELDS = [INPUT_IDS.FIRST_NAME, INPUT_IDS.LAST_NAME];
 
-function FullName({onNext, onMove, isEditing}: SubPageProps) {
+function FullName({onNext, onMove, isEditing, values}: SubPageProps & ResolvedValuesProps<PersonalInfoValues>) {
     const {translate} = useLocalize();
-    const [account] = useOnyx(ONYXKEYS.SIMPLIFIED_BANK_ONBOARDING_ACCOUNT);
 
     const defaultValues = {
-        firstName: account?.achData?.firstName ?? '',
-        lastName: account?.achData?.lastName ?? '',
+        firstName: values.firstName,
+        lastName: values.lastName,
     };
 
     const handleSubmit = useOnboardingStepFormSubmit({fieldIds: STEP_FIELDS, onNext, shouldSaveDraft: isEditing});

@@ -6,17 +6,14 @@ import ActivityIndicator from '@components/ActivityIndicator';
 import ConfirmationStep from '@components/SubStepForms/ConfirmationStep';
 
 import useLocalize from '@hooks/useLocalize';
-import useOnyx from '@hooks/useOnyx';
 import useThemeStyles from '@hooks/useThemeStyles';
 
 import type BankInfoSubStepProps from '@pages/SimplifiedBankOnboarding/nonUSD/BankInfo/types';
 import SBO_CONST from '@pages/SimplifiedBankOnboarding/SBO_CONST';
 import type {BankFormField} from '@pages/SimplifiedBankOnboarding/types/onyx';
-import {getInputKeysForBankInfoStep, isAccountHolderField} from '@pages/SimplifiedBankOnboarding/utils/BankFieldUtils';
-import getSubStepValues from '@pages/SimplifiedBankOnboarding/utils/getSubStepValues';
+import {isAccountHolderField} from '@pages/SimplifiedBankOnboarding/utils/BankFieldUtils';
 
 import CONST from '@src/CONST';
-import ONYXKEYS from '@src/ONYXKEYS';
 
 import React from 'react';
 
@@ -27,13 +24,9 @@ function getDisplayValue(field: BankFormField, value: string): string {
     return field.valueSet?.find((option) => option.id === value)?.text ?? value;
 }
 
-function Confirmation({onNext, onMove, isEditing, bankFields, isRequestPending, requestErrorMessage}: BankInfoSubStepProps) {
+function Confirmation({onNext, onMove, isEditing, bankFields, values, isRequestPending, requestErrorMessage}: BankInfoSubStepProps) {
     const styles = useThemeStyles();
     const {translate} = useLocalize();
-    const [account] = useOnyx(ONYXKEYS.SIMPLIFIED_BANK_ONBOARDING_ACCOUNT);
-    const [draft] = useOnyx(ONYXKEYS.FORMS.SIMPLIFIED_BANK_ONBOARDING_FORM_DRAFT);
-
-    const values = getSubStepValues(getInputKeysForBankInfoStep(bankFields), draft, account);
 
     const summaryItems = (bankFields?.formFields ?? []).map((field) => ({
         id: field.id,

@@ -157,9 +157,9 @@ Each row names a pattern of the real flow, the real file that shows it best, and
 | --- | --- | --- |
 | USD: the server keeps `currentStep`, a hand-written dictionary turns it into a page name | `R/ReimbursementAccountPage.tsx` (`stepToPageName`) | Replaced: `flow/usdFlow.ts` derives the resume position, `getResumePosition` in `flow/flowNavigation.ts` |
 | NonUSD: the client works out the first unfinished page from the account data, the draft and the currency | `R/NonUSD/utils/getStartPageForContinueSetup.ts` | Replaced: the `isComplete` rules of `flow/nonUSDFlow.ts` |
-| `draftStep`: a request names the step it saved, an effect copies the server values of that step into the draft | `R/ReimbursementAccountPage.tsx`, `src/libs/actions/BankAccounts.ts` | `entry/OnboardingEntryPage.tsx`, `utils/getDraftValuesForStep.ts`, `actions/USDBankAccount.ts` |
+| `draftStep`: a request names the step it saved, an effect copies the server values of that step into the draft | `R/ReimbursementAccountPage.tsx`, `src/libs/actions/BankAccounts.ts` | Replaced: nothing is copied into the draft. A step resolves each value with `values/resolveValue.ts`, and the success of its confirmed request removes the fields of the step from the draft (`draftFieldsToClear` in `requests/buildTrackedRequestData.ts`) |
 | Lossy prefill: the server returns a masked account number | `achData` of a resumed setup | `mockBackend/handlers/buildResponse.ts` (`maskAccountNumber`), `usd/BankInfo/subSteps/Manual.tsx` |
-| Lossy round trip: the owner name is sent as one string and split back into first and last name, so a middle name is lost | `R/NonUSD/BeneficialOwnerInfo/BeneficialOwnerInfo.tsx`, `R/NonUSD/utils/getDraftValuesForBeneficialOwners.ts` | `nonUSD/BeneficialOwnerInfo/utils/getValuesForBeneficialOwner.ts`, `getDraftValuesForBeneficialOwners.ts` |
+| Lossy round trip: the owner name is sent as one string and split back into first and last name, so a middle name is lost | `R/NonUSD/BeneficialOwnerInfo/BeneficialOwnerInfo.tsx`, `R/NonUSD/utils/getDraftValuesForBeneficialOwners.ts` | Kept and confined to `values/codecs/nonUSDBeneficialOwners.ts` (`toForm`, `toParams`) |
 | The client writes the server-owned `currentStep` and `subStep` | `goToWithdrawalAccountSetupStep`, `setBankAccountSubStep` | `actions/OnboardingAccount.ts` |
 | Start page of a step computed from which values exist | `R/USD/utils/getInitialSubStepForPersonalInfo.ts` and its siblings | `utils/getInitialSubStepForPersonalInfo.ts`, `utils/getInitialSubPageForSignerInfo.ts` |
 
@@ -180,7 +180,7 @@ Each row names a pattern of the real flow, the real file that shows it best, and
 | One field per sub page, saved to the draft on every change | `R/USD/Requestor/PersonalInfo/subSteps/*` | `usd/PersonalInfo/subSteps/*`, `usd/BusinessInfo/subSteps/*` |
 | Save per sub page with a `confirm` flag on the last one | `R/USD/Requestor/PersonalInfo/PersonalInfo.tsx` | `usd/PersonalInfo/PersonalInfo.tsx` |
 | Confirmation page that sends the user back by numeric `onMove(index)` | `ConfirmationStep` usages | Every `subSteps/Confirmation.tsx` |
-| Default values read in a different order by different steps (draft, then `achData`, then `corpay`; or `achData` only; or draft only) | `getSubStepValues`, the business and owner sub pages | `utils/getSubStepValues.ts`, `usd/BusinessInfo/subSteps/*`, `usd/BeneficialOwners/subSteps/*` |
+| Default values read in a different order by different steps (draft, then `achData`, then `corpay`; or `achData` only; or draft only) | `getSubStepValues`, the business and owner sub pages | Replaced: one rule in `values/resolveValue.ts`, owner fields in `utils/owners/OwnerDraftUtils.ts`, request shapes in `values/codecs/*`. The step container resolves the values and its sub pages get them as props |
 | Fields locked once the account passed review | `R/USD/BusinessInfo/subSteps/*` | `usd/BusinessInfo/subSteps/Name.tsx`, `TaxID.tsx` |
 | Value transforms before the request | tax ID stripping in `R/USD/BusinessInfo/BusinessInfo.tsx` | `usd/BusinessInfo/BusinessInfo.tsx` |
 | Validators written inside the component | most sub pages | `usd/BankInfo/subSteps/Manual.tsx`, `usd/ConnectBankAccount/BankAccountValidationForm.tsx` |
@@ -212,11 +212,11 @@ Each row names a pattern of the real flow, the real file that shows it best, and
 
 | Pattern | Real flow | This module |
 | --- | --- | --- |
-| Owner loop limited by a count, owners stored under flat draft keys `beneficialOwner_<id>_<field>` | `R/USD/BeneficialOwnerInfo/*` | `usd/BeneficialOwners/*`, `utils/owners/OwnerDraftUtils.ts` |
-| Owner loop limited by the ownership sum | `R/NonUSD/BeneficialOwnerInfo/*` | `nonUSD/BeneficialOwnerInfo/*` |
+| Owner loop limited by a count, owners stored under flat draft keys `beneficialOwner_<id>_<field>` | `R/USD/BeneficialOwnerInfo/*` | `usd/BeneficialOwners/*`, the transitions as pure functions in `usd/BeneficialOwners/uboLoop.ts`, `utils/owners/OwnerDraftUtils.ts` |
+| Owner loop limited by the ownership sum | `R/NonUSD/BeneficialOwnerInfo/*` | `nonUSD/BeneficialOwnerInfo/*`, the transitions as pure functions in `nonUSD/BeneficialOwnerInfo/ownerLoop.ts` |
 | A step container that renders question pages itself and hands the rest to a nested `useSubPage` | both owner steps | `usd/BeneficialOwners/BeneficialOwners.tsx`, `nonUSD/BeneficialOwnerInfo/BeneficialOwnerInfo.tsx` |
 | Branch on "are you a director", with an email request and a waiting page | `R/NonUSD/SignerInfo/*` | `nonUSD/SignerInfo/*` |
-| A step whose pages depend on the answer of another step: an owner already gave the name, so the signer step skips its name page and takes the name from the owner data | `R/NonUSD/SignerInfo/SignerDetailsFormPages.tsx` (`skipPages`), `R/NonUSD/SignerInfo/index.tsx` | `nonUSD/SignerInfo/SignerDetailsFormPages.tsx`, `nonUSD/SignerInfo/SignerInfo.tsx`, `nonUSD/SignerInfo/subSteps/Confirmation.tsx` |
+| A step whose pages depend on the answer of another step: an owner already gave the name, so the signer step skips its name page and takes the name from the owner data | `R/NonUSD/SignerInfo/SignerDetailsFormPages.tsx` (`skipPages`), `R/NonUSD/SignerInfo/index.tsx` | `nonUSD/SignerInfo/SignerDetailsFormPages.tsx`, `nonUSD/SignerInfo/SignerInfo.tsx` (`resolveOwnerFullName`), `nonUSD/SignerInfo/subSteps/Confirmation.tsx` |
 | The current user as an owner, stored under a reserved owner key | `R/NonUSD/BeneficialOwnerInfo/*` (`CURRENT_USER_KEY`) | `nonUSD/BeneficialOwnerInfo/BeneficialOwnerInfo.tsx`, `SBO_CONST.ts` (`CURRENT_USER_KEY`) |
 | A second flow with its own form key | `R/EnterSignerInfo/*` (its own copy of every signer page) | `enterSignerInfo/EnterSignerInfoPage.tsx` (it reuses `nonUSD/SignerInfo/subSteps/*` through a `formID` prop, see [Not reproduced](#not-reproduced)) |
 | A step that only some currencies get | Docusign for USD, CAD and AUD (`R/NonUSD/utils/requiresDocusignStep.ts`) | Docusign for AUD: `nonUSD/Docusign.tsx`, `utils/OnboardingAccountUtils.ts` (`requiresDocusignStep`) |

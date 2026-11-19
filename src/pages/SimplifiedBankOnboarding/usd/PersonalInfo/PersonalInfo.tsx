@@ -18,15 +18,17 @@ import useStepRequest from '@pages/SimplifiedBankOnboarding/requests/useStepRequ
 import SBO_CONST from '@pages/SimplifiedBankOnboarding/SBO_CONST';
 import type USDPageProps from '@pages/SimplifiedBankOnboarding/usd/types';
 import getInitialSubStepForPersonalInfo from '@pages/SimplifiedBankOnboarding/utils/getInitialSubStepForPersonalInfo';
-import getSubStepValues from '@pages/SimplifiedBankOnboarding/utils/getSubStepValues';
 import {getBankAccountParams} from '@pages/SimplifiedBankOnboarding/utils/OnboardingAccountUtils';
+import {FIELDS_TO_CLEAR, PERSONAL_INFO_KEYS} from '@pages/SimplifiedBankOnboarding/values/codecs/usdPersonalInfo';
+import type {PersonalInfoValues} from '@pages/SimplifiedBankOnboarding/values/codecs/usdPersonalInfo';
+import {resolveValues} from '@pages/SimplifiedBankOnboarding/values/resolveValue';
+import type ResolvedValuesProps from '@pages/SimplifiedBankOnboarding/values/types';
 
 import ONYXKEYS from '@src/ONYXKEYS';
 import ROUTES from '@src/ROUTES';
 
 import React from 'react';
 
-import PERSONAL_INFO_KEYS from './PERSONAL_INFO_KEYS';
 import Confirmation from './subSteps/Confirmation';
 import DateOfBirth from './subSteps/DateOfBirth';
 import FullName from './subSteps/FullName';
@@ -35,6 +37,8 @@ import SocialSecurityNumber from './subSteps/SocialSecurityNumber';
 type PersonalInfoProps = Pick<USDPageProps, 'onSubmit' | 'onBackButtonPress' | 'stepNames' | 'startStepIndex' | 'backTo'>;
 
 const {PAGE_NAMES, PERSONAL_INFO_SUB_PAGES: SUB_PAGE_NAMES} = SBO_CONST.USD;
+
+type PersonalInfoSubPageProps = StepRequestSubPageProps & ResolvedValuesProps<PersonalInfoValues>;
 
 const pages = [
     {pageName: SUB_PAGE_NAMES.FULL_NAME, component: FullName},
@@ -49,13 +53,13 @@ function PersonalInfo({onBackButtonPress, onSubmit, stepNames, startStepIndex, b
     const [draft] = useOnyx(ONYXKEYS.FORMS.SIMPLIFIED_BANK_ONBOARDING_FORM_DRAFT);
 
     const policyID = account?.achData?.policyID;
-    const values = getSubStepValues(PERSONAL_INFO_KEYS, draft, account);
+    const values = resolveValues(PERSONAL_INFO_KEYS, draft, account?.achData);
     const confirmRequest = useStepRequest({onSuccess: onSubmit});
     const pageChangeRequest = useStepRequest({mode: 'background'});
 
     const submit = (isConfirmPage: boolean) => {
         const request = isConfirmPage ? confirmRequest : pageChangeRequest;
-        request.send((requestID) => updatePersonalInformation(requestID, getBankAccountParams(policyID, account?.achData), values, isConfirmPage));
+        request.send((requestID) => updatePersonalInformation(requestID, getBankAccountParams(policyID, account?.achData), values, isConfirmPage, FIELDS_TO_CLEAR));
     };
 
     const isBankAccountVerifying = account?.achData?.state === SBO_CONST.STATE.VERIFYING;
@@ -64,7 +68,7 @@ function PersonalInfo({onBackButtonPress, onSubmit, stepNames, startStepIndex, b
     const buildRoute = (pageName: string, action?: 'edit') =>
         ROUTES.SETTINGS_BANK_ONBOARDING_LAB_USD_SETUP.getRoute({policyID, page: PAGE_NAMES.REQUESTOR, subPage: pageName, action, backTo});
 
-    const {CurrentPage, isEditing, currentPageName, pageIndex, nextPage, prevPage, moveTo, isRedirecting} = useSubPage<StepRequestSubPageProps>({
+    const {CurrentPage, isEditing, currentPageName, pageIndex, nextPage, prevPage, moveTo, isRedirecting} = useSubPage<PersonalInfoSubPageProps>({
         pages,
         startFrom,
         onFinished: () => submit(true),
@@ -104,6 +108,7 @@ function PersonalInfo({onBackButtonPress, onSubmit, stepNames, startStepIndex, b
                     currentPageName={currentPageName}
                     isRequestPending={confirmRequest.isPending}
                     requestErrorMessage={confirmRequest.errorMessage}
+                    values={values}
                 />
             )}
         </InteractiveStepWrapper>

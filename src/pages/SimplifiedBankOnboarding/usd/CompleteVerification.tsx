@@ -1,7 +1,7 @@
 /**
  * The agreements step of the USD flow. The real step splits it into a container and one sub page. Here it is one file,
  * because the step has one form with three required checkboxes. Each checkbox saves to the draft on change, the defaults
- * come from the draft and then from the server, and the submit follows its request by its own ID.
+ * come from the draft and then from the server, and the success of the submit removes them from the draft.
  */
 import CheckboxWithLabel from '@components/CheckboxWithLabel';
 import FormProvider from '@components/Form/FormProvider';
@@ -21,6 +21,7 @@ import {acceptACHContract} from '@pages/SimplifiedBankOnboarding/actions/USDBank
 import useStepRequest from '@pages/SimplifiedBankOnboarding/requests/useStepRequest';
 import INPUT_IDS from '@pages/SimplifiedBankOnboarding/types/form';
 import {getBankAccountParams} from '@pages/SimplifiedBankOnboarding/utils/OnboardingAccountUtils';
+import {FIELDS_TO_CLEAR, resolveAgreements, toParams} from '@pages/SimplifiedBankOnboarding/values/codecs/usdAgreements';
 
 import ONYXKEYS from '@src/ONYXKEYS';
 
@@ -38,11 +39,7 @@ function CompleteVerification({onSubmit, onBackButtonPress, stepNames, startStep
     const {send, isPending, errorMessage} = useStepRequest({onSuccess: onSubmit});
 
     const achData = account?.achData;
-    const defaultValues = {
-        isAuthorizedToUseBankAccount: draft?.isAuthorizedToUseBankAccount ?? achData?.isAuthorizedToUseBankAccount ?? false,
-        certifyTrueInformation: draft?.certifyTrueInformation ?? achData?.certifyTrueInformation ?? false,
-        acceptTermsAndConditions: draft?.acceptTermsAndConditions ?? achData?.acceptTermsAndConditions ?? false,
-    };
+    const defaultValues = resolveAgreements(draft, achData);
 
     const validate = (values: FormOnyxValues<typeof ONYXKEYS.FORMS.SIMPLIFIED_BANK_ONBOARDING_FORM>): FormInputErrors<typeof ONYXKEYS.FORMS.SIMPLIFIED_BANK_ONBOARDING_FORM> => {
         const errors: FormInputErrors<typeof ONYXKEYS.FORMS.SIMPLIFIED_BANK_ONBOARDING_FORM> = {};
@@ -59,12 +56,7 @@ function CompleteVerification({onSubmit, onBackButtonPress, stepNames, startStep
     };
 
     const submit = (values: FormOnyxValues<typeof ONYXKEYS.FORMS.SIMPLIFIED_BANK_ONBOARDING_FORM>) => {
-        const contractInformation = {
-            isAuthorizedToUseBankAccount: !!values.isAuthorizedToUseBankAccount,
-            certifyTrueInformation: !!values.certifyTrueInformation,
-            acceptTermsAndConditions: !!values.acceptTermsAndConditions,
-        };
-        send((requestID) => acceptACHContract(requestID, getBankAccountParams(achData?.policyID, achData), contractInformation));
+        send((requestID) => acceptACHContract(requestID, getBankAccountParams(achData?.policyID, achData), toParams(values), FIELDS_TO_CLEAR));
     };
 
     return (

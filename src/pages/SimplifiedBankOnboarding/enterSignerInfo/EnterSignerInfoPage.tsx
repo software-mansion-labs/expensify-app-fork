@@ -61,9 +61,11 @@ function EnterSignerInfoPage({route}: EnterSignerInfoPageProps) {
         },
     });
 
+    // The invited director writes to a form of their own, so the request leaves the onboarding draft as it is.
+    const directorInformation = {signerFullName: signerFormDraft?.signerFullName ?? '', signerJobTitle: signerFormDraft?.signerJobTitle ?? ''};
+
     const submit = () => {
-        const directorInformation = {signerFullName: signerFormDraft?.signerFullName ?? '', signerJobTitle: signerFormDraft?.signerJobTitle ?? ''};
-        send((requestID) => saveOnboardingDirectorInformation(requestID, {policyID, bankAccountID}, directorInformation));
+        send((requestID) => saveOnboardingDirectorInformation(requestID, {policyID, bankAccountID}, directorInformation, []));
     };
 
     const buildRoute = (pageName: string, action?: 'edit') =>
@@ -127,6 +129,8 @@ function EnterSignerInfoPage({route}: EnterSignerInfoPageProps) {
                     onNext={nextPage}
                     onMove={moveTo}
                     formID={ONYXKEYS.FORMS.SIMPLIFIED_BANK_ONBOARDING_SIGNER_FORM}
+                    values={directorInformation}
+                    isNamePageSkipped={false}
                     isRequestPending={isPending}
                     requestErrorMessage={errorMessage}
                 />

@@ -24,14 +24,13 @@ import Navigation from '@libs/Navigation/Navigation';
 import type BankOnboardingLabParamList from '@libs/Navigation/paramLists/BankOnboardingLabParamList';
 import type {PlatformStackScreenProps} from '@libs/Navigation/PlatformStackNavigation/types';
 
-import {clearOnboardingAccount, clearOnboardingDraft, DEFAULT_ACCOUNT, setOnboardingAccountLoading, updateOnboardingDraft} from '@pages/SimplifiedBankOnboarding/actions/OnboardingAccount';
+import {clearOnboardingAccount, clearOnboardingDraft, DEFAULT_ACCOUNT, setOnboardingAccountLoading} from '@pages/SimplifiedBankOnboarding/actions/OnboardingAccount';
 import {openOnboardingPage} from '@pages/SimplifiedBankOnboarding/actions/OnboardingPage';
 import {getResumePosition} from '@pages/SimplifiedBankOnboarding/flow/flowNavigation';
 import NON_USD_FLOW from '@pages/SimplifiedBankOnboarding/flow/nonUSDFlow';
 import USD_FLOW from '@pages/SimplifiedBankOnboarding/flow/usdFlow';
 import SBO_CONST from '@pages/SimplifiedBankOnboarding/SBO_CONST';
 import type {USDStep} from '@pages/SimplifiedBankOnboarding/types/onyx';
-import getDraftValuesForStep from '@pages/SimplifiedBankOnboarding/utils/getDraftValuesForStep';
 import {hasInProgressSetup, hasInProgressUSDSetup, isSupportedCurrency} from '@pages/SimplifiedBankOnboarding/utils/OnboardingAccountUtils';
 
 import CONST from '@src/CONST';
@@ -260,22 +259,12 @@ function OnboardingEntryPage({route}: OnboardingEntryPageProps) {
         if (prevAccount?.pendingAction === CONST.RED_BRICK_ROAD_PENDING_ACTION.DELETE && account?.pendingAction !== prevAccount.pendingAction) {
             setShouldShowContinueSetupButton(hasInProgressUSDSetup(achData));
         }
-
-        if (shouldShowContinueSetupButton) {
-            return;
-        }
-
-        // A USD request stored the step that it saved. The values that the server sent back for that step become the draft.
-        const draftStep = account?.draftStep;
-        if (draftStep) {
-            updateOnboardingDraft(getDraftValuesForStep(draftStep, achData));
-        }
     });
 
     useEffect(() => {
         // eslint-disable-next-line react-hooks/set-state-in-effect -- The lab reproduces the mirrored state of the real entry page on purpose
         syncWithAccountChanges();
-    }, [isOffline, account?.draftStep, account?.pendingAction, account?.isLoading, hasACHDataBeenLoaded, shouldShowContinueSetupButton, currentStep]);
+    }, [isOffline, account?.pendingAction, account?.isLoading, hasACHDataBeenLoaded, shouldShowContinueSetupButton, currentStep]);
 
     const continueUSDSetup = () => {
         const {page, subPage} = getResumePosition(USD_FLOW, {currency: policyCurrency, server: achData, draft});
