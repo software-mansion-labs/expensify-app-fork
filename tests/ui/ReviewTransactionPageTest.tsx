@@ -41,15 +41,6 @@ function mockLabel(label: string) {
     return <Text>{label}</Text>;
 }
 
-function mockActions(onDeny: () => void, onAuthorize: () => void) {
-    return (
-        <View>
-            {mockTouchable('not-recognized', onDeny)}
-            {mockTouchable('recognized', onAuthorize)}
-        </View>
-    );
-}
-
 function mockOutcome(label: string, actionTestID: string, onAction: () => void) {
     return (
         <View>
@@ -106,12 +97,12 @@ jest.mock('@components/Header', () => {
     return MockHeader;
 });
 
-jest.mock(
-    '@pages/MultifactorAuthentication/AuthorizeTransactionPage/AuthorizeTransactionActions',
-    () =>
-        ({onDeny, onAuthorize}: {onDeny: () => void; onAuthorize: () => void}) =>
-            mockActions(onDeny, onAuthorize),
-);
+jest.mock('@pages/MultifactorAuthentication/AuthorizeTransactionPage/AuthorizeTransactionActions', () => {
+    const MockActions = ({children}: {children: React.ReactNode}) => children;
+    MockActions.AuthorizeButton = ({onPress}: {onPress: () => void}) => mockTouchable('recognized', onPress);
+    MockActions.DenyButton = ({onPress}: {onPress: () => void}) => mockTouchable('not-recognized', onPress);
+    return MockActions;
+});
 
 jest.mock('@components/MultifactorAuthentication/components/Modals', () => {
     const mockModal =
