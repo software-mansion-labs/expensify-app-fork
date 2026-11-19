@@ -94,7 +94,7 @@ function ReviewTransactionPage({route}: ReviewTransactionPageProps) {
         showFrozenCardOutcome(transaction?.cardID);
     };
 
-    const {isConfirmModalVisible, showConfirmModal, hideConfirmModal, confirmBackOut, allowNavigatingAway} = useForcedReviewScreen({
+    const {isConfirmModalVisible, showConfirmModal, hideConfirmModal, confirmBackOut} = useForcedReviewScreen({
         transactionID,
         isTransactionPendingReview: !!transaction,
         isSubmitting: isReportingFraud,
