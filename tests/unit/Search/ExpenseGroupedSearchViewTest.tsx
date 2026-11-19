@@ -5,6 +5,7 @@ import {LocaleContextProvider} from '@components/LocaleContextProvider';
 import OnyxListItemProvider from '@components/OnyxListItemProvider';
 import ScrollOffsetContextProvider from '@components/ScrollOffsetContextProvider';
 import ExpenseGroupedSearchView from '@components/Search/ExpenseGroupedSearchView';
+import {getShowMoreFocusKey} from '@components/Search/SearchList/groupedFocusStops';
 import type {SearchListItem} from '@components/Search/SearchList/ListItem/types';
 import type {SearchColumnType, SearchQueryJSON} from '@components/Search/types';
 import ThemeProvider from '@components/ThemeProvider';
@@ -22,7 +23,7 @@ import Onyx from 'react-native-onyx';
 
 import type MockBaseSearchList from '../../utils/mockBaseSearchList';
 
-import {pressEnterOnListRow, resetMockBaseSearchList} from '../../utils/mockBaseSearchList';
+import {getFocusStopKeys, pressEnterOnFocusStop, pressEnterOnListRow, resetMockBaseSearchList} from '../../utils/mockBaseSearchList';
 import * as TestHelper from '../../utils/TestHelper';
 import waitForBatchedUpdates from '../../utils/waitForBatchedUpdates';
 import wrapOnyxWithWaitForBatchedUpdates from '../../utils/wrapOnyxWithWaitForBatchedUpdates';
@@ -175,7 +176,17 @@ function countArmedExitAnimations(root: ReturnType<typeof render>['UNSAFE_root']
  * pending-delete; `isPendingDelete` flags the group row itself, which is what a whole-group delete does.
  */
 /** Builds group rows. `hasTransactionsQuery` gives the group a query of its own to fetch its expenses with, its hash being 100 plus its index. */
-function createMockGroupData(groups: Array<{transactionCount: number; deletedTransactions?: Set<number>; isPendingDelete?: boolean; hasTransactionsQuery?: boolean}>): SearchListItem[] {
+function createMockGroupData(
+    groups: Array<{
+        transactionCount: number;
+        deletedTransactions?: Set<number>;
+        isPendingDelete?: boolean;
+        hasTransactionsQuery?: boolean;
+        hasMoreTransactions?: boolean;
+        isLoadingTransactions?: boolean;
+        transactionsOffset?: number;
+    }>,
+): SearchListItem[] {
     // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion -- test fixtures are intentionally partial group rows
     return groups.map((group, i) => ({
         keyForList: `group-${i}`,
@@ -183,6 +194,9 @@ function createMockGroupData(groups: Array<{transactionCount: number; deletedTra
         action: CONST.SEARCH.ACTION_TYPES.VIEW,
         pendingAction: group.isPendingDelete ? CONST.RED_BRICK_ROAD_PENDING_ACTION.DELETE : undefined,
         transactionsQueryJSON: group.hasTransactionsQuery ? {hash: 100 + i} : undefined,
+        hasMoreTransactions: group.hasMoreTransactions,
+        isLoadingTransactions: group.isLoadingTransactions,
+        transactionsOffset: group.transactionsOffset,
         transactions: Array.from({length: group.transactionCount}, (_, j) => ({
             keyForList: `txn-${i}-${j}`,
             transactionID: `${i}-${j}`,
@@ -543,5 +557,51 @@ describe('ExpenseGroupedSearchView open groups on narrow layouts', () => {
 
         // Then it closes, rather than keep showing only deleted expenses
         expect(mockRowExpanded['group-0']).toBe(false);
+    });
+});
+
+describe('ExpenseGroupedSearchView arrow-key focus stops on narrow layouts', () => {
+    const showMoreKey = getShowMoreFocusKey('group-0');
+
+    it("adds an open group's expenses to the arrow-key stops, and takes them out when it closes", async () => {
+        // Given two closed groups, which the arrow keys pass over in one press each
+        renderView({data: createMockGroupData([{transactionCount: 2}, {transactionCount: 1}])});
+        await waitForBatchedUpdates();
+        expect(getFocusStopKeys()).toEqual(['group-0', 'group-1']);
+
+        // When the first group opens
+        pressEnterOnRow('group-0');
+
+        // Then the arrow keys step through its expenses before reaching the next group
+        expect(getFocusStopKeys()).toEqual(['group-0', 'txn-0-0', 'txn-0-1', 'group-1']);
+
+        // When it closes again
+        pressEnterOnRow('group-0');
+
+        // Then its expenses are no longer stops
+        expect(getFocusStopKeys()).toEqual(['group-0', 'group-1']);
+    });
+
+    it('keeps the Show more stop while the page that Enter asked for loads, and drops it once the page is in', async () => {
+        // Given an open group with more expenses to load
+        const {setData} = renderView({data: createMockGroupData([{transactionCount: 2, hasMoreTransactions: true}])});
+        await waitForBatchedUpdates();
+        pressEnterOnRow('group-0');
+        expect(getFocusStopKeys()).toContain(showMoreKey);
+
+        // When Enter is pressed on Show more, and the spinner replaces the link while the next page loads
+        pressEnterOnFocusStop(showMoreKey);
+        act(() => setData(createMockGroupData([{transactionCount: 2, hasMoreTransactions: true, isLoadingTransactions: true, transactionsOffset: CONST.SEARCH.RESULTS_PAGE_SIZE}])));
+        await waitForBatchedUpdates();
+
+        // Then the stop stays, so focus waits in place for the new expenses
+        expect(getFocusStopKeys()).toEqual(['group-0', 'txn-0-0', 'txn-0-1', showMoreKey]);
+
+        // When the page arrives with the group's last expense
+        act(() => setData(createMockGroupData([{transactionCount: 3, hasMoreTransactions: false, transactionsOffset: CONST.SEARCH.RESULTS_PAGE_SIZE}])));
+        await waitForBatchedUpdates();
+
+        // Then the new expense is a stop and Show more is gone, since nothing is left to load
+        expect(getFocusStopKeys()).toEqual(['group-0', 'txn-0-0', 'txn-0-1', 'txn-0-2']);
     });
 });

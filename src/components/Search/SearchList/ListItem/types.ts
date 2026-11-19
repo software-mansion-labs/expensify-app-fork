@@ -234,6 +234,9 @@ type TransactionGroupListItemType = ListItem & {
     /** Where the group's own search last started reading, which only its Show more link moves past the first page */
     transactionsOffset?: number;
 
+    /** Whether the group's own search is running, while the spinner takes the place of its Show more link */
+    isLoadingTransactions?: boolean;
+
     /** Whether the report has visible violations for user */
     hasVisibleViolations?: boolean;
 
@@ -613,6 +616,9 @@ type TransactionGroupListExpandedProps<TItem extends ListItem> = Pick<
 
     /** Sync key that ties these rows' horizontal scroll to the group's column header, which lives in a sibling row. */
     syncScrollKey?: string;
+
+    /** The group's own key, unprefixed on wide layouts too, which keys the list's focus stop for its Show more link */
+    groupKey: string;
 };
 
 const GROUP_ITEM_TYPES = {

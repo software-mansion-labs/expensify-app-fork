@@ -1,4 +1,5 @@
 import {useEditingCellState} from '@components/EditableCell';
+import useTabBarCoveredHeight from '@components/Navigation/TabBarBottomContent/useTabBarCoveredHeight';
 import useTabRootScrollProps from '@components/Navigation/TabBarBottomContent/useTabRootScrollProps';
 import type {SearchListItem} from '@components/Search/SearchList/ListItem/types';
 import SearchListScrollLockContext, {useSearchListScrollLockStyle} from '@components/Search/SearchListScrollLockContext';
@@ -24,11 +25,16 @@ import type {GestureResponderEvent, LayoutChangeEvent, NativeSyntheticEvent, Sty
 
 import {useIsFocused} from '@react-navigation/native';
 import {FlashList} from '@shopify/flash-list';
-import React, {useContext, useEffect, useRef, useState} from 'react';
-import {View} from 'react-native';
+import React, {useContext, useEffect, useLayoutEffect, useRef, useState} from 'react';
+import {StyleSheet, View} from 'react-native';
 import Animated from 'react-native-reanimated';
 
+import type {SearchListFocusTarget} from './SearchListFocusTargetContext';
 import type BaseSearchListProps from './types';
+import type {SearchListFocusStop} from './types';
+
+import SearchListFocusTargetContext from './SearchListFocusTargetContext';
+import useRevealFocusStop from './useRevealFocusStop';
 
 const AnimatedFlashListComponent = Animated.createAnimatedComponent(FlashList<SearchListItem>);
 
@@ -75,8 +81,10 @@ function BaseSearchList({
     stickyHeaderIndices,
     stickyHeaderConfig,
     getItemType,
-    disabledIndexes,
     overrideItemLayout,
+    focusStops,
+    resolveFocusStopIndex,
+    onSelectFocusStop,
 }: BaseSearchListProps) {
     const tabRootScrollProps = useTabRootScrollProps(contentContainerStyle);
     // Chrome ends a drag at the first scroller with `overscroll-behavior` set even when that scroller can't move,
@@ -87,9 +95,27 @@ function BaseSearchList({
     const scrollLockStyle = useSearchListScrollLockStyle(listContentHeight - listHeight > 1);
     const hasKeyBeenPressed = useRef(false);
     const isFocused = useIsFocused();
-    const {focusedCellId, isEditingCell} = useEditingCellState();
+    const {focusedCellId, isEditingCell, wasRecentlyEditingCell} = useEditingCellState();
 
     const [isModalVisible] = useOnyx(ONYXKEYS.MODAL, {selector: isModalActiveSelector});
+
+    // Focus handlers run after render, and read these instead of their render's values so they can stay stable.
+    const focusStopsRef = useRef(focusStops);
+    useLayoutEffect(() => {
+        focusStopsRef.current = focusStops;
+    });
+    const focusTargetsRef = useRef(new Map<string, SearchListFocusTarget>());
+
+    // Where the page header floats over the list, the list reserves its height as top padding.
+    const {paddingTop} = StyleSheet.flatten(contentContainerStyle) ?? {};
+    const tabBarCoveredHeight = useTabBarCoveredHeight();
+    const revealFocusStop = useRevealFocusStop({
+        listRef: ref,
+        focusTargetsRef,
+        topInset: typeof paddingTop === 'number' ? paddingTop : 0,
+        bottomInset: tabBarCoveredHeight,
+        isEditingCell: isEditingCell || wasRecentlyEditingCell,
+    });
 
     const setHasKeyBeenPressed = () => {
         if (hasKeyBeenPressed.current) {
@@ -102,42 +128,109 @@ function BaseSearchList({
 
     const [focusedIndex, setFocusedIndex] = useArrowKeyFocusManager({
         initialFocusedIndex: -1,
-        maxIndex: flattenedItemsLength - 1,
+        maxIndex: (focusStops?.length ?? flattenedItemsLength) - 1,
         isActive: isFocused && !isModalVisible,
-        onFocusedIndexChange: (index: number) => {
-            scrollToIndex?.(index);
+        onFocusedIndexChange: (index: number, shouldScrollHint: boolean) => {
+            if (!focusStops) {
+                scrollToIndex?.(index);
+                return;
+            }
+            // Only the arrow keys scroll. A click or Tab focuses a stop that is already where the user is looking.
+            const stop = focusStops.at(index);
+            if (shouldScrollHint && stop) {
+                revealFocusStop(stop);
+            }
         },
         onArrowUpDownCallback: () => {
+            // With focus stops, the list announces the scroll only when it decides to scroll.
+            if (focusStops) {
+                return;
+            }
             ref?.current?.announceProgrammaticScroll();
         },
         setHasKeyBeenPressed,
         isFocused,
         captureOnInputs: false,
-        ...(disabledIndexes ? {disabledIndexes} : {}),
     });
 
-    const handleFocusByIndex = (index: number, event: NativeSyntheticEvent<ExtendedTargetedEvent>) => {
+    const shouldIgnoreFocusEvent = (event: NativeSyntheticEvent<ExtendedTargetedEvent>) => {
         // The focus-return restore shouldn't move the keyboard cursor here, or the row gets highlighted and scrolled into view on back nav. The .focus() still restores DOM focus for screen readers.
         if (isFocusRestoreInProgress()) {
-            return;
+            return true;
         }
         // Prevent unexpected scrolling on mobile Chrome after the context menu closes by ignoring programmatic focus not triggered by direct user interaction.
         if (isMobileChrome() && event.nativeEvent) {
             if (!event.nativeEvent.sourceCapabilities) {
-                return;
+                return true;
             }
             // Ignore the focus if it's caused by a touch event on mobile chrome.
             // For example, a long press will trigger a focus event on mobile chrome
             if (event.nativeEvent.sourceCapabilities.firesTouchEvents) {
-                return;
+                return true;
             }
         }
-        setFocusedIndex(index);
+        return false;
+    };
+
+    const handleFocusByIndex = (index: number, event: NativeSyntheticEvent<ExtendedTargetedEvent>) => {
+        if (shouldIgnoreFocusEvent(event)) {
+            return;
+        }
+        const stops = focusStopsRef.current;
+        if (!stops) {
+            setFocusedIndex(index);
+            return;
+        }
+        const stopIndex = stops.findIndex((stop) => stop.isRow && stop.rowIndex === index);
+        if (stopIndex >= 0) {
+            setFocusedIndex(stopIndex);
+        }
     };
     const getOnFocus = useStableIndexedHandler(handleFocusByIndex);
 
+    const focusTarget = (keyForList: string, event: NativeSyntheticEvent<ExtendedTargetedEvent>) => {
+        const stopIndex = focusStopsRef.current?.findIndex((stop) => stop.keyForList === keyForList) ?? -1;
+        if (stopIndex < 0) {
+            return false;
+        }
+        if (!shouldIgnoreFocusEvent(event)) {
+            setFocusedIndex(stopIndex);
+        }
+        return true;
+    };
+
+    const registerFocusTarget = (keyForList: string, target: SearchListFocusTarget) => {
+        const targets = focusTargetsRef.current;
+        targets.set(keyForList, target);
+        return () => {
+            // A row the list reused for another item may have registered the key again since, and that target stays.
+            if (targets.get(keyForList) !== target) {
+                return;
+            }
+            targets.delete(keyForList);
+        };
+    };
+
+    const focusTargetContextValue = {onFocusTarget: focusTarget, registerFocusTarget};
+
+    // The stops change as groups open, close and load, so the focused index can end up on another stop. Focus follows
+    // the stop instead, moved here during render rather than in an effect, so the wrong stop never shows as focused.
+    const focusedStop = focusStops && focusedIndex >= 0 ? focusStops.at(focusedIndex) : undefined;
+    const [trackedFocus, setTrackedFocus] = useState<{index: number; stop?: SearchListFocusStop}>({index: -1});
+    if (focusStops && focusedIndex >= 0) {
+        if (focusedIndex !== trackedFocus.index) {
+            setTrackedFocus({index: focusedIndex, stop: focusedStop});
+        } else if (trackedFocus.stop && focusedStop?.keyForList !== trackedFocus.stop.keyForList) {
+            const prevStop = trackedFocus.stop;
+            const nextIndex = resolveFocusStopIndex ? resolveFocusStopIndex(prevStop, focusedIndex, focusStops) : focusStops.findIndex((stop) => stop.keyForList === prevStop.keyForList);
+            setFocusedIndex(nextIndex);
+            setTrackedFocus({index: nextIndex, stop: nextIndex >= 0 ? focusStops.at(nextIndex) : undefined});
+        }
+    }
+
     // Rows read their own focus by key, so a focus change doesn't invalidate every FlashList cell.
-    const focusedKeyForList = focusedIndex >= 0 ? data.at(focusedIndex)?.keyForList : undefined;
+    const focusedRowKeyForList = focusedIndex >= 0 ? data.at(focusedIndex)?.keyForList : undefined;
+    const focusedKeyForList = focusStops ? focusedStop?.keyForList : focusedRowKeyForList;
     useEffect(() => {
         if (!focusedKeyForList) {
             return;
@@ -161,6 +254,27 @@ function BaseSearchList({
         }
 
         event?.stopPropagation();
+
+        if (focusStops) {
+            if (!focusedStop) {
+                return;
+            }
+            if (focusedStop.isRow) {
+                const focusedRow = data.at(focusedStop.rowIndex);
+                if (focusedRow) {
+                    onSelectRow(focusedRow);
+                }
+                return;
+            }
+            // A nested target does what a click on it does, which only its row knows.
+            const activate = focusTargetsRef.current.get(focusedStop.keyForList)?.activate;
+            if (!activate) {
+                return;
+            }
+            activate();
+            onSelectFocusStop?.(focusedStop);
+            return;
+        }
 
         const focusedItem = data.at(focusedIndex);
 
@@ -198,7 +312,7 @@ function BaseSearchList({
     const extraData = [columns, newTransactions, nonPersonalAndWorkspaceCards, isAttendeesEnabledForMovingPolicy];
 
     return (
-        <>
+        <SearchListFocusTargetContext.Provider value={focusTargetContextValue}>
             {/* Where the page header scrolls away, the select-all bar scrolls with the rows too, rather than staying pinned above them. */}
             {!isUnderScrollAwayHeader && selectionTopBar}
             <AnimatedFlashListComponent
@@ -227,7 +341,7 @@ function BaseSearchList({
                 overrideItemLayout={overrideItemLayout}
                 overrideProps={scrollLockStyle ? {style: scrollLockStyle} : undefined}
             />
-        </>
+        </SearchListFocusTargetContext.Provider>
     );
 }
 

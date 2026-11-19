@@ -1,12 +1,14 @@
 import {act} from '@testing-library/react-native';
 
 /**
- * Test-only wrapper around `BaseSearchList` that still renders the real list, but captures its `onSelectRow` and `data`.
- * The list only calls `onSelectRow` when Enter is pressed on its focused row, so this lets a test press Enter on any row.
+ * Test-only wrapper around `BaseSearchList` that still renders the real list, but captures its `onSelectRow`, `data`,
+ * focus stops and `onSelectFocusStop`. The list only calls those two callbacks when Enter is pressed on what has focus,
+ * so this lets a test press Enter on any row or focus stop.
  *
  * Wire it up with `jest.mock('@components/Search/SearchList/BaseSearchList', ...)` returning this module's default export
  * through `jest.requireActual`, and call `resetMockBaseSearchList` in `beforeEach`.
  */
+import type {SearchListFocusStop} from '@components/Search/SearchList/BaseSearchList/types';
 import type {SearchListItem} from '@components/Search/SearchList/ListItem/types';
 
 import type React from 'react';
@@ -16,6 +18,8 @@ import {createElement} from 'react';
 type CapturedListProps = {
     onSelectRow: (item: SearchListItem) => void;
     data: SearchListItem[];
+    focusStops?: readonly SearchListFocusStop[];
+    onSelectFocusStop?: (stop: SearchListFocusStop) => void;
 };
 
 const capturedListProps: Partial<CapturedListProps> = {};
@@ -26,6 +30,8 @@ const ActualBaseSearchList = jest.requireActual<{default: React.ComponentType<Ca
 function MockBaseSearchList(props: CapturedListProps) {
     capturedListProps.onSelectRow = props.onSelectRow;
     capturedListProps.data = props.data;
+    capturedListProps.focusStops = props.focusStops;
+    capturedListProps.onSelectFocusStop = props.onSelectFocusStop;
     return createElement(ActualBaseSearchList, props);
 }
 
@@ -38,10 +44,26 @@ function pressEnterOnListRow(isRow: (item: SearchListItem) => boolean, rowDescri
     act(() => capturedListProps.onSelectRow?.(row));
 }
 
+/** The keys of the stops the arrow keys move through, in order. */
+function getFocusStopKeys(): string[] {
+    return capturedListProps.focusStops?.map((stop) => stop.keyForList) ?? [];
+}
+
+/** Tells the view that Enter was pressed on the focus stop with this key. The stop's own action isn't run. */
+function pressEnterOnFocusStop(keyForList: string) {
+    const stop = capturedListProps.focusStops?.find((candidate) => candidate.keyForList === keyForList);
+    if (!stop) {
+        throw new Error(`No focus stop for ${keyForList}`);
+    }
+    act(() => capturedListProps.onSelectFocusStop?.(stop));
+}
+
 function resetMockBaseSearchList() {
     capturedListProps.onSelectRow = undefined;
     capturedListProps.data = undefined;
+    capturedListProps.focusStops = undefined;
+    capturedListProps.onSelectFocusStop = undefined;
 }
 
 export default MockBaseSearchList;
-export {pressEnterOnListRow, resetMockBaseSearchList};
+export {getFocusStopKeys, pressEnterOnFocusStop, pressEnterOnListRow, resetMockBaseSearchList};

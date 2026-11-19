@@ -19,6 +19,7 @@ import type {NativeSyntheticEvent} from 'react-native';
 
 import React, {useState} from 'react';
 
+import type {SearchListFocusStop} from './SearchList/BaseSearchList/types';
 import type {SearchListItem} from './SearchList/ListItem/types';
 import type {CommonSearchViewProps, TransactionViewExtras} from './searchViewProps';
 import type {SearchQueryJSON, SelectedTransactions} from './types';
@@ -29,6 +30,7 @@ import useSearchListViewState from './hooks/useSearchListViewState';
 import AnimatedExitRow from './primitives/AnimatedExitRow';
 import SelectionTopBar from './primitives/SelectionTopBar';
 import BaseSearchList from './SearchList/BaseSearchList';
+import {buildGroupedFocusStops, getFocusableExpenses, isGroupedFocusStop, resolveGroupedFocusStopIndex} from './SearchList/groupedFocusStops';
 import getGroupRowActivation from './SearchList/ListItem/getGroupRowActivation';
 import GroupChildrenContainer from './SearchList/ListItem/GroupChildrenContainer';
 import GroupHeader from './SearchList/ListItem/GroupHeader';
@@ -46,30 +48,27 @@ const isRowDeleted = (item: SearchListItem) => item.pendingAction === CONST.RED_
 
 const isRowSelected = (key: string | undefined, selectedTransactions: SelectedTransactions) => !!(key && selectedTransactions[key]?.isSelected);
 
-/**
- * On wide web layouts each group is split into a sticky header row plus a children-container row, so the
- * rendered list differs from the source data. Returns the rendered list plus the sticky-header and
- * children-container indices FlashList needs. On narrow/native layouts the group rows render as-is.
- */
-function buildSplitGroupData(data: SearchListItem[], shouldSplitGroups: boolean) {
-    if (!shouldSplitGroups) {
-        return {listData: data, stickyHeaderIndices: undefined, childrenContainerIndices: CONST.EMPTY_ARRAY as readonly number[]};
-    }
+/** A "Show more" pressed with Enter, waiting for the page it loads */
+type PendingShowMore = {
+    groupKey: string;
 
-    const {splitData, stickyHeaderIndices} = splitGroupsIntoPairs(data);
-    const childrenContainerIndices: number[] = [];
-    for (let i = 0; i < splitData.length; i++) {
-        const item = splitData.at(i);
-        if (item && isGroupChildrenContainerItem(item)) {
-            childrenContainerIndices.push(i);
-        }
-    }
+    /** The position in the group of the first expense the page will add */
+    ordinal: number;
+};
 
-    return {
-        listData: splitData,
-        stickyHeaderIndices: stickyHeaderIndices.length > 0 ? stickyHeaderIndices : undefined,
-        childrenContainerIndices,
-    };
+/** Whether the page a pending "Show more" asked for has arrived, or will no longer arrive for the group to show */
+function isPendingShowMoreSettled(pendingShowMore: PendingShowMore, data: SearchListItem[], expandedGroups: ReadonlySet<string>, isOffline: boolean) {
+    if (isOffline || !expandedGroups.has(pendingShowMore.groupKey)) {
+        return true;
+    }
+    const group = data.find((item) => item.keyForList === pendingShowMore.groupKey);
+    if (!group || !isTransactionGroupListItemType(group)) {
+        return true;
+    }
+    if (group.isLoadingTransactions) {
+        return false;
+    }
+    return getFocusableExpenses(group, isOffline).length > pendingShowMore.ordinal || !group.hasMoreTransactions;
 }
 
 /**
@@ -120,7 +119,7 @@ function ExpenseGroupedSearchView({
     // Wide web layouts split each group into a sticky header row plus an expandable children-container row.
     // Computed here (not from the shared hook) because the split list feeds back into the hook as `listData`.
     const shouldSplit = !!groupBy && isLargeScreenWidth && getPlatform() === CONST.PLATFORM.WEB;
-    const {listData, stickyHeaderIndices, childrenContainerIndices} = buildSplitGroupData(data, shouldSplit);
+    const {splitData: listData, stickyHeaderIndices} = shouldSplit ? splitGroupsIntoPairs(data) : {splitData: data, stickyHeaderIndices: undefined};
 
     const [expandedGroups, setExpandedGroups] = useState<Set<string>>(() => new Set());
     // Fetch on open here rather than in the row, because the list reuses rows as it scrolls, and a reused row that lands
@@ -169,6 +168,20 @@ function ExpenseGroupedSearchView({
     // Only the split layout renders children as their own rows.
     useOpenGroupsForShiftRange(shouldSplit ? expandedGroups : NO_OPEN_GROUPS);
 
+    // While the page it asked for loads, the spinner replaces the "Show more" that Enter was pressed on. Its focus stop
+    // stays until the page arrives, so focus can move on to the first expense the page added.
+    const [pendingShowMore, setPendingShowMore] = useState<PendingShowMore>();
+    if (pendingShowMore && isPendingShowMoreSettled(pendingShowMore, data, expandedGroups, isOffline)) {
+        setPendingShowMore(undefined);
+    }
+    const focusStops = buildGroupedFocusStops({listData, expandedGroups, isOffline, pendingShowMoreGroupKey: pendingShowMore?.groupKey});
+    const waitForShowMorePage = (stop: SearchListFocusStop) => {
+        if (!isGroupedFocusStop(stop) || stop.kind !== 'showMore' || !stop.groupKey) {
+            return;
+        }
+        setPendingShowMore({groupKey: stop.groupKey, ordinal: stop.ordinal ?? 0});
+    };
+
     const [visibleColumns] = useOnyx(ONYXKEYS.FORMS.SEARCH_ADVANCED_FILTERS_FORM, {selector: columnsSelector});
 
     const {
@@ -186,7 +199,6 @@ function ExpenseGroupedSearchView({
         handleUndelete,
         onLongPressRow,
         handleSelectRow,
-        scrollToListIndex,
     } = useSearchListViewState({data, listData, isMobileSelectionModeEnabled, onSelectRow});
 
     // Enter on the focused row must do what clicking it does, and a group that isn't a report has no page to open.
@@ -376,8 +388,10 @@ function ExpenseGroupedSearchView({
                 showsVerticalScrollIndicator={false}
                 ref={listRef}
                 columns={columns}
-                scrollToIndex={scrollToListIndex}
                 flattenedItemsLength={listData.length}
+                focusStops={focusStops}
+                resolveFocusStopIndex={resolveGroupedFocusStopIndex}
+                onSelectFocusStop={waitForShowMorePage}
                 onEndReached={onEndReached}
                 onEndReachedThreshold={0.75}
                 ListFooterComponent={ListFooterComponent}
@@ -389,7 +403,6 @@ function ExpenseGroupedSearchView({
                 stickyHeaderIndices={stickyHeaderIndices}
                 getItemType={getItemType}
                 stickyHeaderConfig={stickyHeaderConfig}
-                disabledIndexes={shouldSplit ? childrenContainerIndices : undefined}
                 overrideItemLayout={shouldSplit ? overrideItemLayout : undefined}
             />
         </SearchListViewLayout>

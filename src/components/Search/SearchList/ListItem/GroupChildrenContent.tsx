@@ -136,6 +136,7 @@ function GroupChildrenContent({
             onUndelete={onUndelete}
             hideSearchTableHeader
             syncScrollKey={groupItem.groupKeyForList}
+            groupKey={groupItem.groupKeyForList}
         />
     );
 }

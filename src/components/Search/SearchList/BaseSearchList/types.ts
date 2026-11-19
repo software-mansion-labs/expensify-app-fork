@@ -8,6 +8,21 @@ import type {FlashListProps, FlashListRef} from '@shopify/flash-list';
 import type {RefObject} from 'react';
 import type {NativeSyntheticEvent} from 'react-native';
 
+/** A place the arrow keys can move focus to: a whole row, or a target nested inside one, such as an open group's expense */
+type SearchListFocusStop = {
+    /** The key the stop is focused and highlighted by, which a nested target registers under */
+    keyForList: string;
+
+    /** Index in `data` of the row that renders the stop */
+    rowIndex: number;
+
+    /** Whether the stop is the row itself, which Enter selects through `onSelectRow`, rather than a target nested in it */
+    isRow: boolean;
+
+    /** Index of the sticky row that covers the top of the list while this stop is under it */
+    stickyRowIndex?: number;
+};
+
 type BaseSearchListProps = Pick<
     FlashListProps<SearchListItem>,
     | 'onScroll'
@@ -53,8 +68,15 @@ type BaseSearchListProps = Pick<
     /** Function to determine item type for FlashList recycling */
     getItemType?: (item: SearchListItem, index: number) => string | number | undefined;
 
-    /** Indexes to skip during keyboard arrow navigation */
-    disabledIndexes?: readonly number[];
+    /** Where the arrow keys move focus, in order. Without it they move from row to row. */
+    focusStops?: readonly SearchListFocusStop[];
+
+    /** Picks the stop to keep focus on when the focused stop moved or left `focusStops`, or -1 for none */
+    resolveFocusStopIndex?: (prevStop: SearchListFocusStop, prevIndex: number, stops: readonly SearchListFocusStop[]) => number;
+
+    /** Called after Enter activates a nested stop */
+    onSelectFocusStop?: (stop: SearchListFocusStop) => void;
 };
 
 export default BaseSearchListProps;
+export type {SearchListFocusStop};

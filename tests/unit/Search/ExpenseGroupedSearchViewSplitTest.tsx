@@ -23,7 +23,7 @@ import Onyx from 'react-native-onyx';
 
 import type MockBaseSearchList from '../../utils/mockBaseSearchList';
 
-import {pressEnterOnListRow, resetMockBaseSearchList} from '../../utils/mockBaseSearchList';
+import {getFocusStopKeys, pressEnterOnListRow, resetMockBaseSearchList} from '../../utils/mockBaseSearchList';
 import * as TestHelper from '../../utils/TestHelper';
 import waitForBatchedUpdates from '../../utils/waitForBatchedUpdates';
 import wrapOnyxWithWaitForBatchedUpdates from '../../utils/wrapOnyxWithWaitForBatchedUpdates';
@@ -333,5 +333,26 @@ describe('ExpenseGroupedSearchView Enter on a focused group header', () => {
         // Then it neither opens nor selects anything
         expect(isGroupExpanded('group-0')).toBe(false);
         expect(onSelectRow).not.toHaveBeenCalled();
+    });
+});
+
+describe('ExpenseGroupedSearchView arrow-key focus stops on wide layouts', () => {
+    it("puts an open group's expenses between its header and the next group, and skips the children rows", async () => {
+        // Given two closed groups, each split into a header row and a children row
+        renderView(createMockGroupData([{}, {}]));
+        await waitForBatchedUpdates();
+        expect(getFocusStopKeys()).toEqual(['header_group-0', 'header_group-1']);
+
+        // When Enter opens the first group
+        pressEnterOnHeader('group-0');
+
+        // Then its expense is a stop right after its header
+        expect(getFocusStopKeys()).toEqual(['header_group-0', 'txn-0-0', 'header_group-1']);
+
+        // When Enter closes it
+        pressEnterOnHeader('group-0');
+
+        // Then the arrow keys go straight from one header to the next again
+        expect(getFocusStopKeys()).toEqual(['header_group-0', 'header_group-1']);
     });
 });

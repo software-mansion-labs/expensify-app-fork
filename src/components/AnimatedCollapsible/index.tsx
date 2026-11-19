@@ -10,7 +10,7 @@ import useThemeStyles from '@hooks/useThemeStyles';
 import CONST from '@src/CONST';
 import type {WithRequiredSentryLabel} from '@src/types/utils/SentryLabel';
 
-import type {ReactNode} from 'react';
+import type {ComponentRef, ReactNode, Ref} from 'react';
 import type {StyleProp, ViewStyle} from 'react-native';
 
 import React, {useState} from 'react';
@@ -39,6 +39,9 @@ type AnimatedCollapsibleProps = WithRequiredSentryLabel & {
     /** Style for the header container */
     headerStyle?: StyleProp<ViewStyle>;
 
+    /** Ref to the header container, for a caller that measures the header apart from the content below it */
+    headerRef?: Ref<ComponentRef<typeof View>>;
+
     /** Style for the content container */
     contentStyle?: StyleProp<ViewStyle>;
 
@@ -62,6 +65,7 @@ function AnimatedCollapsible({
     duration = 300,
     style,
     headerStyle,
+    headerRef,
     contentStyle,
     expandButtonStyle,
     onPress,
@@ -134,7 +138,10 @@ function AnimatedCollapsible({
 
     return (
         <View style={style}>
-            <View style={[headerStyle, styles.flexRow, styles.alignItemsCenter]}>
+            <View
+                ref={headerRef}
+                style={[headerStyle, styles.flexRow, styles.alignItemsCenter]}
+            >
                 <View style={[styles.flex1]}>{header}</View>
                 {shouldShowToggleButton && (
                     <PressableWithFeedback
