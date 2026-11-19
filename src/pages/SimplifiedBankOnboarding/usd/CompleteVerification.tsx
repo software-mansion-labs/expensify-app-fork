@@ -30,12 +30,9 @@ import React from 'react';
 
 import type USDPageProps from './types';
 
-type CompleteVerificationProps = Pick<USDPageProps, 'onSubmit' | 'onBackButtonPress' | 'stepNames'>;
+type CompleteVerificationProps = Pick<USDPageProps, 'onSubmit' | 'onBackButtonPress' | 'stepNames' | 'startStepIndex'>;
 
-// The position of this step in the step counter of the header
-const STEP_INDEX = 5;
-
-function CompleteVerification({onSubmit, onBackButtonPress, stepNames}: CompleteVerificationProps) {
+function CompleteVerification({onSubmit, onBackButtonPress, stepNames, startStepIndex}: CompleteVerificationProps) {
     const {translate} = useLocalize();
     const styles = useThemeStyles();
     const [account] = useOnyx(ONYXKEYS.SIMPLIFIED_BANK_ONBOARDING_ACCOUNT);
@@ -79,7 +76,7 @@ function CompleteVerification({onSubmit, onBackButtonPress, stepNames}: Complete
             shouldEnableMaxHeight
             headerTitle={translate('completeVerificationStep.completeVerification')}
             handleBackButtonPress={onBackButtonPress}
-            startStepIndex={STEP_INDEX}
+            startStepIndex={startStepIndex}
             stepNames={stepNames}
         >
             <FormProvider

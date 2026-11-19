@@ -39,14 +39,11 @@ import SignerDetailsFormPages from './SignerDetailsFormPages';
 
 const {PAGE_NAMES, SIGNER_INFO_SUB_PAGES: SUB_PAGE_NAMES, CURRENT_USER_KEY} = SBO_CONST.NON_USD;
 
-// The position of this step in the step counter of the header
-const STEP_INDEX = 4;
-
 function buildSignerInfoRoute(subPage: string, policyID: string | undefined, backTo: string | undefined) {
     return ROUTES.SETTINGS_BANK_ONBOARDING_LAB_NON_USD_SETUP.getRoute({policyID, page: PAGE_NAMES.SIGNER_INFO, subPage, backTo});
 }
 
-function SignerInfo({onBackButtonPress, onSubmit, policyID, currency = '', stepNames, currentSubPage, backTo}: NonUSDPageProps) {
+function SignerInfo({onBackButtonPress, onSubmit, policyID, currency = '', stepNames, startStepIndex, currentSubPage, backTo}: NonUSDPageProps) {
     const {translate} = useLocalize();
     const [account] = useOnyx(ONYXKEYS.SIMPLIFIED_BANK_ONBOARDING_ACCOUNT);
     const [draft] = useOnyx(ONYXKEYS.FORMS.SIMPLIFIED_BANK_ONBOARDING_FORM_DRAFT);
@@ -155,9 +152,9 @@ function SignerInfo({onBackButtonPress, onSubmit, policyID, currency = '', stepN
                 onBackToIsDirector={goBackToIsDirector}
                 onFinished={submit}
                 stepNames={stepNames}
+                startStepIndex={startStepIndex}
                 policyID={policyID}
                 backTo={backTo}
-                stepIndex={STEP_INDEX}
             />
         );
     }
@@ -168,7 +165,7 @@ function SignerInfo({onBackButtonPress, onSubmit, policyID, currency = '', stepN
             handleBackButtonPress={handleBackButtonPress}
             headerTitle={translate('signerInfoStep.signerInfo')}
             stepNames={stepNames}
-            startStepIndex={STEP_INDEX}
+            startStepIndex={startStepIndex}
         >
             {currentSubPage === SUB_PAGE_NAMES.IS_DIRECTOR && (
                 <YesNoStep

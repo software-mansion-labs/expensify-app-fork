@@ -8,7 +8,6 @@ import {getMicroSecondOnyxErrorWithTranslationKey} from '@libs/ErrorUtils';
 import {READ_COMMANDS, WRITE_COMMANDS} from '@pages/SimplifiedBankOnboarding/mockBackend/commands';
 import {read, write} from '@pages/SimplifiedBankOnboarding/mockBackend/mockApi';
 import {resetDatabase} from '@pages/SimplifiedBankOnboarding/mockBackend/serverDatabase';
-import type {SetupType, USDStep} from '@pages/SimplifiedBankOnboarding/types/onyx';
 
 import ONYXKEYS from '@src/ONYXKEYS';
 import type {OnyxData} from '@src/types/onyx/Request';
@@ -19,11 +18,6 @@ type OpenOnboardingPageParams = {
     /** The page names the workspace or the bank account. With the bank account, the server picks the step. */
     policyID?: string;
     bankAccountID?: number;
-
-    /** The step that the client wants to show. The server answers with it when the account already reached that step. */
-    stepToOpen?: USDStep | '';
-    subStep?: SetupType | '';
-    localCurrentStep?: USDStep | '';
 };
 
 function openLandingPage() {
@@ -38,8 +32,9 @@ function getAccountLoadingDataForOnyx(): OnyxData<typeof ONYXKEYS.SIMPLIFIED_BAN
     };
 }
 
-function openOnboardingPage({policyID, bankAccountID, stepToOpen = '', subStep = '', localCurrentStep = ''}: OpenOnboardingPageParams) {
-    read(READ_COMMANDS.OPEN_ONBOARDING_PAGE, {policyID, bankAccountID, stepToOpen, subStep, localCurrentStep}, getAccountLoadingDataForOnyx());
+/** The URL owns the position in the flow, so the read never asks the server to keep or move a step */
+function openOnboardingPage({policyID, bankAccountID}: OpenOnboardingPageParams) {
+    read(READ_COMMANDS.OPEN_ONBOARDING_PAGE, {policyID, bankAccountID, stepToOpen: '', subStep: '', localCurrentStep: ''}, getAccountLoadingDataForOnyx());
 }
 
 /**

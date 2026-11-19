@@ -26,14 +26,11 @@ import {View} from 'react-native';
 
 import type USDPageProps from './types';
 
-type VerifyIdentityProps = Pick<USDPageProps, 'onSubmit' | 'onBackButtonPress' | 'stepNames'>;
+type VerifyIdentityProps = Pick<USDPageProps, 'onSubmit' | 'onBackButtonPress' | 'stepNames' | 'startStepIndex'>;
 
 const MOCK_ONFIDO_DATA = 'mock-onfido-data';
 
-// The position of this step in the step counter of the header
-const STEP_INDEX = 2;
-
-function VerifyIdentity({onSubmit, onBackButtonPress, stepNames}: VerifyIdentityProps) {
+function VerifyIdentity({onSubmit, onBackButtonPress, stepNames, startStepIndex}: VerifyIdentityProps) {
     const {translate} = useLocalize();
     const styles = useThemeStyles();
     const [account] = useOnyx(ONYXKEYS.SIMPLIFIED_BANK_ONBOARDING_ACCOUNT);
@@ -63,7 +60,7 @@ function VerifyIdentity({onSubmit, onBackButtonPress, stepNames}: VerifyIdentity
             wrapperID="SimplifiedBankOnboardingVerifyIdentity"
             headerTitle={translate('onfidoStep.verifyIdentity')}
             handleBackButtonPress={onBackButtonPress}
-            startStepIndex={STEP_INDEX}
+            startStepIndex={startStepIndex}
             stepNames={stepNames}
         >
             <FullPageOfflineBlockingView>

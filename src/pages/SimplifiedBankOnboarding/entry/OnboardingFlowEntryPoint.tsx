@@ -20,10 +20,8 @@ import Navigation from '@libs/Navigation/Navigation';
 
 import {
     clearOnboardingAccountErrors,
-    goToSetupStep,
     prepareNewBankAccountSetup,
     requestResetBankAccount,
-    setBankAccountSubStep,
     setSetupOptionPressed,
     updateOnboardingAccount,
     updateOnboardingDraft,
@@ -79,10 +77,9 @@ const NO_BANK_ACCOUNT_ID = 0;
 
 const isUserValidatedSelector = (user: OnyxEntry<OnboardingUser>) => !!user?.validated;
 
-/** Stores the picked option and the first step, which the USD flow page reads when it opens */
+/** Stores the picked option in the draft, where the flow definition reads it when the user leaves the country page */
 function prepareUSDSetup(setupType: SetupType) {
-    setBankAccountSubStep(setupType);
-    goToSetupStep(SBO_CONST.USD.STEP.COUNTRY);
+    updateOnboardingDraft({setupType});
 }
 
 function OnboardingFlowEntryPoint({

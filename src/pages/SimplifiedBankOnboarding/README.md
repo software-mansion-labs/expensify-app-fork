@@ -74,11 +74,12 @@ Everything is under `src/pages/SimplifiedBankOnboarding/`. Paths in the table be
 | `enterSignerInfo/` | The separate flow that a director opens from an email |
 | `actions/` | Request and Onyx write functions (the stand-in for `src/libs/actions`) |
 | `hooks/` | The three hooks that wait for requests or open the reset modal |
-| `utils/` | Pure helpers: value lookup, resume position, draft prefill |
+| `flow/` | The flow definitions and the pure functions that navigate them: next, previous, resume, header counter |
+| `utils/` | Pure helpers: value lookup, draft prefill |
 | `components/` | The few components that two flows share |
 | `types/` | The form type and the Onyx types |
 | `mockBackend/` | The server: database, command handlers, queue, UI panel |
-| `SBO_CONST.ts` | Step names, page names, sub page names and positions, mock values |
+| `SBO_CONST.ts` | Server step names, page names, sub page names and positions, mock values |
 
 The files outside the module only register it: Onyx keys, routes, screens, the navigator entries, one menu item, one
 translation key and the Sentry labels.
@@ -110,6 +111,18 @@ Judge every experiment on the same scenarios, because they are the ones where th
    ignored, and the signer step can skip its name page with no name to send.
 7. Lose and regain the connection with the Payments page mounted under the flow.
 8. Open the same bank account by `bankAccountID` and by its workspace.
+
+## Experiment: derived flow
+
+The flow position is derived from data. The pattern catalog below describes the baseline at commit `a513a9853f9`, so
+some of its paths are gone on this branch. These rows were replaced:
+
+| Baseline pattern | Replacement |
+| --- | --- |
+| `STEP_TO_PAGE_NAME` and `getStartPageForContinueSetup` | `getResumePosition` over the flow definitions in `flow/usdFlow.ts` and `flow/nonUSDFlow.ts` |
+| Static `pages` arrays with hand-written skip rules | `isApplicable` of each step, and `getNextStep` and `getPreviousStep` in `flow/flowNavigation.ts` |
+| A `STEP_INDEX` constant in each step and the `STEP_NAMES` lists | `headerPosition` of each step, passed down as `startStepIndex`, and `getHeaderStepNames` |
+| The client writes `currentStep` and `subStep` | The URL owns the position. The picked setup type is `setupType` in the draft. |
 
 ## Pattern catalog
 

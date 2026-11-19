@@ -36,10 +36,7 @@ import getAgreementValues from './getAgreementValues';
 
 const STEP_FIELDS = [INPUT_IDS.AUTHORIZED_TO_BIND_CLIENT_TO_AGREEMENT, INPUT_IDS.AGREE_TO_TERMS_AND_CONDITIONS, INPUT_IDS.CONSENT_TO_PRIVACY_NOTICE];
 
-// The position of this step in the step counter of the header
-const STEP_INDEX = 5;
-
-function Agreements({onBackButtonPress, onSubmit, policyID, currency, stepNames}: NonUSDPageProps) {
+function Agreements({onBackButtonPress, onSubmit, policyID, currency, stepNames, startStepIndex}: NonUSDPageProps) {
     const {translate} = useLocalize();
     const styles = useThemeStyles();
     const [account] = useOnyx(ONYXKEYS.SIMPLIFIED_BANK_ONBOARDING_ACCOUNT);
@@ -103,7 +100,7 @@ function Agreements({onBackButtonPress, onSubmit, policyID, currency, stepNames}
             handleBackButtonPress={handleBackButtonPress}
             headerTitle={translate('agreementsStep.agreements')}
             stepNames={stepNames}
-            startStepIndex={STEP_INDEX}
+            startStepIndex={startStepIndex}
         >
             <FormProvider
                 ref={formRef}

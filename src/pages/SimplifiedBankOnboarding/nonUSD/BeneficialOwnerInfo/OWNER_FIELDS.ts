@@ -1,9 +1,6 @@
 /**
- * Constants that the outer pages, the details form and the helpers of the NonUSD owner step share.
+ * The owner fields that the details form and the helpers of the NonUSD owner step share.
  */
-
-// The position of this step in the step counter of the header
-const STEP_INDEX = 3;
 
 /** The fields of one owner, the last part of its flat draft keys. The server stores the two names joined as `fullName`. */
 const OWNER_FIELDS = {
@@ -12,4 +9,4 @@ const OWNER_FIELDS = {
     OWNERSHIP_PERCENTAGE: 'ownershipPercentage',
 } as const;
 
-export {OWNER_FIELDS, STEP_INDEX};
+export default OWNER_FIELDS;

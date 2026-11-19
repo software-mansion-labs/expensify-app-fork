@@ -35,7 +35,7 @@ import IncorporationType from './subSteps/IncorporationType';
 import Name from './subSteps/Name';
 import TaxID from './subSteps/TaxID';
 
-type BusinessInfoProps = Pick<USDPageProps, 'onSubmit' | 'onBackButtonPress' | 'stepNames' | 'backTo'>;
+type BusinessInfoProps = Pick<USDPageProps, 'onSubmit' | 'onBackButtonPress' | 'stepNames' | 'startStepIndex' | 'backTo'>;
 
 type BusinessInfoValues = SubStepValues<typeof INPUT_IDS.COMPANY_NAME | typeof INPUT_IDS.COMPANY_TAX_ID | typeof INPUT_IDS.INCORPORATION_TYPE>;
 
@@ -49,9 +49,6 @@ const pages = [
     {pageName: SUB_PAGE_NAMES.INCORPORATION_TYPE, component: IncorporationType},
     {pageName: SUB_PAGE_NAMES.CONFIRMATION, component: Confirmation},
 ];
-
-// The position of this step in the step counter of the header
-const STEP_INDEX = 3;
 
 /** Returns the index of the first sub page that still misses data, so a returning user lands there */
 function getInitialSubStepForBusinessInfo(values: BusinessInfoValues): number {
@@ -67,7 +64,7 @@ function getInitialSubStepForBusinessInfo(values: BusinessInfoValues): number {
     return CONFIRMATION_INDEX;
 }
 
-function BusinessInfo({onBackButtonPress, onSubmit, stepNames, backTo}: BusinessInfoProps) {
+function BusinessInfo({onBackButtonPress, onSubmit, stepNames, startStepIndex, backTo}: BusinessInfoProps) {
     const {translate} = useLocalize();
     const [account] = useOnyx(ONYXKEYS.SIMPLIFIED_BANK_ONBOARDING_ACCOUNT);
     const [draft] = useOnyx(ONYXKEYS.FORMS.SIMPLIFIED_BANK_ONBOARDING_FORM_DRAFT);
@@ -120,7 +117,7 @@ function BusinessInfo({onBackButtonPress, onSubmit, stepNames, backTo}: Business
             shouldEnableMaxHeight
             headerTitle={translate('businessInfoStep.businessInfo')}
             handleBackButtonPress={handleBackButtonPress}
-            startStepIndex={STEP_INDEX}
+            startStepIndex={startStepIndex}
             stepNames={stepNames}
         >
             <CurrentPage

@@ -21,7 +21,6 @@ import React from 'react';
 
 import type BeneficialOwnerSubPageProps from './types';
 
-import STEP_INDEX from './STEP_INDEX';
 import ConfirmationUBO from './subSteps/ConfirmationUBO';
 import DateOfBirthUBO from './subSteps/DateOfBirthUBO';
 import LegalNameUBO from './subSteps/LegalNameUBO';
@@ -38,6 +37,9 @@ type BeneficialOwnerDetailsFormPagesProps = {
     /** Called after the confirmation page */
     onFinished: () => void;
     stepNames?: readonly string[];
+
+    /** Position of the step in the step counter of the header */
+    startStepIndex?: number;
     backTo?: string;
 };
 
@@ -49,7 +51,15 @@ const pages = [
     {pageName: SUB_PAGE_NAMES.CONFIRMATION, component: ConfirmationUBO},
 ];
 
-function BeneficialOwnerDetailsFormPages({policyID, beneficialOwnerBeingModifiedID, isEditingCreatedBeneficialOwner, onFinished, stepNames, backTo}: BeneficialOwnerDetailsFormPagesProps) {
+function BeneficialOwnerDetailsFormPages({
+    policyID,
+    beneficialOwnerBeingModifiedID,
+    isEditingCreatedBeneficialOwner,
+    onFinished,
+    stepNames,
+    startStepIndex,
+    backTo,
+}: BeneficialOwnerDetailsFormPagesProps) {
     const {translate} = useLocalize();
     const [draft] = useOnyx(ONYXKEYS.FORMS.SIMPLIFIED_BANK_ONBOARDING_FORM_DRAFT);
     const hasExistingBeneficialOwners = (draft?.beneficialOwnerKeys ?? []).length > 0;
@@ -90,7 +100,7 @@ function BeneficialOwnerDetailsFormPages({policyID, beneficialOwnerBeingModified
             shouldEnableMaxHeight
             headerTitle={translate('beneficialOwnerInfoStep.companyOwner')}
             handleBackButtonPress={handleBackButtonPress}
-            startStepIndex={STEP_INDEX}
+            startStepIndex={startStepIndex}
             stepNames={stepNames}
         >
             {isRedirecting || !beneficialOwnerBeingModifiedID ? (

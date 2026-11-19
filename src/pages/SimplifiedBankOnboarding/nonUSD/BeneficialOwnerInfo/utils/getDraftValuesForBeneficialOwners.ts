@@ -3,7 +3,7 @@
  * writes them to the draft on resume, like the real `getDraftValuesForBeneficialOwners`. The server stores one full name,
  * so the split into the two name inputs drops the middle part of a name with more than two words, as the real flow does.
  */
-import {OWNER_FIELDS} from '@pages/SimplifiedBankOnboarding/nonUSD/BeneficialOwnerInfo/const';
+import OWNER_FIELDS from '@pages/SimplifiedBankOnboarding/nonUSD/BeneficialOwnerInfo/OWNER_FIELDS';
 import type {OnboardingForm} from '@pages/SimplifiedBankOnboarding/types/form';
 import type {OnboardingAccount} from '@pages/SimplifiedBankOnboarding/types/onyx';
 import {getOwnerInputID} from '@pages/SimplifiedBankOnboarding/utils/owners/OwnerDraftUtils';

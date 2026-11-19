@@ -12,7 +12,7 @@ import Text from '@components/Text';
 import useLocalize from '@hooks/useLocalize';
 import useThemeStyles from '@hooks/useThemeStyles';
 
-import {goToSetupStep, updateOnboardingDraft} from '@pages/SimplifiedBankOnboarding/actions/OnboardingAccount';
+import {updateOnboardingDraft} from '@pages/SimplifiedBankOnboarding/actions/OnboardingAccount';
 import SBO_CONST from '@pages/SimplifiedBankOnboarding/SBO_CONST';
 import INPUT_IDS from '@pages/SimplifiedBankOnboarding/types/form';
 
@@ -22,16 +22,15 @@ import React from 'react';
 
 import type USDPageProps from './types';
 
-type CountryProps = Pick<USDPageProps, 'onSubmit' | 'onBackButtonPress' | 'stepNames'>;
+type CountryProps = Pick<USDPageProps, 'onSubmit' | 'onBackButtonPress' | 'stepNames' | 'startStepIndex'>;
 
-function Country({onSubmit, onBackButtonPress, stepNames}: CountryProps) {
+function Country({onSubmit, onBackButtonPress, stepNames, startStepIndex}: CountryProps) {
     const {translate} = useLocalize();
     const styles = useThemeStyles();
     const countryOptions = {[SBO_CONST.COUNTRY.US]: translate('allCountries.US')};
 
     const submit = () => {
         updateOnboardingDraft({country: SBO_CONST.COUNTRY.US});
-        goToSetupStep(SBO_CONST.USD.STEP.BANK_ACCOUNT);
         onSubmit();
     };
 
@@ -41,7 +40,7 @@ function Country({onSubmit, onBackButtonPress, stepNames}: CountryProps) {
             handleBackButtonPress={onBackButtonPress}
             headerTitle={translate('countryStep.confirmCurrency')}
             stepNames={stepNames}
-            startStepIndex={0}
+            startStepIndex={startStepIndex}
         >
             <FormProvider
                 formID={ONYXKEYS.FORMS.SIMPLIFIED_BANK_ONBOARDING_FORM}

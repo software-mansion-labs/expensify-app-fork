@@ -2,7 +2,7 @@
  * Reads the data of one owner from the flat keys of the draft, in the shape that the server stores: the two name inputs
  * joined into one full name. It mirrors the real `getValuesForBeneficialOwner`, which reads only the draft.
  */
-import {OWNER_FIELDS} from '@pages/SimplifiedBankOnboarding/nonUSD/BeneficialOwnerInfo/const';
+import OWNER_FIELDS from '@pages/SimplifiedBankOnboarding/nonUSD/BeneficialOwnerInfo/OWNER_FIELDS';
 import type {OnboardingForm} from '@pages/SimplifiedBankOnboarding/types/form';
 import type {GlobalBeneficialOwner} from '@pages/SimplifiedBankOnboarding/types/onyx';
 import {getOwnerDraftValue} from '@pages/SimplifiedBankOnboarding/utils/owners/OwnerDraftUtils';

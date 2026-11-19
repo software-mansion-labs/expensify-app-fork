@@ -42,10 +42,7 @@ const pages = [
     {pageName: SUB_PAGE_NAMES.CONFIRMATION, component: Confirmation},
 ];
 
-// The position of this step in the step counter of the header
-const STEP_INDEX = 1;
-
-function BankInfo({onBackButtonPress, onSubmit, policyID, currency = '', stepNames, backTo}: NonUSDPageProps) {
+function BankInfo({onBackButtonPress, onSubmit, policyID, currency = '', stepNames, startStepIndex, backTo}: NonUSDPageProps) {
     const {translate} = useLocalize();
     const [account] = useOnyx(ONYXKEYS.SIMPLIFIED_BANK_ONBOARDING_ACCOUNT);
     const [draft] = useOnyx(ONYXKEYS.FORMS.SIMPLIFIED_BANK_ONBOARDING_FORM_DRAFT);
@@ -129,7 +126,7 @@ function BankInfo({onBackButtonPress, onSubmit, policyID, currency = '', stepNam
             handleBackButtonPress={handleBackButtonPress}
             headerTitle={translate('bankAccount.bankInfo')}
             stepNames={stepNames}
-            startStepIndex={STEP_INDEX}
+            startStepIndex={startStepIndex}
         >
             {isRedirecting ? (
                 <SubPageRedirectIndicator />

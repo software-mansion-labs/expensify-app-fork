@@ -31,7 +31,7 @@ import DateOfBirth from './subSteps/DateOfBirth';
 import FullName from './subSteps/FullName';
 import SocialSecurityNumber from './subSteps/SocialSecurityNumber';
 
-type PersonalInfoProps = Pick<USDPageProps, 'onSubmit' | 'onBackButtonPress' | 'stepNames' | 'backTo'>;
+type PersonalInfoProps = Pick<USDPageProps, 'onSubmit' | 'onBackButtonPress' | 'stepNames' | 'startStepIndex' | 'backTo'>;
 
 const {PAGE_NAMES, PERSONAL_INFO_SUB_PAGES: SUB_PAGE_NAMES} = SBO_CONST.USD;
 
@@ -42,10 +42,7 @@ const pages = [
     {pageName: SUB_PAGE_NAMES.CONFIRMATION, component: Confirmation},
 ];
 
-// The position of this step in the step counter of the header
-const STEP_INDEX = 2;
-
-function PersonalInfo({onBackButtonPress, onSubmit, stepNames, backTo}: PersonalInfoProps) {
+function PersonalInfo({onBackButtonPress, onSubmit, stepNames, startStepIndex, backTo}: PersonalInfoProps) {
     const {translate} = useLocalize();
     const [account] = useOnyx(ONYXKEYS.SIMPLIFIED_BANK_ONBOARDING_ACCOUNT);
     const [draft] = useOnyx(ONYXKEYS.FORMS.SIMPLIFIED_BANK_ONBOARDING_FORM_DRAFT);
@@ -94,7 +91,7 @@ function PersonalInfo({onBackButtonPress, onSubmit, stepNames, backTo}: Personal
             shouldEnableMaxHeight
             headerTitle={translate('personalInfoStep.personalInfo')}
             handleBackButtonPress={handleBackButtonPress}
-            startStepIndex={STEP_INDEX}
+            startStepIndex={startStepIndex}
             stepNames={stepNames}
         >
             {isRedirecting ? (

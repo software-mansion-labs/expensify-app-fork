@@ -39,9 +39,6 @@ const pages = [
     {pageName: SUB_PAGE_NAMES.CONFIRMATION, component: Confirmation},
 ];
 
-// The position of this step in the step counter of the header
-const STEP_INDEX = 2;
-
 /** Returns the index of the first sub page with an empty input, or the confirmation page when every input has a value */
 function getInitialSubPageIndex(values: SubStepValues<(typeof BUSINESS_INFO_KEYS)[keyof typeof BUSINESS_INFO_KEYS]>): number {
     if (!values.companyName) {
@@ -53,7 +50,7 @@ function getInitialSubPageIndex(values: SubStepValues<(typeof BUSINESS_INFO_KEYS
     return pages.length - 1;
 }
 
-function BusinessInfo({onBackButtonPress, onSubmit, policyID, stepNames, backTo}: NonUSDPageProps) {
+function BusinessInfo({onBackButtonPress, onSubmit, policyID, stepNames, startStepIndex, backTo}: NonUSDPageProps) {
     const {translate} = useLocalize();
     const [account] = useOnyx(ONYXKEYS.SIMPLIFIED_BANK_ONBOARDING_ACCOUNT);
     const [draft] = useOnyx(ONYXKEYS.FORMS.SIMPLIFIED_BANK_ONBOARDING_FORM_DRAFT);
@@ -119,7 +116,7 @@ function BusinessInfo({onBackButtonPress, onSubmit, policyID, stepNames, backTo}
             handleBackButtonPress={handleBackButtonPress}
             headerTitle={translate('businessInfoStep.businessInfoTitle')}
             stepNames={stepNames}
-            startStepIndex={STEP_INDEX}
+            startStepIndex={startStepIndex}
         >
             {isRedirecting ? (
                 <SubPageRedirectIndicator />

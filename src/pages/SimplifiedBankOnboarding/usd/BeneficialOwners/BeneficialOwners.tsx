@@ -28,7 +28,6 @@ import ROUTES from '@src/ROUTES';
 import React, {useEffect} from 'react';
 
 import BeneficialOwnerDetailsFormPages from './BeneficialOwnerDetailsFormPages';
-import STEP_INDEX from './STEP_INDEX';
 import CompanyOwnersListUBO from './subSteps/CompanyOwnersListUBO';
 import getValuesForBeneficialOwner from './utils/getValuesForBeneficialOwner';
 
@@ -36,7 +35,7 @@ const {PAGE_NAMES, BENEFICIAL_OWNERS_SUB_PAGES: SUB_PAGE_NAMES, MAX_NUMBER_OF_UB
 
 const OUTER_SUB_PAGES = new Set<string>([SUB_PAGE_NAMES.IS_USER_UBO, SUB_PAGE_NAMES.IS_ANYONE_ELSE_UBO, SUB_PAGE_NAMES.ARE_THERE_MORE_UBOS, SUB_PAGE_NAMES.UBOS_LIST]);
 
-function BeneficialOwners({onBackButtonPress, onSubmit, policyID, currentSubPage, stepNames, backTo}: USDPageProps) {
+function BeneficialOwners({onBackButtonPress, onSubmit, policyID, currentSubPage, stepNames, startStepIndex, backTo}: USDPageProps) {
     const {translate} = useLocalize();
     const styles = useThemeStyles();
     const [account] = useOnyx(ONYXKEYS.SIMPLIFIED_BANK_ONBOARDING_ACCOUNT);
@@ -178,6 +177,7 @@ function BeneficialOwners({onBackButtonPress, onSubmit, policyID, currentSubPage
                 isEditingCreatedBeneficialOwner={isEditingCreatedBeneficialOwner}
                 onFinished={handleBeneficialOwnerDetailsFormFinished}
                 stepNames={stepNames}
+                startStepIndex={startStepIndex}
                 backTo={backTo}
             />
         );
@@ -192,7 +192,7 @@ function BeneficialOwners({onBackButtonPress, onSubmit, policyID, currentSubPage
             shouldEnableMaxHeight
             headerTitle={translate('beneficialOwnerInfoStep.companyOwner')}
             handleBackButtonPress={handleBackButtonPress}
-            startStepIndex={STEP_INDEX}
+            startStepIndex={startStepIndex}
             stepNames={stepNames}
         >
             {!!question && (

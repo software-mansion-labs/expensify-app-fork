@@ -42,14 +42,14 @@ type SignerDetailsFormPagesProps = {
     /** Sends the director request after the confirmation page */
     onFinished: () => void;
     stepNames?: readonly string[];
+
+    /** Position of the step in the step counter of the header */
+    startStepIndex?: number;
     policyID?: string;
     backTo?: string;
-
-    /** The position of the signer step in the step counter of the header */
-    stepIndex: number;
 };
 
-function SignerDetailsFormPages({onBackToIsDirector, onFinished, stepNames, policyID, backTo, stepIndex}: SignerDetailsFormPagesProps) {
+function SignerDetailsFormPages({onBackToIsDirector, onFinished, stepNames, startStepIndex, policyID, backTo}: SignerDetailsFormPagesProps) {
     const {translate} = useLocalize();
     const [account] = useOnyx(ONYXKEYS.SIMPLIFIED_BANK_ONBOARDING_ACCOUNT);
     const [draft] = useOnyx(ONYXKEYS.FORMS.SIMPLIFIED_BANK_ONBOARDING_FORM_DRAFT);
@@ -93,7 +93,7 @@ function SignerDetailsFormPages({onBackToIsDirector, onFinished, stepNames, poli
             handleBackButtonPress={handleBackButtonPress}
             headerTitle={translate('signerInfoStep.signerInfo')}
             stepNames={stepNames}
-            startStepIndex={stepIndex}
+            startStepIndex={startStepIndex}
         >
             {isRedirecting ? (
                 <SubPageRedirectIndicator />

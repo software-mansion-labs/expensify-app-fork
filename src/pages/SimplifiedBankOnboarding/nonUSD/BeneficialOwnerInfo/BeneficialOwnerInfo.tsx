@@ -28,7 +28,6 @@ import React, {useEffect, useRef} from 'react';
 
 import BeneficialOwnerDetailsFormPages from './BeneficialOwnerDetailsFormPages';
 import BeneficialOwnersList from './BeneficialOwnersList';
-import {STEP_INDEX} from './const';
 import getDraftValuesForBeneficialOwners from './utils/getDraftValuesForBeneficialOwners';
 import {getTotalOwnedPercentageSum} from './utils/getTotalOwnedPercentage';
 import getValuesForBeneficialOwner from './utils/getValuesForBeneficialOwner';
@@ -43,7 +42,7 @@ const OUTER_SUB_PAGES = new Set<string>([
     SUB_PAGE_NAMES.BENEFICIAL_OWNERS_LIST,
 ]);
 
-function BeneficialOwnerInfo({onBackButtonPress, onSubmit, policyID, stepNames, currentSubPage, backTo}: NonUSDPageProps) {
+function BeneficialOwnerInfo({onBackButtonPress, onSubmit, policyID, stepNames, startStepIndex, currentSubPage, backTo}: NonUSDPageProps) {
     const {translate} = useLocalize();
     const [account] = useOnyx(ONYXKEYS.SIMPLIFIED_BANK_ONBOARDING_ACCOUNT);
     const [draft] = useOnyx(ONYXKEYS.FORMS.SIMPLIFIED_BANK_ONBOARDING_FORM_DRAFT);
@@ -222,6 +221,7 @@ function BeneficialOwnerInfo({onBackButtonPress, onSubmit, policyID, stepNames, 
                 policyID={policyID}
                 onFinished={handleOwnerDetailsFormFinished}
                 stepNames={stepNames}
+                startStepIndex={startStepIndex}
                 backTo={backTo}
             />
         );
@@ -235,7 +235,7 @@ function BeneficialOwnerInfo({onBackButtonPress, onSubmit, policyID, stepNames, 
             handleBackButtonPress={handleBackButtonPress}
             headerTitle={translate('ownershipInfoStep.ownerInfo')}
             stepNames={stepNames}
-            startStepIndex={STEP_INDEX}
+            startStepIndex={startStepIndex}
         >
             {!!question && (
                 <YesNoStep

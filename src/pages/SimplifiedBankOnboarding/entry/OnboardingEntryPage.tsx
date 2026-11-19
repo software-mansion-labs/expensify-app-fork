@@ -24,20 +24,14 @@ import Navigation from '@libs/Navigation/Navigation';
 import type BankOnboardingLabParamList from '@libs/Navigation/paramLists/BankOnboardingLabParamList';
 import type {PlatformStackScreenProps} from '@libs/Navigation/PlatformStackNavigation/types';
 
-import {
-    clearOnboardingAccount,
-    clearOnboardingDraft,
-    DEFAULT_ACCOUNT,
-    goToSetupStep,
-    setBankAccountSubStep,
-    setOnboardingAccountLoading,
-    updateOnboardingDraft,
-} from '@pages/SimplifiedBankOnboarding/actions/OnboardingAccount';
+import {clearOnboardingAccount, clearOnboardingDraft, DEFAULT_ACCOUNT, setOnboardingAccountLoading, updateOnboardingDraft} from '@pages/SimplifiedBankOnboarding/actions/OnboardingAccount';
 import {openOnboardingPage} from '@pages/SimplifiedBankOnboarding/actions/OnboardingPage';
+import {getResumePosition} from '@pages/SimplifiedBankOnboarding/flow/flowNavigation';
+import NON_USD_FLOW from '@pages/SimplifiedBankOnboarding/flow/nonUSDFlow';
+import USD_FLOW from '@pages/SimplifiedBankOnboarding/flow/usdFlow';
 import SBO_CONST from '@pages/SimplifiedBankOnboarding/SBO_CONST';
 import type {USDStep} from '@pages/SimplifiedBankOnboarding/types/onyx';
 import getDraftValuesForStep from '@pages/SimplifiedBankOnboarding/utils/getDraftValuesForStep';
-import getStartPageForContinueSetup from '@pages/SimplifiedBankOnboarding/utils/getStartPageForContinueSetup';
 import {hasInProgressSetup, hasInProgressUSDSetup, isSupportedCurrency} from '@pages/SimplifiedBankOnboarding/utils/OnboardingAccountUtils';
 
 import CONST from '@src/CONST';
@@ -60,18 +54,6 @@ const {STEP, PAGE_NAMES} = SBO_CONST.USD;
 
 /** The steps whose data is on the device, so they can be shown without a connection */
 const OFFLINE_ACCESSIBLE_STEPS: USDStep[] = [STEP.COUNTRY, STEP.BANK_ACCOUNT, STEP.REQUESTOR, STEP.COMPANY];
-
-/** Translates the step that the server stores into the page name that the URL holds. The two lists are kept in sync by hand. */
-const STEP_TO_PAGE_NAME: Partial<Record<USDStep, string>> = {
-    [STEP.COUNTRY]: PAGE_NAMES.COUNTRY,
-    [STEP.BANK_ACCOUNT]: PAGE_NAMES.BANK_ACCOUNT,
-    [STEP.REQUESTOR]: PAGE_NAMES.REQUESTOR,
-    [STEP.COMPANY]: PAGE_NAMES.COMPANY,
-    [STEP.BENEFICIAL_OWNERS]: PAGE_NAMES.BENEFICIAL_OWNERS,
-    [STEP.ACH_CONTRACT]: PAGE_NAMES.ACH_CONTRACT,
-    [STEP.KYB_DOCS]: PAGE_NAMES.KYB_DOCS,
-    [STEP.VALIDATION]: PAGE_NAMES.VALIDATION,
-};
 
 function OnboardingEntryPage({route}: OnboardingEntryPageProps) {
     const styles = useThemeStyles();
@@ -152,28 +134,15 @@ function OnboardingEntryPage({route}: OnboardingEntryPageProps) {
         Navigation.dismissModal();
     };
 
-    const fetchData = (shouldPreserveCurrentStep = false) => {
+    const fetchData = () => {
         if (!policyID && !bankAccountIDParam) {
             return;
         }
         if (bankAccountIDParam) {
-            // The server returns the step of the account, so the step parameters are left out.
             openOnboardingPage({bankAccountID: Number(bankAccountIDParam)});
             return;
         }
-
-        // After a reconnect the client asks for the step it was showing, because the server may have moved on in the meantime.
-        const stepToOpen = shouldPreserveCurrentStep ? currentStep : '';
-        const subStep = isPreviousPolicy ? (achData?.subStep ?? '') : '';
-
-        let localCurrentStep: USDStep | '' = '';
-        if (shouldPreserveCurrentStep) {
-            localCurrentStep = currentStep;
-        } else if (isPreviousPolicy) {
-            localCurrentStep = achData?.currentStep ?? '';
-        }
-
-        openOnboardingPage({policyID, stepToOpen, subStep, localCurrentStep});
+        openOnboardingPage({policyID});
     };
 
     useEffect(() => {
@@ -208,9 +177,6 @@ function OnboardingEntryPage({route}: OnboardingEntryPageProps) {
             setOnboardingAccountLoading(true);
             clearOnboardingDraft();
         }
-
-        // The page opens without a step, so the choice between Plaid and the manual setup is shown again.
-        setBankAccountSubStep(null);
         fetchData();
     });
 
@@ -280,7 +246,7 @@ function OnboardingEntryPage({route}: OnboardingEntryPageProps) {
     const syncWithAccountChanges = useEffectEvent(() => {
         const isBackOnline = prevIsOffline && !isOffline;
         if (isBackOnline && prevAccount && prevAccount.pendingAction !== CONST.RED_BRICK_ROAD_PENDING_ACTION.DELETE) {
-            fetchData(true);
+            fetchData();
         }
 
         if (!hasACHDataBeenLoaded) {
@@ -312,15 +278,12 @@ function OnboardingEntryPage({route}: OnboardingEntryPageProps) {
     }, [isOffline, account?.draftStep, account?.pendingAction, account?.isLoading, hasACHDataBeenLoaded, shouldShowContinueSetupButton, currentStep]);
 
     const continueUSDSetup = () => {
-        // A resumed setup never goes through Plaid again. It shows the manual variant with the numbers locked.
-        setBankAccountSubStep(SBO_CONST.SETUP_TYPE.MANUAL).then(() => {
-            const page = STEP_TO_PAGE_NAME[currentStep] ?? PAGE_NAMES.COUNTRY;
-            Navigation.navigate(ROUTES.SETTINGS_BANK_ONBOARDING_LAB_USD_SETUP.getRoute({policyID, page, backTo}));
-        });
+        const {page, subPage} = getResumePosition(USD_FLOW, {currency: policyCurrency, server: achData, draft});
+        Navigation.navigate(ROUTES.SETTINGS_BANK_ONBOARDING_LAB_USD_SETUP.getRoute({policyID, page, subPage, backTo}));
     };
 
     const continueNonUSDSetup = () => {
-        const {page, subPage} = getStartPageForContinueSetup(achData, policyCurrency, draft);
+        const {page, subPage} = getResumePosition(NON_USD_FLOW, {currency: policyCurrency, server: achData, draft});
         Navigation.navigate(ROUTES.SETTINGS_BANK_ONBOARDING_LAB_NON_USD_SETUP.getRoute({policyID, page, subPage, backTo}));
     };
 
@@ -330,7 +293,6 @@ function OnboardingEntryPage({route}: OnboardingEntryPageProps) {
                 if (hasInProgressUSDSetup(achData)) {
                     setShouldShowContinueSetupButton(true);
                 }
-                setBankAccountSubStep(null);
                 Navigation.goBack(backTo);
                 break;
             case STEP.VALIDATION:
@@ -338,7 +300,6 @@ function OnboardingEntryPage({route}: OnboardingEntryPageProps) {
                     Navigation.dismissModal();
                     break;
                 }
-                goToSetupStep(STEP.ACH_CONTRACT);
                 Navigation.goBack(backTo);
                 break;
             default:

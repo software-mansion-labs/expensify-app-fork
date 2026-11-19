@@ -2,7 +2,7 @@
  * Reads the share of every owner from the draft. The step uses the sum to decide whether more owners can be added, and
  * the percentage page uses the shares to keep the total at 100 or below, like the real step does.
  */
-import {OWNER_FIELDS} from '@pages/SimplifiedBankOnboarding/nonUSD/BeneficialOwnerInfo/const';
+import OWNER_FIELDS from '@pages/SimplifiedBankOnboarding/nonUSD/BeneficialOwnerInfo/OWNER_FIELDS';
 import type {OnboardingForm} from '@pages/SimplifiedBankOnboarding/types/form';
 import {getOwnerDraftValue} from '@pages/SimplifiedBankOnboarding/utils/owners/OwnerDraftUtils';
 

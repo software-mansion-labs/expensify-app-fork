@@ -26,7 +26,6 @@ import type BeneficialOwnerSubPageProps from './types';
 import Confirmation from './BeneficialOwnerDetailsFormSubSteps/Confirmation';
 import Name from './BeneficialOwnerDetailsFormSubSteps/Name';
 import OwnershipPercentage from './BeneficialOwnerDetailsFormSubSteps/OwnershipPercentage';
-import {STEP_INDEX} from './const';
 import getTotalOwnedPercentage from './utils/getTotalOwnedPercentage';
 
 type BeneficialOwnerDetailsFormPagesProps = {
@@ -35,6 +34,9 @@ type BeneficialOwnerDetailsFormPagesProps = {
     /** Called after the confirmation page */
     onFinished: () => void;
     stepNames?: readonly string[];
+
+    /** Position of the step in the step counter of the header */
+    startStepIndex?: number;
     backTo?: string;
 };
 
@@ -46,7 +48,7 @@ const pages = [
     {pageName: SUB_PAGE_NAMES.CONFIRMATION, component: Confirmation},
 ];
 
-function BeneficialOwnerDetailsFormPages({policyID, onFinished, stepNames, backTo}: BeneficialOwnerDetailsFormPagesProps) {
+function BeneficialOwnerDetailsFormPages({policyID, onFinished, stepNames, startStepIndex, backTo}: BeneficialOwnerDetailsFormPagesProps) {
     const {translate} = useLocalize();
     const [draft] = useOnyx(ONYXKEYS.FORMS.SIMPLIFIED_BANK_ONBOARDING_FORM_DRAFT);
 
@@ -88,7 +90,7 @@ function BeneficialOwnerDetailsFormPages({policyID, onFinished, stepNames, backT
             handleBackButtonPress={handleBackButtonPress}
             headerTitle={translate('ownershipInfoStep.ownerInfo')}
             stepNames={stepNames}
-            startStepIndex={STEP_INDEX}
+            startStepIndex={startStepIndex}
         >
             {isRedirecting || !ownerBeingModifiedID ? (
                 <SubPageRedirectIndicator />

@@ -1,7 +1,6 @@
 /**
- * The bank step of the USD flow. Like the real step it has no sub pages of its own: the setup type stored in
- * `achData.subStep` picks the Plaid or the manual variant, and the URL sub page is only a copy of it. The container owns
- * the request and waits for it with the shared `isLoading` (request style 1).
+ * The bank step of the USD flow. The sub page of the URL picks the Plaid or the manual variant, and the flow definition
+ * puts it there. The container owns the request and waits for it with the shared `isLoading` (request style 1).
  */
 import ActivityIndicator from '@components/ActivityIndicator';
 import InteractiveStepWrapper from '@components/InteractiveStepWrapper';
@@ -12,12 +11,17 @@ import useThemeStyles from '@hooks/useThemeStyles';
 
 import {clearOnboardingAccountErrors} from '@pages/SimplifiedBankOnboarding/actions/OnboardingAccount';
 import {connectBankAccountManually, connectBankAccountWithPlaid} from '@pages/SimplifiedBankOnboarding/actions/USDBankAccount';
+import {getBankAccountSubPage} from '@pages/SimplifiedBankOnboarding/flow/usdFlow';
 import useOnboardingSubmitCallback from '@pages/SimplifiedBankOnboarding/hooks/useOnboardingSubmitCallback';
 import SBO_CONST from '@pages/SimplifiedBankOnboarding/SBO_CONST';
+import type {OnboardingForm} from '@pages/SimplifiedBankOnboarding/types/form';
+import type {OnboardingAccount} from '@pages/SimplifiedBankOnboarding/types/onyx';
 import type USDPageProps from '@pages/SimplifiedBankOnboarding/usd/types';
 
 import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';
+
+import type {OnyxEntry} from 'react-native-onyx';
 
 import React from 'react';
 import {View} from 'react-native';
@@ -27,18 +31,24 @@ import type {BankAccountValues} from './types';
 import Manual from './subSteps/Manual';
 import Plaid from './subSteps/Plaid';
 
-type BankInfoProps = Pick<USDPageProps, 'onSubmit' | 'onBackButtonPress' | 'policyID' | 'stepNames'>;
+type BankInfoProps = Pick<USDPageProps, 'onSubmit' | 'onBackButtonPress' | 'policyID' | 'currentSubPage' | 'stepNames' | 'startStepIndex'>;
 
-// The position of this step in the step counter of the header
-const STEP_INDEX = 1;
+function selectBankAccountID(account: OnyxEntry<OnboardingAccount>) {
+    return account?.achData?.bankAccountID;
+}
 
-function BankInfo({onSubmit, onBackButtonPress, policyID, stepNames}: BankInfoProps) {
+function selectSetupType(draft: OnyxEntry<OnboardingForm>) {
+    return draft?.setupType;
+}
+
+function BankInfo({onSubmit, onBackButtonPress, policyID, currentSubPage, stepNames, startStepIndex}: BankInfoProps) {
     const {translate} = useLocalize();
     const styles = useThemeStyles();
-    const [account] = useOnyx(ONYXKEYS.SIMPLIFIED_BANK_ONBOARDING_ACCOUNT);
+    const [bankAccountID] = useOnyx(ONYXKEYS.SIMPLIFIED_BANK_ONBOARDING_ACCOUNT, {selector: selectBankAccountID});
+    const [draftSetupType] = useOnyx(ONYXKEYS.FORMS.SIMPLIFIED_BANK_ONBOARDING_FORM_DRAFT, {selector: selectSetupType});
     const markSubmitting = useOnboardingSubmitCallback(onSubmit);
 
-    const setupType = account?.achData?.subStep ?? '';
+    const setupType = currentSubPage ?? getBankAccountSubPage(bankAccountID, draftSetupType);
 
     const submit = (values: BankAccountValues) => {
         if (!policyID) {
@@ -80,7 +90,7 @@ function BankInfo({onSubmit, onBackButtonPress, policyID, stepNames}: BankInfoPr
             shouldEnablePickerAvoiding={false}
             handleBackButtonPress={handleBackButtonPress}
             headerTitle={translate('bankAccount.bankInfo')}
-            startStepIndex={STEP_INDEX}
+            startStepIndex={startStepIndex}
             stepNames={stepNames}
         >
             {renderBankInfo()}

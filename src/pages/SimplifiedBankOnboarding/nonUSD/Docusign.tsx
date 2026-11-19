@@ -33,10 +33,7 @@ import getAgreementValues from './getAgreementValues';
 
 const STEP_FIELDS = [INPUT_IDS.ACH_AUTHORIZATION_FORM];
 
-// The position of this step in the step counter of the header
-const STEP_INDEX = 6;
-
-function Docusign({onBackButtonPress, onSubmit, policyID, stepNames}: NonUSDPageProps) {
+function Docusign({onBackButtonPress, onSubmit, policyID, stepNames, startStepIndex}: NonUSDPageProps) {
     const {translate} = useLocalize();
     const styles = useThemeStyles();
     const [account] = useOnyx(ONYXKEYS.SIMPLIFIED_BANK_ONBOARDING_ACCOUNT);
@@ -81,7 +78,7 @@ function Docusign({onBackButtonPress, onSubmit, policyID, stepNames}: NonUSDPage
             handleBackButtonPress={handleBackButtonPress}
             headerTitle={translate('docusignStep.subheader')}
             stepNames={stepNames}
-            startStepIndex={STEP_INDEX}
+            startStepIndex={startStepIndex}
         >
             <FormProvider
                 ref={formRef}

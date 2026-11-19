@@ -1,11 +1,11 @@
 /**
- * Actions that only change the client state of the onboarding: the step that the client wants to show, the draft and
- * the flags that drive the screens. None of them calls the server. They mirror `libs/actions/ReimbursementAccount`.
+ * Actions that only change the client state of the onboarding: the draft and the flags that drive the screens. None of
+ * them calls the server. They mirror `libs/actions/ReimbursementAccount`.
  */
 /* eslint-disable rulesdir/prefer-actions-set-data -- This file is the action layer of an isolated research module, so it lives outside src/libs/actions */
 import SBO_CONST from '@pages/SimplifiedBankOnboarding/SBO_CONST';
 import type {OnboardingForm} from '@pages/SimplifiedBankOnboarding/types/form';
-import type {ACHData, OnboardingAccount, SetupType, USDStep} from '@pages/SimplifiedBankOnboarding/types/onyx';
+import type {ACHData, OnboardingAccount, SetupType} from '@pages/SimplifiedBankOnboarding/types/onyx';
 
 import ONYXKEYS from '@src/ONYXKEYS';
 
@@ -23,16 +23,6 @@ const DEFAULT_ACCOUNT: OnboardingAccount = {
     maxAttemptsReached: false,
     shouldShowResetModal: false,
 };
-
-/** Passing `null` goes back to the choice between Plaid and the manual setup */
-function setBankAccountSubStep(subStep: SetupType | null): Promise<void> {
-    return Onyx.merge(ONYXKEYS.SIMPLIFIED_BANK_ONBOARDING_ACCOUNT, {achData: {subStep}});
-}
-
-/** Writes the step on the client. The server stores its own copy of the step and sends it back with every response. */
-function goToSetupStep(currentStep: USDStep) {
-    Onyx.merge(ONYXKEYS.SIMPLIFIED_BANK_ONBOARDING_ACCOUNT, {achData: {currentStep}});
-}
 
 function updateOnboardingAccount(achData: Partial<ACHData>) {
     Onyx.merge(ONYXKEYS.SIMPLIFIED_BANK_ONBOARDING_ACCOUNT, {achData});
@@ -86,10 +76,8 @@ export {
     clearOnboardingAccount,
     clearOnboardingAccountErrors,
     clearOnboardingDraft,
-    goToSetupStep,
     prepareNewBankAccountSetup,
     requestResetBankAccount,
-    setBankAccountSubStep,
     setOnboardingAccountLoading,
     setSetupOptionPressed,
     updateOnboardingAccount,
