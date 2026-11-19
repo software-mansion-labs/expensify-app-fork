@@ -13,29 +13,34 @@ import type {FlowPlan, PageConfig, PageID, PlanContext, StepConfig, StepID} from
 import {exitFlow, goBackToEntry, goBackToPosition, goToPosition, replacePosition} from '@pages/SimplifiedBankOnboarding/navigation/flowNavigation';
 import {getPositionFromParams} from '@pages/SimplifiedBankOnboarding/navigation/routes';
 import type {FlowRouteParams, FlowRouteTarget} from '@pages/SimplifiedBankOnboarding/navigation/routes';
-import {saveDraft} from '@pages/SimplifiedBankOnboarding/requests/draft';
 import useRequestState from '@pages/SimplifiedBankOnboarding/requests/useRequestState';
 import type {OnboardingDraft} from '@pages/SimplifiedBankOnboarding/types/form';
 
-import ONYXKEYS from '@src/ONYXKEYS';
 import {isEmptyObject} from '@src/types/utils/EmptyObject';
 
 /**
  * The controller of a flow screen. It builds the plan in render from the draft and the server data, reads the position
  * from the URL and gives the page its handlers. Every move happens in a handler: it writes the draft, rebuilds the plan
- * from fresh Onyx data, runs the request of the page or, at the end of a step, the step request and only then navigates. The one effect redirects a
- * URL that names no reachable position.
+ * from fresh Onyx data, runs the request of the page or, at the end of a step, the step request and only then navigates.
+ * The one effect redirects a URL that names no reachable position, once the data of the plan is there.
  */
 import {useIsFocused} from '@react-navigation/native';
 import {useEffect, useEffectEvent, useRef} from 'react';
-import Onyx from 'react-native-onyx';
 
-import type {FlowData, FlowDescriptor} from './types';
+import type {FlowDataSource, FlowDataStatus, FlowDescriptor} from './types';
 
-import useFlowData from './useFlowData';
+type OnboardingFlowOptions<TData> = {
+    flow: FlowDescriptor<TData>;
+    target: FlowRouteTarget;
+    routeParams: FlowRouteParams;
+    dataSource: FlowDataSource<TData>;
 
-type OnboardingFlow = {
-    data: FlowData;
+    /** The redirect waits until the data of the plan is there */
+    dataStatus: FlowDataStatus;
+};
+
+type OnboardingFlow<TData> = {
+    data: TData;
     context: PlanContext;
     plan: FlowPlan;
     position: FlowPosition | undefined;
@@ -58,11 +63,11 @@ function getPositionKey(position: FlowPosition | undefined): string {
     return position ? `${position.stepID}/${position.pageID}/${position.isEditing ? 'edit' : ''}` : '';
 }
 
-function useOnboardingFlow(flow: FlowDescriptor, target: FlowRouteTarget, routeParams: FlowRouteParams): OnboardingFlow {
+function useOnboardingFlow<TData>({flow, target, routeParams, dataSource, dataStatus}: OnboardingFlowOptions<TData>): OnboardingFlow<TData> {
     const {translate} = useLocalize();
     const {isOffline} = useNetwork();
     const isFocused = useIsFocused();
-    const data = useFlowData();
+    const {data, readData} = dataSource;
 
     const context: PlanContext = {translate, policyID: target.policyID};
     const plan = flow.buildPlan(data, context);
@@ -79,16 +84,7 @@ function useOnboardingFlow(flow: FlowDescriptor, target: FlowRouteTarget, routeP
     const leftPositionKeyRef = useRef<string | undefined>(undefined);
 
     // After a draft write or a request the plan of the last render is stale, so handlers rebuild it from what Onyx holds now
-    const rebuildPlan = async () => {
-        const [draft, account, workspaces, bankFields, picklists] = await Onyx.multiGet([
-            ONYXKEYS.FORMS.SIMPLIFIED_BANK_ONBOARDING_FORM_DRAFT,
-            ONYXKEYS.SIMPLIFIED_BANK_ONBOARDING_ACCOUNT,
-            ONYXKEYS.SIMPLIFIED_BANK_ONBOARDING_WORKSPACES,
-            ONYXKEYS.SIMPLIFIED_BANK_ONBOARDING_BANK_FIELDS,
-            ONYXKEYS.SIMPLIFIED_BANK_ONBOARDING_PICKLISTS,
-        ]);
-        return flow.buildPlan({draft: draft ?? undefined, account, workspaces, bankFields, picklists}, context);
-    };
+    const rebuildPlan = async () => flow.buildPlan(await readData(), context);
 
     const leavePosition = (from: FlowPosition, navigate: () => void) => {
         leftPositionKeyRef.current = getPositionKey(from);
@@ -156,7 +152,7 @@ function useOnboardingFlow(flow: FlowDescriptor, target: FlowRouteTarget, routeP
             const transition = submittedPage.onSubmit?.(values) ?? {};
             const draftUpdate = transition.draftUpdate ?? values;
             if (!isEmptyObject(draftUpdate)) {
-                await saveDraft(draftUpdate);
+                await flow.saveDraft(draftUpdate);
             }
             const nextPlan = await runPageRequest(from, await rebuildPlan());
             if (!nextPlan) {
@@ -208,7 +204,7 @@ function useOnboardingFlow(flow: FlowDescriptor, target: FlowRouteTarget, routeP
         const transition = page.onRowPress(rowID);
         runHandler(async () => {
             if (transition.draftUpdate) {
-                await saveDraft(transition.draftUpdate);
+                await flow.saveDraft(transition.draftUpdate);
             }
             const nextPageID = transition.nextPageID;
             if (!nextPageID) {
@@ -228,6 +224,7 @@ function useOnboardingFlow(flow: FlowDescriptor, target: FlowRouteTarget, routeP
 
     const urlPositionKey = getPositionKey(urlPosition);
     const isUnreachable = !position;
+    const isDataReady = dataStatus === 'ready';
 
     const redirectToResume = useEffectEvent(() => {
         if (isHandlingRef.current || leftPositionKeyRef.current === urlPositionKey) {
@@ -251,13 +248,14 @@ function useOnboardingFlow(flow: FlowDescriptor, target: FlowRouteTarget, routeP
 
     // The only navigation outside a handler: a deep link, a stale URL or a URL without a page has no page to show, so
     // the screen swaps it for the position where the flow resumes. It waits while a handler runs or has just left this
-    // URL, because the data then changes before the navigation lands, and it redirects one URL only once.
+    // URL, because the data then changes before the navigation lands, and it redirects one URL only once. A plan built
+    // before the account of the workspace was read would send a deep link back to the first step, so it waits for the read too.
     useEffect(() => {
-        if (!isUnreachable || !isFocused) {
+        if (!isUnreachable || !isFocused || !isDataReady) {
             return;
         }
         redirectToResume();
-    }, [isUnreachable, isFocused, urlPositionKey]);
+    }, [isUnreachable, isFocused, isDataReady, urlPositionKey]);
 
     return {
         data,

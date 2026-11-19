@@ -1,12 +1,13 @@
-import type {FormInputErrors, FormOnyxValues} from '@components/Form/types';
+import type {FormInputErrors} from '@components/Form/types';
 
 import type ONYXKEYS from '@src/ONYXKEYS';
 
-/** Every page of the flow renders the one onboarding form, so its values are the draft of the whole flow */
-type OnboardingFormID = typeof ONYXKEYS.FORMS.SIMPLIFIED_BANK_ONBOARDING_FORM;
+/**
+ * The forms that a form page renders: the onboarding form, whose values are the draft of the whole flow, and the form of
+ * an invited director, whose inputs are the signer inputs of the onboarding form under the same IDs
+ */
+type OnboardingFormID = typeof ONYXKEYS.FORMS.SIMPLIFIED_BANK_ONBOARDING_FORM | typeof ONYXKEYS.FORMS.SIMPLIFIED_BANK_ONBOARDING_SIGNER_FORM;
 
-type OnboardingFormValues = FormOnyxValues<OnboardingFormID>;
+type OnboardingFormErrors = FormInputErrors<typeof ONYXKEYS.FORMS.SIMPLIFIED_BANK_ONBOARDING_FORM>;
 
-type OnboardingFormErrors = FormInputErrors<OnboardingFormID>;
-
-export type {OnboardingFormErrors, OnboardingFormID, OnboardingFormValues};
+export type {OnboardingFormErrors, OnboardingFormID};

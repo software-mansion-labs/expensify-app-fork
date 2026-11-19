@@ -16,11 +16,14 @@ import {useMemoizedLazyExpensifyIcons} from '@hooks/useLazyAsset';
 import useLocalize from '@hooks/useLocalize';
 import useThemeStyles from '@hooks/useThemeStyles';
 
-import {clearOnboardingAccountErrors, requestResetBankAccount} from '@pages/SimplifiedBankOnboarding/actions/OnboardingAccount';
-import useResetOnboardingModal from '@pages/SimplifiedBankOnboarding/hooks/useResetOnboardingModal';
+import useStartOverModal from '@pages/SimplifiedBankOnboarding/entry/reset/useStartOverModal';
+import {goToChangeBankAccount, leaveEntry} from '@pages/SimplifiedBankOnboarding/navigation/entryNavigation';
+import {openFlow} from '@pages/SimplifiedBankOnboarding/navigation/flowNavigation';
+import clearAccountErrors from '@pages/SimplifiedBankOnboarding/requests/clearAccountErrors';
 import type {OnboardingAccount} from '@pages/SimplifiedBankOnboarding/types/onyx';
 
 import CONST from '@src/CONST';
+import type {Route} from '@src/ROUTES';
 import {isEmptyObject} from '@src/types/utils/EmptyObject';
 
 import type {OnyxEntry} from 'react-native-onyx';
@@ -28,35 +31,37 @@ import type {OnyxEntry} from 'react-native-onyx';
 import React from 'react';
 import {View} from 'react-native';
 
-import navigateToChangeBankAccount from './navigateToChangeBankAccount';
-
-type ConnectedBankAccountProps = {
-    /** The shared account object. The entry page reads it and passes it down, like the real flow does. */
+type ConnectedBankAccountViewProps = {
     account: OnyxEntry<OnboardingAccount>;
-    onBackButtonPress: () => void;
-
-    /** Lets the reset modal leave this view once the bank account is disconnected */
-    setShouldShowConnectedBankAccount: (shouldShowConnectedBankAccount: boolean) => void;
-    isNonUSDWorkspace: boolean;
+    policyID: string | undefined;
+    backTo: Route | undefined;
+    isNonUSD: boolean;
 };
 
 const VISIBLE_ACCOUNT_NUMBER_DIGITS = 4;
 
-function ConnectedBankAccount({account, onBackButtonPress, setShouldShowConnectedBankAccount, isNonUSDWorkspace}: ConnectedBankAccountProps) {
+function ConnectedBankAccountView({account, policyID, backTo, isNonUSD}: ConnectedBankAccountViewProps) {
     const styles = useThemeStyles();
     const {translate} = useLocalize();
     const icons = useMemoizedLazyExpensifyIcons(['Bank', 'Close']);
+    const {openStartOverModal} = useStartOverModal({account, policyID, isNonUSD});
 
     const achData = account?.achData;
     const errors = account?.errors ?? {};
     const pendingAction = account?.pendingAction;
     const isDisabled = !!pendingAction || !isEmptyObject(errors);
 
-    // The two flows keep the account number in different places of the same object.
+    // The two flows keep the account number in different places of the same object
     const accountNumber = achData?.accountNumber ?? achData?.corpay?.iban ?? achData?.corpay?.accountNumber ?? '';
     const formattedAccountNumber = accountNumber ? `${translate('bankAccount.accountEnding')} ${accountNumber.slice(-VISIBLE_ACCOUNT_NUMBER_DIGITS)}` : '';
 
-    useResetOnboardingModal({account, isNonUSDWorkspace, setShouldShowConnectedBankAccount});
+    // A disconnected USD account shows the setup options on this page, a NonUSD one starts its flow again right away
+    const openAfterDisconnect = () => {
+        if (!isNonUSD) {
+            return;
+        }
+        openFlow({kind: 'nonUSD', policyID, backTo});
+    };
 
     return (
         <ScreenWrapper
@@ -67,7 +72,7 @@ function ConnectedBankAccount({account, onBackButtonPress, setShouldShowConnecte
         >
             <HeaderWithBackButtonAndTitle
                 title={translate('bankAccount.addBankAccount')}
-                onBackButtonPress={onBackButtonPress}
+                onBackButtonPress={() => leaveEntry(backTo)}
             />
             <ScrollView style={styles.flex1}>
                 <Section title={translate('workspace.bankAccount.allSet')}>
@@ -75,7 +80,7 @@ function ConnectedBankAccount({account, onBackButtonPress, setShouldShowConnecte
                         pendingAction={pendingAction}
                         errors={errors}
                         shouldShowErrorMessages
-                        onClose={clearOnboardingAccountErrors}
+                        onClose={clearAccountErrors}
                     >
                         <View style={[styles.mt3, styles.mhn5]}>
                             <MenuItemField
@@ -89,14 +94,14 @@ function ConnectedBankAccount({account, onBackButtonPress, setShouldShowConnecte
                                 sentryLabel={CONST.SENTRY_LABEL.BANK_ONBOARDING_LAB.SELECT_SETUP_OPTION}
                                 title={translate('workspace.bankAccount.changeBankAccount')}
                                 icon={icons.Bank}
-                                onPress={() => navigateToChangeBankAccount(achData?.policyID)}
+                                onPress={() => goToChangeBankAccount(policyID, backTo)}
                                 isDisabled={isDisabled}
                             />
                             <MenuItemAction
                                 sentryLabel={CONST.SENTRY_LABEL.BANK_ONBOARDING_LAB.START_OVER}
                                 title={translate('workspace.bankAccount.disconnectBankAccount')}
                                 icon={icons.Close}
-                                onPress={requestResetBankAccount}
+                                onPress={() => openStartOverModal({onReset: openAfterDisconnect})}
                                 isDisabled={isDisabled}
                             />
                         </View>
@@ -107,4 +112,4 @@ function ConnectedBankAccount({account, onBackButtonPress, setShouldShowConnecte
     );
 }
 
-export default ConnectedBankAccount;
+export default ConnectedBankAccountView;

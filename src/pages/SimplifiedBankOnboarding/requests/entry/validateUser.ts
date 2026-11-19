@@ -1,4 +1,5 @@
 import {WRITE_COMMANDS} from '@pages/SimplifiedBankOnboarding/mockBackend/commands';
+import clearRequestState from '@pages/SimplifiedBankOnboarding/requests/clearRequestState';
 import REQUEST_NAMES from '@pages/SimplifiedBankOnboarding/requests/REQUEST_NAMES';
 import runRequest from '@pages/SimplifiedBankOnboarding/requests/runRequest';
 import type {RequestOutcome} from '@pages/SimplifiedBankOnboarding/requests/types';
@@ -14,4 +15,10 @@ function validateUser(validateCode: string): Promise<RequestOutcome> {
     });
 }
 
+/** Drops the error of the last attempt, such as when the user types again or leaves the page */
+function clearValidateUserErrors(): Promise<void> {
+    return clearRequestState(REQUEST_NAMES.VALIDATE_USER);
+}
+
 export default validateUser;
+export {clearValidateUserErrors};

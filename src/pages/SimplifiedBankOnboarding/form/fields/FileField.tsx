@@ -11,22 +11,23 @@ import useLocalize from '@hooks/useLocalize';
 import useThemeStyles from '@hooks/useThemeStyles';
 
 import type {FileFieldConfig} from '@pages/SimplifiedBankOnboarding/formConfig/types';
+import type {OnboardingFormID} from '@pages/SimplifiedBankOnboarding/formConfig/validation/types';
 import type {OnboardingDraft} from '@pages/SimplifiedBankOnboarding/types/form';
 
 import {clearErrorFields, setDraftValues, setErrorFields} from '@userActions/FormActions';
 
-import ONYXKEYS from '@src/ONYXKEYS';
 import type {FileObject} from '@src/types/utils/Attachment';
 
 import React, {useState} from 'react';
 import {View} from 'react-native';
 
 type FileFieldProps = {
+    formID: OnboardingFormID;
     field: FileFieldConfig;
     shouldSaveDraft: boolean;
 };
 
-function FileField({field, shouldSaveDraft}: FileFieldProps) {
+function FileField({formID, field, shouldSaveDraft}: FileFieldProps) {
     const {translate} = useLocalize();
     const styles = useThemeStyles();
     const [files, setFiles] = useState<FileObject[]>(field.defaultValue);
@@ -38,16 +39,16 @@ function FileField({field, shouldSaveDraft}: FileFieldProps) {
         }
         const draftValues: OnboardingDraft = {};
         draftValues[field.id] = newFiles;
-        setDraftValues(ONYXKEYS.FORMS.SIMPLIFIED_BANK_ONBOARDING_FORM, draftValues);
+        setDraftValues(formID, draftValues);
     };
 
     // The upload control checks the size, the type and the count of the files, and its error replaces the error of the field
     const setUploadError = (error: string) => {
         if (!error) {
-            clearErrorFields(ONYXKEYS.FORMS.SIMPLIFIED_BANK_ONBOARDING_FORM);
+            clearErrorFields(formID);
             return;
         }
-        setErrorFields(ONYXKEYS.FORMS.SIMPLIFIED_BANK_ONBOARDING_FORM, {[field.id]: {onUpload: error}});
+        setErrorFields(formID, {[field.id]: {onUpload: error}});
     };
 
     return (

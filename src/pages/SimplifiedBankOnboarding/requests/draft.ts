@@ -30,4 +30,9 @@ function prepareNewBankAccountSetup(policyID: string | undefined, currency: stri
     ]).then(() => undefined);
 }
 
-export {clearDraft, prepareNewBankAccountSetup, saveDraft};
+/** The page of an invited director has its own form, which keeps only the signer inputs of the submitted values */
+function saveSignerDraft({signerFullName, signerJobTitle}: OnboardingDraft): Promise<void> {
+    return Onyx.merge(ONYXKEYS.FORMS.SIMPLIFIED_BANK_ONBOARDING_SIGNER_FORM_DRAFT, {signerFullName, signerJobTitle});
+}
+
+export {clearDraft, prepareNewBankAccountSetup, saveDraft, saveSignerDraft};

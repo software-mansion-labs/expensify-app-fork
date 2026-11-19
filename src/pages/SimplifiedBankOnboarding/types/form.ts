@@ -173,17 +173,14 @@ const SIGNER_INPUT_IDS = {
 
 type SignerInputID = ValueOf<typeof SIGNER_INPUT_IDS>;
 
-/** The form that an invited director fills in, a separate copy of the signer inputs with its own request flags */
+/** The form that an invited director fills in, a separate copy of the signer inputs. Its request state is in the request status key. */
 type EnterSignerInfoForm = Form<
     SignerInputID,
     {
         [SIGNER_INPUT_IDS.SIGNER_FULL_NAME]: string;
         [SIGNER_INPUT_IDS.SIGNER_JOB_TITLE]: string;
     }
-> & {
-    isSavingSignerInformation?: boolean | null;
-    isSuccess?: boolean | null;
-};
+>;
 
 export type {EnterSignerInfoForm, GlobalOwnerDraft, InputID, OnboardingDraft, OnboardingForm, USDOwnerDraft};
 export {SIGNER_INPUT_IDS};

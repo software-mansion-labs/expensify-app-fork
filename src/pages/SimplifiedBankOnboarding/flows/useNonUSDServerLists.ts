@@ -21,7 +21,7 @@ type NonUSDServerLists = {
 
 function useNonUSDServerLists({draft, account, workspaces, bankFields}: FlowData, policyID: string | undefined): NonUSDServerLists {
     const achData = account?.achData;
-    const currency = getNonUSDCurrency(workspaces, policyID ?? achData?.policyID, achData, draft);
+    const currency = getNonUSDCurrency(workspaces, policyID, achData, draft);
     const {country} = getNonUSDAnswers(draft, account, currency);
     const isBankFieldsLoaded = areBankFieldsLoaded(bankFields, country, currency);
     const bankFieldsRequest = useRequestState(REQUEST_NAMES.GET_BANK_ACCOUNT_FIELDS);

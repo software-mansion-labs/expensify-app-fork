@@ -58,6 +58,19 @@ function getPositionRoute(target: FlowRouteTarget, {stepID, pageID, isEditing}: 
     }
 }
 
+/** The flow route without a position. The flow page swaps it for the position where the flow resumes. */
+function getFlowRoute(target: FlowRouteTarget): Route {
+    switch (target.kind) {
+        case 'usd':
+            return ROUTES.SETTINGS_BANK_ONBOARDING_LAB_USD_SETUP.getRoute({policyID: target.policyID, backTo: target.backTo});
+        case 'nonUSD':
+            return ROUTES.SETTINGS_BANK_ONBOARDING_LAB_NON_USD_SETUP.getRoute({policyID: target.policyID, backTo: target.backTo});
+        case 'enterSignerInfo':
+        default:
+            return ROUTES.SETTINGS_BANK_ONBOARDING_LAB_ENTER_SIGNER_INFO.getRoute({policyID: target.policyID, bankAccountID: target.bankAccountID, isCompleted: target.isCompleted});
+    }
+}
+
 /** The entry page that opened the flow. The invited director page is opened from an email, so it has none. */
 function getEntryRoute(target: FlowRouteTarget): Route | undefined {
     if (target.kind === 'enterSignerInfo') {
@@ -66,5 +79,5 @@ function getEntryRoute(target: FlowRouteTarget): Route | undefined {
     return ROUTES.SETTINGS_BANK_ONBOARDING_LAB_ENTRY.getRoute({policyID: target.policyID, backTo: target.backTo});
 }
 
-export {ENTER_SIGNER_INFO_STEP_ID, getEntryRoute, getPositionFromParams, getPositionRoute};
+export {ENTER_SIGNER_INFO_STEP_ID, getEntryRoute, getFlowRoute, getPositionFromParams, getPositionRoute};
 export type {FlowRouteParams, FlowRouteTarget};

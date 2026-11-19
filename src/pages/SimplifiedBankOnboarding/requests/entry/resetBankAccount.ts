@@ -43,7 +43,7 @@ function getResetOnyxData(policyID: string | undefined, achAccount: WorkspaceACH
             {
                 onyxMethod: Onyx.METHOD.MERGE,
                 key: ONYXKEYS.SIMPLIFIED_BANK_ONBOARDING_ACCOUNT,
-                value: {shouldShowResetModal: false, pendingAction: CONST.RED_BRICK_ROAD_PENDING_ACTION.DELETE, achData: null},
+                value: {pendingAction: CONST.RED_BRICK_ROAD_PENDING_ACTION.DELETE, achData: null},
             },
             ...buildWorkspaceSummaryUpdates(policyID, null),
         ],

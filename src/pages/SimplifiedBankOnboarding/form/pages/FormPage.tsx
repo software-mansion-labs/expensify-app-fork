@@ -1,5 +1,5 @@
 /**
- * A page of input fields. It renders the fields of the config inside the onboarding form, validates them with their
+ * A page of input fields. It renders the fields of the config inside the form of the flow, validates them with their
  * rules and submits only their values. What happens after the submit is up to the caller.
  */
 import FormProvider from '@components/Form/FormProvider';
@@ -12,17 +12,18 @@ import useThemeStyles from '@hooks/useThemeStyles';
 import FieldRenderer from '@pages/SimplifiedBankOnboarding/form/fields/FieldRenderer';
 import type {FormPageConfig} from '@pages/SimplifiedBankOnboarding/formConfig/types';
 import getFieldValues from '@pages/SimplifiedBankOnboarding/formConfig/validation/getFieldValues';
-import type {OnboardingFormValues} from '@pages/SimplifiedBankOnboarding/formConfig/validation/types';
+import type {OnboardingFormID} from '@pages/SimplifiedBankOnboarding/formConfig/validation/types';
 import validateFields from '@pages/SimplifiedBankOnboarding/formConfig/validation/validateFields';
 import type {OnboardingDraft} from '@pages/SimplifiedBankOnboarding/types/form';
 
 import CONST from '@src/CONST';
-import ONYXKEYS from '@src/ONYXKEYS';
 
 import React from 'react';
 import {View} from 'react-native';
 
 type FormPageProps = {
+    /** The form that holds the values, which keeps the draft of the inputs while the user types */
+    formID: OnboardingFormID;
     page: FormPageConfig;
     isEditing: boolean;
     isLoading: boolean;
@@ -32,20 +33,16 @@ type FormPageProps = {
     onSubmit: (values: OnboardingDraft) => void;
 };
 
-function FormPage({page, isEditing, isLoading, errorText, onSubmit}: FormPageProps) {
+function FormPage({formID, page, isEditing, isLoading, errorText, onSubmit}: FormPageProps) {
     const {translate} = useLocalize();
     const styles = useThemeStyles();
 
-    const submit = (values: OnboardingFormValues) => {
-        onSubmit(getFieldValues(page.fields, values));
-    };
-
     return (
         <FormProvider
-            formID={ONYXKEYS.FORMS.SIMPLIFIED_BANK_ONBOARDING_FORM}
+            formID={formID}
             submitButtonText={page.submitLabel ?? translate(isEditing ? 'common.confirm' : 'common.next')}
             validate={(values, validateTranslate) => validateFields(page.fields, values, validateTranslate)}
-            onSubmit={submit}
+            onSubmit={(values) => onSubmit(getFieldValues(page.fields, values))}
             style={[styles.mh5, styles.flexGrow1]}
             isLoading={isLoading}
             enabledWhenOffline={page.enabledWhenOffline}
@@ -59,6 +56,7 @@ function FormPage({page, isEditing, isLoading, errorText, onSubmit}: FormPagePro
                     style={styles.mb6}
                 >
                     <FieldRenderer
+                        formID={formID}
                         field={field}
                         shouldSaveDraft={!isEditing}
                     />

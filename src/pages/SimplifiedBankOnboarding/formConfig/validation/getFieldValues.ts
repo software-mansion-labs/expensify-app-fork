@@ -1,10 +1,8 @@
 import type {FieldConfig} from '@pages/SimplifiedBankOnboarding/formConfig/types';
 import type {OnboardingDraft} from '@pages/SimplifiedBankOnboarding/types/form';
 
-import type {OnboardingFormValues} from './types';
-
 /** The form holds the whole draft, so a page submits only the values of its own fields */
-function getFieldValues(fields: FieldConfig[], values: OnboardingFormValues): OnboardingDraft {
+function getFieldValues(fields: FieldConfig[], values: OnboardingDraft): OnboardingDraft {
     const fieldValues: OnboardingDraft = {};
     for (const field of fields) {
         // Each case narrows the ID to the inputs of one value type, so the copy keeps the type of the value

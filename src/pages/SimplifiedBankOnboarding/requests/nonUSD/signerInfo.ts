@@ -9,6 +9,10 @@ import REQUEST_NAMES from '@pages/SimplifiedBankOnboarding/requests/REQUEST_NAME
 import runRequest from '@pages/SimplifiedBankOnboarding/requests/runRequest';
 import type {RequestOutcome} from '@pages/SimplifiedBankOnboarding/requests/types';
 
+import ONYXKEYS from '@src/ONYXKEYS';
+
+import Onyx from 'react-native-onyx';
+
 type DirectorInfo = Omit<WriteCommandParams[typeof WRITE_COMMANDS.SAVE_ONBOARDING_DIRECTOR_INFORMATION], keyof BankAccountParams>;
 type SignerEmails = Omit<WriteCommandParams[typeof WRITE_COMMANDS.ASK_FOR_SIGNER_INFORMATION], keyof BankAccountParams>;
 
@@ -22,13 +26,19 @@ function saveDirectorInfo(bankAccount: BankAccountParams, directorInfo: Director
     });
 }
 
-/** The invited director is not in the flow, so the account error of the Payments page does not apply */
+/**
+ * The invited director is not in the flow, so the account error of the Payments page does not apply. The saved details
+ * leave the draft of the page, so the next director starts from an empty form.
+ */
 function saveSignerInfo(bankAccount: BankAccountParams, directorInfo: DirectorInfo): Promise<RequestOutcome> {
     return runRequest({
         name: REQUEST_NAMES.SAVE_SIGNER_INFO,
         type: 'write',
         command: WRITE_COMMANDS.SAVE_ONBOARDING_DIRECTOR_INFORMATION,
         params: {...bankAccount, ...directorInfo},
+        onyxData: {
+            successData: [{onyxMethod: Onyx.METHOD.SET, key: ONYXKEYS.FORMS.SIMPLIFIED_BANK_ONBOARDING_SIGNER_FORM_DRAFT, value: null}],
+        },
     });
 }
 

@@ -1,4 +1,5 @@
 import type {FieldConfig} from '@pages/SimplifiedBankOnboarding/formConfig/types';
+import type {OnboardingFormID} from '@pages/SimplifiedBankOnboarding/formConfig/validation/types';
 
 import React from 'react';
 
@@ -10,6 +11,8 @@ import ReadOnlyField from './ReadOnlyField';
 import TextField from './TextField';
 
 type FieldRendererProps = {
+    /** The form of the page. The file field writes its draft and its upload error to it. */
+    formID: OnboardingFormID;
     field: FieldConfig;
 
     /** False in edit mode, so a value the user changed but did not confirm never reaches the draft */
@@ -17,7 +20,7 @@ type FieldRendererProps = {
 };
 
 /** Picks the input component of a field by its type */
-function FieldRenderer({field, shouldSaveDraft}: FieldRendererProps) {
+function FieldRenderer({formID, field, shouldSaveDraft}: FieldRendererProps) {
     switch (field.type) {
         case 'text':
             return (
@@ -50,6 +53,7 @@ function FieldRenderer({field, shouldSaveDraft}: FieldRendererProps) {
         case 'file':
             return (
                 <FileField
+                    formID={formID}
                     field={field}
                     shouldSaveDraft={shouldSaveDraft}
                 />
