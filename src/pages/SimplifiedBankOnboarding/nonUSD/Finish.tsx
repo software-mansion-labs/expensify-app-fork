@@ -13,8 +13,8 @@ import useLocalize from '@hooks/useLocalize';
 import useOnyx from '@hooks/useOnyx';
 import useThemeStyles from '@hooks/useThemeStyles';
 
-import MockReviewButtons from '@pages/SimplifiedBankOnboarding/components/MockReviewButtons';
 import SBO_CONST from '@pages/SimplifiedBankOnboarding/SBO_CONST';
+import MockReviewButtons from '@pages/SimplifiedBankOnboarding/steps/MockReviewButtons';
 
 import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';

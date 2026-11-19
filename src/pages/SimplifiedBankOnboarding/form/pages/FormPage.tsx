@@ -10,10 +10,10 @@ import useLocalize from '@hooks/useLocalize';
 import useThemeStyles from '@hooks/useThemeStyles';
 
 import FieldRenderer from '@pages/SimplifiedBankOnboarding/form/fields/FieldRenderer';
-import type {OnboardingFormValues} from '@pages/SimplifiedBankOnboarding/form/types';
-import getFieldValues from '@pages/SimplifiedBankOnboarding/form/validation/getFieldValues';
-import validateFields from '@pages/SimplifiedBankOnboarding/form/validation/validateFields';
 import type {FormPageConfig} from '@pages/SimplifiedBankOnboarding/formConfig/types';
+import getFieldValues from '@pages/SimplifiedBankOnboarding/formConfig/validation/getFieldValues';
+import type {OnboardingFormValues} from '@pages/SimplifiedBankOnboarding/formConfig/validation/types';
+import validateFields from '@pages/SimplifiedBankOnboarding/formConfig/validation/validateFields';
 import type {OnboardingDraft} from '@pages/SimplifiedBankOnboarding/types/form';
 
 import CONST from '@src/CONST';

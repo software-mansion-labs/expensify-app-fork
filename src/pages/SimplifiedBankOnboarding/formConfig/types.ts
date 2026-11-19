@@ -3,6 +3,8 @@
  * `formConfig/` produce it from the answers, the controller walks it and `form/` renders one page of it. Labels are
  * already translated, so the renderer needs no knowledge of the flow.
  */
+import type {LocalizedTranslate} from '@components/LocaleContextProvider';
+
 import type {RequestName} from '@pages/SimplifiedBankOnboarding/requests/REQUEST_NAMES';
 import type {RequestOutcome} from '@pages/SimplifiedBankOnboarding/requests/types';
 import type {InputID, OnboardingDraft, OnboardingForm} from '@pages/SimplifiedBankOnboarding/types/form';
@@ -121,12 +123,21 @@ type PageTransition = {
     /** Defaults to the following page of the step, or to the end of the step */
     nextPageID?: PageID;
 
-    /** Opens the next page in edit mode, so its submit returns to the last page of the step */
+    /** Opens the next page in edit mode, so its submit returns to the confirmation of the step */
     isEditing?: boolean;
 };
 
 type PageBase = {
     id: PageID;
+
+    /**
+     * The page already holds a valid answer. The flow resumes at the first page that does not. A page that only edits
+     * a buffer or shows a summary counts as complete, so it never stops the flow from moving past it.
+     */
+    isComplete: boolean;
+
+    /** Back leaves the flow instead of opening the previous page, like the test deposit form of the USD flow */
+    shouldExitOnBack?: boolean;
 
     /** Decides the transition from the submitted values. Without it the controller saves the values and goes on. */
     onSubmit?: (values: OnboardingDraft) => PageTransition;
@@ -226,6 +237,14 @@ type FlowPlan = {
     steps: StepConfig[];
 };
 
+/** What a plan builder needs besides the answers and the server data */
+type PlanContext = {
+    translate: LocalizedTranslate;
+
+    /** The workspace of the URL. The builders fall back to the workspace of the server data without it. */
+    policyID: string | undefined;
+};
+
 export type {
     BooleanInputID,
     CheckboxFieldConfig,
@@ -248,6 +267,7 @@ export type {
     PageTransition,
     PicklistFieldConfig,
     PicklistOption,
+    PlanContext,
     QuestionPageConfig,
     ReadOnlyFieldConfig,
     StepConfig,

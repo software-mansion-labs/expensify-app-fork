@@ -1,29 +1,28 @@
-import type {OnboardingFormValues} from '@pages/SimplifiedBankOnboarding/form/types';
 import type {FieldConfig} from '@pages/SimplifiedBankOnboarding/formConfig/types';
 import type {OnboardingDraft} from '@pages/SimplifiedBankOnboarding/types/form';
 
-/** The form holds the whole draft, so a page submits only the values of its own fields */
-function getFieldValues(fields: FieldConfig[], values: OnboardingFormValues): OnboardingDraft {
-    const fieldValues: OnboardingDraft = {};
+/** The values that the fields of a page start with, which are the answers that the flow already holds */
+function getDefaultValues(fields: FieldConfig[]): OnboardingDraft {
+    const values: OnboardingDraft = {};
     for (const field of fields) {
         // Each case narrows the ID to the inputs of one value type, so the copy keeps the type of the value
         switch (field.type) {
             case 'text':
             case 'date':
             case 'picklist':
-                fieldValues[field.id] = values[field.id];
+                values[field.id] = field.defaultValue;
                 break;
             case 'checkbox':
-                fieldValues[field.id] = values[field.id];
+                values[field.id] = field.defaultValue;
                 break;
             case 'file':
-                fieldValues[field.id] = values[field.id];
+                values[field.id] = field.defaultValue;
                 break;
             default:
                 break;
         }
     }
-    return fieldValues;
+    return values;
 }
 
-export default getFieldValues;
+export default getDefaultValues;

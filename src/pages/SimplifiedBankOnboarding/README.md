@@ -206,7 +206,7 @@ Each row names a pattern of the real flow, the real file that shows it best, and
 | A second flow with its own form key | `R/EnterSignerInfo/*` (its own copy of every signer page) | `enterSignerInfo/EnterSignerInfoPage.tsx` (it reuses `nonUSD/SignerInfo/subSteps/*` through a `formID` prop, see [Not reproduced](#not-reproduced)) |
 | A step that only some currencies get | Docusign for USD, CAD and AUD (`R/NonUSD/utils/requiresDocusignStep.ts`) | Docusign for AUD: `nonUSD/Docusign.tsx`, `utils/OnboardingAccountUtils.ts` (`requiresDocusignStep`) |
 | Third-party widgets: Plaid, Onfido, Docusign | their real SDK wrappers | Fake widgets with `[mock]` buttons in `usd/BankInfo/subSteps/Plaid.tsx`, `usd/VerifyIdentity.tsx`, `nonUSD/Docusign.tsx`. What surrounds the widgets is not reproduced either, see [Not reproduced](#not-reproduced) |
-| A review that ends on the backend and reaches the client as a push | Pusher updates of `reimbursementAccount` | `mockBackend/serverEvents.ts` (`finishReview`), `components/MockReviewButtons.tsx` |
+| A review that ends on the backend and reaches the client as a push | Pusher updates of `reimbursementAccount` | `mockBackend/serverEvents.ts` (`finishReview`), `steps/MockReviewButtons.tsx` |
 
 ## What is simplified
 

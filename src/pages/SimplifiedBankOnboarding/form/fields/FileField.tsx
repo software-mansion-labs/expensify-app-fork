@@ -1,6 +1,7 @@
 /**
  * A file input. The upload control reports only the files that the user just added, so the field keeps the whole list
- * in its own state and hands it to the form as the value. The list reaches the draft when the page is submitted.
+ * in its own state and hands it to the form as the value. It also saves the list to the draft on every change, so the
+ * picked files are still there when the user leaves the page and comes back.
  */
 import InputWrapper from '@components/Form/InputWrapper';
 import Text from '@components/Text';
@@ -10,8 +11,9 @@ import useLocalize from '@hooks/useLocalize';
 import useThemeStyles from '@hooks/useThemeStyles';
 
 import type {FileFieldConfig} from '@pages/SimplifiedBankOnboarding/formConfig/types';
+import type {OnboardingDraft} from '@pages/SimplifiedBankOnboarding/types/form';
 
-import {clearErrorFields, setErrorFields} from '@userActions/FormActions';
+import {clearErrorFields, setDraftValues, setErrorFields} from '@userActions/FormActions';
 
 import ONYXKEYS from '@src/ONYXKEYS';
 import type {FileObject} from '@src/types/utils/Attachment';
@@ -21,12 +23,23 @@ import {View} from 'react-native';
 
 type FileFieldProps = {
     field: FileFieldConfig;
+    shouldSaveDraft: boolean;
 };
 
-function FileField({field}: FileFieldProps) {
+function FileField({field, shouldSaveDraft}: FileFieldProps) {
     const {translate} = useLocalize();
     const styles = useThemeStyles();
     const [files, setFiles] = useState<FileObject[]>(field.defaultValue);
+
+    const changeFiles = (newFiles: FileObject[]) => {
+        setFiles(newFiles);
+        if (!shouldSaveDraft) {
+            return;
+        }
+        const draftValues: OnboardingDraft = {};
+        draftValues[field.id] = newFiles;
+        setDraftValues(ONYXKEYS.FORMS.SIMPLIFIED_BANK_ONBOARDING_FORM, draftValues);
+    };
 
     // The upload control checks the size, the type and the count of the files, and its error replaces the error of the field
     const setUploadError = (error: string) => {
@@ -46,8 +59,8 @@ function FileField({field}: FileFieldProps) {
                 buttonText={translate('common.chooseFile')}
                 uploadedFiles={files}
                 value={files}
-                onUpload={(addedFiles) => setFiles([...files, ...addedFiles])}
-                onRemove={(fileName) => setFiles(files.filter((file) => file.name !== fileName))}
+                onUpload={(addedFiles) => changeFiles([...files, ...addedFiles])}
+                onRemove={(fileName) => changeFiles(files.filter((file) => file.name !== fileName))}
                 setError={setUploadError}
                 acceptedFileTypes={field.acceptedFileTypes}
                 fileLimit={field.fileLimit}

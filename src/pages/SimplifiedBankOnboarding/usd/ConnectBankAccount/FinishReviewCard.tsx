@@ -13,8 +13,8 @@ import useThemeStyles from '@hooks/useThemeStyles';
 import Navigation from '@libs/Navigation/Navigation';
 
 import {goToSetupStep, setBankAccountSubStep} from '@pages/SimplifiedBankOnboarding/actions/OnboardingAccount';
-import MockReviewButtons from '@pages/SimplifiedBankOnboarding/components/MockReviewButtons';
 import SBO_CONST from '@pages/SimplifiedBankOnboarding/SBO_CONST';
+import MockReviewButtons from '@pages/SimplifiedBankOnboarding/steps/MockReviewButtons';
 import type USDPageProps from '@pages/SimplifiedBankOnboarding/usd/types';
 
 import CONST from '@src/CONST';

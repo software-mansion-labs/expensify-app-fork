@@ -16,9 +16,9 @@ type RequestStateResult = {
     errors: OnyxCommon.Errors | undefined;
 };
 
-/** The state of one request for the page that sent it */
-function useRequestState(name: RequestName): RequestStateResult {
-    const selectRequest = (requests: OnyxEntry<OnboardingRequests>) => requests?.[name];
+/** The state of one request for the page that sent it. A page without a request gets an idle state. */
+function useRequestState(name: RequestName | undefined): RequestStateResult {
+    const selectRequest = (requests: OnyxEntry<OnboardingRequests>) => (name ? requests?.[name] : undefined);
     const [request] = useOnyx(ONYXKEYS.SIMPLIFIED_BANK_ONBOARDING_REQUESTS, {selector: selectRequest});
 
     return {

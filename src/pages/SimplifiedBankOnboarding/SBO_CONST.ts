@@ -78,6 +78,9 @@ const SBO_CONST = {
         PAGE_NAMES: USD_PAGE_NAMES,
         STEP_NAMES: ['1', '2', '3', '4', '5', '6', '7'],
         MAX_NUMBER_OF_UBOS: 3,
+        COUNTRY_SUB_PAGES: {
+            CONFIRM_CURRENCY: 'confirm-currency',
+        },
         BANK_INFO_SUB_PAGES: {
             MANUAL: 'manual',
             PLAID: 'plaid',
@@ -103,8 +106,17 @@ const SBO_CONST = {
             ARE_THERE_MORE_UBOS: 'are-there-more-ubos',
             UBOS_LIST: 'ubos-list',
         },
+        VERIFY_IDENTITY_SUB_PAGES: {
+            IDENTITY_CHECK: 'identity-check',
+        },
         COMPLETE_VERIFICATION_SUB_PAGES: {
             CONFIRM_AGREEMENTS: 'confirm-agreements',
+        },
+        KYB_DOCUMENTS_SUB_PAGES: {
+            UPLOAD: 'upload',
+        },
+        VALIDATION_SUB_PAGES: {
+            VALIDATE: 'validate',
         },
 
         /** Positions of the sub pages, which the confirmation pages use to send the user back to one of them */

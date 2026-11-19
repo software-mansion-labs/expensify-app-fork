@@ -48,7 +48,12 @@ function FieldRenderer({field, shouldSaveDraft}: FieldRendererProps) {
                 />
             );
         case 'file':
-            return <FileField field={field} />;
+            return (
+                <FileField
+                    field={field}
+                    shouldSaveDraft={shouldSaveDraft}
+                />
+            );
         case 'readOnly':
             return <ReadOnlyField field={field} />;
         default:
