@@ -17,8 +17,9 @@ function hasInProgressNonUSDSetup(achData?: ACHData): boolean {
     return !!achData?.bankAccountID && !!achData.created;
 }
 
+/** Without a workspace ID the account data is taken as it is, which is the case of a page opened by the bank account ID */
 function hasInProgressSetup(achData: ACHData | undefined, isNonUSDWorkspace: boolean, policyID: string | undefined): boolean {
-    if (!policyID || achData?.policyID !== policyID) {
+    if (policyID && achData?.policyID !== policyID) {
         return false;
     }
     return isNonUSDWorkspace ? hasInProgressNonUSDSetup(achData) : hasInProgressUSDSetup(achData);

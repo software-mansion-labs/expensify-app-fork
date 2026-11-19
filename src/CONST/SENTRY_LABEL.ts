@@ -3223,6 +3223,9 @@ const SENTRY_LABEL = {
     },
     BANK_ONBOARDING_LAB: {
         OPEN_WORKSPACE: 'BankOnboardingLab-OpenWorkspace',
+        OPEN_PAYMENTS_PAGE: 'BankOnboardingLab-OpenPaymentsPage',
+        OPEN_BANK_ACCOUNT: 'BankOnboardingLab-OpenBankAccount',
+        OPEN_SETUP: 'BankOnboardingLab-OpenSetup',
         CHANGE_MOCK_SERVER: 'BankOnboardingLab-ChangeMockServer',
         SELECT_SETUP_OPTION: 'BankOnboardingLab-SelectSetupOption',
         CONTINUE_SETUP: 'BankOnboardingLab-ContinueSetup',

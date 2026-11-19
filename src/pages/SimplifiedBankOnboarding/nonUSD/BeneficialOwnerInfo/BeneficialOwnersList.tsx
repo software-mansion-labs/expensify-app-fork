@@ -1,8 +1,7 @@
 /**
- * The owners list of the NonUSD loop. The other owners come from the draft, like in the real `BeneficialOwnersList`.
- * The details of the current user are not collected in this module, so the user shows as a read only row.
+ * The owners list of the NonUSD loop. Every owner comes from the draft, the current user included, like in the real
+ * `BeneficialOwnersList`.
  */
-import useLocalize from '@hooks/useLocalize';
 import useOnyx from '@hooks/useOnyx';
 
 import {getLatestErrorMessage} from '@libs/ErrorUtils';
@@ -18,7 +17,6 @@ import getValuesForBeneficialOwner from './utils/getValuesForBeneficialOwner';
 
 type BeneficialOwnersListProps = {
     ownerKeys: string[];
-    isUserOwner: boolean;
 
     /** Sends every owner to the server */
     onConfirm: () => void;
@@ -27,10 +25,7 @@ type BeneficialOwnersListProps = {
     onEdit: (ownerID: string) => void;
 };
 
-const CURRENT_USER_ROW_ID = 'currentUser';
-
-function BeneficialOwnersList({ownerKeys, isUserOwner, onConfirm, onEdit}: BeneficialOwnersListProps) {
-    const {translate} = useLocalize();
+function BeneficialOwnersList({ownerKeys, onConfirm, onEdit}: BeneficialOwnersListProps) {
     const [account] = useOnyx(ONYXKEYS.SIMPLIFIED_BANK_ONBOARDING_ACCOUNT);
     const [draft] = useOnyx(ONYXKEYS.FORMS.SIMPLIFIED_BANK_ONBOARDING_FORM_DRAFT);
 
@@ -41,7 +36,7 @@ function BeneficialOwnersList({ownerKeys, isUserOwner, onConfirm, onEdit}: Benef
 
     return (
         <OwnersList
-            rows={isUserOwner ? [{id: CURRENT_USER_ROW_ID, title: translate('common.you')}, ...ownerRows] : ownerRows}
+            rows={ownerRows}
             error={getLatestErrorMessage(account)}
             isLoading={!!account?.isSavingCorpayOnboardingBeneficialOwnersFields}
             onConfirm={onConfirm}

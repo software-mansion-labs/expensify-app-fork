@@ -287,6 +287,10 @@ const config: LinkingOptions<RootNavigatorParamList>['config'] = {
                             path: ROUTES.SETTINGS_BANK_ONBOARDING_LAB_ENTER_SIGNER_INFO.route,
                             exact: true,
                         },
+                        [SCREENS.SETTINGS.BANK_ONBOARDING_LAB.WORKSPACE_PAYMENTS]: {
+                            path: ROUTES.SETTINGS_BANK_ONBOARDING_LAB_WORKSPACE_PAYMENTS.route,
+                            exact: true,
+                        },
                         [SCREENS.SETTINGS.WALLET.TRANSFER_BALANCE]: {
                             path: ROUTES.SETTINGS_WALLET_TRANSFER_BALANCE,
                             exact: true,

@@ -62,7 +62,7 @@ function Confirmation({onNext, onMove, isEditing, bankFields}: BankInfoSubStepPr
             pageTitle={translate('bankInfoStep.letsDoubleCheck')}
             summaryItems={summaryItems}
             showOnfidoLinks={false}
-            isLoading={!!account?.isCreateCorpayBankAccount}
+            isLoading={!!account?.isLoading}
             error={getLatestErrorMessage(account)}
         />
     );

@@ -61,7 +61,7 @@ type OnboardingFlowEntryPointProps = {
     /** The currency of the workspace. Only the replacement of a connected bank account needs it. */
     currency?: string;
 
-    /** The route that the flow returns to when the user leaves it */
+    /** The route that the flow returns to when the user leaves it. The screen also reads it to learn which page opened the flow. */
     backTo?: Route;
 
     /** Whether a setup is in progress, which swaps the setup options for continue, change and start over */
@@ -109,6 +109,10 @@ function OnboardingFlowEntryPoint({
     const hasReachedMaxAttempts = !!account?.maxAttemptsReached;
     const isContinueMenuDisabled = !!pendingAction || (!isEmptyObject(errors) && !hasReachedMaxAttempts);
 
+    // As in the real entry point, the return route doubles as data: only the Payments page offers to replace the bank account.
+    const isComingFromPaymentsPage = !!policyID && backTo === ROUTES.SETTINGS_BANK_ONBOARDING_LAB_WORKSPACE_PAYMENTS.getRoute(policyID);
+    const shouldShowChangeBankAccount = shouldShowContinueSetupButton && isComingFromPaymentsPage;
+
     const removeExistingBankAccountDetails = () => {
         // A replacement must not be prefilled with the data of the bank account that it replaces.
         if (isChangingBankAccount && currency) {
@@ -155,7 +159,7 @@ function OnboardingFlowEntryPoint({
     const connectManually = () => {
         if (!isUserValidated) {
             setSetupOptionPressed(SBO_CONST.SETUP_TYPE.MANUAL);
-            Navigation.navigate(ROUTES.SETTINGS_BANK_ONBOARDING_LAB_VERIFY_ACCOUNT.getRoute(policyID));
+            Navigation.navigate(ROUTES.SETTINGS_BANK_ONBOARDING_LAB_VERIFY_ACCOUNT.getRoute(policyID, backTo));
             return;
         }
 
@@ -172,7 +176,7 @@ function OnboardingFlowEntryPoint({
     const connectWithPlaid = () => {
         if (!isUserValidated) {
             setSetupOptionPressed(SBO_CONST.SETUP_TYPE.PLAID);
-            Navigation.navigate(ROUTES.SETTINGS_BANK_ONBOARDING_LAB_VERIFY_ACCOUNT.getRoute(policyID));
+            Navigation.navigate(ROUTES.SETTINGS_BANK_ONBOARDING_LAB_VERIFY_ACCOUNT.getRoute(policyID, backTo));
             return;
         }
 
@@ -181,7 +185,15 @@ function OnboardingFlowEntryPoint({
         prepareNextStep(SBO_CONST.SETUP_TYPE.PLAID);
     };
 
-    useResetOnboardingModal({account, isNonUSDWorkspace, setShouldShowContinueSetupButton, backTo});
+    const navigateAfterReset = () => {
+        // A setup that was opened from the bank account list returns to the list, because the reset removed the row that opened it.
+        if (backTo !== ROUTES.SETTINGS_BANK_ONBOARDING_LAB) {
+            return;
+        }
+        Navigation.goBack(ROUTES.SETTINGS_BANK_ONBOARDING_LAB);
+    };
+
+    useResetOnboardingModal({account, isNonUSDWorkspace, setShouldShowContinueSetupButton, navigateAfterReset, backTo});
 
     return (
         <ScreenWrapper
@@ -217,13 +229,15 @@ function OnboardingFlowEntryPoint({
                                     onPress={onContinuePress}
                                     isDisabled={isContinueMenuDisabled}
                                 />
-                                <MenuItemNavigation
-                                    sentryLabel={CONST.SENTRY_LABEL.BANK_ONBOARDING_LAB.SELECT_SETUP_OPTION}
-                                    title={translate('workspace.bankAccount.changeBankAccount')}
-                                    icon={icons.Bank}
-                                    onPress={() => navigateToChangeBankAccount(policyID)}
-                                    isDisabled={isContinueMenuDisabled}
-                                />
+                                {shouldShowChangeBankAccount && (
+                                    <MenuItemNavigation
+                                        sentryLabel={CONST.SENTRY_LABEL.BANK_ONBOARDING_LAB.SELECT_SETUP_OPTION}
+                                        title={translate('workspace.bankAccount.changeBankAccount')}
+                                        icon={icons.Bank}
+                                        onPress={() => navigateToChangeBankAccount(policyID)}
+                                        isDisabled={isContinueMenuDisabled}
+                                    />
+                                )}
                                 <MenuItemNavigation
                                     sentryLabel={CONST.SENTRY_LABEL.BANK_ONBOARDING_LAB.START_OVER}
                                     title={translate('workspace.bankAccount.startOver')}

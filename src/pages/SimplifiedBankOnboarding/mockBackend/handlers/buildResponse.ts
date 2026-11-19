@@ -43,7 +43,8 @@ function maskAccountNumber(accountNumber: string): string {
 }
 
 function findBankAccount(database: MockServerDatabase, {policyID, bankAccountID}: BankAccountParams): ServerBankAccount | undefined {
-    const account = policyID ? database.bankAccounts[policyID] : undefined;
+    // A flow that was opened by the bank account ID has no workspace to name, so the ID alone identifies the row.
+    const account = policyID ? database.bankAccounts[policyID] : Object.values(database.bankAccounts).find((row) => row.bankAccountID === bankAccountID);
     return account?.bankAccountID === bankAccountID ? account : undefined;
 }
 

@@ -17,6 +17,7 @@ import MockServerPanel from '@pages/SimplifiedBankOnboarding/mockBackend/ui/Mock
 
 import React, {useEffect} from 'react';
 
+import OtherEntryPoints from './OtherEntryPoints';
 import WorkspaceList from './WorkspaceList';
 
 function BankOnboardingLabPage() {
@@ -44,6 +45,7 @@ function BankOnboardingLabPage() {
                 addBottomSafeAreaPadding
             >
                 <WorkspaceList />
+                <OtherEntryPoints />
                 <MockServerPanel />
             </ScrollView>
         </ScreenWrapper>

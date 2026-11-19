@@ -69,6 +69,7 @@ const nonUSDWriteHandlers: NonUSDWriteHandlers = {
             created: new Date().toISOString(),
             ...existingAccount,
             country,
+            currency,
             unmaskedAccountNumber,
             corpay: {
                 ...existingAccount?.corpay,

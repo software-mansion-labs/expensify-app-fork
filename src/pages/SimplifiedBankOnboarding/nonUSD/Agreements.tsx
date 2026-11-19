@@ -71,6 +71,11 @@ function Agreements({onBackButtonPress, onSubmit, policyID, currency, stepNames}
             onSubmit();
             clearFinishGlobalBankAccountOnboarding();
         }
+
+        // As in the real step, this cleanup runs whenever a flag changes and not only on unmount, so it can clear a request that just started.
+        return () => {
+            clearFinishGlobalBankAccountOnboarding();
+        };
     }, [account?.errors, account?.isFinishingCorpayBankAccountOnboarding, account?.isSuccess, isDocusignStepRequired, onSubmit]);
 
     const validate = (values: FormOnyxValues<typeof ONYXKEYS.FORMS.SIMPLIFIED_BANK_ONBOARDING_FORM>): FormInputErrors<typeof ONYXKEYS.FORMS.SIMPLIFIED_BANK_ONBOARDING_FORM> => {

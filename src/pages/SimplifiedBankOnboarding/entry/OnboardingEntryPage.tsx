@@ -85,6 +85,7 @@ function OnboardingEntryPage({route}: OnboardingEntryPageProps) {
     const [workspaces] = useOnyx(ONYXKEYS.SIMPLIFIED_BANK_ONBOARDING_WORKSPACES);
 
     const policyID = route.params?.policyID;
+    const bankAccountIDParam = route.params?.bankAccountID;
     const backTo = route.params?.backTo;
     const isChangingBankAccount = !!route.params?.isChangingBankAccount;
 
@@ -106,7 +107,7 @@ function OnboardingEntryPage({route}: OnboardingEntryPageProps) {
     const workspace = policyID ? workspaces?.[policyID] : undefined;
     const isLoadingWorkspaces = !workspaces;
     const achData = account?.achData;
-    const policyCurrency = workspace ? workspace.outputCurrency : draft?.currency;
+    const policyCurrency = workspace ? workspace.outputCurrency : (achData?.currency ?? draft?.currency);
     const isNonUSDWorkspace = !!policyCurrency && policyCurrency !== SBO_CONST.CURRENCY.USD;
     const hasUnsupportedCurrency = !!policyCurrency && !isSupportedCurrency(policyCurrency);
     const isAuthorized = workspace?.role === SBO_CONST.WORKSPACE_ROLE.ADMIN;
@@ -117,7 +118,10 @@ function OnboardingEntryPage({route}: OnboardingEntryPageProps) {
 
     // The country step only exists on the client, so the server step counts once the user got past it.
     const currentStep: USDStep = hasConfirmedUSDCurrency ? (achData?.currentStep ?? STEP.COUNTRY) : STEP.COUNTRY;
-    const isConnectedBankAccountData = isNonUSDWorkspace ? achData?.state === SBO_CONST.STATE.OPEN : achData?.currentStep === STEP.ENABLE;
+
+    // A page opened by the bank account ID has no workspace, so the flow type is a state that an effect corrects once the currency arrives.
+    const [isNonUSDSetup, setIsNonUSDSetup] = useState(workspace ? isNonUSDWorkspace : achData?.currency !== SBO_CONST.CURRENCY.USD || draft?.currency !== SBO_CONST.CURRENCY.USD);
+    const isConnectedBankAccountData = isNonUSDSetup ? achData?.state === SBO_CONST.STATE.OPEN : achData?.currentStep === STEP.ENABLE;
 
     const shouldShowContinueSetupButtonValue = hasInProgressSetup(achData, isNonUSDWorkspace, policyID);
     const hasLoadedData = !!achData && !deepEqual(account, DEFAULT_ACCOUNT) && !account?.isLoading;
@@ -149,7 +153,12 @@ function OnboardingEntryPage({route}: OnboardingEntryPageProps) {
     };
 
     const fetchData = (shouldPreserveCurrentStep = false) => {
-        if (!policyID) {
+        if (!policyID && !bankAccountIDParam) {
+            return;
+        }
+        if (bankAccountIDParam) {
+            // The server returns the step of the account, so the step parameters are left out.
+            openOnboardingPage({bankAccountID: Number(bankAccountIDParam)});
             return;
         }
 
@@ -182,6 +191,14 @@ function OnboardingEntryPage({route}: OnboardingEntryPageProps) {
             }
         };
     }, []);
+
+    useEffect(() => {
+        if (!policyCurrency || isNonUSDSetup === (policyCurrency !== SBO_CONST.CURRENCY.USD)) {
+            return;
+        }
+        // eslint-disable-next-line react-hooks/set-state-in-effect -- The lab reproduces the mirrored state of the real entry page on purpose
+        setIsNonUSDSetup(policyCurrency !== SBO_CONST.CURRENCY.USD);
+    }, [policyCurrency, isNonUSDSetup]);
 
     const openPageForWorkspace = useEffectEvent(() => {
         if (isPreviousPolicy && !!account) {
@@ -329,13 +346,17 @@ function OnboardingEntryPage({route}: OnboardingEntryPageProps) {
         }
     };
 
-    const isLoading = !!account?.isLoading;
+    // The bank step of the NonUSD flow raises the shared `isLoading` too, and it must not swap the flow for the loader of this page.
+    const isLoading = !!account?.isLoading && !account?.isCreateCorpayBankAccount;
     // Offline, only the steps that send nothing can be shown, and only with the data that was loaded before.
     const shouldShowOfflineLoader = !(hasLoadedData && isOffline && OFFLINE_ACCESSIBLE_STEPS.some((step) => step === currentStep));
 
+    // Matched the way `fetchData` opens the account. An account without the ID of the route counts as another one.
+    const isOtherAccount = bankAccountIDParam ? achData?.bankAccountID !== Number(bankAccountIDParam) : !!policyID && achData?.policyID !== policyID;
+
     // `hasLoadedData` only proves that the object differs from the default one. Offline, the actions of the mount effect
-    // already cause that with nothing loaded, so the data must also belong to this workspace.
-    const hasACHDataForThisPage = !isEmptyObject(achData) && !deepEqual(achData, DEFAULT_ACCOUNT.achData) && achData?.policyID === policyID;
+    // already cause that with nothing loaded, so the data must also belong to this page.
+    const hasACHDataForThisPage = !isEmptyObject(achData) && !deepEqual(achData, DEFAULT_ACCOUNT.achData) && !isOtherAccount;
 
     if (isOffline && (!hasLoadedData || !hasACHDataForThisPage)) {
         return (
@@ -353,11 +374,12 @@ function OnboardingEntryPage({route}: OnboardingEntryPageProps) {
         return <FullScreenLoadingIndicator onGoBack={() => Navigation.goBack(backTo)} />;
     }
 
-    if (!!policyID && !isChangingBankAccount && (!hasACHDataBeenLoaded || isLoading) && shouldShowOfflineLoader) {
+    if ((!!policyID || !!bankAccountIDParam) && !isChangingBankAccount && (!hasACHDataBeenLoaded || isLoading) && shouldShowOfflineLoader) {
         return <ReimbursementAccountLoadingIndicator onBackButtonPress={goBackFromCurrentStep} />;
     }
 
-    if (!policyID || (!isLoading && (!workspace || !isAuthorized))) {
+    // A page without a workspace ID is not checked, like the real page that the Wallet opens by the bank account ID.
+    if (!!policyID && !isLoading && (!workspace || !isAuthorized)) {
         return (
             <ScreenWrapper testID="SimplifiedBankOnboardingEntryPage">
                 <FullPageNotFoundView
@@ -397,7 +419,7 @@ function OnboardingEntryPage({route}: OnboardingEntryPageProps) {
                 account={account}
                 setShouldShowConnectedBankAccount={setShouldShowConnectedBankAccount}
                 onBackButtonPress={goBackFromCurrentStep}
-                isNonUSDWorkspace={isNonUSDWorkspace}
+                isNonUSDWorkspace={isNonUSDSetup}
             />
         );
     }
@@ -413,13 +435,13 @@ function OnboardingEntryPage({route}: OnboardingEntryPageProps) {
     return (
         <OnboardingFlowEntryPoint
             account={account}
-            onContinuePress={isNonUSDWorkspace ? continueNonUSDSetup : continueUSDSetup}
+            onContinuePress={isNonUSDSetup ? continueNonUSDSetup : continueUSDSetup}
             policyName={workspace?.name}
             policyID={policyID}
             currency={policyCurrency}
             backTo={backTo}
             shouldShowContinueSetupButton={shouldShowContinueSetupButtonToDisplay}
-            isNonUSDWorkspace={isNonUSDWorkspace}
+            isNonUSDWorkspace={isNonUSDSetup}
             setShouldShowContinueSetupButton={setShouldShowContinueSetupButton}
             isChangingBankAccount={isChangingBankAccount}
         />

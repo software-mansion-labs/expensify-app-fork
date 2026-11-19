@@ -1,10 +1,12 @@
 /**
  * The form pages of the signer step for a user who is the director. Like `SignerDetailsFormPages` of the real flow, it has
- * its own wrapper and `useSubPage`, and going back from its first page returns to the director question.
+ * its own wrapper and `useSubPage`, and going back from its first page returns to the director question. The name page
+ * is skipped for a user who is also an owner, because the owner step already collected the name.
  */
 import InteractiveStepWrapper from '@components/InteractiveStepWrapper';
 
 import useLocalize from '@hooks/useLocalize';
+import useOnyx from '@hooks/useOnyx';
 import useSubPage from '@hooks/useSubPage';
 
 import Navigation from '@libs/Navigation/Navigation';
@@ -49,6 +51,11 @@ type SignerDetailsFormPagesProps = {
 
 function SignerDetailsFormPages({onBackToIsDirector, onFinished, stepNames, policyID, backTo, stepIndex}: SignerDetailsFormPagesProps) {
     const {translate} = useLocalize();
+    const [account] = useOnyx(ONYXKEYS.SIMPLIFIED_BANK_ONBOARDING_ACCOUNT);
+    const [draft] = useOnyx(ONYXKEYS.FORMS.SIMPLIFIED_BANK_ONBOARDING_FORM_DRAFT);
+
+    const isUserOwner = account?.achData?.corpay?.ownsMoreThan25Percent ?? draft?.ownsMoreThan25Percent ?? false;
+    const skipPages: string[] = isUserOwner ? [SUB_PAGE_NAMES.NAME] : [];
 
     const buildRoute = (pageName: string, action?: 'edit') =>
         ROUTES.SETTINGS_BANK_ONBOARDING_LAB_NON_USD_SETUP.getRoute({policyID, page: PAGE_NAMES.SIGNER_INFO, subPage: pageName, action, backTo});
@@ -58,6 +65,7 @@ function SignerDetailsFormPages({onBackToIsDirector, onFinished, stepNames, poli
         startFrom: 0,
         onFinished,
         buildRoute,
+        skipPages,
     });
 
     const handleBackButtonPress = () => {
@@ -66,7 +74,13 @@ function SignerDetailsFormPages({onBackToIsDirector, onFinished, stepNames, poli
             Navigation.goBack(buildRoute(SUB_PAGE_NAMES.CONFIRMATION));
             return;
         }
-        if (pageIndex === 0) {
+
+        // The first page that is shown is not always the first page of the list, so this looks for a shown page before the current one.
+        let prevIndex = pageIndex - 1;
+        while (prevIndex >= 0 && skipPages.includes(pages.at(prevIndex)?.pageName ?? '')) {
+            prevIndex -= 1;
+        }
+        if (prevIndex < 0) {
             onBackToIsDirector();
             return;
         }

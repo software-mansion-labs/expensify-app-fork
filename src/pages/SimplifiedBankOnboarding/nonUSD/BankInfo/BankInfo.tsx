@@ -1,7 +1,8 @@
 /**
  * The bank step of the NonUSD flow, and the reference for the steps of this flow. The server describes the inputs, and
  * the single request at the end creates the bank account. The step waits for it with its own ref and the `isSuccess`
- * flag that every NonUSD request shares, then clears the flag by hand.
+ * flag that every NonUSD request shares, then clears the flag by hand. Unlike the other steps of this flow, it watches
+ * the shared `isLoading` and not a flag of its own, like the real step.
  */
 import InteractiveStepWrapper from '@components/InteractiveStepWrapper';
 
@@ -71,7 +72,7 @@ function BankInfo({onBackButtonPress, onSubmit, policyID, currency = '', stepNam
     });
 
     useEffect(() => {
-        if (account?.isCreateCorpayBankAccount === true || !!account?.errors) {
+        if (account?.isLoading === true || !!account?.errors) {
             return;
         }
 
@@ -81,7 +82,7 @@ function BankInfo({onBackButtonPress, onSubmit, policyID, currency = '', stepNam
             onSubmit();
             clearGlobalBankAccountCreation();
         }
-    }, [account?.errors, account?.isCreateCorpayBankAccount, account?.isSuccess, onSubmit]);
+    }, [account?.errors, account?.isLoading, account?.isSuccess, onSubmit]);
 
     useEffect(() => {
         if (country === '') {

@@ -30,7 +30,7 @@ function parseBeneficialOwners(json: string): BeneficialOwner[] | undefined {
 }
 
 function parseGlobalBeneficialOwners(json: string): GlobalBeneficialOwner[] | undefined {
-    return parseOwnersWithFields(json, ['fullName', 'ownershipPercentage']);
+    return parseOwnersWithFields(json, ['uid', 'fullName', 'ownershipPercentage']);
 }
 
 export {parseBeneficialOwners, parseGlobalBeneficialOwners};

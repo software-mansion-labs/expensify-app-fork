@@ -10,11 +10,12 @@ import type {ACHData, USDStep} from '@pages/SimplifiedBankOnboarding/types/onyx'
 
 import ONYXKEYS from '@src/ONYXKEYS';
 
-import {buildClientACHData, buildFailureResponse, buildMergeUpdate, buildSetUpdate, buildSuccessResponse} from './buildResponse';
+import {buildClientACHData, buildFailureResponse, buildMergeUpdate, buildSetUpdate, buildSuccessResponse, findBankAccount} from './buildResponse';
 
 type ReadHandlers = {[TCommand in keyof ReadCommandParams]: CommandHandler<ReadCommandParams[TCommand]>};
 
 const {STEP} = SBO_CONST.USD;
+const NO_BANK_ACCOUNT_ID = 0;
 const USD_STEP_ORDER: USDStep[] = [STEP.COUNTRY, STEP.BANK_ACCOUNT, STEP.REQUESTOR, STEP.COMPANY, STEP.BENEFICIAL_OWNERS, STEP.ACH_CONTRACT, STEP.KYB_DOCS, STEP.VALIDATION, STEP.ENABLE];
 
 /** The client may ask for an earlier step than the one the server stores, never for a later one */
@@ -32,14 +33,16 @@ const readHandlers: ReadHandlers = {
             buildMergeUpdate(ONYXKEYS.SIMPLIFIED_BANK_ONBOARDING_USER, {validated: database.user.validated}),
         ]),
 
-    [READ_COMMANDS.OPEN_ONBOARDING_PAGE]: ({policyID, stepToOpen, subStep}, database) => {
-        if (!database.workspaces[policyID]) {
-            return buildFailureResponse('The workspace does not exist', SBO_CONST.MOCK.JSON_CODE.NOT_FOUND);
+    [READ_COMMANDS.OPEN_ONBOARDING_PAGE]: ({policyID, bankAccountID = NO_BANK_ACCOUNT_ID, stepToOpen, subStep}, database) => {
+        // A page that was opened by the bank account ID learns its workspace from the row of that account.
+        const workspaceID = policyID ?? findBankAccount(database, {policyID, bankAccountID})?.policyID;
+        if (!workspaceID || !database.workspaces[workspaceID]) {
+            return buildFailureResponse('The workspace or the bank account does not exist', SBO_CONST.MOCK.JSON_CODE.NOT_FOUND);
         }
-        const account = database.bankAccounts[policyID];
+        const account = database.bankAccounts[workspaceID];
         const achData: ACHData = account
             ? {...buildClientACHData(account), currentStep: getStepToReturn(account.currentStep, stepToOpen)}
-            : {policyID, currentStep: stepToOpen || STEP.BANK_ACCOUNT, subStep};
+            : {policyID: workspaceID, currentStep: stepToOpen || STEP.BANK_ACCOUNT, subStep};
 
         // The whole object is replaced, so the data of the workspace that was open before does not leak into this one.
         return buildSuccessResponse([

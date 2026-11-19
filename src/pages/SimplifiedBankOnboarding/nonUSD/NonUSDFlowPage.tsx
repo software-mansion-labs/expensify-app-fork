@@ -74,7 +74,7 @@ function NonUSDFlowPage({route}: NonUSDFlowPageProps) {
     const [workspaces] = useOnyx(ONYXKEYS.SIMPLIFIED_BANK_ONBOARDING_WORKSPACES);
 
     const workspace = policyID ? workspaces?.[policyID] : undefined;
-    const currency = workspace?.outputCurrency ?? draft?.currency ?? '';
+    const currency = workspace?.outputCurrency ?? account?.achData?.currency ?? draft?.currency ?? '';
     const isDocusignStepRequired = requiresDocusignStep(currency);
     const stepNames = isDocusignStepRequired ? DOCUSIGN_REQUIRED_STEP_NAMES : STEP_NAMES;
 

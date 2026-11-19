@@ -2685,8 +2685,14 @@ const ROUTES = {
     SETTINGS_BANK_ONBOARDING_LAB: 'settings/bank-onboarding-lab',
     SETTINGS_BANK_ONBOARDING_LAB_ENTRY: {
         route: 'settings/bank-onboarding-lab/new',
-        getRoute: ({policyID, isChangingBankAccount, backTo}: {policyID: string; isChangingBankAccount?: boolean; backTo?: string}) =>
-            getUrlWithParams('settings/bank-onboarding-lab/new', {policyID, isChangingBankAccount: isChangingBankAccount ? 'true' : undefined, backTo}),
+        getRoute: ({policyID, bankAccountID, isChangingBankAccount, backTo}: {policyID?: string; bankAccountID?: number; isChangingBankAccount?: boolean; backTo?: string}) =>
+            getUrlWithParams('settings/bank-onboarding-lab/new', {
+                // Like the real route, the URL names the bank account or the workspace, never both.
+                bankAccountID,
+                policyID: bankAccountID ? undefined : policyID,
+                isChangingBankAccount: isChangingBankAccount ? 'true' : undefined,
+                backTo,
+            }),
     },
     SETTINGS_BANK_ONBOARDING_LAB_USD_SETUP: {
         route: 'settings/bank-onboarding-lab/new/us/:page?/:subPage?/:action?',
@@ -2708,7 +2714,11 @@ const ROUTES = {
     },
     SETTINGS_BANK_ONBOARDING_LAB_VERIFY_ACCOUNT: {
         route: 'settings/bank-onboarding-lab/verify-account',
-        getRoute: (policyID: string) => getUrlWithParams('settings/bank-onboarding-lab/verify-account', {policyID}),
+        getRoute: (policyID: string | undefined, backTo?: string) => getUrlWithParams('settings/bank-onboarding-lab/verify-account', {policyID, backTo}),
+    },
+    SETTINGS_BANK_ONBOARDING_LAB_WORKSPACE_PAYMENTS: {
+        route: 'settings/bank-onboarding-lab/workspace/:policyID/payments',
+        getRoute: (policyID: string) => `settings/bank-onboarding-lab/workspace/${policyID}/payments` as const,
     },
     SETTINGS_BANK_ONBOARDING_LAB_ENTER_SIGNER_INFO: {
         route: 'settings/bank-onboarding-lab/enter-signer-info/:subPage?/:action?',

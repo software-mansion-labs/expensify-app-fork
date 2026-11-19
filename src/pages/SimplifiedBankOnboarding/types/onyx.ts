@@ -25,6 +25,10 @@ type BeneficialOwner = {
 
 /** A beneficial owner as the global provider stores it */
 type GlobalBeneficialOwner = {
+    /** The owner ID that the client made. The current user has a fixed one. */
+    uid: string;
+
+    /** The first and the last name joined, so the client has to split it again to fill its two inputs */
     fullName: string;
     ownershipPercentage: string;
 };
@@ -68,6 +72,9 @@ type ACHData = {
     subStep?: SetupType | '';
     state?: BankAccountState;
     country?: string;
+
+    /** The currency of the bank account. The entry page falls back to it when the URL names no workspace. */
+    currency?: string;
 
     /** Set when the bank account was created on the server */
     created?: string;

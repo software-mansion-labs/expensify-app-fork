@@ -238,6 +238,7 @@ const SCREENS = {
             NON_USD_SETUP: 'Settings_BankOnboardingLab_NonUSDSetup',
             VERIFY_ACCOUNT: 'Settings_BankOnboardingLab_VerifyAccount',
             ENTER_SIGNER_INFO: 'Settings_BankOnboardingLab_EnterSignerInfo',
+            WORKSPACE_PAYMENTS: 'Settings_BankOnboardingLab_WorkspacePayments',
         },
 
         EXIT_SURVEY: {

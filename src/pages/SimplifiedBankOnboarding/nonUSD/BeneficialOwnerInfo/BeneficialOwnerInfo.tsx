@@ -2,7 +2,8 @@
  * The owner step of the NonUSD flow, a hand-written state machine like the real `BeneficialOwnerInfo`. The questions
  * and the list are URL sub pages that this container renders itself, and any other sub page renders the nested details
  * form of one owner. The owners live in the draft, the server owners are copied into it on resume, and the step waits
- * for its single request with its own ref, the request flag and the shared `isSuccess`, like the bank step.
+ * for its single request with its own ref, the request flag and the shared `isSuccess`, like the bank step. A user who
+ * owns the company fills in the same details form under a fixed owner ID, which the signer step later relies on.
  */
 import InteractiveStepWrapper from '@components/InteractiveStepWrapper';
 import YesNoStep from '@components/SubStepForms/YesNoStep';
@@ -32,7 +33,8 @@ import getDraftValuesForBeneficialOwners from './utils/getDraftValuesForBenefici
 import {getTotalOwnedPercentageSum} from './utils/getTotalOwnedPercentage';
 import getValuesForBeneficialOwner from './utils/getValuesForBeneficialOwner';
 
-const {PAGE_NAMES, BENEFICIAL_OWNER_INFO_SUB_PAGES: SUB_PAGE_NAMES, MAX_OWNERSHIP_SUM_TO_ADD_MORE} = SBO_CONST.NON_USD;
+const {PAGE_NAMES, BENEFICIAL_OWNER_INFO_SUB_PAGES: SUB_PAGE_NAMES, MAX_OWNERSHIP_SUM_TO_ADD_MORE, CURRENT_USER_KEY} = SBO_CONST.NON_USD;
+const MAX_OWNERS_NEXT_TO_USER = 3;
 
 const OUTER_SUB_PAGES = new Set<string>([
     SUB_PAGE_NAMES.IS_USER_BENEFICIAL_OWNER,
@@ -66,16 +68,21 @@ function BeneficialOwnerInfo({onBackButtonPress, onSubmit, policyID, stepNames, 
     }, [draft?.beneficialOwnerKeys, savedBeneficialOwnerValues]);
 
     useEffect(() => {
-        if (account?.isSavingCorpayOnboardingBeneficialOwnersFields === true || !!account?.errors) {
+        if (account?.errors || account?.isSavingCorpayOnboardingBeneficialOwnersFields || !account?.isSuccess) {
             return;
         }
 
         // The shared `isSuccess` can still be true from the previous step, so the ref tells whether this step sent the request.
-        if (account?.isSuccess === true && isSubmittingRef.current) {
+        if (isSubmittingRef.current) {
             isSubmittingRef.current = false;
             onSubmit();
             clearSaveOnboardingBeneficialOwners();
         }
+
+        // As in the real step, this cleanup runs whenever a flag changes and not only on unmount, so it can clear a request that just started.
+        return () => {
+            clearSaveOnboardingBeneficialOwners();
+        };
     }, [account?.errors, account?.isSavingCorpayOnboardingBeneficialOwnersFields, account?.isSuccess, onSubmit]);
 
     const buildRoute = (subPage: string) => ROUTES.SETTINGS_BANK_ONBOARDING_LAB_NON_USD_SETUP.getRoute({policyID, page: PAGE_NAMES.BENEFICIAL_OWNER_INFO, subPage, backTo});
@@ -85,7 +92,7 @@ function BeneficialOwnerInfo({onBackButtonPress, onSubmit, policyID, stepNames, 
     const navigateBackToSubPage = (subPage: string) => Navigation.goBack(buildRoute(subPage));
 
     const submit = (ownerKeysToSave: string[]) => {
-        const anyIndividualOwn25PercentOrMore = ownerKeysToSave.length > 0;
+        const anyIndividualOwn25PercentOrMore = ownerKeysToSave.some((ownerID) => ownerID !== CURRENT_USER_KEY);
         const beneficialOwners = JSON.stringify(ownerKeysToSave.map((ownerID) => getValuesForBeneficialOwner(ownerID, draft)));
         setDraftValues(ONYXKEYS.FORMS.SIMPLIFIED_BANK_ONBOARDING_FORM, {ownsMoreThan25Percent: isUserOwner, anyIndividualOwn25PercentOrMore, beneficialOwners});
 
@@ -99,8 +106,8 @@ function BeneficialOwnerInfo({onBackButtonPress, onSubmit, policyID, stepNames, 
     };
 
     const handleOwnerDetailsFormFinished = () => {
-        const ownerBeingModifiedID = draft?.ownerBeingModifiedID;
-        const isFreshOwner = !!ownerBeingModifiedID && !ownerKeys.includes(ownerBeingModifiedID);
+        const ownerBeingModifiedID = draft?.ownerBeingModifiedID ?? CURRENT_USER_KEY;
+        const isFreshOwner = !ownerKeys.includes(ownerBeingModifiedID);
         const updatedOwnerKeys = isFreshOwner ? [...ownerKeys, ownerBeingModifiedID] : ownerKeys;
         if (isFreshOwner) {
             setDraftValues(ONYXKEYS.FORMS.SIMPLIFIED_BANK_ONBOARDING_FORM, {beneficialOwnerKeys: updatedOwnerKeys});
@@ -112,6 +119,12 @@ function BeneficialOwnerInfo({onBackButtonPress, onSubmit, policyID, stepNames, 
             navigateToSubPage(SUB_PAGE_NAMES.BENEFICIAL_OWNERS_LIST);
             return;
         }
+
+        // The user just entered their own data, so the question about the other owners comes next.
+        if (ownerBeingModifiedID === CURRENT_USER_KEY) {
+            navigateToSubPage(SUB_PAGE_NAMES.IS_ANYONE_ELSE_BENEFICIAL_OWNER);
+            return;
+        }
         navigateToSubPage(SUB_PAGE_NAMES.ARE_THERE_MORE_BENEFICIAL_OWNERS);
     };
 
@@ -120,22 +133,32 @@ function BeneficialOwnerInfo({onBackButtonPress, onSubmit, policyID, stepNames, 
         navigateToSubPage(SUB_PAGE_NAMES.NAME);
     };
 
-    // The real step collects the details of the user here, this module keeps only the answer.
     const handleIsUserOwnerSelected = (value: boolean) => {
         setDraftValues(ONYXKEYS.FORMS.SIMPLIFIED_BANK_ONBOARDING_FORM, {ownsMoreThan25Percent: value});
+
+        if (value) {
+            // An owner holds at least 25%, so only three others fit next to the user.
+            if (ownerKeys.length > MAX_OWNERS_NEXT_TO_USER) {
+                setDraftValues(ONYXKEYS.FORMS.SIMPLIFIED_BANK_ONBOARDING_FORM, {beneficialOwnerKeys: ownerKeys.slice(0, MAX_OWNERS_NEXT_TO_USER)});
+            }
+            prepareOwnerDetailsForm(CURRENT_USER_KEY);
+            return;
+        }
+        setDraftValues(ONYXKEYS.FORMS.SIMPLIFIED_BANK_ONBOARDING_FORM, {beneficialOwnerKeys: ownerKeys.filter((ownerID) => ownerID !== CURRENT_USER_KEY)});
         navigateToSubPage(SUB_PAGE_NAMES.IS_ANYONE_ELSE_BENEFICIAL_OWNER);
     };
 
     const handleIsAnyoneElseOwnerSelected = (value: boolean) => {
         setDraftValues(ONYXKEYS.FORMS.SIMPLIFIED_BANK_ONBOARDING_FORM, {anyIndividualOwn25PercentOrMore: value});
 
-        if (!value) {
+        if (!value && !isUserOwner) {
             setDraftValues(ONYXKEYS.FORMS.SIMPLIFIED_BANK_ONBOARDING_FORM, {beneficialOwnerKeys: []});
-            if (isUserOwner) {
-                navigateToSubPage(SUB_PAGE_NAMES.BENEFICIAL_OWNERS_LIST);
-                return;
-            }
             submit([]);
+            return;
+        }
+        if (!value) {
+            setDraftValues(ONYXKEYS.FORMS.SIMPLIFIED_BANK_ONBOARDING_FORM, {beneficialOwnerKeys: [CURRENT_USER_KEY]});
+            navigateToSubPage(SUB_PAGE_NAMES.BENEFICIAL_OWNERS_LIST);
             return;
         }
         if (!canAddMoreOwners) {
@@ -228,7 +251,6 @@ function BeneficialOwnerInfo({onBackButtonPress, onSubmit, policyID, stepNames, 
             {currentSubPage === SUB_PAGE_NAMES.BENEFICIAL_OWNERS_LIST && (
                 <BeneficialOwnersList
                     ownerKeys={ownerKeys}
-                    isUserOwner={isUserOwner}
                     onConfirm={() => submit(ownerKeys)}
                     onEdit={handleOwnerEdit}
                 />

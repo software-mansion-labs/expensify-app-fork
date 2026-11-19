@@ -83,6 +83,11 @@ function BusinessInfo({onBackButtonPress, onSubmit, policyID, stepNames, backTo}
             onSubmit();
             clearSaveOnboardingCompanyDetails();
         }
+
+        // As in the real step, this cleanup runs whenever a flag changes and not only on unmount, so it can clear a request that just started.
+        return () => {
+            clearSaveOnboardingCompanyDetails();
+        };
     }, [account?.errors, account?.isSavingCorpayOnboardingCompanyFields, account?.isSuccess, onSubmit]);
 
     const buildRoute = (pageName: string, action?: 'edit') =>

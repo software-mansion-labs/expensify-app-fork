@@ -44,6 +44,7 @@ function VerifyAccountPage({route}: VerifyAccountPageProps) {
     const [validateCode, setValidateCode] = useState('');
 
     const policyID = route.params?.policyID;
+    const backTo = route.params?.backTo;
     const workspace = policyID ? workspaces?.[policyID] : undefined;
     const isNonUSDWorkspace = !!workspace && workspace.outputCurrency !== SBO_CONST.CURRENCY.USD;
     const isUserValidated = !!user?.validated;
@@ -58,8 +59,8 @@ function VerifyAccountPage({route}: VerifyAccountPageProps) {
         hasNavigatedForwardRef.current = true;
 
         const forwardRoute = isNonUSDWorkspace
-            ? ROUTES.SETTINGS_BANK_ONBOARDING_LAB_NON_USD_SETUP.getRoute({policyID, page: SBO_CONST.NON_USD.PAGE_NAMES.COUNTRY})
-            : ROUTES.SETTINGS_BANK_ONBOARDING_LAB_USD_SETUP.getRoute({policyID, page: SBO_CONST.USD.PAGE_NAMES.COUNTRY});
+            ? ROUTES.SETTINGS_BANK_ONBOARDING_LAB_NON_USD_SETUP.getRoute({policyID, page: SBO_CONST.NON_USD.PAGE_NAMES.COUNTRY, backTo})
+            : ROUTES.SETTINGS_BANK_ONBOARDING_LAB_USD_SETUP.getRoute({policyID, page: SBO_CONST.USD.PAGE_NAMES.COUNTRY, backTo});
 
         // The page replaces itself, so the back button of the first step returns to the entry point and not to this form.
         Navigation.navigate(forwardRoute, {forceReplace: true});

@@ -2,7 +2,8 @@
  * The signer step of the NonUSD flow. It mirrors `NonUSD/SignerInfo/index.tsx`: the sub page from the URL picks between
  * the form pages of a director, the director question, the emails of other directors and the waiting page. The answer to
  * the director question lives in the draft, the draft is seeded from the server data, and each of the two requests is
- * awaited by its own effect that navigates to the next sub page.
+ * awaited by its own effect that navigates to the next sub page. For a user who is also an owner, the step reads the
+ * answer and the name that the owner step left in the draft, like the real step.
  */
 import type {FormOnyxValues} from '@components/Form/types';
 import InteractiveStepWrapper from '@components/InteractiveStepWrapper';
@@ -20,6 +21,7 @@ import {
     saveOnboardingDirectorInformation,
 } from '@pages/SimplifiedBankOnboarding/actions/GlobalBankAccount';
 import {updateOnboardingDraft} from '@pages/SimplifiedBankOnboarding/actions/OnboardingAccount';
+import getValuesForBeneficialOwner from '@pages/SimplifiedBankOnboarding/nonUSD/BeneficialOwnerInfo/utils/getValuesForBeneficialOwner';
 import type NonUSDPageProps from '@pages/SimplifiedBankOnboarding/nonUSD/types';
 import SBO_CONST from '@pages/SimplifiedBankOnboarding/SBO_CONST';
 import {getBankAccountParams} from '@pages/SimplifiedBankOnboarding/utils/OnboardingAccountUtils';
@@ -35,7 +37,7 @@ import EnterEmail from './EnterEmail';
 import HangTight from './HangTight';
 import SignerDetailsFormPages from './SignerDetailsFormPages';
 
-const {PAGE_NAMES, SIGNER_INFO_SUB_PAGES: SUB_PAGE_NAMES} = SBO_CONST.NON_USD;
+const {PAGE_NAMES, SIGNER_INFO_SUB_PAGES: SUB_PAGE_NAMES, CURRENT_USER_KEY} = SBO_CONST.NON_USD;
 
 // The position of this step in the step counter of the header
 const STEP_INDEX = 4;
@@ -51,6 +53,7 @@ function SignerInfo({onBackButtonPress, onSubmit, policyID, currency = '', stepN
 
     const corpay = account?.achData?.corpay;
     const companyName = corpay?.companyName ?? draft?.companyName ?? '';
+    const isUserOwner = corpay?.ownsMoreThan25Percent ?? draft?.ownsMoreThan25Percent ?? false;
     const isUserDirector = draft?.isUserDirector ?? false;
     const isAUD = currency === SBO_CONST.CURRENCY.AUD;
     const shouldSendOnlySecondSignerEmail = isAUD && isUserDirector;
@@ -72,26 +75,39 @@ function SignerInfo({onBackButtonPress, onSubmit, policyID, currency = '', stepN
 
     const submit = () => {
         isSubmittingRef.current = true;
+
+        // The name page is skipped for an owner, so the name comes from the owner step: from its draft, or from what it saved when the draft is gone.
+        const savedOwnerFullName = corpay?.beneficialOwners?.find((owner) => owner.uid === CURRENT_USER_KEY)?.fullName ?? '';
+        const ownerFullName = getValuesForBeneficialOwner(CURRENT_USER_KEY, draft).fullName || savedOwnerFullName;
+        const signerFullName = isUserOwner ? ownerFullName : (draft?.signerFullName ?? '');
         saveOnboardingDirectorInformation(getBankAccountParams(policyID, account?.achData), {
-            signerFullName: draft?.signerFullName ?? '',
+            signerFullName,
             signerJobTitle: draft?.signerJobTitle ?? '',
         });
     };
 
     useEffect(() => {
-        if (account?.errors || account?.isSavingCorpayOnboardingDirectorInformation || !account?.isSuccess || !isSubmittingRef.current) {
+        if (account?.errors || account?.isSavingCorpayOnboardingDirectorInformation || !account?.isSuccess) {
             return;
         }
-        isSubmittingRef.current = false;
 
-        // An AUD workspace needs a second director, so a director who saved their data still has to invite one.
-        if (isAUD) {
-            Navigation.navigate(buildSignerInfoRoute(SUB_PAGE_NAMES.ENTER_EMAIL, policyID, backTo));
+        if (isSubmittingRef.current) {
+            isSubmittingRef.current = false;
+
+            // An AUD workspace needs a second director, so a director who saved their data still has to invite one.
+            if (isAUD) {
+                Navigation.navigate(buildSignerInfoRoute(SUB_PAGE_NAMES.ENTER_EMAIL, policyID, backTo));
+                clearSaveOnboardingDirectorInformation();
+                return;
+            }
+            onSubmit();
             clearSaveOnboardingDirectorInformation();
-            return;
         }
-        onSubmit();
-        clearSaveOnboardingDirectorInformation();
+
+        // As in the real step, this cleanup runs whenever a flag changes and not only on unmount, so it can clear a request that just started.
+        return () => {
+            clearSaveOnboardingDirectorInformation();
+        };
     }, [account?.errors, account?.isSavingCorpayOnboardingDirectorInformation, account?.isSuccess, isAUD, onSubmit, policyID, backTo]);
 
     useEffect(() => {
@@ -113,7 +129,11 @@ function SignerInfo({onBackButtonPress, onSubmit, policyID, currency = '', stepN
 
     const handleIsDirectorSelected = (isDirector: boolean) => {
         updateOnboardingDraft({isUserDirector: isDirector});
-        Navigation.navigate(buildRoute(isDirector ? SUB_PAGE_NAMES.NAME : SUB_PAGE_NAMES.ENTER_EMAIL));
+        if (!isDirector) {
+            Navigation.navigate(buildRoute(SUB_PAGE_NAMES.ENTER_EMAIL));
+            return;
+        }
+        Navigation.navigate(buildRoute(isUserOwner ? SUB_PAGE_NAMES.JOB_TITLE : SUB_PAGE_NAMES.NAME));
     };
 
     const handleBackButtonPress = () => {

@@ -17,6 +17,7 @@ import type {OnyxData} from '@src/types/onyx/Request';
 import Onyx from 'react-native-onyx';
 
 type GlobalRequestFlag =
+    | 'isLoading'
     | 'isCreateCorpayBankAccount'
     | 'isSavingCorpayOnboardingCompanyFields'
     | 'isSavingCorpayOnboardingBeneficialOwnersFields'
@@ -64,11 +65,15 @@ function getOnboardingFields(countryISO: string) {
     read(READ_COMMANDS.GET_ONBOARDING_FIELDS, {countryISO}, onyxData);
 }
 
+/**
+ * Creates the bank account. It is the only request of this flow that also raises the shared `isLoading`, like
+ * `createCorpayBankAccount`, so the entry page has to tell it apart from its own loading with `isCreateCorpayBankAccount`.
+ */
 function createGlobalBankAccount(details: GlobalBankAccountDetails) {
     write(
         WRITE_COMMANDS.CREATE_GLOBAL_BANK_ACCOUNT,
         details,
-        getGlobalRequestDataForOnyx((isCreateCorpayBankAccount) => ({isCreateCorpayBankAccount})),
+        getGlobalRequestDataForOnyx((isInProgress) => ({isLoading: isInProgress, isCreateCorpayBankAccount: isInProgress})),
     );
 }
 
@@ -161,7 +166,7 @@ function finishGlobalBankAccountOnboarding(bankAccount: BankAccountParams, detai
 }
 
 function clearGlobalBankAccountCreation() {
-    Onyx.merge(ONYXKEYS.SIMPLIFIED_BANK_ONBOARDING_ACCOUNT, {isCreateCorpayBankAccount: null, isSuccess: null});
+    Onyx.merge(ONYXKEYS.SIMPLIFIED_BANK_ONBOARDING_ACCOUNT, {isCreateCorpayBankAccount: null, isSuccess: null, isLoading: null});
 }
 
 function clearSaveOnboardingCompanyDetails() {

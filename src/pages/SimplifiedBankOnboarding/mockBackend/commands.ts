@@ -37,7 +37,7 @@ const WRITE_COMMANDS = {
 } as const;
 
 type BankAccountParams = {
-    /** Missing when the client has no workspace to name. The server then finds no bank account. */
+    /** Missing when the flow was opened by the bank account ID. The server then finds the account by that ID alone. */
     policyID: string | undefined;
     bankAccountID: number;
 };
@@ -45,7 +45,9 @@ type BankAccountParams = {
 type ReadCommandParams = {
     [READ_COMMANDS.OPEN_LANDING_PAGE]: Record<string, never>;
     [READ_COMMANDS.OPEN_ONBOARDING_PAGE]: {
-        policyID: string;
+        /** The page names the workspace or the bank account, like `OpenReimbursementAccountPage` */
+        policyID?: string;
+        bankAccountID?: number;
         stepToOpen: USDStep | '';
         subStep: SetupType | '';
         localCurrentStep: USDStep | '';

@@ -62,6 +62,7 @@ function connectBankAccount(database: MockServerDatabase, policyID: string, setu
         policyID,
         state: STATE.SETUP,
         country: SBO_CONST.COUNTRY.US,
+        currency: SBO_CONST.CURRENCY.USD,
         created: new Date().toISOString(),
         ...existingAccount,
         currentStep: STEP.REQUESTOR,

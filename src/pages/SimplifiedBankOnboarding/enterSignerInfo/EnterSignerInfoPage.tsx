@@ -81,6 +81,11 @@ function EnterSignerInfoPage({route}: EnterSignerInfoPageProps) {
         clearEnterSignerInformationFormSave();
         clearDraftValues(ONYXKEYS.FORMS.SIMPLIFIED_BANK_ONBOARDING_SIGNER_FORM);
         Navigation.goBack();
+
+        // As in the real page, this cleanup runs whenever a flag changes and not only on unmount, so it can clear a request that just started.
+        return () => {
+            clearEnterSignerInformationFormSave();
+        };
     }, [signerForm?.errors, signerForm?.isSavingSignerInformation, signerForm?.isSuccess]);
 
     useEffect(() => {

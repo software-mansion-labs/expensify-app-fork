@@ -1,7 +1,7 @@
 /**
  * Turns the owners that the server saved into draft values: the owner keys plus the flat keys of every owner. The step
- * writes them to the draft on resume, like the real `getDraftValuesForBeneficialOwners`. The mock server stores no
- * owner IDs, so the saved owners get IDs from their position.
+ * writes them to the draft on resume, like the real `getDraftValuesForBeneficialOwners`. The server stores one full name,
+ * so the split into the two name inputs drops the middle part of a name with more than two words, as the real flow does.
  */
 import {OWNER_FIELDS} from '@pages/SimplifiedBankOnboarding/nonUSD/BeneficialOwnerInfo/const';
 import type {OnboardingForm} from '@pages/SimplifiedBankOnboarding/types/form';
@@ -14,18 +14,32 @@ type DraftValuesForBeneficialOwners = Partial<OnboardingForm> & {
     beneficialOwnerKeys: string[];
 };
 
-function getSavedOwnerID(index: number): string {
-    return `saved${index}`;
+type SplitName = {
+    firstName: string;
+    lastName: string;
+};
+
+function splitFullName(fullName: string): SplitName {
+    const trimmedFullName = fullName.trim();
+    const firstSpaceIndex = trimmedFullName.indexOf(' ');
+    if (firstSpaceIndex === -1) {
+        return {firstName: trimmedFullName, lastName: ''};
+    }
+    return {
+        firstName: trimmedFullName.substring(0, firstSpaceIndex).trim(),
+        lastName: trimmedFullName.substring(trimmedFullName.lastIndexOf(' ')).trim(),
+    };
 }
 
 function getDraftValuesForBeneficialOwners(account: OnyxEntry<OnboardingAccount>): DraftValuesForBeneficialOwners {
     const owners = account?.achData?.corpay?.beneficialOwners ?? [];
-    const values: DraftValuesForBeneficialOwners = {beneficialOwnerKeys: owners.map((owner, index) => getSavedOwnerID(index))};
+    const values: DraftValuesForBeneficialOwners = {beneficialOwnerKeys: owners.map((owner) => owner.uid)};
 
-    for (const [index, owner] of owners.entries()) {
-        const ownerID = getSavedOwnerID(index);
-        values[getOwnerInputID(ownerID, OWNER_FIELDS.FULL_NAME)] = owner.fullName;
-        values[getOwnerInputID(ownerID, OWNER_FIELDS.OWNERSHIP_PERCENTAGE)] = owner.ownershipPercentage;
+    for (const owner of owners) {
+        const {firstName, lastName} = splitFullName(owner.fullName);
+        values[getOwnerInputID(owner.uid, OWNER_FIELDS.FIRST_NAME)] = firstName;
+        values[getOwnerInputID(owner.uid, OWNER_FIELDS.LAST_NAME)] = lastName;
+        values[getOwnerInputID(owner.uid, OWNER_FIELDS.OWNERSHIP_PERCENTAGE)] = owner.ownershipPercentage;
     }
     return values;
 }

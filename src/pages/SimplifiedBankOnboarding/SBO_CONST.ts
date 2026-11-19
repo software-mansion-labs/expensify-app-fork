@@ -154,6 +154,9 @@ const SBO_CONST = {
         STEP_NAMES: ['1', '2', '3', '4', '5', '6'],
         DOCUSIGN_REQUIRED_STEP_NAMES: ['1', '2', '3', '4', '5', '6', '7'],
         ACCOUNT_HOLDER_KEY_PREFIX: 'accountHolder',
+
+        /** The owner ID of the current user. Every other owner gets a generated one. */
+        CURRENT_USER_KEY: 'currentUser',
         MIN_OWNERSHIP_PERCENTAGE: 25,
         MAX_OWNERSHIP_SUM_TO_ADD_MORE: 75,
         BANK_INFO_SUB_PAGES: {

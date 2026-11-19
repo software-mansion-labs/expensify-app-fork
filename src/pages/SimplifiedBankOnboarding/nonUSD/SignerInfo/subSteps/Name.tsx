@@ -1,6 +1,6 @@
 /**
  * The name sub page of a signer. Both the signer step and the page of an invited director render it, each with its own
- * form, like the real flow where the two flows have their own copy of this page.
+ * form. The real flow does not share it: each of the two flows has its own copy of this page.
  */
 import type {FormInputErrors, FormOnyxValues} from '@components/Form/types';
 import SingleFieldStep from '@components/SubStepForms/SingleFieldStep';

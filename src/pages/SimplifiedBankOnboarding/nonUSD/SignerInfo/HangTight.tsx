@@ -58,6 +58,11 @@ function HangTight({policyID, currency, onContinue}: HangTightProps) {
             return;
         }
         clearSendReminderForSignerInformation();
+
+        // As in the real step, this cleanup runs whenever a flag changes and not only on unmount, so it can clear a request that just started.
+        return () => {
+            clearSendReminderForSignerInformation();
+        };
     }, [account?.errors, account?.isSendingReminderForCorpaySignerInformation, account?.isSuccess]);
 
     return (

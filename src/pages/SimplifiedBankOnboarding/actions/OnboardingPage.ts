@@ -16,7 +16,9 @@ import type {OnyxData} from '@src/types/onyx/Request';
 import Onyx from 'react-native-onyx';
 
 type OpenOnboardingPageParams = {
-    policyID: string;
+    /** The page names the workspace or the bank account. With the bank account, the server picks the step. */
+    policyID?: string;
+    bankAccountID?: number;
 
     /** The step that the client wants to show. The server answers with it when the account already reached that step. */
     stepToOpen?: USDStep | '';
@@ -28,13 +30,24 @@ function openLandingPage() {
     read(READ_COMMANDS.OPEN_LANDING_PAGE, {});
 }
 
-function openOnboardingPage({policyID, stepToOpen = '', subStep = '', localCurrentStep = ''}: OpenOnboardingPageParams) {
-    const onyxData: OnyxData<typeof ONYXKEYS.SIMPLIFIED_BANK_ONBOARDING_ACCOUNT> = {
+function getAccountLoadingDataForOnyx(): OnyxData<typeof ONYXKEYS.SIMPLIFIED_BANK_ONBOARDING_ACCOUNT> {
+    return {
         optimisticData: [{onyxMethod: Onyx.METHOD.MERGE, key: ONYXKEYS.SIMPLIFIED_BANK_ONBOARDING_ACCOUNT, value: {isLoading: true}}],
         successData: [{onyxMethod: Onyx.METHOD.MERGE, key: ONYXKEYS.SIMPLIFIED_BANK_ONBOARDING_ACCOUNT, value: {isLoading: false}}],
         failureData: [{onyxMethod: Onyx.METHOD.MERGE, key: ONYXKEYS.SIMPLIFIED_BANK_ONBOARDING_ACCOUNT, value: {isLoading: false}}],
     };
-    read(READ_COMMANDS.OPEN_ONBOARDING_PAGE, {policyID, stepToOpen, subStep, localCurrentStep}, onyxData);
+}
+
+function openOnboardingPage({policyID, bankAccountID, stepToOpen = '', subStep = '', localCurrentStep = ''}: OpenOnboardingPageParams) {
+    read(READ_COMMANDS.OPEN_ONBOARDING_PAGE, {policyID, bankAccountID, stepToOpen, subStep, localCurrentStep}, getAccountLoadingDataForOnyx());
+}
+
+/**
+ * The read of the page that stands in for the Payments tab of a workspace. Like `openWorkspaceView`, it belongs to a page
+ * outside the flow and still raises `isLoading` on the account key, which the entry page takes for its own loading.
+ */
+function openWorkspacePaymentsPage() {
+    read(READ_COMMANDS.OPEN_LANDING_PAGE, {}, getAccountLoadingDataForOnyx());
 }
 
 function validateUser(validateCode: string) {
@@ -71,4 +84,4 @@ function resetLabData() {
     }).then(openLandingPage);
 }
 
-export {clearValidateUserErrors, openLandingPage, openOnboardingPage, resetLabData, validateUser};
+export {clearValidateUserErrors, openLandingPage, openOnboardingPage, openWorkspacePaymentsPage, resetLabData, validateUser};

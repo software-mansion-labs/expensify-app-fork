@@ -35,39 +35,42 @@ type ResetOnboardingModalOptions = {
     setShouldShowConnectedBankAccount?: (shouldShowConnectedBankAccount: boolean) => void;
     setShouldShowContinueSetupButton?: (shouldShowContinueSetupButton: boolean) => void;
 
+    /** Runs after the reset was sent, for a screen that has to leave the flow then */
+    navigateAfterReset?: () => void;
+
     /** Passed along to the NonUSD flow, which opens right after the reset */
     backTo?: Route;
 };
 
 const VISIBLE_ACCOUNT_NUMBER_DIGITS = 4;
 
-function useResetOnboardingModal({account, isNonUSDWorkspace, setShouldShowConnectedBankAccount, setShouldShowContinueSetupButton, backTo}: ResetOnboardingModalOptions) {
+function useResetOnboardingModal({account, isNonUSDWorkspace, setShouldShowConnectedBankAccount, setShouldShowContinueSetupButton, navigateAfterReset, backTo}: ResetOnboardingModalOptions) {
     const styles = useThemeStyles();
     const {translate} = useLocalize();
     const {showConfirmModal} = useConfirmModal();
     const achData = account?.achData;
     const policyID = achData?.policyID;
-    const selectWorkspaceBankAccountID = (workspaces: OnyxEntry<Workspaces>) => (policyID ? workspaces?.[policyID]?.achAccount?.bankAccountID : undefined);
-    const [workspaceBankAccountID] = useOnyx(ONYXKEYS.SIMPLIFIED_BANK_ONBOARDING_WORKSPACES, {selector: selectWorkspaceBankAccountID});
+    const selectWorkspaceACHAccount = (workspaces: OnyxEntry<Workspaces>) => (policyID ? workspaces?.[policyID]?.achAccount : undefined);
+    const [workspaceACHAccount] = useOnyx(ONYXKEYS.SIMPLIFIED_BANK_ONBOARDING_WORKSPACES, {selector: selectWorkspaceACHAccount});
     const shouldShowResetModal = account?.shouldShowResetModal ?? false;
     const isInOpenState = achData?.state === SBO_CONST.STATE.OPEN;
     const bankShortName = `${achData?.bankName ?? ''} ${(achData?.accountNumber ?? '').slice(-VISIBLE_ACCOUNT_NUMBER_DIGITS)}`;
 
     const resetBankAccount = () => {
         // The account data may already be cleared when the user confirms, so the ID also comes from the summary on the workspace.
-        const bankAccountParams = getBankAccountParams(policyID, achData, workspaceBankAccountID);
+        const bankAccountParams = getBankAccountParams(policyID, achData, workspaceACHAccount?.bankAccountID);
 
         if (isNonUSDWorkspace) {
-            resetNonUSDBankAccount(bankAccountParams);
+            resetNonUSDBankAccount(bankAccountParams, workspaceACHAccount);
             setShouldShowConnectedBankAccount?.(false);
             setShouldShowContinueSetupButton?.(false);
             Navigation.navigate(ROUTES.SETTINGS_BANK_ONBOARDING_LAB_NON_USD_SETUP.getRoute({policyID, page: SBO_CONST.NON_USD.PAGE_NAMES.COUNTRY, backTo}));
-            return;
+        } else {
+            resetUSDBankAccount(bankAccountParams, workspaceACHAccount);
+            setShouldShowContinueSetupButton?.(false);
+            setShouldShowConnectedBankAccount?.(false);
         }
-
-        resetUSDBankAccount(bankAccountParams);
-        setShouldShowContinueSetupButton?.(false);
-        setShouldShowConnectedBankAccount?.(false);
+        navigateAfterReset?.();
     };
 
     // Several effects may ask for the modal while it is open, so this keeps it from opening twice.

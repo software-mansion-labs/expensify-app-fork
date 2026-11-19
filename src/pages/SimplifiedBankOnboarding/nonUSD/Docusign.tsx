@@ -42,11 +42,9 @@ function Docusign({onBackButtonPress, onSubmit, policyID, stepNames}: NonUSDPage
     const [account] = useOnyx(ONYXKEYS.SIMPLIFIED_BANK_ONBOARDING_ACCOUNT);
     const [draft] = useOnyx(ONYXKEYS.FORMS.SIMPLIFIED_BANK_ONBOARDING_FORM_DRAFT);
     const formRef = useRef<FormRef | null>(null);
-    const isSubmittingRef = useRef(false);
     const [authorizationForms, setAuthorizationForms] = useState<FileObject[]>(draft?.achAuthorizationForm ?? []);
 
     const submit = () => {
-        isSubmittingRef.current = true;
         finishGlobalBankAccountOnboarding(getBankAccountParams(policyID, account?.achData), {
             ...getAgreementValues(draft, account),
             bankStatementName: draft?.bankStatement?.at(0)?.name,
@@ -59,12 +57,14 @@ function Docusign({onBackButtonPress, onSubmit, policyID, stepNames}: NonUSDPage
             return;
         }
 
-        // The real step has no ref here; it keeps the ref of the other NonUSD steps so a stale `isSuccess` cannot skip it.
-        if (isSubmittingRef.current) {
-            isSubmittingRef.current = false;
-            onSubmit();
+        // Unlike the other NonUSD steps, the real step has no ref of its own here, so a stale `isSuccess` of another request passes this check.
+        onSubmit();
+        clearFinishGlobalBankAccountOnboarding();
+
+        // As in the real step, this cleanup runs whenever a flag changes and not only on unmount, so it can clear a request that just started.
+        return () => {
             clearFinishGlobalBankAccountOnboarding();
-        }
+        };
     }, [account?.errors, account?.isFinishingCorpayBankAccountOnboarding, account?.isSuccess, onSubmit]);
 
     const validate = (values: FormOnyxValues<typeof ONYXKEYS.FORMS.SIMPLIFIED_BANK_ONBOARDING_FORM>): FormInputErrors<typeof ONYXKEYS.FORMS.SIMPLIFIED_BANK_ONBOARDING_FORM> =>

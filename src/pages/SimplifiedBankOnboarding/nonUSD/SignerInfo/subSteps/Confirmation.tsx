@@ -1,7 +1,8 @@
 /**
  * The confirmation sub page of a signer. It reads the values from the draft only, like the real one, and shows the
  * progress of the director request from the key that its form watches: the account for the signer step, the signer form
- * for the page of an invited director.
+ * for the page of an invited director. In the signer step, a user who is also an owner gets no name row, because the
+ * name page was skipped.
  */
 import ConfirmationStep from '@components/SubStepForms/ConfirmationStep';
 
@@ -27,6 +28,7 @@ const DETAILS_SUBSTEP_INDEX = {
 function Confirmation({onNext, onMove, isEditing, formID}: SignerDetailsSubPageProps) {
     const {translate} = useLocalize();
     const [account] = useOnyx(ONYXKEYS.SIMPLIFIED_BANK_ONBOARDING_ACCOUNT);
+    const [onboardingDraft] = useOnyx(ONYXKEYS.FORMS.SIMPLIFIED_BANK_ONBOARDING_FORM_DRAFT);
     const [signerForm] = useOnyx(ONYXKEYS.FORMS.SIMPLIFIED_BANK_ONBOARDING_SIGNER_FORM);
     const fullName = useSignerDraftValue(formID, SIGNER_INPUT_IDS.SIGNER_FULL_NAME);
     const jobTitle = useSignerDraftValue(formID, SIGNER_INPUT_IDS.SIGNER_JOB_TITLE);
@@ -34,23 +36,23 @@ function Confirmation({onNext, onMove, isEditing, formID}: SignerDetailsSubPageP
     const isOnboardingForm = formID === ONYXKEYS.FORMS.SIMPLIFIED_BANK_ONBOARDING_FORM;
     const isLoading = isOnboardingForm ? !!account?.isSavingCorpayOnboardingDirectorInformation : !!signerForm?.isSavingSignerInformation;
     const error = isOnboardingForm ? getLatestErrorMessage(account) : getLatestErrorMessage(signerForm);
+    const isUserOwner = isOnboardingForm && (account?.achData?.corpay?.ownsMoreThan25Percent ?? onboardingDraft?.ownsMoreThan25Percent ?? false);
 
-    const summaryItems = [
-        {
-            id: 'legal-name',
-            title: fullName,
-            description: translate('signerInfoStep.legalName'),
-            shouldShowRightIcon: true,
-            onPress: () => onMove(DETAILS_SUBSTEP_INDEX.NAME),
-        },
-        {
-            id: 'job-title',
-            title: jobTitle,
-            description: translate('signerInfoStep.jobTitle'),
-            shouldShowRightIcon: true,
-            onPress: () => onMove(DETAILS_SUBSTEP_INDEX.JOB_TITLE),
-        },
-    ];
+    const nameItem = {
+        id: 'legal-name',
+        title: fullName,
+        description: translate('signerInfoStep.legalName'),
+        shouldShowRightIcon: true,
+        onPress: () => onMove(DETAILS_SUBSTEP_INDEX.NAME),
+    };
+    const jobTitleItem = {
+        id: 'job-title',
+        title: jobTitle,
+        description: translate('signerInfoStep.jobTitle'),
+        shouldShowRightIcon: true,
+        onPress: () => onMove(DETAILS_SUBSTEP_INDEX.JOB_TITLE),
+    };
+    const summaryItems = isUserOwner ? [jobTitleItem] : [nameItem, jobTitleItem];
 
     return (
         <ConfirmationStep

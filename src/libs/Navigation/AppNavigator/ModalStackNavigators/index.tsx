@@ -546,6 +546,7 @@ const SettingsModalStackNavigator = createModalStackNavigator<SettingsNavigatorP
     [SCREENS.SETTINGS.BANK_ONBOARDING_LAB.NON_USD_SETUP]: () => require<ReactComponentModule>('../../../../pages/SimplifiedBankOnboarding/nonUSD/NonUSDFlowPage').default,
     [SCREENS.SETTINGS.BANK_ONBOARDING_LAB.VERIFY_ACCOUNT]: () => require<ReactComponentModule>('../../../../pages/SimplifiedBankOnboarding/entry/VerifyAccountPage').default,
     [SCREENS.SETTINGS.BANK_ONBOARDING_LAB.ENTER_SIGNER_INFO]: () => require<ReactComponentModule>('../../../../pages/SimplifiedBankOnboarding/enterSignerInfo/EnterSignerInfoPage').default,
+    [SCREENS.SETTINGS.BANK_ONBOARDING_LAB.WORKSPACE_PAYMENTS]: () => require<ReactComponentModule>('../../../../pages/SimplifiedBankOnboarding/landing/WorkspacePaymentsPage').default,
     [SCREENS.SETTINGS.RULES.ROOT]: () => require<ReactComponentModule>('../../../../pages/settings/Rules/ExpenseRulesPage').default,
     [SCREENS.SETTINGS.AGENTS.DYNAMIC_NEW]: withAgentAccessDenied(() => require<ReactComponentModule>('../../../../pages/settings/Agents/DynamicNewAgentPage').default),
     [SCREENS.SETTINGS.AGENTS.DYNAMIC_ADD]: withAgentAccessDenied(() => require<ReactComponentModule>('../../../../pages/settings/Agents/DynamicAddAgentPage').default),
