@@ -231,6 +231,15 @@ const SCREENS = {
             EXPENSIFY_CARD_SPEND_RULES: 'Settings_Wallet_ExpensifyCard_SpendRules',
         },
 
+        BANK_ONBOARDING_LAB: {
+            ROOT: 'Settings_BankOnboardingLab',
+            ENTRY: 'Settings_BankOnboardingLab_Entry',
+            USD_SETUP: 'Settings_BankOnboardingLab_USDSetup',
+            NON_USD_SETUP: 'Settings_BankOnboardingLab_NonUSDSetup',
+            VERIFY_ACCOUNT: 'Settings_BankOnboardingLab_VerifyAccount',
+            ENTER_SIGNER_INFO: 'Settings_BankOnboardingLab_EnterSignerInfo',
+        },
+
         EXIT_SURVEY: {
             RESPONSE: 'Settings_ExitSurvey_Response',
         },

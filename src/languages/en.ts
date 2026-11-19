@@ -196,6 +196,7 @@ const translations = {
         payments: 'Payments',
         approvals: 'Approvals',
         wallet: 'Wallet',
+        bankOnboardingLab: 'Bank onboarding lab',
         preferences: 'Preferences',
         view: 'View',
         review: (amount?: string) => `Review${amount ? ` ${amount}` : ''}`,

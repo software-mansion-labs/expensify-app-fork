@@ -97,6 +97,12 @@ const OPTIONS_PER_SCREEN: Partial<Record<Screen, PlatformStackNavigationOptions>
     [SCREENS.REIMBURSEMENT_ACCOUNT_NON_USD]: {
         animationTypeForReplace: 'push',
     },
+    [SCREENS.SETTINGS.BANK_ONBOARDING_LAB.USD_SETUP]: {
+        animationTypeForReplace: 'push',
+    },
+    [SCREENS.SETTINGS.BANK_ONBOARDING_LAB.NON_USD_SETUP]: {
+        animationTypeForReplace: 'push',
+    },
     [SCREENS.SEARCH.DYNAMIC_MONEY_REQUEST_REPORT_HOLD_TRANSACTIONS]: {
         animation: Animations.NONE,
     },
@@ -535,6 +541,11 @@ const SettingsModalStackNavigator = createModalStackNavigator<SettingsNavigatorP
         require<ReactComponentModule>('../../../../pages/settings/Wallet/InternationalDepositAccount/subPages/AccountFlowEntryPoint').default,
     [SCREENS.SETTINGS.UPDATE_PERSONAL_BANK_ACCOUNT]: () => require<ReactComponentModule>('../../../../pages/settings/Wallet/UpdatePersonalBankAccountPage').default,
     [SCREENS.SETTINGS.BANK_ACCOUNT_PURPOSE]: () => require<ReactComponentModule>('../../../../pages/settings/Wallet/BankAccountPurposePage').default,
+    [SCREENS.SETTINGS.BANK_ONBOARDING_LAB.ENTRY]: () => require<ReactComponentModule>('../../../../pages/SimplifiedBankOnboarding/entry/OnboardingEntryPage').default,
+    [SCREENS.SETTINGS.BANK_ONBOARDING_LAB.USD_SETUP]: () => require<ReactComponentModule>('../../../../pages/SimplifiedBankOnboarding/usd/USDFlowPage').default,
+    [SCREENS.SETTINGS.BANK_ONBOARDING_LAB.NON_USD_SETUP]: () => require<ReactComponentModule>('../../../../pages/SimplifiedBankOnboarding/nonUSD/NonUSDFlowPage').default,
+    [SCREENS.SETTINGS.BANK_ONBOARDING_LAB.VERIFY_ACCOUNT]: () => require<ReactComponentModule>('../../../../pages/SimplifiedBankOnboarding/entry/VerifyAccountPage').default,
+    [SCREENS.SETTINGS.BANK_ONBOARDING_LAB.ENTER_SIGNER_INFO]: () => require<ReactComponentModule>('../../../../pages/SimplifiedBankOnboarding/enterSignerInfo/EnterSignerInfoPage').default,
     [SCREENS.SETTINGS.RULES.ROOT]: () => require<ReactComponentModule>('../../../../pages/settings/Rules/ExpenseRulesPage').default,
     [SCREENS.SETTINGS.AGENTS.DYNAMIC_NEW]: withAgentAccessDenied(() => require<ReactComponentModule>('../../../../pages/settings/Agents/DynamicNewAgentPage').default),
     [SCREENS.SETTINGS.AGENTS.DYNAMIC_ADD]: withAgentAccessDenied(() => require<ReactComponentModule>('../../../../pages/settings/Agents/DynamicAddAgentPage').default),

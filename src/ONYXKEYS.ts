@@ -7,6 +7,17 @@ import type {OnboardingFeatureMapItem} from './libs/actions/Welcome/OnboardingFe
 import type {OnboardingCompanySize} from './libs/actions/Welcome/OnboardingFlow';
 import type Platform from './libs/getPlatform/types';
 import type {TransactionThreadNavigationDescriptor} from './libs/TransactionThreadNavigationUtils';
+import type {MockServerDatabase} from './pages/SimplifiedBankOnboarding/mockBackend/types';
+import type {EnterSignerInfoForm as SimplifiedBankOnboardingEnterSignerInfoForm, OnboardingForm as SimplifiedBankOnboardingForm} from './pages/SimplifiedBankOnboarding/types/form';
+import type {
+    BankFields as SimplifiedBankOnboardingBankFields,
+    OnboardingAccount as SimplifiedBankOnboardingOnboardingAccount,
+    OnboardingPicklists as SimplifiedBankOnboardingOnboardingPicklists,
+    OnboardingUser as SimplifiedBankOnboardingOnboardingUser,
+    PlaidData as SimplifiedBankOnboardingPlaidData,
+    SetupType as SimplifiedBankOnboardingSetupType,
+    Workspaces as SimplifiedBankOnboardingWorkspaces,
+} from './pages/SimplifiedBankOnboarding/types/onyx';
 import type * as FormTypes from './types/form';
 import type * as OnyxTypes from './types/onyx';
 import type DefaultP2PMileageRate from './types/onyx/DefaultP2PMileageRate';
@@ -498,6 +509,36 @@ const ONYXKEYS = {
 
     /** Stores the bank connection type user wants to set up before validation code modal */
     REIMBURSEMENT_ACCOUNT_OPTION_PRESSED: 'reimbursementAccountOptionPressed',
+
+    /** Simplified bank onboarding (research module): server data, request flags and form state of the account being set up */
+    SIMPLIFIED_BANK_ONBOARDING_ACCOUNT: 'simplifiedBankOnboardingAccount',
+
+    /** Simplified bank onboarding: the setup type picked before the account validation gate */
+    SIMPLIFIED_BANK_ONBOARDING_OPTION_PRESSED: 'simplifiedBankOnboardingOptionPressed',
+
+    /** Simplified bank onboarding: mock workspaces, the stand-in for policies */
+    SIMPLIFIED_BANK_ONBOARDING_WORKSPACES: 'simplifiedBankOnboardingWorkspaces',
+
+    /** Simplified bank onboarding: the mock user, the stand-in for the account */
+    SIMPLIFIED_BANK_ONBOARDING_USER: 'simplifiedBankOnboardingUser',
+
+    /** Simplified bank onboarding: bank accounts returned by the mock Plaid */
+    SIMPLIFIED_BANK_ONBOARDING_PLAID_DATA: 'simplifiedBankOnboardingPlaidData',
+
+    /** Simplified bank onboarding: token of the mock Plaid widget, never persisted */
+    RAM_ONLY_SIMPLIFIED_BANK_ONBOARDING_PLAID_LINK_TOKEN: 'simplifiedBankOnboardingPlaidLinkToken',
+
+    /** Simplified bank onboarding: token of the mock identity check */
+    SIMPLIFIED_BANK_ONBOARDING_ONFIDO_TOKEN: 'simplifiedBankOnboardingOnfidoToken',
+
+    /** Simplified bank onboarding: server-driven inputs of the NonUSD bank step */
+    SIMPLIFIED_BANK_ONBOARDING_BANK_FIELDS: 'simplifiedBankOnboardingBankFields',
+
+    /** Simplified bank onboarding: server picklists of the NonUSD business step */
+    SIMPLIFIED_BANK_ONBOARDING_PICKLISTS: 'simplifiedBankOnboardingPicklists',
+
+    /** Simplified bank onboarding: database and settings of the mock backend */
+    SIMPLIFIED_BANK_ONBOARDING_MOCK_SERVER: 'simplifiedBankOnboardingMockServer',
 
     /** Set when we are loading payment methods */
     IS_LOADING_PAYMENT_METHODS: 'isLoadingPaymentMethods',
@@ -1369,6 +1410,10 @@ const ONYXKEYS = {
         REIMBURSEMENT_ACCOUNT_FORM_DRAFT: 'reimbursementAccountDraft',
         ENTER_SINGER_INFO_FORM: 'enterSignerInfoForm',
         ENTER_SINGER_INFO_FORM_DRAFT: 'enterSignerInfoFormDraft',
+        SIMPLIFIED_BANK_ONBOARDING_FORM: 'simplifiedBankOnboardingAccount',
+        SIMPLIFIED_BANK_ONBOARDING_FORM_DRAFT: 'simplifiedBankOnboardingAccountDraft',
+        SIMPLIFIED_BANK_ONBOARDING_SIGNER_FORM: 'simplifiedBankOnboardingSignerForm',
+        SIMPLIFIED_BANK_ONBOARDING_SIGNER_FORM_DRAFT: 'simplifiedBankOnboardingSignerFormDraft',
         PERSONAL_BANK_ACCOUNT_FORM: 'personalBankAccount',
         PERSONAL_BANK_ACCOUNT_FORM_DRAFT: 'personalBankAccountDraft',
         DISABLE_AUTO_RENEW_SURVEY_FORM: 'disableAutoRenewSurveyForm',
@@ -1606,6 +1651,8 @@ type OnyxFormValuesMapping = {
     [ONYXKEYS.FORMS.RESET_DOMAIN_FORM]: FormTypes.ResetDomainForm;
     [ONYXKEYS.FORMS.REIMBURSEMENT_ACCOUNT_FORM]: FormTypes.ReimbursementAccountForm;
     [ONYXKEYS.FORMS.ENTER_SINGER_INFO_FORM]: FormTypes.EnterSignerInfoForm;
+    [ONYXKEYS.FORMS.SIMPLIFIED_BANK_ONBOARDING_FORM]: SimplifiedBankOnboardingForm;
+    [ONYXKEYS.FORMS.SIMPLIFIED_BANK_ONBOARDING_SIGNER_FORM]: SimplifiedBankOnboardingEnterSignerInfoForm;
     [ONYXKEYS.FORMS.PERSONAL_BANK_ACCOUNT_FORM]: FormTypes.PersonalBankAccountForm;
     [ONYXKEYS.FORMS.WORKSPACE_DESCRIPTION_FORM]: FormTypes.WorkspaceDescriptionForm;
     [ONYXKEYS.FORMS.WORKSPACE_CLIENT_ID_FORM]: FormTypes.WorkspaceClientIDForm;
@@ -1947,6 +1994,16 @@ type OnyxValuesMapping = {
     [ONYXKEYS.REIMBURSEMENT_ACCOUNT_BACKUP]: OnyxTypes.ReimbursementAccount;
     [ONYXKEYS.IS_CHANGING_TO_NEW_BANK_ACCOUNT]: boolean;
     [ONYXKEYS.REIMBURSEMENT_ACCOUNT_OPTION_PRESSED]: ValueOf<typeof CONST.BANK_ACCOUNT.SETUP_TYPE>;
+    [ONYXKEYS.SIMPLIFIED_BANK_ONBOARDING_ACCOUNT]: SimplifiedBankOnboardingOnboardingAccount;
+    [ONYXKEYS.SIMPLIFIED_BANK_ONBOARDING_OPTION_PRESSED]: SimplifiedBankOnboardingSetupType;
+    [ONYXKEYS.SIMPLIFIED_BANK_ONBOARDING_WORKSPACES]: SimplifiedBankOnboardingWorkspaces;
+    [ONYXKEYS.SIMPLIFIED_BANK_ONBOARDING_USER]: SimplifiedBankOnboardingOnboardingUser;
+    [ONYXKEYS.SIMPLIFIED_BANK_ONBOARDING_PLAID_DATA]: SimplifiedBankOnboardingPlaidData;
+    [ONYXKEYS.RAM_ONLY_SIMPLIFIED_BANK_ONBOARDING_PLAID_LINK_TOKEN]: string;
+    [ONYXKEYS.SIMPLIFIED_BANK_ONBOARDING_ONFIDO_TOKEN]: string;
+    [ONYXKEYS.SIMPLIFIED_BANK_ONBOARDING_BANK_FIELDS]: SimplifiedBankOnboardingBankFields;
+    [ONYXKEYS.SIMPLIFIED_BANK_ONBOARDING_PICKLISTS]: SimplifiedBankOnboardingOnboardingPicklists;
+    [ONYXKEYS.SIMPLIFIED_BANK_ONBOARDING_MOCK_SERVER]: MockServerDatabase;
     [ONYXKEYS.PREFERRED_EMOJI_SKIN_TONE]: number;
     [ONYXKEYS.FREQUENTLY_USED_EMOJIS]: OnyxTypes.FrequentlyUsedEmoji[];
     [ONYXKEYS.REIMBURSEMENT_ACCOUNT_WORKSPACE_ID]: string;

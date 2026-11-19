@@ -21,6 +21,7 @@ import type {UpperCaseCharacters} from 'type-fest/source/internal';
 
 import type {SIDEBAR_TO_SPLIT} from './linkingConfig/RELATIONS';
 import type AccountSettingsParamList from './paramLists/AccountSettingsParamList';
+import type BankOnboardingLabParamList from './paramLists/BankOnboardingLabParamList';
 import type DomainSettingsParamList from './paramLists/DomainSettingsParamList';
 import type WorkspaceSettingsParamList from './paramLists/WorkspaceSettingsParamList';
 
@@ -68,7 +69,7 @@ type BackToParams = {
     backTo?: Routes;
 };
 
-type SettingsNavigatorParamList = AccountSettingsParamList & WorkspaceSettingsParamList & DomainSettingsParamList & ReimbursementAccountNavigatorParamList;
+type SettingsNavigatorParamList = AccountSettingsParamList & WorkspaceSettingsParamList & DomainSettingsParamList & ReimbursementAccountNavigatorParamList & BankOnboardingLabParamList;
 
 type DomainCardNavigatorParamList = {
     [SCREENS.DOMAIN_CARD.DOMAIN_CARD_DETAIL]: {
@@ -1047,6 +1048,7 @@ type SettingsSplitNavigatorParamList = {
         backTo?: Routes;
     };
     [SCREENS.SETTINGS.WALLET.ROOT]: undefined;
+    [SCREENS.SETTINGS.BANK_ONBOARDING_LAB.ROOT]: undefined;
     [SCREENS.SETTINGS.AGENTS.ROOT]: undefined;
     [SCREENS.SETTINGS.RULES.ROOT]: undefined;
     [SCREENS.SETTINGS.ABOUT]: undefined;

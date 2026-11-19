@@ -267,6 +267,26 @@ const config: LinkingOptions<RootNavigatorParamList>['config'] = {
                             path: ROUTES.SETTINGS_WALLET_PERSONAL_CARD_UPGRADE,
                             exact: true,
                         },
+                        [SCREENS.SETTINGS.BANK_ONBOARDING_LAB.ENTRY]: {
+                            path: ROUTES.SETTINGS_BANK_ONBOARDING_LAB_ENTRY.route,
+                            exact: true,
+                        },
+                        [SCREENS.SETTINGS.BANK_ONBOARDING_LAB.USD_SETUP]: {
+                            path: ROUTES.SETTINGS_BANK_ONBOARDING_LAB_USD_SETUP.route,
+                            exact: true,
+                        },
+                        [SCREENS.SETTINGS.BANK_ONBOARDING_LAB.NON_USD_SETUP]: {
+                            path: ROUTES.SETTINGS_BANK_ONBOARDING_LAB_NON_USD_SETUP.route,
+                            exact: true,
+                        },
+                        [SCREENS.SETTINGS.BANK_ONBOARDING_LAB.VERIFY_ACCOUNT]: {
+                            path: ROUTES.SETTINGS_BANK_ONBOARDING_LAB_VERIFY_ACCOUNT.route,
+                            exact: true,
+                        },
+                        [SCREENS.SETTINGS.BANK_ONBOARDING_LAB.ENTER_SIGNER_INFO]: {
+                            path: ROUTES.SETTINGS_BANK_ONBOARDING_LAB_ENTER_SIGNER_INFO.route,
+                            exact: true,
+                        },
                         [SCREENS.SETTINGS.WALLET.TRANSFER_BALANCE]: {
                             path: ROUTES.SETTINGS_WALLET_TRANSFER_BALANCE,
                             exact: true,
@@ -2481,6 +2501,10 @@ const config: LinkingOptions<RootNavigatorParamList>['config'] = {
                         },
                         [SCREENS.SETTINGS.WALLET.ROOT]: {
                             path: ROUTES.SETTINGS_WALLET,
+                            exact: true,
+                        },
+                        [SCREENS.SETTINGS.BANK_ONBOARDING_LAB.ROOT]: {
+                            path: ROUTES.SETTINGS_BANK_ONBOARDING_LAB,
                             exact: true,
                         },
                         [SCREENS.SETTINGS.AGENTS.ROOT]: {

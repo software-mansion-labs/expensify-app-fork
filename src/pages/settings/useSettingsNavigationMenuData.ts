@@ -99,7 +99,7 @@ type MenuSection = {
 };
 
 function useSettingsNavigationMenuData(): {accountMenuItemsData: MenuSection; generalMenuItemsData: MenuSection} {
-    const icons = useMemoizedLazyExpensifyIcons(['Bot', 'Gear', 'Profile', 'Heart', 'Info', 'QuestionMark', 'Lightbulb', 'Lock', 'Users', 'CreditCard', 'Wallet', 'Bolt']);
+    const icons = useMemoizedLazyExpensifyIcons(['Bot', 'Gear', 'Profile', 'Heart', 'Info', 'QuestionMark', 'Lightbulb', 'Lock', 'Users', 'CreditCard', 'Wallet', 'Bolt', 'Bank']);
     const [amountOwed = 0] = useOnyx(ONYXKEYS.NVP_PRIVATE_AMOUNT_OWED);
     const subscriptionPlan = useSubscriptionPlan();
     const isAgentAccount = useIsAgentAccount();
@@ -118,6 +118,13 @@ function useSettingsNavigationMenuData(): {accountMenuItemsData: MenuSection; ge
             screenName: SCREENS.SETTINGS.WALLET.ROOT,
             sentryLabel: CONST.SENTRY_LABEL.ACCOUNT.WALLET,
             action: () => Navigation.navigate(ROUTES.SETTINGS_WALLET),
+        },
+        {
+            translationKey: 'common.bankOnboardingLab',
+            icon: icons.Bank,
+            screenName: SCREENS.SETTINGS.BANK_ONBOARDING_LAB.ROOT,
+            sentryLabel: CONST.SENTRY_LABEL.ACCOUNT.BANK_ONBOARDING_LAB,
+            action: () => Navigation.navigate(ROUTES.SETTINGS_BANK_ONBOARDING_LAB),
         },
         {
             translationKey: 'expenseRulesPage.title',

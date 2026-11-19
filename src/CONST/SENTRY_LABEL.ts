@@ -1344,6 +1344,7 @@ const SENTRY_LABEL = {
     ACCOUNT: {
         PROFILE: 'Account-Profile',
         WALLET: 'Account-Wallet',
+        BANK_ONBOARDING_LAB: 'Account-BankOnboardingLab',
         AGENTS: 'Account-Agents',
         RULES: 'Account-Rules',
         PREFERENCES: 'Account-Preferences',
@@ -3219,6 +3220,19 @@ const SENTRY_LABEL = {
         MERGE_ACCOUNTS_NEXT: 'SettingsSecurity-MergeAccountsNext',
         MERGE_RESULT_CONFIRM: 'SettingsSecurity-MergeResultConfirm',
         MERGE_RESULT_GO_TO_CLASSIC: 'SettingsSecurity-MergeResultGoToExpensifyClassic',
+    },
+    BANK_ONBOARDING_LAB: {
+        OPEN_WORKSPACE: 'BankOnboardingLab-OpenWorkspace',
+        CHANGE_MOCK_SERVER: 'BankOnboardingLab-ChangeMockServer',
+        SELECT_SETUP_OPTION: 'BankOnboardingLab-SelectSetupOption',
+        CONTINUE_SETUP: 'BankOnboardingLab-ContinueSetup',
+        START_OVER: 'BankOnboardingLab-StartOver',
+        SUBMIT_STEP: 'BankOnboardingLab-SubmitStep',
+        SELECT_OPTION: 'BankOnboardingLab-SelectOption',
+        EDIT_INPUT: 'BankOnboardingLab-EditInput',
+        ATTACH_FILE: 'BankOnboardingLab-AttachFile',
+        OPEN_SUMMARY_ITEM: 'BankOnboardingLab-OpenSummaryItem',
+        SEND_REMINDER: 'BankOnboardingLab-SendReminder',
     },
     SETTINGS_WALLET: {
         ADD_COMPANY_CARDS: {

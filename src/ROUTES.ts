@@ -2682,6 +2682,46 @@ const ROUTES = {
     },
     SETTINGS_ABOUT: 'settings/about',
     SETTINGS_WALLET: 'settings/wallet',
+    SETTINGS_BANK_ONBOARDING_LAB: 'settings/bank-onboarding-lab',
+    SETTINGS_BANK_ONBOARDING_LAB_ENTRY: {
+        route: 'settings/bank-onboarding-lab/new',
+        getRoute: ({policyID, isChangingBankAccount, backTo}: {policyID: string; isChangingBankAccount?: boolean; backTo?: string}) =>
+            getUrlWithParams('settings/bank-onboarding-lab/new', {policyID, isChangingBankAccount: isChangingBankAccount ? 'true' : undefined, backTo}),
+    },
+    SETTINGS_BANK_ONBOARDING_LAB_USD_SETUP: {
+        route: 'settings/bank-onboarding-lab/new/us/:page?/:subPage?/:action?',
+        getRoute: ({policyID, page, subPage, action, backTo}: {policyID?: string; page?: string; subPage?: string; action?: 'edit'; backTo?: string}) => {
+            const pagePart = page ? `/${page}` : '';
+            const subPagePart = subPage ? `/${subPage}` : '';
+            const actionPart = action ? `/${action}` : '';
+            return getUrlWithParams(`settings/bank-onboarding-lab/new/us${pagePart}${subPagePart}${actionPart}`, {policyID, backTo});
+        },
+    },
+    SETTINGS_BANK_ONBOARDING_LAB_NON_USD_SETUP: {
+        route: 'settings/bank-onboarding-lab/new/global/:page?/:subPage?/:action?',
+        getRoute: ({policyID, page, subPage, action, backTo}: {policyID?: string; page?: string; subPage?: string; action?: 'edit'; backTo?: string}) => {
+            const pagePart = page ? `/${page}` : '';
+            const subPagePart = subPage ? `/${subPage}` : '';
+            const actionPart = action ? `/${action}` : '';
+            return getUrlWithParams(`settings/bank-onboarding-lab/new/global${pagePart}${subPagePart}${actionPart}`, {policyID, backTo});
+        },
+    },
+    SETTINGS_BANK_ONBOARDING_LAB_VERIFY_ACCOUNT: {
+        route: 'settings/bank-onboarding-lab/verify-account',
+        getRoute: (policyID: string) => getUrlWithParams('settings/bank-onboarding-lab/verify-account', {policyID}),
+    },
+    SETTINGS_BANK_ONBOARDING_LAB_ENTER_SIGNER_INFO: {
+        route: 'settings/bank-onboarding-lab/enter-signer-info/:subPage?/:action?',
+        getRoute: ({policyID, bankAccountID, isCompleted, subPage, action}: {policyID?: string; bankAccountID?: number; isCompleted?: boolean; subPage?: string; action?: 'edit'}) => {
+            const subPagePart = subPage ? `/${subPage}` : '';
+            const actionPart = action ? `/${action}` : '';
+            return getUrlWithParams(`settings/bank-onboarding-lab/enter-signer-info${subPagePart}${actionPart}`, {
+                policyID,
+                bankAccountID,
+                isCompleted: isCompleted ? 'true' : undefined,
+            });
+        },
+    },
     SETTINGS_WALLET_EXPENSIFY_CARD_SPEND_RULES: {
         route: 'settings/wallet/expensify-card/spend-rules/:policyID/:ruleID',
         getRoute: (policyID: string, ruleID?: string) => `settings/wallet/expensify-card/spend-rules/${policyID}/${ruleID ?? 'new'}` as const,

@@ -133,6 +133,7 @@ const translations: TranslationDeepObject<typeof en> = {
         payments: 'Zahlungen',
         approvals: 'Genehmigungen',
         wallet: 'Brieftasche',
+        bankOnboardingLab: 'Bank onboarding lab',
         preferences: 'Einstellungen',
         view: 'Anzeigen',
         review: (amount?: string) => `Prüfen${amount ? ` ${amount}` : ''}`,
