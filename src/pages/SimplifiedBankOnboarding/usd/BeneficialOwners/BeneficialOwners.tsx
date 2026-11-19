@@ -14,7 +14,7 @@ import useThemeStyles from '@hooks/useThemeStyles';
 import Navigation from '@libs/Navigation/Navigation';
 
 import {updateBeneficialOwners} from '@pages/SimplifiedBankOnboarding/actions/USDBankAccount';
-import useOnboardingSubmitCallback from '@pages/SimplifiedBankOnboarding/hooks/useOnboardingSubmitCallback';
+import useStepRequest from '@pages/SimplifiedBankOnboarding/requests/useStepRequest';
 import SBO_CONST from '@pages/SimplifiedBankOnboarding/SBO_CONST';
 import type USDPageProps from '@pages/SimplifiedBankOnboarding/usd/types';
 import {getBankAccountParams} from '@pages/SimplifiedBankOnboarding/utils/OnboardingAccountUtils';
@@ -43,7 +43,7 @@ function BeneficialOwners({onBackButtonPress, onSubmit, policyID, currentSubPage
 
     const achData = account?.achData;
     const companyName = achData?.companyName ?? '';
-    const markSubmitting = useOnboardingSubmitCallback(onSubmit);
+    const {send, isPending, errorMessage} = useStepRequest({onSuccess: onSubmit});
 
     // The control state lives in the draft, because every sub page change is a navigation that remounts the step.
     // The draft wins over the server data, so an answer that the user changed is not replaced by the saved one.
@@ -78,12 +78,12 @@ function BeneficialOwners({onBackButtonPress, onSubmit, policyID, currentSubPage
 
     const submit = (ownerKeys: string[]) => {
         const beneficialOwners = ownerKeys.map((beneficialOwnerID) => getValuesForBeneficialOwner(beneficialOwnerID, draft));
-        updateBeneficialOwners(getBankAccountParams(policyID, achData), {
+        const beneficialOwnersInformation = {
             ownsMoreThan25Percent: isUserUBO,
             beneficialOwners: JSON.stringify(beneficialOwners),
             beneficialOwnerKeys: ownerKeys,
-        });
-        markSubmitting();
+        };
+        send((requestID) => updateBeneficialOwners(requestID, getBankAccountParams(policyID, achData), beneficialOwnersInformation));
     };
 
     const prepareBeneficialOwnerDetailsForm = () => {
@@ -204,7 +204,7 @@ function BeneficialOwners({onBackButtonPress, onSubmit, policyID, currentSubPage
                     submitButtonStyles={[styles.mb0]}
                     defaultValue={question.defaultValue}
                     onSelectedValue={question.onSelectedValue}
-                    isLoading={!!account?.isLoading}
+                    isLoading={isPending}
                 />
             )}
             {currentSubPage === SUB_PAGE_NAMES.UBOS_LIST && (
@@ -214,6 +214,8 @@ function BeneficialOwners({onBackButtonPress, onSubmit, policyID, currentSubPage
                     isAnyoneElseUBO={isAnyoneElseUBO}
                     onConfirm={() => submit(isAnyoneElseUBO ? beneficialOwnerKeys : [])}
                     onEdit={handleUBOEdit}
+                    isRequestPending={isPending}
+                    requestErrorMessage={errorMessage}
                 />
             )}
         </InteractiveStepWrapper>

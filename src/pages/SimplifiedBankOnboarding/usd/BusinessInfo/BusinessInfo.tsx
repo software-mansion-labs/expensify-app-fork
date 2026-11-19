@@ -2,7 +2,7 @@
  * The business info step of the USD flow. It has the same container shape as the personal info step, with the differences
  * of the real step: a full screen loader while the sub page redirects, and a tax ID that loses its separators before it is
  * sent. The real step also saves after each sub page with a confirm flag. The mock action has no such flag, so this step
- * saves only once, on the confirmation page, and waits for the answer with the shared `isLoading` (request style 1).
+ * saves only once, on the confirmation page, and follows that request by its own ID.
  */
 import FullScreenLoadingIndicator from '@components/FullscreenLoadingIndicator';
 import InteractiveStepWrapper from '@components/InteractiveStepWrapper';
@@ -10,12 +10,12 @@ import InteractiveStepWrapper from '@components/InteractiveStepWrapper';
 import useLocalize from '@hooks/useLocalize';
 import useOnyx from '@hooks/useOnyx';
 import useSubPage from '@hooks/useSubPage';
-import type {SubPageProps} from '@hooks/useSubPage/types';
 
 import Navigation from '@libs/Navigation/Navigation';
 
 import {updateCompanyInformation} from '@pages/SimplifiedBankOnboarding/actions/USDBankAccount';
-import useOnboardingSubmitCallback from '@pages/SimplifiedBankOnboarding/hooks/useOnboardingSubmitCallback';
+import type StepRequestSubPageProps from '@pages/SimplifiedBankOnboarding/requests/types';
+import useStepRequest from '@pages/SimplifiedBankOnboarding/requests/useStepRequest';
 import SBO_CONST from '@pages/SimplifiedBankOnboarding/SBO_CONST';
 import type INPUT_IDS from '@pages/SimplifiedBankOnboarding/types/form';
 import type USDPageProps from '@pages/SimplifiedBankOnboarding/usd/types';
@@ -71,15 +71,15 @@ function BusinessInfo({onBackButtonPress, onSubmit, stepNames, startStepIndex, b
 
     const policyID = account?.achData?.policyID;
     const values = getSubStepValues(BUSINESS_INFO_KEYS, draft, account);
-    const markSubmitting = useOnboardingSubmitCallback(onSubmit);
+    const {send, isPending, errorMessage} = useStepRequest({onSuccess: onSubmit});
 
     const submit = () => {
-        updateCompanyInformation(getBankAccountParams(policyID, account?.achData), {
+        const companyInformation = {
             companyName: values.companyName,
             companyTaxID: values.companyTaxID.replaceAll(CONST.REGEX.NON_NUMERIC, ''),
             incorporationType: values.incorporationType,
-        });
-        markSubmitting();
+        };
+        send((requestID) => updateCompanyInformation(requestID, getBankAccountParams(policyID, account?.achData), companyInformation));
     };
 
     const isBankAccountVerifying = account?.achData?.state === SBO_CONST.STATE.VERIFYING;
@@ -87,7 +87,7 @@ function BusinessInfo({onBackButtonPress, onSubmit, stepNames, startStepIndex, b
 
     const buildRoute = (pageName: string, action?: 'edit') => ROUTES.SETTINGS_BANK_ONBOARDING_LAB_USD_SETUP.getRoute({policyID, page: PAGE_NAMES.COMPANY, subPage: pageName, action, backTo});
 
-    const {CurrentPage, isEditing, currentPageName, pageIndex, nextPage, prevPage, moveTo, isRedirecting} = useSubPage<SubPageProps>({
+    const {CurrentPage, isEditing, currentPageName, pageIndex, nextPage, prevPage, moveTo, isRedirecting} = useSubPage<StepRequestSubPageProps>({
         pages,
         startFrom,
         onFinished: submit,
@@ -125,6 +125,8 @@ function BusinessInfo({onBackButtonPress, onSubmit, stepNames, startStepIndex, b
                 onNext={nextPage}
                 onMove={moveTo}
                 currentPageName={currentPageName}
+                isRequestPending={isPending}
+                requestErrorMessage={errorMessage}
             />
         </InteractiveStepWrapper>
     );

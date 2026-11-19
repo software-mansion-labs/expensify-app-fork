@@ -18,7 +18,8 @@ import useThemeStyles from '@hooks/useThemeStyles';
 
 import {getFieldRequiredErrors} from '@libs/ValidationUtils';
 
-import {clearFinishGlobalBankAccountOnboarding, finishGlobalBankAccountOnboarding} from '@pages/SimplifiedBankOnboarding/actions/GlobalBankAccount';
+import {finishGlobalBankAccountOnboarding} from '@pages/SimplifiedBankOnboarding/actions/GlobalBankAccount';
+import useStepRequest from '@pages/SimplifiedBankOnboarding/requests/useStepRequest';
 import INPUT_IDS from '@pages/SimplifiedBankOnboarding/types/form';
 import {getBankAccountParams, requiresDocusignStep} from '@pages/SimplifiedBankOnboarding/utils/OnboardingAccountUtils';
 
@@ -27,7 +28,7 @@ import {clearErrors} from '@userActions/FormActions';
 import ONYXKEYS from '@src/ONYXKEYS';
 import type {FileObject} from '@src/types/utils/Attachment';
 
-import React, {useEffect, useRef, useState} from 'react';
+import React, {useRef, useState} from 'react';
 
 import type NonUSDPageProps from './types';
 
@@ -44,36 +45,18 @@ function Agreements({onBackButtonPress, onSubmit, policyID, currency, stepNames,
 
     const agreementValues = getAgreementValues(draft, account);
     const isDocusignStepRequired = requiresDocusignStep(currency);
-    const isSubmittingRef = useRef(false);
     const formRef = useRef<FormRef | null>(null);
     const [bankStatements, setBankStatements] = useState<FileObject[]>(draft?.bankStatement ?? []);
+
+    const {send, isPending} = useStepRequest({onSuccess: onSubmit});
 
     const submit = () => {
         if (isDocusignStepRequired) {
             onSubmit();
             return;
         }
-        isSubmittingRef.current = true;
-        finishGlobalBankAccountOnboarding(getBankAccountParams(policyID, account?.achData), agreementValues);
+        send((requestID) => finishGlobalBankAccountOnboarding(requestID, getBankAccountParams(policyID, account?.achData), agreementValues));
     };
-
-    useEffect(() => {
-        if (isDocusignStepRequired || account?.errors || account?.isFinishingCorpayBankAccountOnboarding || !account?.isSuccess) {
-            return;
-        }
-
-        // The shared `isSuccess` can still be true from the previous step, so the ref tells whether this step sent the request.
-        if (isSubmittingRef.current) {
-            isSubmittingRef.current = false;
-            onSubmit();
-            clearFinishGlobalBankAccountOnboarding();
-        }
-
-        // As in the real step, this cleanup runs whenever a flag changes and not only on unmount, so it can clear a request that just started.
-        return () => {
-            clearFinishGlobalBankAccountOnboarding();
-        };
-    }, [account?.errors, account?.isFinishingCorpayBankAccountOnboarding, account?.isSuccess, isDocusignStepRequired, onSubmit]);
 
     const validate = (values: FormOnyxValues<typeof ONYXKEYS.FORMS.SIMPLIFIED_BANK_ONBOARDING_FORM>): FormInputErrors<typeof ONYXKEYS.FORMS.SIMPLIFIED_BANK_ONBOARDING_FORM> => {
         const errors = getFieldRequiredErrors(values, isDocusignStepRequired ? [...STEP_FIELDS, INPUT_IDS.BANK_STATEMENT] : STEP_FIELDS, translate);
@@ -110,7 +93,7 @@ function Agreements({onBackButtonPress, onSubmit, policyID, currency, stepNames,
                 submitButtonText={translate(isDocusignStepRequired ? 'common.confirm' : 'agreementsStep.accept')}
                 style={[styles.mh5, styles.flexGrow1]}
                 enabledWhenOffline={false}
-                isLoading={!!account?.isFinishingCorpayBankAccountOnboarding}
+                isLoading={isPending}
             >
                 <Text style={styles.textHeadlineLineHeightXXL}>{translate('agreementsStep.pleaseConfirm')}</Text>
                 <InputWrapper

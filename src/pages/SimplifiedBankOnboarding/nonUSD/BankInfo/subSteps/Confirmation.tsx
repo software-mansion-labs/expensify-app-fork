@@ -9,8 +9,6 @@ import useLocalize from '@hooks/useLocalize';
 import useOnyx from '@hooks/useOnyx';
 import useThemeStyles from '@hooks/useThemeStyles';
 
-import {getLatestErrorMessage} from '@libs/ErrorUtils';
-
 import type BankInfoSubStepProps from '@pages/SimplifiedBankOnboarding/nonUSD/BankInfo/types';
 import SBO_CONST from '@pages/SimplifiedBankOnboarding/SBO_CONST';
 import type {BankFormField} from '@pages/SimplifiedBankOnboarding/types/onyx';
@@ -29,7 +27,7 @@ function getDisplayValue(field: BankFormField, value: string): string {
     return field.valueSet?.find((option) => option.id === value)?.text ?? value;
 }
 
-function Confirmation({onNext, onMove, isEditing, bankFields}: BankInfoSubStepProps) {
+function Confirmation({onNext, onMove, isEditing, bankFields, isRequestPending, requestErrorMessage}: BankInfoSubStepProps) {
     const styles = useThemeStyles();
     const {translate} = useLocalize();
     const [account] = useOnyx(ONYXKEYS.SIMPLIFIED_BANK_ONBOARDING_ACCOUNT);
@@ -62,8 +60,8 @@ function Confirmation({onNext, onMove, isEditing, bankFields}: BankInfoSubStepPr
             pageTitle={translate('bankInfoStep.letsDoubleCheck')}
             summaryItems={summaryItems}
             showOnfidoLinks={false}
-            isLoading={!!account?.isLoading}
-            error={getLatestErrorMessage(account)}
+            isLoading={isRequestPending}
+            error={requestErrorMessage}
         />
     );
 }

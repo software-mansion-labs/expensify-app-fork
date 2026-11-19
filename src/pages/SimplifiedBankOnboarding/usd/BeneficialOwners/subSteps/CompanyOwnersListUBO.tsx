@@ -4,10 +4,9 @@
  */
 import useOnyx from '@hooks/useOnyx';
 
-import {getLatestErrorMessage} from '@libs/ErrorUtils';
-
 import OwnersList from '@pages/SimplifiedBankOnboarding/components/owners/OwnersList';
 import type {OwnerRow} from '@pages/SimplifiedBankOnboarding/components/owners/OwnersList';
+import type {StepRequestProps} from '@pages/SimplifiedBankOnboarding/requests/types';
 import INPUT_IDS from '@pages/SimplifiedBankOnboarding/types/form';
 import getValuesForBeneficialOwner from '@pages/SimplifiedBankOnboarding/usd/BeneficialOwners/utils/getValuesForBeneficialOwner';
 import getSubStepValues from '@pages/SimplifiedBankOnboarding/utils/getSubStepValues';
@@ -26,7 +25,7 @@ type CompanyOwnersListUBOProps = {
 
     /** Opens the details form of an owner that the user already added */
     onEdit: (beneficialOwnerID: string) => void;
-};
+} & StepRequestProps;
 
 const REQUESTOR_KEYS = {
     FIRST_NAME: INPUT_IDS.FIRST_NAME,
@@ -36,7 +35,7 @@ const REQUESTOR_KEYS = {
 
 const REQUESTOR_ROW_ID = 'requestor';
 
-function CompanyOwnersListUBO({beneficialOwnerKeys, isUserUBO, isAnyoneElseUBO, onConfirm, onEdit}: CompanyOwnersListUBOProps) {
+function CompanyOwnersListUBO({beneficialOwnerKeys, isUserUBO, isAnyoneElseUBO, onConfirm, onEdit, isRequestPending, requestErrorMessage}: CompanyOwnersListUBOProps) {
     const [account] = useOnyx(ONYXKEYS.SIMPLIFIED_BANK_ONBOARDING_ACCOUNT);
     const [draft] = useOnyx(ONYXKEYS.FORMS.SIMPLIFIED_BANK_ONBOARDING_FORM_DRAFT);
 
@@ -58,8 +57,8 @@ function CompanyOwnersListUBO({beneficialOwnerKeys, isUserUBO, isAnyoneElseUBO, 
     return (
         <OwnersList
             rows={[...requestorRows, ...otherOwnerRows]}
-            error={getLatestErrorMessage(account)}
-            isLoading={!!account?.isLoading}
+            error={requestErrorMessage}
+            isLoading={isRequestPending}
             onConfirm={onConfirm}
         />
     );

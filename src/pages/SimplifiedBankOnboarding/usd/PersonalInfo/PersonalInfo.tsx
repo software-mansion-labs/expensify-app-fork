@@ -1,19 +1,20 @@
 /**
  * The personal info step of the USD flow, and the reference for every step that is built from sub pages. It saves to the
- * server after each sub page, and only the confirmation page waits for the answer before the flow moves on.
+ * server after each sub page in the background, and only the request of the confirmation page is confirmed, so the flow
+ * moves on with its answer.
  */
 import InteractiveStepWrapper from '@components/InteractiveStepWrapper';
 
 import useLocalize from '@hooks/useLocalize';
 import useOnyx from '@hooks/useOnyx';
 import useSubPage from '@hooks/useSubPage';
-import type {SubPageProps} from '@hooks/useSubPage/types';
 
 import Navigation from '@libs/Navigation/Navigation';
 
 import {updatePersonalInformation} from '@pages/SimplifiedBankOnboarding/actions/USDBankAccount';
 import SubPageRedirectIndicator from '@pages/SimplifiedBankOnboarding/components/SubPageRedirectIndicator';
-import useOnboardingSubmitCallback from '@pages/SimplifiedBankOnboarding/hooks/useOnboardingSubmitCallback';
+import type StepRequestSubPageProps from '@pages/SimplifiedBankOnboarding/requests/types';
+import useStepRequest from '@pages/SimplifiedBankOnboarding/requests/useStepRequest';
 import SBO_CONST from '@pages/SimplifiedBankOnboarding/SBO_CONST';
 import type USDPageProps from '@pages/SimplifiedBankOnboarding/usd/types';
 import getInitialSubStepForPersonalInfo from '@pages/SimplifiedBankOnboarding/utils/getInitialSubStepForPersonalInfo';
@@ -49,10 +50,12 @@ function PersonalInfo({onBackButtonPress, onSubmit, stepNames, startStepIndex, b
 
     const policyID = account?.achData?.policyID;
     const values = getSubStepValues(PERSONAL_INFO_KEYS, draft, account);
-    const markSubmitting = useOnboardingSubmitCallback(onSubmit);
+    const confirmRequest = useStepRequest({onSuccess: onSubmit});
+    const pageChangeRequest = useStepRequest({mode: 'background'});
 
     const submit = (isConfirmPage: boolean) => {
-        updatePersonalInformation(getBankAccountParams(policyID, account?.achData), values, isConfirmPage);
+        const request = isConfirmPage ? confirmRequest : pageChangeRequest;
+        request.send((requestID) => updatePersonalInformation(requestID, getBankAccountParams(policyID, account?.achData), values, isConfirmPage));
     };
 
     const isBankAccountVerifying = account?.achData?.state === SBO_CONST.STATE.VERIFYING;
@@ -61,13 +64,10 @@ function PersonalInfo({onBackButtonPress, onSubmit, stepNames, startStepIndex, b
     const buildRoute = (pageName: string, action?: 'edit') =>
         ROUTES.SETTINGS_BANK_ONBOARDING_LAB_USD_SETUP.getRoute({policyID, page: PAGE_NAMES.REQUESTOR, subPage: pageName, action, backTo});
 
-    const {CurrentPage, isEditing, currentPageName, pageIndex, nextPage, prevPage, moveTo, isRedirecting} = useSubPage<SubPageProps>({
+    const {CurrentPage, isEditing, currentPageName, pageIndex, nextPage, prevPage, moveTo, isRedirecting} = useSubPage<StepRequestSubPageProps>({
         pages,
         startFrom,
-        onFinished: () => {
-            submit(true);
-            markSubmitting();
-        },
+        onFinished: () => submit(true),
         onPageChange: () => submit(false),
         buildRoute,
     });
@@ -102,6 +102,8 @@ function PersonalInfo({onBackButtonPress, onSubmit, stepNames, startStepIndex, b
                     onNext={nextPage}
                     onMove={moveTo}
                     currentPageName={currentPageName}
+                    isRequestPending={confirmRequest.isPending}
+                    requestErrorMessage={confirmRequest.errorMessage}
                 />
             )}
         </InteractiveStepWrapper>

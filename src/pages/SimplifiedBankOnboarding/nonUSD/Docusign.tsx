@@ -15,7 +15,8 @@ import useThemeStyles from '@hooks/useThemeStyles';
 
 import {getFieldRequiredErrors} from '@libs/ValidationUtils';
 
-import {clearFinishGlobalBankAccountOnboarding, finishGlobalBankAccountOnboarding} from '@pages/SimplifiedBankOnboarding/actions/GlobalBankAccount';
+import {finishGlobalBankAccountOnboarding} from '@pages/SimplifiedBankOnboarding/actions/GlobalBankAccount';
+import useStepRequest from '@pages/SimplifiedBankOnboarding/requests/useStepRequest';
 import INPUT_IDS from '@pages/SimplifiedBankOnboarding/types/form';
 import {getBankAccountParams} from '@pages/SimplifiedBankOnboarding/utils/OnboardingAccountUtils';
 
@@ -24,7 +25,7 @@ import {clearErrors} from '@userActions/FormActions';
 import ONYXKEYS from '@src/ONYXKEYS';
 import type {FileObject} from '@src/types/utils/Attachment';
 
-import React, {useEffect, useRef, useState} from 'react';
+import React, {useRef, useState} from 'react';
 
 import type NonUSDPageProps from './types';
 
@@ -41,28 +42,16 @@ function Docusign({onBackButtonPress, onSubmit, policyID, stepNames, startStepIn
     const formRef = useRef<FormRef | null>(null);
     const [authorizationForms, setAuthorizationForms] = useState<FileObject[]>(draft?.achAuthorizationForm ?? []);
 
+    const {send, isPending} = useStepRequest({onSuccess: onSubmit});
+
     const submit = () => {
-        finishGlobalBankAccountOnboarding(getBankAccountParams(policyID, account?.achData), {
+        const agreementValues = {
             ...getAgreementValues(draft, account),
             bankStatementName: draft?.bankStatement?.at(0)?.name,
             achAuthorizationFormName: authorizationForms.at(0)?.name,
-        });
-    };
-
-    useEffect(() => {
-        if (account?.errors || account?.isFinishingCorpayBankAccountOnboarding || !account?.isSuccess) {
-            return;
-        }
-
-        // Unlike the other NonUSD steps, the real step has no ref of its own here, so a stale `isSuccess` of another request passes this check.
-        onSubmit();
-        clearFinishGlobalBankAccountOnboarding();
-
-        // As in the real step, this cleanup runs whenever a flag changes and not only on unmount, so it can clear a request that just started.
-        return () => {
-            clearFinishGlobalBankAccountOnboarding();
         };
-    }, [account?.errors, account?.isFinishingCorpayBankAccountOnboarding, account?.isSuccess, onSubmit]);
+        send((requestID) => finishGlobalBankAccountOnboarding(requestID, getBankAccountParams(policyID, account?.achData), agreementValues));
+    };
 
     const validate = (values: FormOnyxValues<typeof ONYXKEYS.FORMS.SIMPLIFIED_BANK_ONBOARDING_FORM>): FormInputErrors<typeof ONYXKEYS.FORMS.SIMPLIFIED_BANK_ONBOARDING_FORM> =>
         getFieldRequiredErrors(values, STEP_FIELDS, translate);
@@ -89,7 +78,7 @@ function Docusign({onBackButtonPress, onSubmit, policyID, stepNames, startStepIn
                 style={[styles.mh5, styles.flexGrow1]}
                 submitButtonStyles={[styles.mb0]}
                 enabledWhenOffline={false}
-                isLoading={!!account?.isFinishingCorpayBankAccountOnboarding}
+                isLoading={isPending}
             >
                 <Text style={[styles.textHeadlineLineHeightXXL, styles.mb3]}>{translate('docusignStep.pleaseCompleteTheBusinessAccount')}</Text>
                 <Text style={styles.mb5}>{translate('docusignStep.pleaseUploadTheDirect')}</Text>

@@ -1,12 +1,13 @@
 /**
  * The identity check of the USD flow. A fake Onfido widget keeps the real sequence: a token on mount, then the check result.
- * Unlike the other steps it does not wait for the answer. It sends the result, marks the check as done in the draft and
- * moves on at once, like `handleOnfidoSuccess` in the real step (request style 3, fire and go). When the check was already
- * done, for example after direct URL navigation, it skips itself on mount like the real step.
+ * Unlike the real step, which moves on at once, it waits for the answer to the result like the other steps, and only then
+ * marks the check as done in the draft and moves on. When the check was already done, for example after direct URL
+ * navigation, it skips itself on mount like the real step.
  */
 import ActivityIndicator from '@components/ActivityIndicator';
 import FullPageOfflineBlockingView from '@components/BlockingViews/FullPageOfflineBlockingView';
 import Button from '@components/Button';
+import FormHelpMessage from '@components/FormHelpMessage';
 import InteractiveStepWrapper from '@components/InteractiveStepWrapper';
 import Text from '@components/Text';
 
@@ -16,6 +17,7 @@ import useThemeStyles from '@hooks/useThemeStyles';
 
 import {updateOnboardingDraft} from '@pages/SimplifiedBankOnboarding/actions/OnboardingAccount';
 import {openIdentityCheckFlow, verifyIdentity} from '@pages/SimplifiedBankOnboarding/actions/USDBankAccount';
+import useStepRequest from '@pages/SimplifiedBankOnboarding/requests/useStepRequest';
 import {getBankAccountParams} from '@pages/SimplifiedBankOnboarding/utils/OnboardingAccountUtils';
 
 import CONST from '@src/CONST';
@@ -49,10 +51,15 @@ function VerifyIdentity({onSubmit, onBackButtonPress, stepNames, startStepIndex}
         openIdentityCheckFlow(policyIDRef.current ?? '');
     }, []);
 
+    const {send, isPending, errorMessage} = useStepRequest({
+        onSuccess: () => {
+            updateOnboardingDraft({isOnfidoSetupComplete: true});
+            onSubmit();
+        },
+    });
+
     const passIdentityCheck = () => {
-        verifyIdentity(getBankAccountParams(policyID, account?.achData), MOCK_ONFIDO_DATA);
-        updateOnboardingDraft({isOnfidoSetupComplete: true});
-        onSubmit();
+        send((requestID) => verifyIdentity(requestID, getBankAccountParams(policyID, account?.achData), MOCK_ONFIDO_DATA));
     };
 
     return (
@@ -70,10 +77,12 @@ function VerifyIdentity({onSubmit, onBackButtonPress, stepNames, startStepIndex}
                         <Button
                             variant={CONST.BUTTON_VARIANT.SUCCESS}
                             onPress={passIdentityCheck}
+                            isLoading={isPending}
                             sentryLabel={CONST.SENTRY_LABEL.BANK_ONBOARDING_LAB.SUBMIT_STEP}
                         >
                             <Button.Text>[mock] Pass the identity check</Button.Text>
                         </Button>
+                        <FormHelpMessage message={errorMessage} />
                     </View>
                 ) : (
                     <View style={[styles.flex1, styles.alignItemsCenter, styles.justifyContentCenter]}>

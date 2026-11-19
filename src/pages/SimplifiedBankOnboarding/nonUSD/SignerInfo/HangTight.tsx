@@ -1,6 +1,6 @@
 /**
- * The sub page that waits for the invited directors. Like the real one it can send a reminder and clears the flags of that
- * request when it succeeds. The real flow learns from a push that a director filled in the form, so here a mock button
+ * The sub page that waits for the invited directors. Like the real one it can send a reminder, which it follows by its own
+ * request ID. The real flow learns from a push that a director filled in the form, so here a mock button
  * opens that form, and the step continues once the server data holds the names of the directors.
  */
 import Button from '@components/Button';
@@ -12,10 +12,10 @@ import useLocalize from '@hooks/useLocalize';
 import useOnyx from '@hooks/useOnyx';
 import useThemeStyles from '@hooks/useThemeStyles';
 
-import {getLatestErrorMessage} from '@libs/ErrorUtils';
 import Navigation from '@libs/Navigation/Navigation';
 
-import {clearSendReminderForSignerInformation, sendReminderForSignerInformation} from '@pages/SimplifiedBankOnboarding/actions/GlobalBankAccount';
+import {sendReminderForSignerInformation} from '@pages/SimplifiedBankOnboarding/actions/GlobalBankAccount';
+import useStepRequest from '@pages/SimplifiedBankOnboarding/requests/useStepRequest';
 import SBO_CONST from '@pages/SimplifiedBankOnboarding/SBO_CONST';
 import {getBankAccountParams} from '@pages/SimplifiedBankOnboarding/utils/OnboardingAccountUtils';
 
@@ -23,7 +23,7 @@ import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';
 import ROUTES from '@src/ROUTES';
 
-import React, {useEffect} from 'react';
+import React from 'react';
 import {View} from 'react-native';
 
 type HangTightProps = {
@@ -40,30 +40,17 @@ function HangTight({policyID, currency, onContinue}: HangTightProps) {
     const [account] = useOnyx(ONYXKEYS.SIMPLIFIED_BANK_ONBOARDING_ACCOUNT);
 
     const corpay = account?.achData?.corpay;
-    const error = getLatestErrorMessage(account);
-    const isSendingReminder = !!account?.isSendingReminderForCorpaySignerInformation;
+    const {send, isPending: isSendingReminder, errorMessage: error} = useStepRequest();
     const hasSecondSignerIfNeeded = currency !== SBO_CONST.CURRENCY.AUD || !!corpay?.secondSignerFullName;
     const haveDirectorsFilledInData = !!corpay?.signerFullName && hasSecondSignerIfNeeded;
 
     const sendReminder = () => {
-        sendReminderForSignerInformation(getBankAccountParams(policyID, account?.achData));
+        send((requestID) => sendReminderForSignerInformation(requestID, getBankAccountParams(policyID, account?.achData)));
     };
 
     const openDirectorForm = () => {
         Navigation.navigate(ROUTES.SETTINGS_BANK_ONBOARDING_LAB_ENTER_SIGNER_INFO.getRoute({policyID, bankAccountID: account?.achData?.bankAccountID}));
     };
-
-    useEffect(() => {
-        if (account?.errors || account?.isSendingReminderForCorpaySignerInformation || !account?.isSuccess) {
-            return;
-        }
-        clearSendReminderForSignerInformation();
-
-        // As in the real step, this cleanup runs whenever a flag changes and not only on unmount, so it can clear a request that just started.
-        return () => {
-            clearSendReminderForSignerInformation();
-        };
-    }, [account?.errors, account?.isSendingReminderForCorpaySignerInformation, account?.isSuccess]);
 
     return (
         <ScrollView contentContainerStyle={[styles.flexGrow1, styles.pb5]}>

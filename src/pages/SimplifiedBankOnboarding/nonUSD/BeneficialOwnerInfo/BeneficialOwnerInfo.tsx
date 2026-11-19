@@ -1,9 +1,8 @@
 /**
  * The owner step of the NonUSD flow, a hand-written state machine like the real `BeneficialOwnerInfo`. The questions
  * and the list are URL sub pages that this container renders itself, and any other sub page renders the nested details
- * form of one owner. The owners live in the draft, the server owners are copied into it on resume, and the step waits
- * for its single request with its own ref, the request flag and the shared `isSuccess`, like the bank step. A user who
- * owns the company fills in the same details form under a fixed owner ID, which the signer step later relies on.
+ * form of one owner. The owners live in the draft, the server owners are copied into it on resume, and the step moves on
+ * once its single request succeeds, like the bank step. A user who owns the company fills in the same details form under a fixed owner ID, which the signer step later relies on.
  */
 import InteractiveStepWrapper from '@components/InteractiveStepWrapper';
 import YesNoStep from '@components/SubStepForms/YesNoStep';
@@ -13,8 +12,9 @@ import useOnyx from '@hooks/useOnyx';
 
 import Navigation from '@libs/Navigation/Navigation';
 
-import {clearSaveOnboardingBeneficialOwners, saveOnboardingBeneficialOwners} from '@pages/SimplifiedBankOnboarding/actions/GlobalBankAccount';
+import {saveOnboardingBeneficialOwners} from '@pages/SimplifiedBankOnboarding/actions/GlobalBankAccount';
 import type NonUSDPageProps from '@pages/SimplifiedBankOnboarding/nonUSD/types';
+import useStepRequest from '@pages/SimplifiedBankOnboarding/requests/useStepRequest';
 import SBO_CONST from '@pages/SimplifiedBankOnboarding/SBO_CONST';
 import {getBankAccountParams} from '@pages/SimplifiedBankOnboarding/utils/OnboardingAccountUtils';
 import {generateOwnerID} from '@pages/SimplifiedBankOnboarding/utils/owners/OwnerDraftUtils';
@@ -24,7 +24,7 @@ import {clearErrors, setDraftValues} from '@userActions/FormActions';
 import ONYXKEYS from '@src/ONYXKEYS';
 import ROUTES from '@src/ROUTES';
 
-import React, {useEffect, useRef} from 'react';
+import React, {useEffect} from 'react';
 
 import BeneficialOwnerDetailsFormPages from './BeneficialOwnerDetailsFormPages';
 import BeneficialOwnersList from './BeneficialOwnersList';
@@ -56,7 +56,7 @@ function BeneficialOwnerInfo({onBackButtonPress, onSubmit, policyID, stepNames, 
     const savedBeneficialOwnerValues = getDraftValuesForBeneficialOwners(account);
     const ownerKeys = draft?.beneficialOwnerKeys ?? savedBeneficialOwnerValues.beneficialOwnerKeys;
     const canAddMoreOwners = getTotalOwnedPercentageSum(ownerKeys, draft) <= MAX_OWNERSHIP_SUM_TO_ADD_MORE;
-    const isSubmittingRef = useRef(false);
+    const {send, isPending, errorMessage} = useStepRequest({onSuccess: onSubmit});
 
     // On resume the owners that the server saved are copied into the draft once, so the sub pages can edit them.
     useEffect(() => {
@@ -65,24 +65,6 @@ function BeneficialOwnerInfo({onBackButtonPress, onSubmit, policyID, stepNames, 
         }
         setDraftValues(ONYXKEYS.FORMS.SIMPLIFIED_BANK_ONBOARDING_FORM, savedBeneficialOwnerValues);
     }, [draft?.beneficialOwnerKeys, savedBeneficialOwnerValues]);
-
-    useEffect(() => {
-        if (account?.errors || account?.isSavingCorpayOnboardingBeneficialOwnersFields || !account?.isSuccess) {
-            return;
-        }
-
-        // The shared `isSuccess` can still be true from the previous step, so the ref tells whether this step sent the request.
-        if (isSubmittingRef.current) {
-            isSubmittingRef.current = false;
-            onSubmit();
-            clearSaveOnboardingBeneficialOwners();
-        }
-
-        // As in the real step, this cleanup runs whenever a flag changes and not only on unmount, so it can clear a request that just started.
-        return () => {
-            clearSaveOnboardingBeneficialOwners();
-        };
-    }, [account?.errors, account?.isSavingCorpayOnboardingBeneficialOwnersFields, account?.isSuccess, onSubmit]);
 
     const buildRoute = (subPage: string) => ROUTES.SETTINGS_BANK_ONBOARDING_LAB_NON_USD_SETUP.getRoute({policyID, page: PAGE_NAMES.BENEFICIAL_OWNER_INFO, subPage, backTo});
 
@@ -95,8 +77,9 @@ function BeneficialOwnerInfo({onBackButtonPress, onSubmit, policyID, stepNames, 
         const beneficialOwners = JSON.stringify(ownerKeysToSave.map((ownerID) => getValuesForBeneficialOwner(ownerID, draft)));
         setDraftValues(ONYXKEYS.FORMS.SIMPLIFIED_BANK_ONBOARDING_FORM, {ownsMoreThan25Percent: isUserOwner, anyIndividualOwn25PercentOrMore, beneficialOwners});
 
-        isSubmittingRef.current = true;
-        saveOnboardingBeneficialOwners(getBankAccountParams(policyID, achData), {ownsMoreThan25Percent: isUserOwner, anyIndividualOwn25PercentOrMore, beneficialOwners});
+        send((requestID) =>
+            saveOnboardingBeneficialOwners(requestID, getBankAccountParams(policyID, achData), {ownsMoreThan25Percent: isUserOwner, anyIndividualOwn25PercentOrMore, beneficialOwners}),
+        );
     };
 
     const prepareOwnerDetailsForm = (ownerID: string) => {
@@ -245,7 +228,7 @@ function BeneficialOwnerInfo({onBackButtonPress, onSubmit, policyID, stepNames, 
                     description={translate('ownershipInfoStep.regulationsRequire')}
                     defaultValue={question.defaultValue}
                     onSelectedValue={saveAnswer}
-                    isLoading={!!account?.isSavingCorpayOnboardingBeneficialOwnersFields}
+                    isLoading={isPending}
                 />
             )}
             {currentSubPage === SUB_PAGE_NAMES.BENEFICIAL_OWNERS_LIST && (
@@ -253,6 +236,8 @@ function BeneficialOwnerInfo({onBackButtonPress, onSubmit, policyID, stepNames, 
                     ownerKeys={ownerKeys}
                     onConfirm={() => submit(ownerKeys)}
                     onEdit={handleOwnerEdit}
+                    isRequestPending={isPending}
+                    requestErrorMessage={errorMessage}
                 />
             )}
         </InteractiveStepWrapper>

@@ -214,6 +214,16 @@ type OnboardingPicklists = {
     };
 };
 
+/** The state of one request that a step sent, kept under the ID that the step created for it */
+type RequestStatus = {
+    command: string;
+    status: ValueOf<typeof SBO_CONST.REQUEST_STATUS>;
+    errors?: OnyxCommon.Errors;
+};
+
+/** Every tracked request of the onboarding, keyed by its ID. The key lives only in memory, so nothing waits after a reload. */
+type StepRequests = Record<string, RequestStatus | null>;
+
 export type {
     ACHData,
     BankAccountState,
@@ -230,7 +240,9 @@ export type {
     OnboardingUser,
     PlaidBankAccount,
     PlaidData,
+    RequestStatus,
     SetupType,
+    StepRequests,
     USDStep,
     Workspace,
     Workspaces,

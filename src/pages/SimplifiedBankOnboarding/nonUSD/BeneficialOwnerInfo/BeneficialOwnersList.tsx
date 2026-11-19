@@ -4,10 +4,9 @@
  */
 import useOnyx from '@hooks/useOnyx';
 
-import {getLatestErrorMessage} from '@libs/ErrorUtils';
-
 import OwnersList from '@pages/SimplifiedBankOnboarding/components/owners/OwnersList';
 import type {OwnerRow} from '@pages/SimplifiedBankOnboarding/components/owners/OwnersList';
+import type {StepRequestProps} from '@pages/SimplifiedBankOnboarding/requests/types';
 
 import ONYXKEYS from '@src/ONYXKEYS';
 
@@ -23,10 +22,9 @@ type BeneficialOwnersListProps = {
 
     /** Opens the details form of an owner that the user already added */
     onEdit: (ownerID: string) => void;
-};
+} & StepRequestProps;
 
-function BeneficialOwnersList({ownerKeys, onConfirm, onEdit}: BeneficialOwnersListProps) {
-    const [account] = useOnyx(ONYXKEYS.SIMPLIFIED_BANK_ONBOARDING_ACCOUNT);
+function BeneficialOwnersList({ownerKeys, onConfirm, onEdit, isRequestPending, requestErrorMessage}: BeneficialOwnersListProps) {
     const [draft] = useOnyx(ONYXKEYS.FORMS.SIMPLIFIED_BANK_ONBOARDING_FORM_DRAFT);
 
     const ownerRows = ownerKeys.map((ownerID): OwnerRow => {
@@ -37,8 +35,8 @@ function BeneficialOwnersList({ownerKeys, onConfirm, onEdit}: BeneficialOwnersLi
     return (
         <OwnersList
             rows={ownerRows}
-            error={getLatestErrorMessage(account)}
-            isLoading={!!account?.isSavingCorpayOnboardingBeneficialOwnersFields}
+            error={requestErrorMessage}
+            isLoading={isRequestPending}
             onConfirm={onConfirm}
         />
     );

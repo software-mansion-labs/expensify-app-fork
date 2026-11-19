@@ -47,9 +47,9 @@ type SignerDetailsFormPagesProps = {
     startStepIndex?: number;
     policyID?: string;
     backTo?: string;
-};
+} & Pick<SignerDetailsSubPageProps, 'isRequestPending' | 'requestErrorMessage'>;
 
-function SignerDetailsFormPages({onBackToIsDirector, onFinished, stepNames, startStepIndex, policyID, backTo}: SignerDetailsFormPagesProps) {
+function SignerDetailsFormPages({onBackToIsDirector, onFinished, stepNames, startStepIndex, policyID, backTo, isRequestPending, requestErrorMessage}: SignerDetailsFormPagesProps) {
     const {translate} = useLocalize();
     const [account] = useOnyx(ONYXKEYS.SIMPLIFIED_BANK_ONBOARDING_ACCOUNT);
     const [draft] = useOnyx(ONYXKEYS.FORMS.SIMPLIFIED_BANK_ONBOARDING_FORM_DRAFT);
@@ -104,6 +104,8 @@ function SignerDetailsFormPages({onBackToIsDirector, onFinished, stepNames, star
                     onMove={moveTo}
                     currentPageName={currentPageName}
                     formID={ONYXKEYS.FORMS.SIMPLIFIED_BANK_ONBOARDING_FORM}
+                    isRequestPending={isRequestPending}
+                    requestErrorMessage={requestErrorMessage}
                 />
             )}
         </InteractiveStepWrapper>

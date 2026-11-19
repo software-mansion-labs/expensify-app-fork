@@ -52,6 +52,13 @@ const SBO_CONST = {
         MANUAL: 'manual',
         PLAID: 'plaid',
     },
+
+    /** The states of a request that a step tracks by its ID */
+    REQUEST_STATUS: {
+        PENDING: 'pending',
+        SUCCEEDED: 'succeeded',
+        FAILED: 'failed',
+    },
     STATE: {
         SETUP: 'SETUP',
         VERIFYING: 'VERIFYING',

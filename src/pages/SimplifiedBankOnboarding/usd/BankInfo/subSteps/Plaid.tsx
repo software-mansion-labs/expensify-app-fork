@@ -29,10 +29,9 @@ import {View} from 'react-native';
 
 const MOCK_PUBLIC_TOKEN = 'mock-public-token';
 
-function Plaid({onNext}: BankInfoSubStepProps) {
+function Plaid({onNext, isRequestPending, requestErrorMessage}: BankInfoSubStepProps) {
     const {translate} = useLocalize();
     const styles = useThemeStyles();
-    const [account] = useOnyx(ONYXKEYS.SIMPLIFIED_BANK_ONBOARDING_ACCOUNT);
     const [draft] = useOnyx(ONYXKEYS.FORMS.SIMPLIFIED_BANK_ONBOARDING_FORM_DRAFT);
     const [plaidData] = useOnyx(ONYXKEYS.SIMPLIFIED_BANK_ONBOARDING_PLAID_DATA);
     const [plaidLinkToken] = useOnyx(ONYXKEYS.RAM_ONLY_SIMPLIFIED_BANK_ONBOARDING_PLAID_LINK_TOKEN);
@@ -81,7 +80,7 @@ function Plaid({onNext}: BankInfoSubStepProps) {
                 style={styles.flexGrow1}
                 submitButtonStyles={styles.mh5}
                 isSubmitDisabled={!selectedPlaidAccountID}
-                isLoading={!!account?.isLoading}
+                isLoading={isRequestPending}
                 shouldHideFixErrorsAlert
             >
                 <Text style={[styles.mh5, styles.mb3, styles.textHeadlineLineHeightXXL]}>{translate('bankAccount.chooseAnAccount')}</Text>
@@ -93,7 +92,7 @@ function Plaid({onNext}: BankInfoSubStepProps) {
                 />
                 <FormHelpMessage
                     style={styles.mh5}
-                    message={getLatestErrorMessage(account)}
+                    message={requestErrorMessage}
                 />
             </FormProvider>
         </FullPageOfflineBlockingView>

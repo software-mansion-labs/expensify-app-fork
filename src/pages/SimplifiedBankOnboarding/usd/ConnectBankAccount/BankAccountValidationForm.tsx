@@ -1,7 +1,8 @@
 /**
  * The test deposit form of the last USD step. Like the real form it sends the three amounts and does not wait for the
- * answer itself: a right answer changes the bank account state, which swaps this form for the next screen, and a wrong one
- * shows the error or, after too many tries, the block message.
+ * answer to move on: a right answer changes the bank account state, which swaps this form for the next screen. The form
+ * follows its request by its own ID only to show the loader and the error of a wrong answer, or after too many tries the
+ * block message.
  */
 import FormProvider from '@components/Form/FormProvider';
 import InputWrapper from '@components/Form/InputWrapper';
@@ -14,9 +15,8 @@ import useLocalize from '@hooks/useLocalize';
 import useOnyx from '@hooks/useOnyx';
 import useThemeStyles from '@hooks/useThemeStyles';
 
-import {getLatestErrorMessage} from '@libs/ErrorUtils';
-
 import {validateBankAccount} from '@pages/SimplifiedBankOnboarding/actions/USDBankAccount';
+import useStepRequest from '@pages/SimplifiedBankOnboarding/requests/useStepRequest';
 import SBO_CONST from '@pages/SimplifiedBankOnboarding/SBO_CONST';
 import INPUT_IDS from '@pages/SimplifiedBankOnboarding/types/form';
 import {getBankAccountParams} from '@pages/SimplifiedBankOnboarding/utils/OnboardingAccountUtils';
@@ -40,6 +40,7 @@ function BankAccountValidationForm() {
     const [account] = useOnyx(ONYXKEYS.SIMPLIFIED_BANK_ONBOARDING_ACCOUNT);
 
     const achData = account?.achData;
+    const {send, isPending, errorMessage} = useStepRequest();
 
     const validate = (values: FormOnyxValues<typeof ONYXKEYS.FORMS.SIMPLIFIED_BANK_ONBOARDING_FORM>): FormInputErrors<typeof ONYXKEYS.FORMS.SIMPLIFIED_BANK_ONBOARDING_FORM> => {
         const errors: FormInputErrors<typeof ONYXKEYS.FORMS.SIMPLIFIED_BANK_ONBOARDING_FORM> = {};
@@ -53,7 +54,7 @@ function BankAccountValidationForm() {
 
     const submit = (values: FormOnyxValues<typeof ONYXKEYS.FORMS.SIMPLIFIED_BANK_ONBOARDING_FORM>) => {
         const amounts = AMOUNT_KEYS.map((key) => values[key]?.trim() ?? '');
-        validateBankAccount(getBankAccountParams(achData?.policyID, achData), amounts);
+        send((requestID) => validateBankAccount(requestID, getBankAccountParams(achData?.policyID, achData), amounts));
     };
 
     return (
@@ -63,7 +64,7 @@ function BankAccountValidationForm() {
             onSubmit={submit}
             validate={validate}
             style={[styles.mh5, styles.flexGrow1]}
-            isLoading={!!account?.isLoading}
+            isLoading={isPending}
         >
             <Text>{translate('connectBankAccountStep.description')}</Text>
             <Text style={[styles.textSupporting, styles.mt3]}>{`The mock server expects ${SBO_CONST.MOCK.MICRO_DEPOSIT_AMOUNTS.join(', ')}.`}</Text>
@@ -85,7 +86,7 @@ function BankAccountValidationForm() {
                     />
                 ))}
             </View>
-            <FormHelpMessage message={getLatestErrorMessage(account)} />
+            <FormHelpMessage message={errorMessage} />
         </FormProvider>
     );
 }

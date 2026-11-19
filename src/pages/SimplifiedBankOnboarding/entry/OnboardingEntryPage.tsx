@@ -307,8 +307,8 @@ function OnboardingEntryPage({route}: OnboardingEntryPageProps) {
         }
     };
 
-    // The bank step of the NonUSD flow raises the shared `isLoading` too, and it must not swap the flow for the loader of this page.
-    const isLoading = !!account?.isLoading && !account?.isCreateCorpayBankAccount;
+    // The requests of the steps follow their own IDs, so `isLoading` only covers the reads of this page.
+    const isLoading = !!account?.isLoading;
     // Offline, only the steps that send nothing can be shown, and only with the data that was loaded before.
     const shouldShowOfflineLoader = !(hasLoadedData && isOffline && OFFLINE_ACCESSIBLE_STEPS.some((step) => step === currentStep));
 

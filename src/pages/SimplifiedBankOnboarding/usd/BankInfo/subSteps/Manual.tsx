@@ -16,7 +16,6 @@ import useLocalize from '@hooks/useLocalize';
 import useOnyx from '@hooks/useOnyx';
 import useThemeStyles from '@hooks/useThemeStyles';
 
-import {getLatestErrorMessage} from '@libs/ErrorUtils';
 import {getFieldRequiredErrors} from '@libs/ValidationUtils';
 
 import INPUT_IDS from '@pages/SimplifiedBankOnboarding/types/form';
@@ -35,7 +34,7 @@ const MANUAL_KEYS = {
 const STEP_FIELDS = [INPUT_IDS.ROUTING_NUMBER, INPUT_IDS.ACCOUNT_NUMBER];
 const ROUTING_NUMBER_PATTERN = /^\d{9}$/;
 
-function Manual({onNext}: BankInfoSubStepProps) {
+function Manual({onNext, isRequestPending, requestErrorMessage}: BankInfoSubStepProps) {
     const {translate} = useLocalize();
     const styles = useThemeStyles();
     const {inputCallbackRef} = useAutoFocusInput();
@@ -68,7 +67,7 @@ function Manual({onNext}: BankInfoSubStepProps) {
             validate={validate}
             submitButtonText={translate('common.next')}
             style={[styles.mh5, styles.flexGrow1]}
-            isLoading={!!account?.isLoading}
+            isLoading={isRequestPending}
         >
             <Text style={[styles.textHeadlineLineHeightXXL, styles.mb3]}>{translate('bankAccount.manuallyAdd')}</Text>
             <Text style={[styles.mb5, styles.textSupporting]}>{translate('bankAccount.checkHelpLine')}</Text>
@@ -102,7 +101,7 @@ function Manual({onNext}: BankInfoSubStepProps) {
             />
             <FormHelpMessage
                 style={styles.mt3}
-                message={getLatestErrorMessage(account)}
+                message={requestErrorMessage}
             />
         </FormProvider>
     );
