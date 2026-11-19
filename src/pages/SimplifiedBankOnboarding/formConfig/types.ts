@@ -27,8 +27,11 @@ type StepID = string;
 /** The URL `subPage` value of a page */
 type PageID = string;
 
-/** Returns the translated error of a value, or undefined when the value is valid */
-type FieldValidator = (value: string) => string | undefined;
+/**
+ * Returns the translated error of a value, or undefined when the value is valid. The other values of the form are there
+ * for the rules that compare two inputs, such as two emails that must differ.
+ */
+type FieldValidator = (value: string, values: OnboardingDraft) => string | undefined;
 
 type RequiredFieldProps = {
     isRequired?: boolean;
@@ -77,6 +80,12 @@ type PicklistFieldConfig = RequiredFieldProps & {
     defaultValue: string;
     options: PicklistOption[];
     isLocked?: boolean;
+
+    /** The title of the list that opens from the row. Defaults to the label. */
+    modalTitle?: string;
+
+    /** The label of the search input of that list. Defaults to the label. */
+    searchTitle?: string;
 };
 
 type CheckboxFieldConfig = RequiredFieldProps & {
@@ -144,6 +153,18 @@ type PageBase = {
 
     /** Defaults to the preceding page, or to the last page of the previous step */
     previousPageID?: PageID;
+
+    /** The server data that describes the page did not arrive yet, such as the bank inputs of a country */
+    isLoading?: boolean;
+
+    /**
+     * A request that saves the answers of the page before the next page opens, for a step that talks to the server in
+     * the middle, such as the director details before the emails of the other directors. It runs after the draft write.
+     */
+    submit?: () => Promise<RequestOutcome>;
+
+    /** The name of the request of `submit`, so the page can show its pending state and its error */
+    requestName?: RequestName;
 };
 
 type FormPageConfig = PageBase & {
@@ -204,11 +225,14 @@ type ListPageConfig = PageBase & {
 };
 
 /** The pages that are not forms. Each one is a screen of `steps/`, picked by name. */
-type CustomStepName = 'plaid' | 'onfido' | 'docusign' | 'hangTight' | 'validation' | 'finish';
+type CustomStepName = 'plaid' | 'onfido' | 'hangTight' | 'validation' | 'finish';
 
 type CustomPageConfig = PageBase & {
     kind: 'custom';
     component: CustomStepName;
+
+    /** False while the page waits for something outside the flow, such as the other directors. Defaults to true. */
+    canComplete?: boolean;
 };
 
 type PageConfig = FormPageConfig | QuestionPageConfig | ConfirmationPageConfig | ListPageConfig | CustomPageConfig;

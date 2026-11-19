@@ -2,14 +2,20 @@
  * The screen body of a flow: the header with the step counter and the open page of the plan. The flow descriptor
  * supplies the plan and the custom steps, so the same page serves every flow.
  */
+import ActivityIndicator from '@components/ActivityIndicator';
 import FullScreenLoadingIndicator from '@components/FullscreenLoadingIndicator';
 import InteractiveStepWrapper from '@components/InteractiveStepWrapper';
 
+import useThemeStyles from '@hooks/useThemeStyles';
+
 import PageRenderer from '@pages/SimplifiedBankOnboarding/form/pages/PageRenderer';
-import type {CustomPageConfig, PageConfig, StepConfig} from '@pages/SimplifiedBankOnboarding/formConfig/types';
+import type {CustomPageConfig} from '@pages/SimplifiedBankOnboarding/formConfig/types';
 import type {FlowRouteParams, FlowRouteTarget} from '@pages/SimplifiedBankOnboarding/navigation/routes';
 
+import CONST from '@src/CONST';
+
 import React from 'react';
+import {View} from 'react-native';
 
 import type {FlowDescriptor} from './types';
 
@@ -21,19 +27,13 @@ type OnboardingFlowPageProps = {
     routeParams: FlowRouteParams;
 };
 
-/** Only the last page of a step sends its request, so only that page shows the spinner and the error of the request */
-function isLastPageOfStep(step: StepConfig, page: PageConfig): boolean {
-    return step.pages.at(-1)?.id === page.id;
-}
-
 function OnboardingFlowPage({flow, target, routeParams}: OnboardingFlowPageProps) {
-    const {data, step, page, position, isSubmitting, errorText, submitPage, goBack, editPage, pressRow, goToStep} = useOnboardingFlow(flow, target, routeParams);
+    const styles = useThemeStyles();
+    const {data, context, step, page, position, isSubmitting, errorText, submitPage, goBack, editPage, pressRow, goToStep} = useOnboardingFlow(flow, target, routeParams);
 
     if (!step || !page || !position) {
         return <FullScreenLoadingIndicator />;
     }
-
-    const isRequestPage = isLastPageOfStep(step, page);
 
     const renderCustom = (customPage: CustomPageConfig) =>
         flow.renderCustomStep({
@@ -51,20 +51,26 @@ function OnboardingFlowPage({flow, target, routeParams}: OnboardingFlowPageProps
             headerTitle={step.title}
             handleBackButtonPress={goBack}
             startStepIndex={step.counterIndex}
-            stepNames={step.counterIndex === undefined ? undefined : flow.getStepNames(data)}
+            stepNames={step.counterIndex === undefined ? undefined : flow.getStepNames(data, context)}
             shouldEnableMaxHeight
             shouldRemountSubHeaderOnStepChange
         >
-            <PageRenderer
-                page={page}
-                isEditing={position.isEditing}
-                isLoading={isRequestPage && isSubmitting}
-                errorText={isRequestPage && errorText ? errorText : undefined}
-                onSubmit={submitPage}
-                onEdit={editPage}
-                onRowPress={pressRow}
-                renderCustom={renderCustom}
-            />
+            {page.isLoading ? (
+                <View style={[styles.flex1, styles.alignItemsCenter, styles.justifyContentCenter]}>
+                    <ActivityIndicator size={CONST.ACTIVITY_INDICATOR_SIZE.LARGE} />
+                </View>
+            ) : (
+                <PageRenderer
+                    page={page}
+                    isEditing={position.isEditing}
+                    isLoading={isSubmitting}
+                    errorText={errorText || undefined}
+                    onSubmit={submitPage}
+                    onEdit={editPage}
+                    onRowPress={pressRow}
+                    renderCustom={renderCustom}
+                />
+            )}
         </InteractiveStepWrapper>
     );
 }

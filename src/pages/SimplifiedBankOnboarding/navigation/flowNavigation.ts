@@ -6,6 +6,8 @@ import Navigation from '@libs/Navigation/Navigation';
 
 import type {FlowPosition} from '@pages/SimplifiedBankOnboarding/flow/position';
 
+import ROUTES from '@src/ROUTES';
+
 import type {FlowRouteTarget} from './routes';
 
 import {getEntryRoute, getPositionRoute} from './routes';
@@ -43,4 +45,9 @@ function goBackToEntry(target: FlowRouteTarget) {
     Navigation.goBack(entryRoute);
 }
 
-export {exitFlow, goBackToEntry, goBackToPosition, goToPosition, replacePosition};
+/** Opens the page that an invited director receives, which the mock plays from the page that waits for the directors */
+function openEnterSignerInfo(policyID: string | undefined, bankAccountID: number | undefined) {
+    Navigation.navigate(ROUTES.SETTINGS_BANK_ONBOARDING_LAB_ENTER_SIGNER_INFO.getRoute({policyID, bankAccountID}));
+}
+
+export {exitFlow, goBackToEntry, goBackToPosition, goToPosition, openEnterSignerInfo, replacePosition};

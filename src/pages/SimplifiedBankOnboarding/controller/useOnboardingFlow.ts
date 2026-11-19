@@ -3,6 +3,7 @@ import useNetwork from '@hooks/useNetwork';
 
 import {getLatestErrorMessage} from '@libs/ErrorUtils';
 
+import getPageRequestName from '@pages/SimplifiedBankOnboarding/flow/getPageRequestName';
 import type {FlowPosition} from '@pages/SimplifiedBankOnboarding/flow/position';
 import {findPage, findStep} from '@pages/SimplifiedBankOnboarding/flow/position';
 import isPositionReachable from '@pages/SimplifiedBankOnboarding/flow/reachability';
@@ -22,7 +23,7 @@ import {isEmptyObject} from '@src/types/utils/EmptyObject';
 /**
  * The controller of a flow screen. It builds the plan in render from the draft and the server data, reads the position
  * from the URL and gives the page its handlers. Every move happens in a handler: it writes the draft, rebuilds the plan
- * from fresh Onyx data, runs the step request at the end of a step and only then navigates. The one effect redirects a
+ * from fresh Onyx data, runs the request of the page or, at the end of a step, the step request and only then navigates. The one effect redirects a
  * URL that names no reachable position.
  */
 import {useIsFocused} from '@react-navigation/native';
@@ -35,15 +36,16 @@ import useFlowData from './useFlowData';
 
 type OnboardingFlow = {
     data: FlowData;
+    context: PlanContext;
     plan: FlowPlan;
     position: FlowPosition | undefined;
     step: StepConfig | undefined;
     page: PageConfig | undefined;
 
-    /** The request of the open step is running */
+    /** The request that the open page sends is running */
     isSubmitting: boolean;
 
-    /** The error of the request of the open step */
+    /** The error of the request that the open page sends */
     errorText: string;
     submitPage: (values: OnboardingDraft) => void;
     goBack: () => void;
@@ -68,7 +70,7 @@ function useOnboardingFlow(flow: FlowDescriptor, target: FlowRouteTarget, routeP
     const position = isPositionReachable(plan, urlPosition) ? urlPosition : undefined;
     const step = position ? findStep(plan, position.stepID) : undefined;
     const page = step && position ? findPage(step, position.pageID) : undefined;
-    const requestState = useRequestState(step?.requestName);
+    const requestState = useRequestState(getPageRequestName(step, page));
 
     // A handler is running: a second submit is ignored and the redirect waits, because the data changes under it
     const isHandlingRef = useRef(false);
@@ -78,8 +80,14 @@ function useOnboardingFlow(flow: FlowDescriptor, target: FlowRouteTarget, routeP
 
     // After a draft write or a request the plan of the last render is stale, so handlers rebuild it from what Onyx holds now
     const rebuildPlan = async () => {
-        const [draft, account] = await Onyx.multiGet([ONYXKEYS.FORMS.SIMPLIFIED_BANK_ONBOARDING_FORM_DRAFT, ONYXKEYS.SIMPLIFIED_BANK_ONBOARDING_ACCOUNT]);
-        return flow.buildPlan({draft: draft ?? undefined, account}, context);
+        const [draft, account, workspaces, bankFields, picklists] = await Onyx.multiGet([
+            ONYXKEYS.FORMS.SIMPLIFIED_BANK_ONBOARDING_FORM_DRAFT,
+            ONYXKEYS.SIMPLIFIED_BANK_ONBOARDING_ACCOUNT,
+            ONYXKEYS.SIMPLIFIED_BANK_ONBOARDING_WORKSPACES,
+            ONYXKEYS.SIMPLIFIED_BANK_ONBOARDING_BANK_FIELDS,
+            ONYXKEYS.SIMPLIFIED_BANK_ONBOARDING_PICKLISTS,
+        ]);
+        return flow.buildPlan({draft: draft ?? undefined, account, workspaces, bankFields, picklists}, context);
     };
 
     const leavePosition = (from: FlowPosition, navigate: () => void) => {
@@ -95,6 +103,26 @@ function useOnboardingFlow(flow: FlowDescriptor, target: FlowRouteTarget, routeP
         handler().finally(() => {
             isHandlingRef.current = false;
         });
+    };
+
+    /**
+     * Sends the request of a page that saves in the middle of its step. Returns the plan after it, or undefined when the
+     * flow stays on the page: offline, while the request is pending or after it failed.
+     */
+    const runPageRequest = async (from: FlowPosition, currentPlan: FlowPlan): Promise<FlowPlan | undefined> => {
+        const currentStep = findStep(currentPlan, from.stepID);
+        const submittedPage = currentStep ? findPage(currentStep, from.pageID) : undefined;
+        if (!submittedPage?.submit) {
+            return currentPlan;
+        }
+        if (isOffline || requestState.isPending) {
+            return undefined;
+        }
+        const outcome = await submittedPage.submit();
+        if (outcome.status !== 'succeeded') {
+            return undefined;
+        }
+        return rebuildPlan();
     };
 
     /** Runs the request of a finished step and opens the next step. The plan must hold the answers that the step sends. */
@@ -130,7 +158,10 @@ function useOnboardingFlow(flow: FlowDescriptor, target: FlowRouteTarget, routeP
             if (!isEmptyObject(draftUpdate)) {
                 await saveDraft(draftUpdate);
             }
-            const nextPlan = await rebuildPlan();
+            const nextPlan = await runPageRequest(from, await rebuildPlan());
+            if (!nextPlan) {
+                return;
+            }
             const editReturnPosition = from.isEditing ? getEditReturnPosition(nextPlan, from) : undefined;
             if (editReturnPosition) {
                 leavePosition(from, () => goBackToPosition(target, editReturnPosition));
@@ -230,6 +261,7 @@ function useOnboardingFlow(flow: FlowDescriptor, target: FlowRouteTarget, routeP
 
     return {
         data,
+        context,
         plan,
         position,
         step,

@@ -19,7 +19,7 @@ function getFieldError(field: InputFieldConfig, values: OnboardingDraft, transla
             if (!isRequiredFulfilled(value)) {
                 return field.isRequired ? getRequiredError(field, translate) : undefined;
             }
-            return field.validate?.(value);
+            return field.validate?.(value, values);
         }
         case 'date': {
             const value = values[field.id] ?? '';

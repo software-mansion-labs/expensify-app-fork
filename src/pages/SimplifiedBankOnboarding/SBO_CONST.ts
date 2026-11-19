@@ -171,6 +171,9 @@ const SBO_CONST = {
         CURRENT_USER_KEY: 'currentUser',
         MIN_OWNERSHIP_PERCENTAGE: 25,
         MAX_OWNERSHIP_SUM_TO_ADD_MORE: 75,
+        COUNTRY_SUB_PAGES: {
+            CONFIRM_CURRENCY: 'confirm-currency',
+        },
         BANK_INFO_SUB_PAGES: {
             BANK_ACCOUNT_DETAILS: 'bank-account-details',
             ACCOUNT_HOLDER_DETAILS: 'account-holder-details',
@@ -197,6 +200,15 @@ const SBO_CONST = {
             CONFIRMATION: 'confirmation',
             ENTER_EMAIL: 'enter-email',
             HANG_TIGHT: 'hang-tight',
+        },
+        AGREEMENTS_SUB_PAGES: {
+            CONFIRM_AGREEMENTS: 'confirm-agreements',
+        },
+        DOCUSIGN_SUB_PAGES: {
+            UPLOAD: 'upload',
+        },
+        FINISH_SUB_PAGES: {
+            DONE: 'done',
         },
         SUBSTEP_INDEX: {
             BANK_INFO: {

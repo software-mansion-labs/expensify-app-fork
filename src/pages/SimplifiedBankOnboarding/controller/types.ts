@@ -1,14 +1,21 @@
 import type {CustomPageConfig, FlowPlan, PlanContext, StepID} from '@pages/SimplifiedBankOnboarding/formConfig/types';
 import type {OnboardingDraft} from '@pages/SimplifiedBankOnboarding/types/form';
-import type {OnboardingAccount} from '@pages/SimplifiedBankOnboarding/types/onyx';
+import type {BankFields, OnboardingAccount, OnboardingPicklists, Workspaces} from '@pages/SimplifiedBankOnboarding/types/onyx';
 
 import type {ReactNode} from 'react';
 import type {OnyxEntry} from 'react-native-onyx';
 
-/** The Onyx values that a plan is built from */
+/** The Onyx values that a plan is built from. A flow reads the ones it needs, such as the server lists of the NonUSD flow. */
 type FlowData = {
     draft: OnboardingDraft | undefined;
     account: OnyxEntry<OnboardingAccount>;
+
+    /** The currency of a workspace decides the NonUSD steps */
+    workspaces: OnyxEntry<Workspaces>;
+
+    /** The bank inputs that the server describes for a country */
+    bankFields: OnyxEntry<BankFields>;
+    picklists: OnyxEntry<OnboardingPicklists>;
 };
 
 /** What a custom step gets from the controller. A custom step never navigates: it reports through these callbacks. */
@@ -37,7 +44,7 @@ type FlowDescriptor = {
     wrapperID: string;
 
     /** The names of the step counter of the header */
-    getStepNames: (data: FlowData) => readonly string[];
+    getStepNames: (data: FlowData, context: PlanContext) => readonly string[];
     buildPlan: (data: FlowData, context: PlanContext) => FlowPlan;
     renderCustomStep: (props: CustomStepProps) => ReactNode;
 };

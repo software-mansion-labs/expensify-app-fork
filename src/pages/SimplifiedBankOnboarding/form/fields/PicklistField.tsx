@@ -25,8 +25,8 @@ function PicklistField({field, shouldSaveDraft}: PicklistFieldProps) {
                 inputID={field.id}
                 optionsList={optionsList}
                 description={field.label}
-                modalHeaderTitle={field.label}
-                searchInputTitle={field.label}
+                modalHeaderTitle={field.modalTitle ?? field.label}
+                searchInputTitle={field.searchTitle ?? field.label}
                 defaultValue={field.defaultValue}
                 shouldSaveDraft={shouldSaveDraft}
                 shouldAllowChange={!field.isLocked}
