@@ -16,7 +16,7 @@ let focusedItemRef: ComponentRef<typeof View> | HTMLElement | null;
  * When the user navigates through the app using the arrows and then the tab button, the focus on the element and the native focus of the browser differs.
  * To maintain consistency when an element is focused in the app, the focus() method is additionally called on the focused element to eliminate the difference between native browser focus and application focus.
  */
-const useSyncFocusImplementation = (ref: RefObject<ComponentRef<typeof View> | HTMLElement | null>, isFocused: boolean, shouldSyncFocus = true) => {
+const useSyncFocusImplementation = (ref: RefObject<ComponentRef<typeof View> | HTMLElement | null>, isFocused: boolean, shouldSyncFocus = true, shouldBlurOnFocusLoss = false) => {
     // this hook can be used outside ScreenWrapperStatusContext (eg. in Popovers). So we to check if the context is present.
     // If we are outside context we don't have to look at transition status
     const contextValue = useContext(ScreenWrapperStatusContext);
@@ -26,6 +26,12 @@ const useSyncFocusImplementation = (ref: RefObject<ComponentRef<typeof View> | H
     useLayoutEffect(() => {
         if (isFocused) {
             focusedItemRef = ref.current;
+        }
+
+        // A recycled list cell keeps the browser focus of the item it showed before, so its focus ring would follow it
+        // onto whichever item it shows next.
+        if (!isFocused && shouldBlurOnFocusLoss && ref.current && ref.current === document.activeElement) {
+            ref.current.blur();
         }
 
         if (!isFocused || !shouldSyncFocus || !didScreenTransitionEnd) {

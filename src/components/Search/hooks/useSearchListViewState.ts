@@ -1,11 +1,9 @@
-import {useEditingCellState} from '@components/EditableCell';
 import useRowLongPressMenu from '@components/Search/primitives/useRowLongPressMenu';
 import useScrollRestoration from '@components/Search/primitives/useScrollRestoration';
 import {useSearchRowSelectionActions, useSearchSelectionContext} from '@components/Search/SearchContext';
 import type {SearchListItem} from '@components/Search/SearchList/ListItem/types';
 import {useRegisterSearchListScroller} from '@components/Search/SearchListScrollLockContext';
 
-import useIsMobileWebLandscape from '@hooks/useIsMobileWebLandscape';
 import useKeyboardState from '@hooks/useKeyboardState';
 import useNetwork from '@hooks/useNetwork';
 import useOnyx from '@hooks/useOnyx';
@@ -16,8 +14,6 @@ import useUndeleteTransactions from '@hooks/useUndeleteTransactions';
 
 import type {TransactionPreviewData} from '@libs/actions/Search';
 import type {ModifiedMouseEvent} from '@libs/Navigation/helpers/openInternalRouteInNewTab';
-
-import variables from '@styles/variables';
 
 import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';
@@ -30,10 +26,6 @@ import {useRef} from 'react';
 type UseSearchListViewStateParams = {
     /** The source rows the view renders. Drives exit-animation tracking. */
     data: SearchListItem[];
-
-    /** The rows actually rendered by the list, if they differ from `data` (e.g. grouped views split each group
-     *  into a header + children-container pair). `scrollToListIndex` indexes over this. Defaults to `data`. */
-    listData?: SearchListItem[];
 
     /** Whether mobile selection mode is on (a row tap toggles selection instead of navigating). */
     isMobileSelectionModeEnabled: boolean;
@@ -48,13 +40,13 @@ type UseSearchListViewStateParams = {
 /**
  * The shared state and interactions every Search list view repeats: the environment hooks, the selection
  * providers, the per-row display data (payment method, billing grace periods, undelete), the long-press
- * menu, the row-tap handler, scroll-to-index, and scroll restoration. Each view layers its own row
+ * menu, the row-tap handler, and scroll restoration. Each view layers its own row
  * renderer, visibility, and selection-count math on top of this bundle.
  *
  * Must be used inside SearchWriteActionsProvider so `toggle`/`toggleAll` resolve to the real actions rather
  * than the no-op defaults.
  */
-function useSearchListViewState({data, listData = data, isMobileSelectionModeEnabled, onSelectRow, shouldPreventLongPressRow = false}: UseSearchListViewStateParams) {
+function useSearchListViewState({data, isMobileSelectionModeEnabled, onSelectRow, shouldPreventLongPressRow = false}: UseSearchListViewStateParams) {
     const {toggle, toggleAll} = useSearchRowSelectionActions();
     const {selectedTransactions} = useSearchSelectionContext();
 
@@ -65,9 +57,6 @@ function useSearchListViewState({data, listData = data, isMobileSelectionModeEna
     // See https://github.com/Expensify/App/issues/48675 for more details
     // eslint-disable-next-line rulesdir/prefer-shouldUseNarrowLayout-instead-of-isSmallScreenWidth
     const {isSmallScreenWidth, isLargeScreenWidth} = useResponsiveLayout();
-    const contentHeaderHeight = isSmallScreenWidth ? variables.contentHeaderNarrowHeight : variables.contentHeaderHeight;
-    const {isEditingCell, wasRecentlyEditingCell} = useEditingCellState();
-    const shouldScrollMainHeader = useIsMobileWebLandscape();
 
     const listRef = useRef<FlashListRef<SearchListItem>>(null);
     const prevDataLength = usePrevious(data.length);
@@ -97,19 +86,6 @@ function useSearchListViewState({data, listData = data, isMobileSelectionModeEna
         onSelectRow(item, transactionPreviewData, event);
     };
 
-    const scrollToListIndex = (index: number, animated = true) => {
-        const item = listData.at(index);
-        if (!listRef.current || !item || index < 0) {
-            return;
-        }
-        // Mirror SearchList: don't scroll while a row's cell is being inline-edited, which would blur/move it mid-edit.
-        if (isEditingCell || wasRecentlyEditingCell) {
-            return;
-        }
-        // Where the header scrolls as part of the list's content there is nothing pinned to clear.
-        listRef.current.scrollToIndex({index, animated, viewOffset: shouldScrollMainHeader ? 0 : -contentHeaderHeight});
-    };
-
     useScrollRestoration(listRef);
 
     // Lets a fling that hides the scroll-away header carry on into the rows (see SearchListScrollLockContext).
@@ -135,7 +111,6 @@ function useSearchListViewState({data, listData = data, isMobileSelectionModeEna
         handleUndelete,
         onLongPressRow,
         handleSelectRow,
-        scrollToListIndex,
     };
 }
 

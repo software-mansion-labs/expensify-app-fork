@@ -74,6 +74,7 @@ import TransactionGroupListExpandedItem from './TransactionGroupListExpanded';
 import useGroupChildren from './useGroupChildren';
 import useGroupOpenForShiftRange from './useGroupOpenForShiftRange';
 import useLiveRowCapabilities from './useLiveRowCapabilities';
+import {useRegisterSearchListFocusTarget} from './useSearchListFocusTarget';
 import WeekListItemHeader from './WeekListItemHeader';
 import WithdrawalIDListItemHeader from './WithdrawalIDListItemHeader';
 import YearListItemHeader from './YearListItemHeader';
@@ -209,6 +210,11 @@ function TransactionGroupListItemImpl({
         isItemSelected && styles.activeComponentBG,
     ];
     const pressableRef = useRef<ComponentRef<typeof View>>(null);
+
+    // An open group's row holds its expenses too, so the list scrolls to the group by its header alone.
+    const headerRef = useRef<ComponentRef<typeof View>>(null);
+    useRegisterSearchListFocusTarget(item.keyForList, headerRef);
+
     const {markMouseDownOnCopyableText, markTouchStartOnCopyableText, shouldSuppressCopyableTextRowFocus, shouldSuppressCopyableTextRowLongPress, shouldSuppressCopyableTextRowPress} =
         useCopyableTextRowPress();
 
@@ -462,7 +468,7 @@ function TransactionGroupListItemImpl({
         return headers[groupBy];
     };
 
-    useSyncFocus(pressableRef, !!isFocused, shouldSyncFocus);
+    useSyncFocus(pressableRef, !!isFocused, shouldSyncFocus, true);
 
     const snapshotData = transactionsSnapshot?.data;
     const groupViolations: Record<string, TransactionViolations | undefined> = {};
@@ -570,6 +576,7 @@ function TransactionGroupListItemImpl({
                         <AnimatedCollapsible
                             isExpanded={isExpanded}
                             header={getHeader(hovered)}
+                            headerRef={headerRef}
                             onPress={onExpandIconPress}
                             expandButtonStyle={isLargeScreenWidth ? styles.pv2 : styles.pv4Half}
                             shouldShowToggleButton={isLargeScreenWidth && !isCashBackWithdrawal}
@@ -599,6 +606,7 @@ function TransactionGroupListItemImpl({
                                 onLongPress={onExpandedRowLongPress}
                                 nonPersonalAndWorkspaceCards={nonPersonalAndWorkspaceCards}
                                 onUndelete={onUndelete}
+                                groupKey={groupItem.keyForList ?? ''}
                             />
                         </AnimatedCollapsible>
                     </View>

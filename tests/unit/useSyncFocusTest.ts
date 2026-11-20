@@ -30,4 +30,32 @@ describe('useSyncFocus', () => {
         // Then the ref focus will be called.
         expect(focusMock).toHaveBeenCalled();
     });
+
+    it('blurs an element that loses focus while it still has browser focus, only when asked to', () => {
+        // Given a focused list row that still has browser focus, like a list cell about to be reused for another item
+        const element = document.createElement('button');
+        document.body.appendChild(element);
+        element.focus();
+        const refMock = {current: element};
+        const {rerender} = renderHook(
+            ({isFocused, shouldBlurOnFocusLoss}: {isFocused: boolean; shouldBlurOnFocusLoss: boolean}) => useSyncFocus(refMock, isFocused, false, shouldBlurOnFocusLoss),
+            {
+                initialProps: {isFocused: true, shouldBlurOnFocusLoss: false},
+            },
+        );
+
+        // When it loses focus without opting in
+        rerender({isFocused: false, shouldBlurOnFocusLoss: false});
+
+        // Then it keeps browser focus, as other lists expect
+        expect(document.activeElement).toBe(element);
+
+        // When it loses focus while opted in
+        rerender({isFocused: true, shouldBlurOnFocusLoss: true});
+        rerender({isFocused: false, shouldBlurOnFocusLoss: true});
+
+        // Then browser focus leaves it, so its focus ring doesn't show on the next item it renders
+        expect(document.activeElement).not.toBe(element);
+        element.remove();
+    });
 });

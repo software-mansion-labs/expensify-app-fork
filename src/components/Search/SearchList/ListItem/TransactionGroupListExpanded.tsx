@@ -1,8 +1,6 @@
 import ActivityIndicator from '@components/ActivityIndicator';
-import LinkButton from '@components/Button/composed/LinkButton';
 import OfflineWithFeedback from '@components/OfflineWithFeedback';
 import {usePersonalDetails} from '@components/OnyxListItemProvider';
-import {PressableWithFeedback} from '@components/Pressable';
 import ScrollView from '@components/ScrollView';
 import {useSyncedHorizontalScroll} from '@components/Search/hooks/useSyncedHorizontalScroll';
 import SearchTableHeader from '@components/Search/SearchTableHeader';
@@ -55,6 +53,10 @@ import {View} from 'react-native';
 
 import type {TransactionGroupListExpandedProps, TransactionListItemType} from './types';
 
+import ExpandedTransactionPressable from './ExpandedTransactionPressable';
+import getGroupShowMoreState from './getGroupShowMoreState';
+import GroupShowMoreLink from './GroupShowMoreLink';
+
 /**
  * Non-generic implementation so OXC's React Compiler can memoize the component.
  * OXC bails on type params inside components ("Unsupported declaration type for hoisting").
@@ -84,6 +86,7 @@ function TransactionGroupListExpandedImpl({
     onUndelete,
     hideSearchTableHeader,
     syncScrollKey,
+    groupKey,
 }: TransactionGroupListExpandedProps<ListItem>) {
     const theme = useTheme();
     const styles = useThemeStyles();
@@ -163,11 +166,15 @@ function TransactionGroupListExpandedImpl({
     const getPolicyTagListsForTransaction = (transaction: TransactionListItemType) =>
         policyTags?.[`${ONYXKEYS.COLLECTION.POLICY_TAGS}${getNonEmptyStringOnyxID(getTransactionPolicyID(transaction))}`];
 
-    // Currently only the transaction report groups have transactions where the empty view makes sense
-    const shouldDisplayShowMoreButton = isExpenseReportType ? transactions.length > transactionsVisibleLimit : !!transactionsSnapshotMetadata?.hasMoreResults && !isOffline;
-    const currentOffset = transactionsSnapshotMetadata?.offset ?? 0;
-    const shouldShowLoadingOnSearch = !!(!transactions?.length && transactionsSnapshotMetadata?.isLoading) || currentOffset > 0;
-    const shouldDisplayLoadingIndicator = !isExpenseReportType && !!transactionsSnapshotMetadata?.isLoading && shouldShowLoadingOnSearch;
+    const {shouldShowMoreButton, shouldShowLoadingIndicator: shouldDisplayLoadingIndicator} = getGroupShowMoreState({
+        isExpenseReportType,
+        transactionsCount: transactions.length,
+        transactionsVisibleLimit,
+        hasMoreResults: transactionsSnapshotMetadata?.hasMoreResults,
+        isLoading: transactionsSnapshotMetadata?.isLoading,
+        offset: transactionsSnapshotMetadata?.offset,
+        isOffline: !!isOffline,
+    });
     const {markMouseDownOnCopyableText, markTouchStartOnCopyableText, shouldSuppressCopyableTextRowLongPress, shouldSuppressCopyableTextRowPress} = useCopyableTextRowPress();
     const {isLargeScreenWidth} = useResponsiveLayout();
     const StyleUtils = useStyleUtils();
@@ -368,15 +375,22 @@ function TransactionGroupListExpandedImpl({
                 const shouldShowBottomBorder = !isLastTransaction(index);
                 const reportActions = Object.values(transactionsSnapshot?.data?.[`${ONYXKEYS.COLLECTION.REPORT_ACTIONS}${transaction?.reportID}`] ?? {});
                 const isDeletedOrPendingDelete = isDeletedTransaction(transaction) || isTransactionPendingDelete(transaction);
+                const isRowDisabled = isTransactionPendingDelete(transaction) && !transaction.isSelected;
+                // Enter on the focused row does what a click does, so both check the same conditions.
+                const isRowPressable = !isRowDisabled && (!isDeletedOrPendingDelete || !!canSelectMultiple);
 
                 return (
                     <OfflineWithFeedback
-                        pendingAction={transaction.pendingAction}
                         key={transaction.transactionID}
+                        pendingAction={transaction.pendingAction}
                     >
-                        <PressableWithFeedback
-                            onPress={isDeletedOrPendingDelete && !canSelectMultiple ? undefined : (event) => handleOnPress(transaction, event)}
-                            disabled={isTransactionPendingDelete(transaction) && !transaction.isSelected}
+                        <ExpandedTransactionPressable
+                            keyForList={transaction.keyForList}
+                            activate={isRowPressable ? () => handleOnPress(transaction) : undefined}
+                            isSelected={!!transaction.isSelected}
+                            isDisabled={!!transaction.isDisabled}
+                            onPress={isRowPressable ? (event) => handleOnPress(transaction, event) : undefined}
+                            disabled={isRowDisabled}
                             onLongPress={() => {
                                 if (shouldSuppressCopyableTextRowLongPress()) {
                                     return;
@@ -401,7 +415,6 @@ function TransactionGroupListExpandedImpl({
                             wrapperStyle={isDeletedOrPendingDelete ? styles.cursorDisabled : undefined}
                             dataSet={{...COPYABLE_ROW_DATA_SET, [CONST.INNER_BOX_SHADOW_ELEMENT]: true}}
                             id={transaction.transactionID}
-                            sentryLabel={CONST.SENTRY_LABEL.SEARCH.EXPANDED_TRANSACTION_ROW}
                         >
                             {({hovered}) => (
                                 <TransactionItemRow
@@ -440,21 +453,16 @@ function TransactionGroupListExpandedImpl({
                                     isHover={hovered}
                                 />
                             )}
-                        </PressableWithFeedback>
+                        </ExpandedTransactionPressable>
                     </OfflineWithFeedback>
                 );
             })}
-            {shouldDisplayShowMoreButton && !shouldDisplayLoadingIndicator && (
+            {shouldShowMoreButton && (
                 <View style={[styles.w100, styles.flexRow, isLargeScreenWidth && styles.pl10]}>
-                    <LinkButton
-                        sentryLabel={CONST.SENTRY_LABEL.SEARCH.GROUP_SHOW_MORE_BUTTON}
+                    <GroupShowMoreLink
+                        groupKey={groupKey}
                         onPress={onShowMoreButtonPress}
-                        isNested
-                        size={CONST.BUTTON_SIZE.MEDIUM}
-                        innerStyles={[styles.ph2]}
-                    >
-                        <LinkButton.Text style={[styles.fontSizeNormal]}>{translate('common.showMore')}</LinkButton.Text>
-                    </LinkButton>
+                    />
                 </View>
             )}
             {shouldDisplayLoadingIndicator && (

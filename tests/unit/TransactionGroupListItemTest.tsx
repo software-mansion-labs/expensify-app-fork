@@ -5,6 +5,9 @@ import {LocaleContextProvider} from '@components/LocaleContextProvider';
 import OnyxListItemProvider from '@components/OnyxListItemProvider';
 import ScreenWrapper from '@components/ScreenWrapper';
 import {SearchContextProvider} from '@components/Search/SearchContextProvider';
+import SearchListFocusTargetContext from '@components/Search/SearchList/BaseSearchList/SearchListFocusTargetContext';
+import type {SearchListFocusTarget, SearchListFocusTargetContextValue} from '@components/Search/SearchList/BaseSearchList/SearchListFocusTargetContext';
+import {getShowMoreFocusKey} from '@components/Search/SearchList/groupedFocusStops';
 import type {
     TransactionCategoryGroupListItemType,
     TransactionGroupListItemProps,
@@ -16,6 +19,7 @@ import type {ListItem} from '@components/SelectionList/types';
 
 import {search} from '@libs/actions/Search';
 import registerMiddlewares from '@libs/Middleware/register';
+import {setForceOffline} from '@libs/NetworkState';
 import type * as SearchKeyUtils from '@libs/SearchKeyUtils';
 import {buildSearchQueryJSON} from '@libs/SearchQueryUtils';
 
@@ -926,5 +930,182 @@ describe('Withdrawal group rows', () => {
         // Then neither screen readers nor the Tab key treat it as a control
         expect(screen.queryByRole(CONST.ROLE.BUTTON, {name: 'Cash back row'})).toBeNull();
         expect(screen.getByLabelText('Cash back row')).toHaveProp('focusable', false);
+    });
+});
+
+describe('Focus stops inside an open group', () => {
+    const mockOnSelectionButtonPress = jest.fn();
+    // The grouped list has a focus stop for every expense it renders.
+    const mockOnFocusTarget = jest.fn(() => true);
+    const registeredTargets = new Map<string, SearchListFocusTarget>();
+
+    // Stands in for the list, which keeps every target its rows register.
+    const focusTargetContextValue: SearchListFocusTargetContextValue = {
+        onFocusTarget: mockOnFocusTarget,
+        registerFocusTarget: (keyForList, target) => {
+            registeredTargets.set(keyForList, target);
+            return () => {
+                if (registeredTargets.get(keyForList) !== target) {
+                    return;
+                }
+                registeredTargets.delete(keyForList);
+            };
+        },
+    };
+
+    // The arrow-key focus stops only exist in the grouped expense list, whose groups page through their own search.
+    const groupQueryJSON = buildSearchQueryJSON('type:expense category:Advertising');
+
+    /** A category group holding `count` expenses keyed `focus-<index>`, the first of which may be pending delete. */
+    const createCategoryGroupWithExpenses = (count: number, isFirstPendingDelete = false): TransactionCategoryGroupListItemType => ({
+        groupedBy: CONST.SEARCH.GROUP_BY.CATEGORY,
+        category: 'Advertising',
+        formattedCategory: 'Advertising',
+        count,
+        total: 0,
+        currency: 'USD',
+        transactionsQueryJSON: groupQueryJSON,
+        keyForList: 'Advertising',
+        transactions: Array.from({length: count}, (_, index) => ({
+            ...mockTransaction,
+            transactionID: `focus-${index}`,
+            keyForList: `focus-${index}`,
+            pendingAction: isFirstPendingDelete && index === 0 ? CONST.RED_BRICK_ROAD_PENDING_ACTION.DELETE : undefined,
+        })),
+    });
+
+    beforeAll(() => {
+        Onyx.init({
+            keys: ONYXKEYS,
+            evictableKeys: [ONYXKEYS.COLLECTION.REPORT_ACTIONS],
+        });
+        jest.spyOn(NativeNavigation, 'useRoute').mockReturnValue({key: '', name: ''});
+    });
+
+    beforeEach(() => {
+        jest.clearAllMocks();
+        registeredTargets.clear();
+        return act(async () => {
+            await Onyx.clear();
+            await waitForBatchedUpdatesWithAct();
+        });
+    });
+
+    afterEach(() => {
+        act(() => setForceOffline(false));
+    });
+
+    function TestWrapper({children}: {children: React.ReactNode}) {
+        return (
+            <ComposeProviders components={[OnyxListItemProvider, LocaleContextProvider]}>
+                <ScreenWrapper testID="test">
+                    <SearchContextProvider>
+                        <SearchListFocusTargetContext.Provider value={focusTargetContextValue}>{children}</SearchListFocusTargetContext.Provider>
+                    </SearchContextProvider>
+                </ScreenWrapper>
+            </ComposeProviders>
+        );
+    }
+
+    const renderOpenGroup = (item: TransactionCategoryGroupListItemType, {canSelectMultiple = true, onFocus = jest.fn(), onSelectRow = jest.fn()} = {}) =>
+        render(
+            <TransactionGroupListItem
+                item={item}
+                showTooltip={false}
+                onSelectRow={onSelectRow}
+                onSelectionButtonPress={mockOnSelectionButtonPress}
+                onFocus={onFocus}
+                searchType={CONST.SEARCH.DATA_TYPES.EXPENSE}
+                groupBy={CONST.SEARCH.GROUP_BY.CATEGORY}
+                canSelectMultiple={canSelectMultiple}
+                isExpanded
+                onToggle={jest.fn()}
+            />,
+            {wrapper: TestWrapper},
+        );
+
+    it("keeps an expense's focus event from reaching the group row around it", async () => {
+        // Given an open group
+        const onGroupFocus = jest.fn();
+        renderOpenGroup(createCategoryGroupWithExpenses(2), {onFocus: onGroupFocus});
+        await waitForBatchedUpdatesWithAct();
+
+        // When its first expense takes focus
+        const stopPropagation = jest.fn();
+        fireEvent(screen.getAllByTestId('transaction-item-row')[0], 'focus', {nativeEvent: {}, stopPropagation});
+
+        // Then the list moves focus to that expense, and the event stops there, so the group row can't take focus back
+        expect(mockOnFocusTarget).toHaveBeenCalledWith('focus-0', expect.anything());
+        expect(stopPropagation).toHaveBeenCalled();
+        expect(onGroupFocus).not.toHaveBeenCalled();
+    });
+
+    it("lets an expense's focus event reach the group row when the list has no stop for it", async () => {
+        // Given an open group in a list without focus stops, such as the report list, where the row takes the focus
+        mockOnFocusTarget.mockReturnValueOnce(false);
+        renderOpenGroup(createCategoryGroupWithExpenses(2));
+        await waitForBatchedUpdatesWithAct();
+
+        // When its first expense takes focus
+        const stopPropagation = jest.fn();
+        fireEvent(screen.getAllByTestId('transaction-item-row')[0], 'focus', {nativeEvent: {}, stopPropagation});
+
+        // Then the event goes on to the group row, so the list focuses the row that holds the expense
+        expect(mockOnFocusTarget).toHaveBeenCalledWith('focus-0', expect.anything());
+        expect(stopPropagation).not.toHaveBeenCalled();
+    });
+
+    it('opens the focused expense on Enter, as a click does', async () => {
+        // Given an open group
+        const onSelectRow = jest.fn();
+        renderOpenGroup(createCategoryGroupWithExpenses(2), {onSelectRow});
+        await waitForBatchedUpdatesWithAct();
+
+        // When Enter runs the action the second expense registered
+        act(() => registeredTargets.get('focus-1')?.activate?.());
+
+        // Then that expense is opened, not the group that holds it
+        expect(onSelectRow).toHaveBeenCalledWith(expect.objectContaining({transactionID: 'focus-1'}), expect.anything(), undefined);
+    });
+
+    it('toggles the selection of the focused expense on Enter in mobile selection mode, as a tap does', async () => {
+        // Given an open group in mobile selection mode
+        await act(() => Onyx.set(ONYXKEYS.RAM_ONLY_MOBILE_SELECTION_MODE, true));
+        renderOpenGroup(createCategoryGroupWithExpenses(2));
+        await waitForBatchedUpdatesWithAct();
+
+        // When Enter runs the action the second expense registered
+        act(() => registeredTargets.get('focus-1')?.activate?.());
+
+        // Then that expense's selection toggles
+        expect(mockOnSelectionButtonPress).toHaveBeenCalledWith(expect.objectContaining({transactionID: 'focus-1'}), expect.any(Array), undefined);
+    });
+
+    it('registers no Enter action for an expense pending delete, which a tap does nothing on either', async () => {
+        // Given offline, where an expense pending delete shows, and expenses can't be selected
+        act(() => setForceOffline(true));
+
+        // When an open group with an expense pending delete renders
+        renderOpenGroup(createCategoryGroupWithExpenses(2, true), {canSelectMultiple: false});
+        await waitForBatchedUpdatesWithAct();
+
+        // Then the expense pending delete registers without an action, while the other one has its own
+        expect(registeredTargets.has('focus-0')).toBe(true);
+        expect(registeredTargets.get('focus-0')?.activate).toBeUndefined();
+        expect(registeredTargets.get('focus-1')?.activate).toBeDefined();
+    });
+
+    it("fetches the group's next page when Enter is pressed on Show more", async () => {
+        // Given an open group whose own search has more expenses than it returned
+        await act(() => Onyx.merge(`${ONYXKEYS.COLLECTION.SNAPSHOT}${groupQueryJSON?.hash}`, {search: {hasMoreResults: true, offset: 0, isLoading: false}}));
+        const item = createCategoryGroupWithExpenses(2);
+        renderOpenGroup(item);
+        await waitForBatchedUpdatesWithAct();
+
+        // When Enter runs the action Show more registered
+        act(() => registeredTargets.get(getShowMoreFocusKey(item.keyForList))?.activate?.());
+
+        // Then the group's search asks for the page after the one it has, the same as a click on it
+        expect(search).toHaveBeenCalledWith(expect.objectContaining({queryJSON: groupQueryJSON, offset: CONST.SEARCH.RESULTS_PAGE_SIZE}));
     });
 });

@@ -79,7 +79,6 @@ function ExpenseReportSearchView({
         ownerBillingGracePeriodEnd,
         onLongPressRow,
         handleSelectRow,
-        scrollToListIndex,
     } = useSearchListViewState({data, isMobileSelectionModeEnabled, onSelectRow, shouldPreventLongPressRow: false});
 
     // Report rows render 1:1 (no group splitting), so visibility is computed straight off the rows.
@@ -164,7 +163,6 @@ function ExpenseReportSearchView({
                 showsVerticalScrollIndicator={false}
                 ref={listRef}
                 columns={columns}
-                scrollToIndex={scrollToListIndex}
                 flattenedItemsLength={data.length}
                 onEndReached={onEndReached}
                 onEndReachedThreshold={0.75}

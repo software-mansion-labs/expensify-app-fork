@@ -56,7 +56,7 @@ function TransactionListItemNarrow<TItem extends ListItem>({
     const pressableRef = useRef<ComponentRef<typeof View>>(null);
     const {markMouseDownOnCopyableText, markTouchStartOnCopyableText, shouldSuppressCopyableTextRowFocus, shouldSuppressCopyableTextRowLongPress, shouldSuppressCopyableTextRowPress} =
         useCopyableTextRowPress();
-    useSyncFocus(pressableRef, !!isFocused, shouldSyncFocus);
+    useSyncFocus(pressableRef, !!isFocused, shouldSyncFocus, true);
 
     const transactionItem = item as unknown as TransactionListItemType;
     const {isSelected} = useRowSelection(item.keyForList, transactionItem.selectionGroupKey);

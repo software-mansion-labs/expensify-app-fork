@@ -381,7 +381,7 @@ function GroupHeader({
     const {markMouseDownOnCopyableText, markTouchStartOnCopyableText, shouldSuppressCopyableTextRowFocus, shouldSuppressCopyableTextRowLongPress, shouldSuppressCopyableTextRowPress} =
         useCopyableTextRowPress();
 
-    useSyncFocus(pressableRef, !!isFocused, shouldSyncFocus);
+    useSyncFocus(pressableRef, !!isFocused, shouldSyncFocus, true);
 
     const pressableStyle = [
         styles.transactionGroupListItemStyle,

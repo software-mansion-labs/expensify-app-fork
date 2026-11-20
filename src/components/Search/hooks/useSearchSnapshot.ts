@@ -308,6 +308,7 @@ function useSearchSnapshot({queryJSON, searchResults, transactions, reportAction
                       hiddenTransactionIDs,
                       hasMoreTransactions: subSnapshot.search?.hasMoreResults,
                       transactionsOffset: subSnapshot.search?.offset,
+                      isLoadingTransactions: subSnapshot.search?.isLoading,
                   };
               });
 
