@@ -1,11 +1,13 @@
 /**
- * Form types of the simplified bank onboarding. Like the real flow, one form type holds the inputs of every step of both
- * flows, plus the control state that the steps keep in the draft.
+ * Form types of the simplified bank onboarding. One form holds the inputs of every step of both flows. Its draft is the
+ * only store of what the user typed: the flow reads its answers from the draft first and from the server data second.
  */
 import type Form from '@src/types/form/Form';
 import type {FileObject} from '@src/types/utils/Attachment';
 
 import type {ValueOf} from 'type-fest';
+
+import type {SetupType} from './onyx';
 
 const INPUT_IDS = {
     COUNTRY: 'country',
@@ -31,8 +33,13 @@ const INPUT_IDS = {
     // Beneficial owners
     OWNS_MORE_THAN_25_PERCENT: 'ownsMoreThan25Percent',
     HAS_OTHER_BENEFICIAL_OWNERS: 'hasOtherBeneficialOwners',
-    ANY_INDIVIDUAL_OWN_25_PERCENT_OR_MORE: 'anyIndividualOwn25PercentOrMore',
-    BENEFICIAL_OWNERS: 'beneficialOwners',
+    HAS_MORE_BENEFICIAL_OWNERS: 'hasMoreBeneficialOwners',
+
+    // The owner that the owner pages edit. The confirmation page copies it into the owner list of the draft.
+    OWNER_FIRST_NAME: 'ownerFirstName',
+    OWNER_LAST_NAME: 'ownerLastName',
+    OWNER_DOB: 'ownerDob',
+    OWNER_OWNERSHIP_PERCENTAGE: 'ownerOwnershipPercentage',
 
     // USD agreements
     IS_AUTHORIZED_TO_USE_BANK_ACCOUNT: 'isAuthorizedToUseBankAccount',
@@ -58,6 +65,7 @@ const INPUT_IDS = {
     ACCOUNT_HOLDER_REGION: 'accountHolderRegion',
 
     // NonUSD signer
+    IS_USER_DIRECTOR: 'isUserDirector',
     SIGNER_FULL_NAME: 'signerFullName',
     SIGNER_JOB_TITLE: 'signerJobTitle',
     SIGNER_EMAIL: 'signerEmail',
@@ -73,16 +81,33 @@ const INPUT_IDS = {
 
 type InputID = ValueOf<typeof INPUT_IDS>;
 
-/** The key of one owner field in the draft, built from the owner ID and the field name */
-type BeneficialOwnerDataKey = `beneficialOwner_${string}_${string}`;
+/** A USD beneficial owner as the draft keeps it until the owners step sends the list */
+type USDOwnerDraft = {
+    id: string;
+    firstName: string;
+    lastName: string;
+    dob: string;
+};
 
-/** Control state that the steps keep in the form draft so it survives the remount caused by URL navigation */
+/** A NonUSD beneficial owner as the draft keeps it. The current user has the fixed ID `SBO_CONST.NON_USD.CURRENT_USER_KEY`. */
+type GlobalOwnerDraft = {
+    id: string;
+    firstName: string;
+    lastName: string;
+    ownershipPercentage: string;
+};
+
+/** Draft values that are not inputs: choices made outside a form and the owner lists */
 type OnboardingFormExtraProps = {
-    [key: BeneficialOwnerDataKey]: string;
-    beneficialOwnerKeys?: string[];
-    ownerBeingModifiedID?: string;
-    isEditingCreatedOwner?: boolean;
-    isUserDirector?: boolean;
+    /** The setup type that the user picked on the entry page. It decides which bank account page the flow shows. */
+    setupType?: SetupType;
+    usdOwners?: USDOwnerDraft[];
+    globalOwners?: GlobalOwnerDraft[];
+
+    /** The owner that the owner pages edit. Undefined while the user adds a new owner. */
+    ownerBeingModifiedID?: string | null;
+
+    /** The currency of a setup that replaces a connected bank account, which the workspace may not name */
     currency?: string;
 };
 
@@ -105,8 +130,11 @@ type OnboardingForm = OnboardingFormExtraProps &
             [INPUT_IDS.BUSINESS_TYPE]: string;
             [INPUT_IDS.OWNS_MORE_THAN_25_PERCENT]: boolean;
             [INPUT_IDS.HAS_OTHER_BENEFICIAL_OWNERS]: boolean;
-            [INPUT_IDS.ANY_INDIVIDUAL_OWN_25_PERCENT_OR_MORE]: boolean;
-            [INPUT_IDS.BENEFICIAL_OWNERS]: string;
+            [INPUT_IDS.HAS_MORE_BENEFICIAL_OWNERS]: boolean;
+            [INPUT_IDS.OWNER_FIRST_NAME]: string;
+            [INPUT_IDS.OWNER_LAST_NAME]: string;
+            [INPUT_IDS.OWNER_DOB]: string;
+            [INPUT_IDS.OWNER_OWNERSHIP_PERCENTAGE]: string;
             [INPUT_IDS.IS_AUTHORIZED_TO_USE_BANK_ACCOUNT]: boolean;
             [INPUT_IDS.CERTIFY_TRUE_INFORMATION]: boolean;
             [INPUT_IDS.ACCEPT_TERMS_AND_CONDITIONS]: boolean;
@@ -122,6 +150,7 @@ type OnboardingForm = OnboardingFormExtraProps &
             [INPUT_IDS.ACCOUNT_HOLDER_NAME]: string;
             [INPUT_IDS.ACCOUNT_HOLDER_COUNTRY]: string;
             [INPUT_IDS.ACCOUNT_HOLDER_REGION]: string;
+            [INPUT_IDS.IS_USER_DIRECTOR]: boolean;
             [INPUT_IDS.SIGNER_FULL_NAME]: string;
             [INPUT_IDS.SIGNER_JOB_TITLE]: string;
             [INPUT_IDS.SIGNER_EMAIL]: string;
@@ -134,6 +163,9 @@ type OnboardingForm = OnboardingFormExtraProps &
         }
     >;
 
+/** The draft as Onyx holds it. Any input may be missing until the user typed it. */
+type OnboardingDraft = Partial<OnboardingForm>;
+
 const SIGNER_INPUT_IDS = {
     SIGNER_FULL_NAME: 'signerFullName',
     SIGNER_JOB_TITLE: 'signerJobTitle',
@@ -141,18 +173,15 @@ const SIGNER_INPUT_IDS = {
 
 type SignerInputID = ValueOf<typeof SIGNER_INPUT_IDS>;
 
-/** The form that an invited director fills in, a separate copy of the signer inputs with its own request flags */
+/** The form that an invited director fills in, a separate copy of the signer inputs. Its request state is in the request status key. */
 type EnterSignerInfoForm = Form<
     SignerInputID,
     {
         [SIGNER_INPUT_IDS.SIGNER_FULL_NAME]: string;
         [SIGNER_INPUT_IDS.SIGNER_JOB_TITLE]: string;
     }
-> & {
-    isSavingSignerInformation?: boolean | null;
-    isSuccess?: boolean | null;
-};
+>;
 
-export type {OnboardingForm, EnterSignerInfoForm, InputID, BeneficialOwnerDataKey};
+export type {EnterSignerInfoForm, GlobalOwnerDraft, InputID, OnboardingDraft, OnboardingForm, USDOwnerDraft};
 export {SIGNER_INPUT_IDS};
 export default INPUT_IDS;

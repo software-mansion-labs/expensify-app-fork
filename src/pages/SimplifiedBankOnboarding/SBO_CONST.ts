@@ -77,7 +77,21 @@ const SBO_CONST = {
         },
         PAGE_NAMES: USD_PAGE_NAMES,
         STEP_NAMES: ['1', '2', '3', '4', '5', '6', '7'],
+
+        /** The position of each step in STEP_NAMES. The identity check counts as part of the personal info step. */
+        STEP_INDEX: {
+            COUNTRY: 0,
+            BANK_ACCOUNT: 1,
+            PERSONAL_INFO: 2,
+            BUSINESS_INFO: 3,
+            BENEFICIAL_OWNERS: 4,
+            COMPLETE_VERIFICATION: 5,
+            VALIDATION: 6,
+        },
         MAX_NUMBER_OF_UBOS: 3,
+        COUNTRY_SUB_PAGES: {
+            CONFIRM_CURRENCY: 'confirm-currency',
+        },
         BANK_INFO_SUB_PAGES: {
             MANUAL: 'manual',
             PLAID: 'plaid',
@@ -103,32 +117,19 @@ const SBO_CONST = {
             ARE_THERE_MORE_UBOS: 'are-there-more-ubos',
             UBOS_LIST: 'ubos-list',
         },
+        VERIFY_IDENTITY_SUB_PAGES: {
+            IDENTITY_CHECK: 'identity-check',
+        },
         COMPLETE_VERIFICATION_SUB_PAGES: {
             CONFIRM_AGREEMENTS: 'confirm-agreements',
         },
-
-        /** Positions of the sub pages, which the confirmation pages use to send the user back to one of them */
-        SUBSTEP_INDEX: {
-            PERSONAL_INFO: {
-                LEGAL_NAME: 0,
-                DATE_OF_BIRTH: 1,
-                SSN: 2,
-            },
-            BUSINESS_INFO: {
-                NAME: 0,
-                TAX_ID: 1,
-                INCORPORATION_TYPE: 2,
-            },
-            UBO: {
-                IS_USER_UBO: 0,
-                IS_ANYONE_ELSE_UBO: 1,
-                LEGAL_NAME: 2,
-                DATE_OF_BIRTH: 3,
-                CONFIRMATION: 4,
-                ARE_THERE_MORE_UBOS: 5,
-                UBOS_LIST: 6,
-            },
+        KYB_DOCUMENTS_SUB_PAGES: {
+            UPLOAD: 'upload',
         },
+        VALIDATION_SUB_PAGES: {
+            VALIDATE: 'validate',
+        },
+
         INCORPORATION_TYPES: {
             LLC: 'LLC',
             CORPORATION: 'Corporation',
@@ -140,25 +141,29 @@ const SBO_CONST = {
         },
     },
     NON_USD: {
-        STEP: {
-            COUNTRY: 'CountryStep',
-            BANK_INFO: 'BankInfoStep',
-            BUSINESS_INFO: 'BusinessInfoStep',
-            BENEFICIAL_OWNER_INFO: 'BeneficialOwnerInfoStep',
-            SIGNER_INFO: 'SignerInfoStep',
-            AGREEMENTS: 'AgreementsStep',
-            DOCUSIGN: 'DocusignStep',
-            FINISH: 'FinishStep',
-        },
         PAGE_NAMES: NON_USD_PAGE_NAMES,
         STEP_NAMES: ['1', '2', '3', '4', '5', '6'],
         DOCUSIGN_REQUIRED_STEP_NAMES: ['1', '2', '3', '4', '5', '6', '7'],
+
+        /** The position of each step in STEP_NAMES, or in DOCUSIGN_REQUIRED_STEP_NAMES for the DocuSign step */
+        STEP_INDEX: {
+            COUNTRY: 0,
+            BANK_INFO: 1,
+            BUSINESS_INFO: 2,
+            BENEFICIAL_OWNERS: 3,
+            SIGNER_INFO: 4,
+            AGREEMENTS: 5,
+            DOCUSIGN: 6,
+        },
         ACCOUNT_HOLDER_KEY_PREFIX: 'accountHolder',
 
         /** The owner ID of the current user. Every other owner gets a generated one. */
         CURRENT_USER_KEY: 'currentUser',
         MIN_OWNERSHIP_PERCENTAGE: 25,
         MAX_OWNERSHIP_SUM_TO_ADD_MORE: 75,
+        COUNTRY_SUB_PAGES: {
+            CONFIRM_CURRENCY: 'confirm-currency',
+        },
         BANK_INFO_SUB_PAGES: {
             BANK_ACCOUNT_DETAILS: 'bank-account-details',
             ACCOUNT_HOLDER_DETAILS: 'account-holder-details',
@@ -186,42 +191,20 @@ const SBO_CONST = {
             ENTER_EMAIL: 'enter-email',
             HANG_TIGHT: 'hang-tight',
         },
-        SUBSTEP_INDEX: {
-            BANK_INFO: {
-                BANK_ACCOUNT_DETAILS: 0,
-                ACCOUNT_HOLDER_DETAILS: 1,
-            },
-            BUSINESS_INFO: {
-                NAME: 0,
-                BUSINESS_TYPE: 1,
-            },
-            BENEFICIAL_OWNER_INFO: {
-                IS_USER_BENEFICIAL_OWNER: 0,
-                IS_ANYONE_ELSE_BENEFICIAL_OWNER: 1,
-                NAME: 2,
-                OWNERSHIP_PERCENTAGE: 3,
-                CONFIRMATION: 4,
-                ARE_THERE_MORE_BENEFICIAL_OWNERS: 5,
-                BENEFICIAL_OWNERS_LIST: 6,
-            },
-            SIGNER_INFO: {
-                IS_DIRECTOR: 0,
-                NAME: 1,
-                JOB_TITLE: 2,
-                CONFIRMATION: 3,
-                ENTER_EMAIL: 4,
-                HANG_TIGHT: 5,
-            },
+        AGREEMENTS_SUB_PAGES: {
+            CONFIRM_AGREEMENTS: 'confirm-agreements',
+        },
+        DOCUSIGN_SUB_PAGES: {
+            UPLOAD: 'upload',
+        },
+        FINISH_SUB_PAGES: {
+            DONE: 'done',
         },
     },
     ENTER_SIGNER_INFO_SUB_PAGES: {
         NAME: 'name',
         JOB_TITLE: 'job-title',
         CONFIRMATION: 'confirmation',
-    },
-    ENTER_SIGNER_INFO_SUBSTEP_INDEX: {
-        NAME: 0,
-        JOB_TITLE: 1,
     },
     SSN_LAST_4_LENGTH: 4,
     MOCK: {

@@ -214,6 +214,16 @@ type OnboardingPicklists = {
     };
 };
 
+/** Where one request of the flow is. `requestID` tells a new attempt apart from the result of an older one. */
+type RequestState = {
+    requestID: string;
+    status: 'pending' | 'succeeded' | 'failed';
+    errors?: OnyxCommon.Errors | null;
+};
+
+/** One entry per request name, so a page reads the state of its own request and nothing else */
+type OnboardingRequests = Record<string, RequestState>;
+
 export type {
     ACHData,
     BankAccountState,
@@ -227,9 +237,11 @@ export type {
     KYBDocumentType,
     OnboardingAccount,
     OnboardingPicklists,
+    OnboardingRequests,
     OnboardingUser,
     PlaidBankAccount,
     PlaidData,
+    RequestState,
     SetupType,
     USDStep,
     Workspace,
