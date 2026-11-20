@@ -1,9 +1,17 @@
+/**
+ * The controller of a flow screen. It builds the plan in render from the draft and the server data, reads the position
+ * from the URL and gives the page its handlers. Every move happens in a handler: it writes the draft, rebuilds the plan
+ * from fresh Onyx data, runs the request of the page or, at the end of a step, the step request and only then navigates.
+ * A request made offline waits in the queue and the page shows it as pending until it settles. A handler navigates
+ * after a request only if the user is still on the page that sent it. The one effect redirects a URL that names no
+ * reachable position, once the data of the plan is there.
+ */
 import useLocalize from '@hooks/useLocalize';
-import useNetwork from '@hooks/useNetwork';
 
 import {getLatestErrorMessage} from '@libs/ErrorUtils';
 
-import getPageRequestName from '@pages/SimplifiedBankOnboarding/flow/getPageRequestName';
+import getPageRequestKey from '@pages/SimplifiedBankOnboarding/flow/getPageRequestKey';
+import getStepInputIDsToClear from '@pages/SimplifiedBankOnboarding/flow/getStepInputIDsToClear';
 import type {FlowPosition} from '@pages/SimplifiedBankOnboarding/flow/position';
 import {findPage, findStep} from '@pages/SimplifiedBankOnboarding/flow/position';
 import isPositionReachable from '@pages/SimplifiedBankOnboarding/flow/reachability';
@@ -13,19 +21,13 @@ import type {FlowPlan, PageConfig, PageID, PlanContext, StepConfig, StepID} from
 import {exitFlow, goBackToEntry, goBackToPosition, goToPosition, replacePosition} from '@pages/SimplifiedBankOnboarding/navigation/flowNavigation';
 import {getPositionFromParams} from '@pages/SimplifiedBankOnboarding/navigation/routes';
 import type {FlowRouteParams, FlowRouteTarget} from '@pages/SimplifiedBankOnboarding/navigation/routes';
-import type {RequestName} from '@pages/SimplifiedBankOnboarding/requests/REQUEST_NAMES';
+import type {RequestKey} from '@pages/SimplifiedBankOnboarding/requests/requestKey';
 import useRequestState from '@pages/SimplifiedBankOnboarding/requests/useRequestState';
 import type {OnboardingDraft} from '@pages/SimplifiedBankOnboarding/types/form';
 
 import ONYXKEYS from '@src/ONYXKEYS';
 import {isEmptyObject} from '@src/types/utils/EmptyObject';
 
-/**
- * The controller of a flow screen. It builds the plan in render from the draft and the server data, reads the position
- * from the URL and gives the page its handlers. Every move happens in a handler: it writes the draft, rebuilds the plan
- * from fresh Onyx data, runs the request of the page or, at the end of a step, the step request and only then navigates.
- * The one effect redirects a URL that names no reachable position, once the data of the plan is there.
- */
 import {useIsFocused} from '@react-navigation/native';
 import {useEffect, useEffectEvent, useRef} from 'react';
 import Onyx from 'react-native-onyx';
@@ -68,7 +70,6 @@ function getPositionKey(position: FlowPosition | undefined): string {
 
 function useOnboardingFlow<TData>({flow, target, routeParams, dataSource, dataStatus}: OnboardingFlowOptions<TData>): OnboardingFlow<TData> {
     const {translate} = useLocalize();
-    const {isOffline} = useNetwork();
     const isFocused = useIsFocused();
     const {data, readData} = dataSource;
 
@@ -78,7 +79,7 @@ function useOnboardingFlow<TData>({flow, target, routeParams, dataSource, dataSt
     const position = isPositionReachable(plan, urlPosition) ? urlPosition : undefined;
     const step = position ? findStep(plan, position.stepID) : undefined;
     const page = step && position ? findPage(step, position.pageID) : undefined;
-    const requestState = useRequestState(getPageRequestName(step, page));
+    const requestState = useRequestState(getPageRequestKey(step, page));
 
     // A handler is running: a second submit is ignored and the redirect waits, because the data changes under it
     const isHandlingRef = useRef(false);
@@ -86,21 +87,30 @@ function useOnboardingFlow<TData>({flow, target, routeParams, dataSource, dataSt
     // The position that a handler navigated away from. The screen keeps it until the new URL arrives or it is focused again.
     const leftPositionKeyRef = useRef<string | undefined>(undefined);
 
+    // The position that the focused screen shows, kept for handlers that resume after a request. It is undefined once the
+    // screen is blurred or unmounted, so a request that settles after the user left never moves them.
+    const shownPositionKeyRef = useRef<string | undefined>(undefined);
+
     // After a draft write or a request the plan of the last render is stale, so handlers rebuild it from what Onyx holds now
     const rebuildPlan = async () => flow.buildPlan(await readData(), context);
 
     // The status of the last render belongs to the request of the open page, which may not be the request the handler
     // sends, and it may be stale. A handler reads the status of its own request before it sends it again.
-    const isRequestPending = async (name: RequestName | undefined) => {
-        if (!name) {
+    const isRequestPending = async (key: RequestKey | undefined) => {
+        if (!key) {
             return false;
         }
-        const requests = await Onyx.get(ONYXKEYS.SIMPLIFIED_BANK_ONBOARDING_REQUESTS);
-        return requests?.[name]?.status === 'pending';
+        const requests = await Onyx.get(ONYXKEYS.RAM_ONLY_SIMPLIFIED_BANK_ONBOARDING_REQUESTS);
+        return requests?.[key]?.status === 'pending';
     };
 
+    /** Navigates away from the page that started the handler, unless the user already left it while the handler waited */
     const leavePosition = (from: FlowPosition, navigate: () => void) => {
-        leftPositionKeyRef.current = getPositionKey(from);
+        const fromKey = getPositionKey(from);
+        if (shownPositionKeyRef.current !== fromKey) {
+            return;
+        }
+        leftPositionKeyRef.current = fromKey;
         navigate();
     };
 
@@ -116,7 +126,7 @@ function useOnboardingFlow<TData>({flow, target, routeParams, dataSource, dataSt
 
     /**
      * Sends the request of a page that saves in the middle of its step. Returns the plan after it, or undefined when the
-     * flow stays on the page: offline, while the request is pending or after it failed.
+     * flow stays on the page: while the request is pending or after it failed.
      */
     const runPageRequest = async (from: FlowPosition, currentPlan: FlowPlan): Promise<FlowPlan | undefined> => {
         const currentStep = findStep(currentPlan, from.stepID);
@@ -124,7 +134,7 @@ function useOnboardingFlow<TData>({flow, target, routeParams, dataSource, dataSt
         if (!submittedPage?.submit) {
             return currentPlan;
         }
-        if (isOffline || (await isRequestPending(submittedPage.requestName))) {
+        if (await isRequestPending(submittedPage.requestKey)) {
             return undefined;
         }
         const outcome = await submittedPage.submit();
@@ -141,14 +151,14 @@ function useOnboardingFlow<TData>({flow, target, routeParams, dataSource, dataSt
             return;
         }
         if (finishedStep.submit) {
-            // Offline the write stays queued and its Promise pending, so the step waits for the connection
-            if (isOffline || (await isRequestPending(finishedStep.requestName))) {
+            if (await isRequestPending(finishedStep.requestKey)) {
                 return;
             }
             const outcome = await finishedStep.submit();
             if (outcome.status !== 'succeeded') {
                 return;
             }
+            await flow.clearDraftInputs?.(getStepInputIDsToClear(finishedStep));
         }
         const nextPlan = await rebuildPlan();
         const nextPosition = getNextStepPosition(nextPlan, currentPlan, from.stepID);
@@ -251,6 +261,13 @@ function useOnboardingFlow<TData>({flow, target, routeParams, dataSource, dataSt
         leftPositionKeyRef.current = urlPositionKey;
         replacePosition(target, resumePosition);
     });
+
+    useEffect(() => {
+        shownPositionKeyRef.current = isFocused ? urlPositionKey : undefined;
+        return () => {
+            shownPositionKeyRef.current = undefined;
+        };
+    }, [isFocused, urlPositionKey]);
 
     useEffect(() => {
         if (!isFocused) {

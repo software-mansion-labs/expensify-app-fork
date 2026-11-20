@@ -5,6 +5,7 @@
 import useNetwork from '@hooks/useNetwork';
 
 import REQUEST_NAMES from '@pages/SimplifiedBankOnboarding/requests/REQUEST_NAMES';
+import getRequestKey from '@pages/SimplifiedBankOnboarding/requests/requestKey';
 import useRequestState from '@pages/SimplifiedBankOnboarding/requests/useRequestState';
 
 import {useEffect, useRef, useState} from 'react';
@@ -38,7 +39,7 @@ function getParamsKey(params: AccountReadParams | undefined): string | undefined
 
 /** Undefined params mean the screen has nothing to read, such as a flow whose account is already there */
 function useAccountRead(params: AccountReadParams | undefined, {shouldJoinPendingRead = false, shouldReadOnReconnect = true}: AccountReadOptions = {}): AccountRead {
-    const {isPending} = useRequestState(REQUEST_NAMES.OPEN_ONBOARDING_PAGE);
+    const {isPending} = useRequestState(getRequestKey(REQUEST_NAMES.OPEN_ONBOARDING_PAGE, params));
     const paramsKey = getParamsKey(params);
 
     // Only the last read may report its outcome, so a slow answer of an earlier read or of an unmounted screen is ignored

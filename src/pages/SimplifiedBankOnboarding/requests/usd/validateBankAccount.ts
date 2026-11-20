@@ -11,6 +11,7 @@ import getUSDOnyxData, {USD_ERROR_KEY} from './getUSDOnyxData';
 function validateBankAccount(bankAccount: BankAccountParams, amounts: string[]): Promise<RequestOutcome> {
     return runRequest({
         name: REQUEST_NAMES.VALIDATE_BANK_ACCOUNT,
+        scope: bankAccount,
         type: 'write',
         command: WRITE_COMMANDS.VALIDATE_BANK_ACCOUNT,
         params: {...bankAccount, validateCode: amounts.join(',')},

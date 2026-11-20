@@ -11,6 +11,7 @@ type GlobalBankAccountDetails = WriteCommandParams[typeof WRITE_COMMANDS.CREATE_
 function createGlobalBankAccount(details: GlobalBankAccountDetails): Promise<RequestOutcome> {
     return runRequest({
         name: REQUEST_NAMES.CREATE_GLOBAL_BANK_ACCOUNT,
+        scope: {policyID: details.policyID},
         type: 'write',
         command: WRITE_COMMANDS.CREATE_GLOBAL_BANK_ACCOUNT,
         params: details,

@@ -3,11 +3,11 @@ import ONYXKEYS from '@src/ONYXKEYS';
 
 import Onyx from 'react-native-onyx';
 
-import type {RequestName} from './REQUEST_NAMES';
+import type {RequestKey} from './requestKey';
 
 /** Drops the result of a request, for example the error of a page that the user leaves */
-function clearRequestState(name: RequestName): Promise<void> {
-    return Onyx.merge(ONYXKEYS.SIMPLIFIED_BANK_ONBOARDING_REQUESTS, {[name]: null});
+function clearRequestState(key: RequestKey): Promise<void> {
+    return Onyx.merge(ONYXKEYS.RAM_ONLY_SIMPLIFIED_BANK_ONBOARDING_REQUESTS, {[key]: null});
 }
 
 export default clearRequestState;

@@ -6,6 +6,7 @@ import getCorpayFileField from '@pages/SimplifiedBankOnboarding/formConfig/field
 import type {StepConfig} from '@pages/SimplifiedBankOnboarding/formConfig/types';
 import finishGlobalOnboarding from '@pages/SimplifiedBankOnboarding/requests/nonUSD/finishGlobalOnboarding';
 import REQUEST_NAMES from '@pages/SimplifiedBankOnboarding/requests/REQUEST_NAMES';
+import getRequestKey from '@pages/SimplifiedBankOnboarding/requests/requestKey';
 import SBO_CONST from '@pages/SimplifiedBankOnboarding/SBO_CONST';
 import INPUT_IDS from '@pages/SimplifiedBankOnboarding/types/form';
 
@@ -19,7 +20,7 @@ function getDocusignStep({answers, achData, bankAccount, translate}: NonUSDStepI
     return {
         id: SBO_CONST.NON_USD.PAGE_NAMES.DOCUSIGN,
         title: translate('docusignStep.subheader'),
-        counterIndex: 6,
+        counterIndex: SBO_CONST.NON_USD.STEP_INDEX.DOCUSIGN,
         isComplete: isSent,
         pages: [
             {
@@ -39,7 +40,7 @@ function getDocusignStep({answers, achData, bankAccount, translate}: NonUSDStepI
                 bankStatementName: answers.bankStatement.at(0)?.name,
                 achAuthorizationFormName: answers.achAuthorizationForm.at(0)?.name,
             }),
-        requestName: REQUEST_NAMES.FINISH_GLOBAL_ONBOARDING,
+        requestKey: getRequestKey(REQUEST_NAMES.FINISH_GLOBAL_ONBOARDING, bankAccount),
     };
 }
 

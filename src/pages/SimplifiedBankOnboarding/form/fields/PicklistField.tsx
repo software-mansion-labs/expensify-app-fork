@@ -10,10 +10,9 @@ import {View} from 'react-native';
 
 type PicklistFieldProps = {
     field: PicklistFieldConfig;
-    shouldSaveDraft: boolean;
 };
 
-function PicklistField({field, shouldSaveDraft}: PicklistFieldProps) {
+function PicklistField({field}: PicklistFieldProps) {
     const styles = useThemeStyles();
     const optionsList = Object.fromEntries(field.options.map((option) => [option.value, option.label]));
 
@@ -28,7 +27,6 @@ function PicklistField({field, shouldSaveDraft}: PicklistFieldProps) {
                 modalHeaderTitle={field.modalTitle ?? field.label}
                 searchInputTitle={field.searchTitle ?? field.label}
                 defaultValue={field.defaultValue}
-                shouldSaveDraft={shouldSaveDraft}
                 shouldAllowChange={!field.isLocked}
             />
         </View>

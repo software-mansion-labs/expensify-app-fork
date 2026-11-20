@@ -1,7 +1,6 @@
 /**
  * A file input. The upload control reports only the files that the user just added, so the field keeps the whole list
- * in its own state and hands it to the form as the value. It also saves the list to the draft on every change, so the
- * picked files are still there when the user leaves the page and comes back.
+ * in its own state and hands it to the form as the value.
  */
 import InputWrapper from '@components/Form/InputWrapper';
 import Text from '@components/Text';
@@ -12,9 +11,8 @@ import useThemeStyles from '@hooks/useThemeStyles';
 
 import type {FileFieldConfig} from '@pages/SimplifiedBankOnboarding/formConfig/types';
 import type {OnboardingFormID} from '@pages/SimplifiedBankOnboarding/formConfig/validation/types';
-import type {OnboardingDraft} from '@pages/SimplifiedBankOnboarding/types/form';
 
-import {clearErrorFields, setDraftValues, setErrorFields} from '@userActions/FormActions';
+import {clearErrorFields, setErrorFields} from '@userActions/FormActions';
 
 import type {FileObject} from '@src/types/utils/Attachment';
 
@@ -24,22 +22,15 @@ import {View} from 'react-native';
 type FileFieldProps = {
     formID: OnboardingFormID;
     field: FileFieldConfig;
-    shouldSaveDraft: boolean;
 };
 
-function FileField({formID, field, shouldSaveDraft}: FileFieldProps) {
+function FileField({formID, field}: FileFieldProps) {
     const {translate} = useLocalize();
     const styles = useThemeStyles();
     const [files, setFiles] = useState<FileObject[]>(field.defaultValue);
 
     const changeFiles = (newFiles: FileObject[]) => {
         setFiles(newFiles);
-        if (!shouldSaveDraft) {
-            return;
-        }
-        const draftValues: OnboardingDraft = {};
-        draftValues[field.id] = newFiles;
-        setDraftValues(formID, draftValues);
     };
 
     // The upload control checks the size, the type and the count of the files, and its error replaces the error of the field

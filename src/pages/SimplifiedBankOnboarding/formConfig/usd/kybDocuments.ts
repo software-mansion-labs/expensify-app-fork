@@ -6,6 +6,7 @@ import getCorpayFileField from '@pages/SimplifiedBankOnboarding/formConfig/field
 import type {FileFieldConfig, StepConfig} from '@pages/SimplifiedBankOnboarding/formConfig/types';
 import isFormPageComplete from '@pages/SimplifiedBankOnboarding/formConfig/validation/isFormPageComplete';
 import REQUEST_NAMES from '@pages/SimplifiedBankOnboarding/requests/REQUEST_NAMES';
+import getRequestKey from '@pages/SimplifiedBankOnboarding/requests/requestKey';
 import uploadKYBDocuments from '@pages/SimplifiedBankOnboarding/requests/usd/uploadKYBDocuments';
 import SBO_CONST from '@pages/SimplifiedBankOnboarding/SBO_CONST';
 import INPUT_IDS from '@pages/SimplifiedBankOnboarding/types/form';
@@ -56,7 +57,7 @@ function getKYBDocumentsStep(input: USDStepInput, requiredDocuments: KYBDocument
             const documentNames = fields.map((field) => field.defaultValue.at(0)?.name ?? '').filter((documentName) => !!documentName);
             return uploadKYBDocuments(bankAccount, documentNames);
         },
-        requestName: REQUEST_NAMES.UPLOAD_KYB_DOCUMENTS,
+        requestKey: getRequestKey(REQUEST_NAMES.UPLOAD_KYB_DOCUMENTS, bankAccount),
     };
 }
 

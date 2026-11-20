@@ -12,6 +12,7 @@ import type {PlatformStackScreenProps} from '@libs/Navigation/PlatformStackNavig
 
 import useFlowData from '@pages/SimplifiedBankOnboarding/controller/useFlowData';
 import {leaveEntry} from '@pages/SimplifiedBankOnboarding/navigation/entryNavigation';
+import clearAccountErrors from '@pages/SimplifiedBankOnboarding/requests/clearAccountErrors';
 import {clearDraft} from '@pages/SimplifiedBankOnboarding/requests/draft';
 import useAccountRead from '@pages/SimplifiedBankOnboarding/requests/entry/useAccountRead';
 import type {AccountReadParams} from '@pages/SimplifiedBankOnboarding/requests/entry/useAccountRead';
@@ -74,6 +75,9 @@ function OnboardingEntryPage({route}: OnboardingEntryPageProps) {
         }
         readOnFocus();
     }, [isFocused, policyIDParam, bankAccountIDParam]);
+
+    // The Payments page shows the account error too, so an error of this visit must not follow the user out of the lab
+    useEffect(() => clearAccountErrors, []);
 
     const state = getEntryState({ref, account, workspaces, draft, isOffline, isChangingBankAccount, hasReadFailed});
     const workspaceName = ref.policyID ? workspaces?.[ref.policyID]?.name : undefined;

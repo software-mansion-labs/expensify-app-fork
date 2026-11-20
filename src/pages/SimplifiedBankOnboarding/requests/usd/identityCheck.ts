@@ -16,6 +16,7 @@ function openIdentityCheckFlow(policyID: string): Promise<RequestOutcome> {
 function verifyIdentity(bankAccount: BankAccountParams, onfidoData: string): Promise<RequestOutcome> {
     return runRequest({
         name: REQUEST_NAMES.VERIFY_IDENTITY,
+        scope: bankAccount,
         type: 'write',
         command: WRITE_COMMANDS.VERIFY_IDENTITY,
         params: {...bankAccount, onfidoData},

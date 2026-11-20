@@ -28,6 +28,7 @@ import type {OnyxEntry} from 'react-native-onyx';
 
 import React from 'react';
 
+import EntryOptionRow from './EntryOptionRow';
 import EntryOptionsLayout from './EntryOptionsLayout';
 import useExclusiveAction from './useExclusiveAction';
 import useOpenSetup from './useOpenSetup';
@@ -84,12 +85,12 @@ function ResumeSetupOptions({account, policyID, workspaceName, isNonUSD, backTo}
                 contentContainerStyle={styles.mhn5}
                 onClose={hasReachedMaxAttempts ? undefined : clearAccountErrors}
             >
-                <MenuItemNavigation
+                <EntryOptionRow
                     sentryLabel={CONST.SENTRY_LABEL.BANK_ONBOARDING_LAB.CONTINUE_SETUP}
                     title={translate('workspace.bankAccount.continueWithSetup')}
                     icon={icons.Connect}
                     onPress={continueSetup}
-                    isLoading={isContinuing}
+                    isRunning={isContinuing}
                     isDisabled={isContinueDisabled}
                 />
                 {shouldShowChangeBankAccount && (

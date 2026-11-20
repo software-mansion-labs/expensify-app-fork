@@ -5,7 +5,7 @@
  */
 import type {LocalizedTranslate} from '@components/LocaleContextProvider';
 
-import type {RequestName} from '@pages/SimplifiedBankOnboarding/requests/REQUEST_NAMES';
+import type {RequestKey} from '@pages/SimplifiedBankOnboarding/requests/requestKey';
 import type {RequestOutcome} from '@pages/SimplifiedBankOnboarding/requests/types';
 import type {InputID, OnboardingDraft, OnboardingForm} from '@pages/SimplifiedBankOnboarding/types/form';
 
@@ -14,18 +14,14 @@ import type {FileObject} from '@src/types/utils/Attachment';
 
 import type {ValueOf} from 'type-fest';
 
+import type {PageID, StepID} from './ids';
+
 /** The inputs whose value has the given type, so a field can only point at an input that holds its kind of value */
 type InputIDWithValue<TValue> = {[TID in InputID]: OnboardingForm[TID] extends TValue ? TID : never}[InputID];
 
 type TextInputID = InputIDWithValue<string>;
 type BooleanInputID = InputIDWithValue<boolean>;
 type FileInputID = InputIDWithValue<FileObject[]>;
-
-/** The URL `page` value of a step */
-type StepID = string;
-
-/** The URL `subPage` value of a page */
-type PageID = string;
 
 /**
  * Returns the translated error of a value, or undefined when the value is valid. The other values of the form are there
@@ -160,8 +156,8 @@ type PageBase = {
      */
     submit?: () => Promise<RequestOutcome>;
 
-    /** The name of the request of `submit`, so the page can show its pending state and its error */
-    requestName?: RequestName;
+    /** The status key of the request of `submit`, so the page can show its pending state and its error */
+    requestKey?: RequestKey;
 };
 
 type FormPageConfig = PageBase & {
@@ -250,8 +246,8 @@ type StepConfig = {
     /** The request that runs after the last page of the step */
     submit?: () => Promise<RequestOutcome>;
 
-    /** The name of the request of `submit`, so the page can show its pending state and its error */
-    requestName?: RequestName;
+    /** The status key of the request of `submit`, so the page can show its pending state and its error */
+    requestKey?: RequestKey;
 };
 
 type FlowPlan = {

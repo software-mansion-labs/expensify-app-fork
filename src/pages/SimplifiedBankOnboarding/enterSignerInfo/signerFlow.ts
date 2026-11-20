@@ -7,8 +7,10 @@ import getSignerDetailsPages from '@pages/SimplifiedBankOnboarding/formConfig/si
 import type {FlowPlan, PlanContext} from '@pages/SimplifiedBankOnboarding/formConfig/types';
 import {ENTER_SIGNER_INFO_STEP_ID} from '@pages/SimplifiedBankOnboarding/navigation/routes';
 import {saveSignerDraft} from '@pages/SimplifiedBankOnboarding/requests/draft';
+import getBankAccountParams from '@pages/SimplifiedBankOnboarding/requests/getBankAccountParams';
 import {saveSignerInfo} from '@pages/SimplifiedBankOnboarding/requests/nonUSD/signerInfo';
 import REQUEST_NAMES from '@pages/SimplifiedBankOnboarding/requests/REQUEST_NAMES';
+import getRequestKey from '@pages/SimplifiedBankOnboarding/requests/requestKey';
 import SBO_CONST from '@pages/SimplifiedBankOnboarding/SBO_CONST';
 
 import ONYXKEYS from '@src/ONYXKEYS';
@@ -16,9 +18,9 @@ import ONYXKEYS from '@src/ONYXKEYS';
 import type {SignerData} from './useSignerFlowData';
 
 const SUB_PAGES = SBO_CONST.ENTER_SIGNER_INFO_SUB_PAGES;
-const NO_BANK_ACCOUNT_ID = 0;
 
 function buildSignerPlan({draft, bankAccountID}: SignerData, {translate, policyID}: PlanContext): FlowPlan {
+    const bankAccount = getBankAccountParams(policyID, {bankAccountID});
     const signerFullName = draft?.signerFullName ?? '';
     const signerJobTitle = draft?.signerJobTitle ?? '';
     const {formPages, confirmation} = getSignerDetailsPages({
@@ -39,8 +41,8 @@ function buildSignerPlan({draft, bankAccountID}: SignerData, {translate, policyI
                     ...formPages,
                     {
                         ...confirmation,
-                        submit: () => saveSignerInfo({policyID, bankAccountID: bankAccountID ?? NO_BANK_ACCOUNT_ID}, {signerFullName, signerJobTitle}),
-                        requestName: REQUEST_NAMES.SAVE_SIGNER_INFO,
+                        submit: () => saveSignerInfo(bankAccount, {signerFullName, signerJobTitle}),
+                        requestKey: getRequestKey(REQUEST_NAMES.SAVE_SIGNER_INFO, bankAccount),
                     },
                 ],
             },

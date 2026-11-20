@@ -1,5 +1,6 @@
 import type {StepConfig} from '@pages/SimplifiedBankOnboarding/formConfig/types';
 import REQUEST_NAMES from '@pages/SimplifiedBankOnboarding/requests/REQUEST_NAMES';
+import getRequestKey from '@pages/SimplifiedBankOnboarding/requests/requestKey';
 import {verifyIdentity} from '@pages/SimplifiedBankOnboarding/requests/usd/identityCheck';
 import SBO_CONST from '@pages/SimplifiedBankOnboarding/SBO_CONST';
 
@@ -13,11 +14,11 @@ function getVerifyIdentityStep({bankAccount, translate}: USDStepInput): StepConf
     return {
         id: SBO_CONST.USD.PAGE_NAMES.VERIFY_IDENTITY,
         title: translate('onfidoStep.verifyIdentity'),
-        counterIndex: 2,
+        counterIndex: SBO_CONST.USD.STEP_INDEX.PERSONAL_INFO,
         isComplete: false,
         pages: [{kind: 'custom', id: SBO_CONST.USD.VERIFY_IDENTITY_SUB_PAGES.IDENTITY_CHECK, component: 'onfido', isComplete: false}],
         submit: () => verifyIdentity(bankAccount, MOCK_ONFIDO_DATA),
-        requestName: REQUEST_NAMES.VERIFY_IDENTITY,
+        requestKey: getRequestKey(REQUEST_NAMES.VERIFY_IDENTITY, bankAccount),
     };
 }
 

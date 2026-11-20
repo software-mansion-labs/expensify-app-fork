@@ -11,12 +11,12 @@ import ONYXKEYS from '@src/ONYXKEYS';
 
 import Onyx from 'react-native-onyx';
 
-import type {RequestName} from './REQUEST_NAMES';
+import type {RequestKey} from './requestKey';
 import type {RequestOutcome} from './types';
 
-async function failRequest(name: RequestName, errorKey: TranslationPaths = 'common.genericErrorMessage'): Promise<RequestOutcome> {
-    await Onyx.merge(ONYXKEYS.SIMPLIFIED_BANK_ONBOARDING_REQUESTS, {
-        [name]: {requestID: rand64(), status: 'failed', errors: getMicroSecondOnyxErrorWithTranslationKey(errorKey)},
+async function failRequest(key: RequestKey, errorKey: TranslationPaths = 'common.genericErrorMessage'): Promise<RequestOutcome> {
+    await Onyx.merge(ONYXKEYS.RAM_ONLY_SIMPLIFIED_BANK_ONBOARDING_REQUESTS, {
+        [key]: {requestID: rand64(), status: 'failed', errors: getMicroSecondOnyxErrorWithTranslationKey(errorKey)},
     });
     return {status: 'failed'};
 }

@@ -513,8 +513,12 @@ const ONYXKEYS = {
     /** Simplified bank onboarding (research module): server data and request flags of the account being set up */
     SIMPLIFIED_BANK_ONBOARDING_ACCOUNT: 'simplifiedBankOnboardingAccount',
 
-    /** Simplified bank onboarding: the status and the error of each request of the flow, keyed by request name */
-    SIMPLIFIED_BANK_ONBOARDING_REQUESTS: 'simplifiedBankOnboardingRequests',
+    /**
+     * Simplified bank onboarding: the status and the error of each request of the flow, keyed by request name and
+     * workspace. It is RAM-only because the offline queue of the mock lives in memory, so a pending status kept over a
+     * reload would never settle.
+     */
+    RAM_ONLY_SIMPLIFIED_BANK_ONBOARDING_REQUESTS: 'simplifiedBankOnboardingRequests',
 
     /** Simplified bank onboarding: mock workspaces, the stand-in for policies */
     SIMPLIFIED_BANK_ONBOARDING_WORKSPACES: 'simplifiedBankOnboardingWorkspaces',
@@ -1995,7 +1999,7 @@ type OnyxValuesMapping = {
     [ONYXKEYS.IS_CHANGING_TO_NEW_BANK_ACCOUNT]: boolean;
     [ONYXKEYS.REIMBURSEMENT_ACCOUNT_OPTION_PRESSED]: ValueOf<typeof CONST.BANK_ACCOUNT.SETUP_TYPE>;
     [ONYXKEYS.SIMPLIFIED_BANK_ONBOARDING_ACCOUNT]: SimplifiedBankOnboardingOnboardingAccount;
-    [ONYXKEYS.SIMPLIFIED_BANK_ONBOARDING_REQUESTS]: SimplifiedBankOnboardingRequests;
+    [ONYXKEYS.RAM_ONLY_SIMPLIFIED_BANK_ONBOARDING_REQUESTS]: SimplifiedBankOnboardingRequests;
     [ONYXKEYS.SIMPLIFIED_BANK_ONBOARDING_WORKSPACES]: SimplifiedBankOnboardingWorkspaces;
     [ONYXKEYS.SIMPLIFIED_BANK_ONBOARDING_USER]: SimplifiedBankOnboardingOnboardingUser;
     [ONYXKEYS.SIMPLIFIED_BANK_ONBOARDING_PLAID_DATA]: SimplifiedBankOnboardingPlaidData;

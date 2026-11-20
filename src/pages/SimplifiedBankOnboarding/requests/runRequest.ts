@@ -1,7 +1,9 @@
 /**
- * The one way the flow sends a request. It records the state of the request under its name in the request status key,
+ * The one way the flow sends a request. It records the state of the request under its key in the request status key,
  * sends it through the mock API and returns a Promise that settles when the status of this very request leaves `pending`.
- * The status entry carries a request ID, so the result of an older request of the same name never settles a newer one.
+ * The status comes from the optimistic, success and failure data of the request, like any other server result, so the
+ * Promise only tells the handler when Onyx holds the result. The status entry carries a request ID, so the result of an
+ * older request with the same key never settles a newer one.
  */
 import {getMicroSecondOnyxErrorWithTranslationKey} from '@libs/ErrorUtils';
 import {getIsOffline} from '@libs/NetworkState';
@@ -19,9 +21,12 @@ import type {OnyxUpdate} from 'react-native-onyx';
 import Onyx from 'react-native-onyx';
 
 import type {RequestName} from './REQUEST_NAMES';
+import type {RequestKey, RequestScope} from './requestKey';
 import type {MockRequest, RequestOutcome} from './types';
 
-type RequestsKey = typeof ONYXKEYS.SIMPLIFIED_BANK_ONBOARDING_REQUESTS;
+import getRequestKey from './requestKey';
+
+type RequestsKey = typeof ONYXKEYS.RAM_ONLY_SIMPLIFIED_BANK_ONBOARDING_REQUESTS;
 
 /** Every key a request of the lab may update. A closed union lets the status updates join the updates of the caller. */
 type RequestOnyxKey =
@@ -38,6 +43,9 @@ type RequestOnyxKey =
 type RunRequestArgs = MockRequest & {
     name: RequestName;
 
+    /** The bank account that the request is about. Readers of the status pass the same scope to `getRequestKey`. */
+    scope?: RequestScope;
+
     /** The updates of the request itself. The status updates are added to them. */
     onyxData?: OnyxData<RequestOnyxKey>;
 
@@ -45,16 +53,16 @@ type RunRequestArgs = MockRequest & {
     errorKey?: TranslationPaths;
 };
 
-function buildStatusUpdate(name: RequestName, value: Partial<RequestState>): OnyxUpdate<RequestsKey> {
-    return {onyxMethod: Onyx.METHOD.MERGE, key: ONYXKEYS.SIMPLIFIED_BANK_ONBOARDING_REQUESTS, value: {[name]: value}};
+function buildStatusUpdate(key: RequestKey, value: Partial<RequestState>): OnyxUpdate<RequestsKey> {
+    return {onyxMethod: Onyx.METHOD.MERGE, key: ONYXKEYS.RAM_ONLY_SIMPLIFIED_BANK_ONBOARDING_REQUESTS, value: {[key]: value}};
 }
 
-function withStatusUpdates(name: RequestName, requestID: string, errorKey: TranslationPaths, onyxData: OnyxData<RequestOnyxKey>): OnyxData<RequestOnyxKey> {
+function withStatusUpdates(key: RequestKey, requestID: string, errorKey: TranslationPaths, onyxData: OnyxData<RequestOnyxKey>): OnyxData<RequestOnyxKey> {
     return {
         ...onyxData,
-        optimisticData: [...(onyxData.optimisticData ?? []), buildStatusUpdate(name, {requestID, status: 'pending', errors: null})],
-        successData: [...(onyxData.successData ?? []), buildStatusUpdate(name, {requestID, status: 'succeeded', errors: null})],
-        failureData: [...(onyxData.failureData ?? []), buildStatusUpdate(name, {requestID, status: 'failed', errors: getMicroSecondOnyxErrorWithTranslationKey(errorKey)})],
+        optimisticData: [...(onyxData.optimisticData ?? []), buildStatusUpdate(key, {requestID, status: 'pending', errors: null})],
+        successData: [...(onyxData.successData ?? []), buildStatusUpdate(key, {requestID, status: 'succeeded', errors: null})],
+        failureData: [...(onyxData.failureData ?? []), buildStatusUpdate(key, {requestID, status: 'failed', errors: getMicroSecondOnyxErrorWithTranslationKey(errorKey)})],
     };
 }
 
@@ -66,16 +74,16 @@ function sendRequest(request: MockRequest, onyxData: OnyxData<RequestOnyxKey>) {
     write(request.command, request.params, onyxData);
 }
 
-function waitForRequestToSettle(name: RequestName, requestID: string): Promise<RequestOutcome> {
+function waitForRequestToSettle(key: RequestKey, requestID: string): Promise<RequestOutcome> {
     return new Promise((resolve) => {
         let hasSeenRequest = false;
 
         // A request runs outside of render: the caller is an event handler that awaits the result before it navigates.
         // There is no component to subscribe with useOnyx, so the action listens to the key until its request settles.
         const connection = Onyx.connectWithoutView({
-            key: ONYXKEYS.SIMPLIFIED_BANK_ONBOARDING_REQUESTS,
+            key: ONYXKEYS.RAM_ONLY_SIMPLIFIED_BANK_ONBOARDING_REQUESTS,
             callback: (requests) => {
-                const entry = requests?.[name];
+                const entry = requests?.[key];
                 if (entry?.requestID === requestID) {
                     hasSeenRequest = true;
                     if (entry.status === 'pending') {
@@ -86,7 +94,7 @@ function waitForRequestToSettle(name: RequestName, requestID: string): Promise<R
                     return;
                 }
 
-                // A newer request of the same name or a reset of the lab replaced the entry, so this one has no result to report.
+                // A newer request with the same key or a reset of the lab replaced the entry, so this one has no result to report.
                 if (hasSeenRequest) {
                     connection.unsubscribe();
                     resolve({status: 'skipped'});
@@ -104,9 +112,10 @@ function runRequest(args: RunRequestArgs): Promise<RequestOutcome> {
     if (args.type === 'read' && getIsOffline()) {
         return Promise.resolve({status: 'skipped'});
     }
+    const key = getRequestKey(args.name, args.scope);
     const requestID = rand64();
-    const settled = waitForRequestToSettle(args.name, requestID);
-    sendRequest(args, withStatusUpdates(args.name, requestID, args.errorKey ?? 'common.genericErrorMessage', args.onyxData ?? {}));
+    const settled = waitForRequestToSettle(key, requestID);
+    sendRequest(args, withStatusUpdates(key, requestID, args.errorKey ?? 'common.genericErrorMessage', args.onyxData ?? {}));
     return settled;
 }
 

@@ -12,6 +12,7 @@ type CompanyInfo = Omit<WriteCommandParams[typeof WRITE_COMMANDS.UPDATE_COMPANY_
 function saveCompany(bankAccount: BankAccountParams, companyInfo: CompanyInfo): Promise<RequestOutcome> {
     return runRequest({
         name: REQUEST_NAMES.SAVE_COMPANY,
+        scope: bankAccount,
         type: 'write',
         command: WRITE_COMMANDS.UPDATE_COMPANY_INFORMATION,
         params: {...bankAccount, ...companyInfo},

@@ -7,10 +7,9 @@ import React from 'react';
 
 type CheckboxFieldProps = {
     field: CheckboxFieldConfig;
-    shouldSaveDraft: boolean;
 };
 
-function CheckboxField({field, shouldSaveDraft}: CheckboxFieldProps) {
+function CheckboxField({field}: CheckboxFieldProps) {
     return (
         <InputWrapper
             InputComponent={CheckboxWithLabel}
@@ -18,7 +17,6 @@ function CheckboxField({field, shouldSaveDraft}: CheckboxFieldProps) {
             label={field.label}
             accessibilityLabel={field.label}
             defaultValue={field.defaultValue}
-            shouldSaveDraft={shouldSaveDraft}
         />
     );
 }

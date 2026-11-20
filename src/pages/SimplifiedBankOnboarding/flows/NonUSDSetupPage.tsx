@@ -12,17 +12,25 @@ import React from 'react';
 import nonUSDFlow from './nonUSDFlow';
 import NonUSDServerListsGate from './NonUSDServerListsGate';
 import SetupFlowPage from './SetupFlowPage';
+import useSetupFlow from './useSetupFlow';
 
 type NonUSDSetupPageProps = PlatformStackScreenProps<BankOnboardingLabParamList, typeof SCREENS.SETTINGS.BANK_ONBOARDING_LAB.NON_USD_SETUP>;
 
 function NonUSDSetupPage({route}: NonUSDSetupPageProps) {
+    const setup = useSetupFlow('nonUSD', route.params);
+
     return (
-        <SetupFlowPage
-            flow={nonUSDFlow}
-            kind="nonUSD"
-            params={route.params}
-            Gate={NonUSDServerListsGate}
-        />
+        <NonUSDServerListsGate
+            data={setup.dataSource.data}
+            policyID={setup.target.policyID}
+            stepID={route.params?.page}
+        >
+            <SetupFlowPage
+                flow={nonUSDFlow}
+                setup={setup}
+                params={route.params}
+            />
+        </NonUSDServerListsGate>
     );
 }
 

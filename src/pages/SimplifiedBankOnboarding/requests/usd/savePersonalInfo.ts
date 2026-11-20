@@ -13,6 +13,7 @@ type PersonalInfo = Omit<WriteCommandParams[typeof WRITE_COMMANDS.UPDATE_PERSONA
 function savePersonalInfo(bankAccount: BankAccountParams, personalInfo: PersonalInfo, confirm: boolean): Promise<RequestOutcome> {
     return runRequest({
         name: REQUEST_NAMES.SAVE_PERSONAL_INFO,
+        scope: bankAccount,
         type: 'write',
         command: WRITE_COMMANDS.UPDATE_PERSONAL_INFORMATION,
         params: {...bankAccount, ...personalInfo, confirm},

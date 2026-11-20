@@ -10,6 +10,7 @@ import getFormPage from '@pages/SimplifiedBankOnboarding/formConfig/getFormPage'
 import type {StepConfig} from '@pages/SimplifiedBankOnboarding/formConfig/types';
 import {getOwnerFullName} from '@pages/SimplifiedBankOnboarding/model/owners/ownerNames';
 import REQUEST_NAMES from '@pages/SimplifiedBankOnboarding/requests/REQUEST_NAMES';
+import getRequestKey from '@pages/SimplifiedBankOnboarding/requests/requestKey';
 import savePersonalInfo from '@pages/SimplifiedBankOnboarding/requests/usd/savePersonalInfo';
 import SBO_CONST from '@pages/SimplifiedBankOnboarding/SBO_CONST';
 import INPUT_IDS from '@pages/SimplifiedBankOnboarding/types/form';
@@ -31,7 +32,7 @@ function getPersonalInfoStep(input: USDStepInput): StepConfig {
     return {
         id: SBO_CONST.USD.PAGE_NAMES.REQUESTOR,
         title: translate('personalInfoStep.personalInfo'),
-        counterIndex: 2,
+        counterIndex: SBO_CONST.USD.STEP_INDEX.PERSONAL_INFO,
         isComplete: hasPassedServerStep(achData, SBO_CONST.USD.STEP.REQUESTOR) || hasServerPersonalInfo,
         pages: [
             getFormPage(
@@ -72,7 +73,7 @@ function getPersonalInfoStep(input: USDStepInput): StepConfig {
             },
         ],
         submit: () => savePersonalInfo(bankAccount, {firstName: answers.firstName, lastName: answers.lastName, dob: answers.dob, ssnLast4: answers.ssnLast4}, true),
-        requestName: REQUEST_NAMES.SAVE_PERSONAL_INFO,
+        requestKey: getRequestKey(REQUEST_NAMES.SAVE_PERSONAL_INFO, bankAccount),
     };
 }
 

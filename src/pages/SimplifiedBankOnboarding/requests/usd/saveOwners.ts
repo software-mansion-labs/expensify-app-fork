@@ -18,6 +18,7 @@ type USDOwnersAnswers = {
 function saveOwners(bankAccount: BankAccountParams, {ownsMoreThan25Percent, owners}: USDOwnersAnswers): Promise<RequestOutcome> {
     return runRequest({
         name: REQUEST_NAMES.SAVE_OWNERS,
+        scope: bankAccount,
         type: 'write',
         command: WRITE_COMMANDS.UPDATE_BENEFICIAL_OWNERS,
         params: {...bankAccount, ownsMoreThan25Percent, ...getUSDOwnersParams(owners)},

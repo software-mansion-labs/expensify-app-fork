@@ -12,6 +12,7 @@ import {findOwner, removeOwner} from '@pages/SimplifiedBankOnboarding/model/owne
 import {getOwnerFullName} from '@pages/SimplifiedBankOnboarding/model/owners/ownerNames';
 import saveGlobalOwners from '@pages/SimplifiedBankOnboarding/requests/nonUSD/saveGlobalOwners';
 import REQUEST_NAMES from '@pages/SimplifiedBankOnboarding/requests/REQUEST_NAMES';
+import getRequestKey from '@pages/SimplifiedBankOnboarding/requests/requestKey';
 import SBO_CONST from '@pages/SimplifiedBankOnboarding/SBO_CONST';
 import type {GlobalOwnerDraft, OnboardingDraft} from '@pages/SimplifiedBankOnboarding/types/form';
 
@@ -94,11 +95,11 @@ function getBeneficialOwnerInfoStep(input: NonUSDStepInput): StepConfig {
     return {
         id: SBO_CONST.NON_USD.PAGE_NAMES.BENEFICIAL_OWNER_INFO,
         title: translate('ownershipInfoStep.ownerInfo'),
-        counterIndex: 3,
+        counterIndex: SBO_CONST.NON_USD.STEP_INDEX.BENEFICIAL_OWNERS,
         isComplete: corpay?.anyIndividualOwn25PercentOrMore !== undefined,
         pages: getOwnerPages(getOwnersDefinition(input, isUserOwner, hasOtherOwners)),
         submit: () => saveGlobalOwners(bankAccount, {ownsMoreThan25Percent: isUserOwner, owners: getOwnersToSend(answers.owners, isUserOwner, hasOtherOwners)}),
-        requestName: REQUEST_NAMES.SAVE_GLOBAL_OWNERS,
+        requestKey: getRequestKey(REQUEST_NAMES.SAVE_GLOBAL_OWNERS, bankAccount),
     };
 }
 

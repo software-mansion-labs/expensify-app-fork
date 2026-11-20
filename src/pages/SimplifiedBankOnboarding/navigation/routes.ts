@@ -4,6 +4,8 @@
  * one step only, so its URL holds the page alone.
  */
 import type {FlowPosition} from '@pages/SimplifiedBankOnboarding/flow/position';
+import {isPageID, isStepID} from '@pages/SimplifiedBankOnboarding/formConfig/ids';
+import type {StepID} from '@pages/SimplifiedBankOnboarding/formConfig/ids';
 
 import ROUTES from '@src/ROUTES';
 import type {Route} from '@src/ROUTES';
@@ -28,12 +30,12 @@ type FlowRouteParams = {
 };
 
 /** The step of the invited director page, which its URL does not name */
-const ENTER_SIGNER_INFO_STEP_ID = 'signer-info';
+const ENTER_SIGNER_INFO_STEP_ID: StepID = 'signer-info';
 
-/** Undefined when the URL does not name a full position, so the flow opens the position where it resumes */
+/** Undefined when the URL does not name a full and known position, so the flow opens the position where it resumes */
 function getPositionFromParams(target: FlowRouteTarget, {page, subPage, action}: FlowRouteParams): FlowPosition | undefined {
     const stepID = target.kind === 'enterSignerInfo' ? ENTER_SIGNER_INFO_STEP_ID : page;
-    if (!stepID || !subPage) {
+    if (!stepID || !subPage || !isStepID(stepID) || !isPageID(subPage)) {
         return undefined;
     }
     return {stepID, pageID: subPage, isEditing: action === 'edit'};

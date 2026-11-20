@@ -30,3 +30,4 @@ function removeOwner<TOwner extends Owner>(owners: TOwner[], id: string): TOwner
 }
 
 export {commitOwner, createOwnerID, findOwner, removeOwner};
+export type {Owner};

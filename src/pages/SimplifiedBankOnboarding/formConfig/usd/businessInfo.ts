@@ -8,6 +8,7 @@ import getFormPage from '@pages/SimplifiedBankOnboarding/formConfig/getFormPage'
 import type {StepConfig} from '@pages/SimplifiedBankOnboarding/formConfig/types';
 import {areCompanyDetailsLocked} from '@pages/SimplifiedBankOnboarding/model/setupStatus';
 import REQUEST_NAMES from '@pages/SimplifiedBankOnboarding/requests/REQUEST_NAMES';
+import getRequestKey from '@pages/SimplifiedBankOnboarding/requests/requestKey';
 import saveCompany from '@pages/SimplifiedBankOnboarding/requests/usd/saveCompany';
 import SBO_CONST from '@pages/SimplifiedBankOnboarding/SBO_CONST';
 import INPUT_IDS from '@pages/SimplifiedBankOnboarding/types/form';
@@ -28,7 +29,7 @@ function getBusinessInfoStep(input: USDStepInput): StepConfig {
     return {
         id: SBO_CONST.USD.PAGE_NAMES.COMPANY,
         title: translate('businessInfoStep.businessInfo'),
-        counterIndex: 3,
+        counterIndex: SBO_CONST.USD.STEP_INDEX.BUSINESS_INFO,
         isComplete: hasPassedServerStep(achData, SBO_CONST.USD.STEP.COMPANY),
         pages: [
             getFormPage(
@@ -99,7 +100,7 @@ function getBusinessInfoStep(input: USDStepInput): StepConfig {
                 companyTaxID: answers.companyTaxID.replaceAll(CONST.REGEX.NON_NUMERIC, ''),
                 incorporationType: answers.incorporationType,
             }),
-        requestName: REQUEST_NAMES.SAVE_COMPANY,
+        requestKey: getRequestKey(REQUEST_NAMES.SAVE_COMPANY, bankAccount),
     };
 }
 

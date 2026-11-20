@@ -1,6 +1,6 @@
 import type {CustomPageConfig, FlowPlan, PlanContext, StepID} from '@pages/SimplifiedBankOnboarding/formConfig/types';
 import type {OnboardingFormID} from '@pages/SimplifiedBankOnboarding/formConfig/validation/types';
-import type {OnboardingDraft} from '@pages/SimplifiedBankOnboarding/types/form';
+import type {InputID, OnboardingDraft} from '@pages/SimplifiedBankOnboarding/types/form';
 
 import type {ComponentType} from 'react';
 
@@ -49,6 +49,9 @@ type FlowDescriptor<TData> = {
 
     /** Writes the submitted values to the draft of that form */
     saveDraft: (values: OnboardingDraft) => Promise<void>;
+
+    /** Removes inputs from that draft after the server saved them. A flow that leaves after its only request needs none. */
+    clearDraftInputs?: (inputIDs: InputID[]) => Promise<void>;
 
     /** The names of the step counter of the header */
     getStepNames: (data: TData, context: PlanContext) => readonly string[];

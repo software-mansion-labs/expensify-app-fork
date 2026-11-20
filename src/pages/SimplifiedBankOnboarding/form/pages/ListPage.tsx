@@ -2,11 +2,9 @@
  * A list of entries of a repeated group, such as the owners, and the button that submits the step. A row opens the
  * entry unless it is read only, like the row of the current user in the owner list.
  */
-import UserAvatar from '@components/Avatar/UserAvatar';
 import Button from '@components/Button';
 import ButtonDisabledWhenOffline from '@components/Button/composed/ButtonDisabledWhenOffline';
 import DotIndicatorMessage from '@components/DotIndicatorMessage';
-import MenuItem from '@components/MenuItem';
 import MenuItemAvatarNavigation from '@components/MenuItem/presets/MenuItemAvatarNavigation';
 import ScrollView from '@components/ScrollView';
 import Text from '@components/Text';
@@ -20,6 +18,8 @@ import CONST from '@src/CONST';
 
 import React from 'react';
 import {View} from 'react-native';
+
+import ReadOnlyListRow from './ReadOnlyListRow';
 
 type ListPageProps = {
     page: ListPageConfig;
@@ -38,17 +38,11 @@ function ListPage({page, isLoading, errorText, onSubmit, onRowPress}: ListPagePr
     const renderRow = (row: ListRow) => {
         if (row.isReadOnly) {
             return (
-                <MenuItem.Root key={row.id}>
-                    <MenuItem.Row>
-                        <MenuItem.Leading>
-                            <UserAvatar accountID={CONST.DEFAULT_NUMBER_ID} />
-                        </MenuItem.Leading>
-                        <MenuItem.Content>
-                            <MenuItem.Title forwardedFSClass={CONST.FULLSTORY.CLASS.MASK}>{row.title}</MenuItem.Title>
-                            {!!row.description && <MenuItem.Description forwardedFSClass={CONST.FULLSTORY.CLASS.MASK}>{row.description}</MenuItem.Description>}
-                        </MenuItem.Content>
-                    </MenuItem.Row>
-                </MenuItem.Root>
+                <ReadOnlyListRow
+                    key={row.id}
+                    title={row.title}
+                    description={row.description}
+                />
             );
         }
         return (

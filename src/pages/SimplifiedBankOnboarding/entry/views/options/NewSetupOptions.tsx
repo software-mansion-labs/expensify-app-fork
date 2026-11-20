@@ -3,8 +3,6 @@
  * Each option clears the bank details of an earlier setup and saves the setup type before it opens the flow, so the
  * plan of the flow already knows it. It mirrors the fresh state of `VerifiedBankAccountFlowEntryPoint`.
  */
-import MenuItemNavigation from '@components/MenuItem/presets/MenuItemNavigation';
-
 import {useMemoizedLazyExpensifyIcons} from '@hooks/useLazyAsset';
 import useLocalize from '@hooks/useLocalize';
 import useThemeStyles from '@hooks/useThemeStyles';
@@ -21,6 +19,7 @@ import type {Route} from '@src/ROUTES';
 import React from 'react';
 import {View} from 'react-native';
 
+import EntryOptionRow from './EntryOptionRow';
 import EntryOptionsLayout from './EntryOptionsLayout';
 import useExclusiveAction from './useExclusiveAction';
 import useOpenSetup from './useOpenSetup';
@@ -65,21 +64,21 @@ function NewSetupOptions({policyID, workspaceName, currency, isNonUSD, isChangin
         >
             <View style={styles.mhn5}>
                 {!isNonUSD && (
-                    <MenuItemNavigation
+                    <EntryOptionRow
                         sentryLabel={CONST.SENTRY_LABEL.BANK_ONBOARDING_LAB.SELECT_SETUP_OPTION}
                         title={translate('bankAccount.connectOnlineWithPlaid')}
                         icon={icons.Bank}
                         onPress={() => startSetup(SBO_CONST.SETUP_TYPE.PLAID)}
-                        isLoading={runningActionID === SBO_CONST.SETUP_TYPE.PLAID}
+                        isRunning={runningActionID === SBO_CONST.SETUP_TYPE.PLAID}
                         isDisabled={!!runningActionID}
                     />
                 )}
-                <MenuItemNavigation
+                <EntryOptionRow
                     sentryLabel={CONST.SENTRY_LABEL.BANK_ONBOARDING_LAB.SELECT_SETUP_OPTION}
                     title={translate('bankAccount.connectManually')}
                     icon={icons.Connect}
                     onPress={() => startSetup(SBO_CONST.SETUP_TYPE.MANUAL)}
-                    isLoading={runningActionID === SBO_CONST.SETUP_TYPE.MANUAL}
+                    isRunning={runningActionID === SBO_CONST.SETUP_TYPE.MANUAL}
                     isDisabled={!!runningActionID}
                 />
             </View>

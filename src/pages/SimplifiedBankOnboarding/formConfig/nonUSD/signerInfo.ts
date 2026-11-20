@@ -10,6 +10,7 @@ import {findOwner} from '@pages/SimplifiedBankOnboarding/model/owners/ownerList'
 import {getOwnerFullName} from '@pages/SimplifiedBankOnboarding/model/owners/ownerNames';
 import {askForSignerInfo, saveDirectorInfo} from '@pages/SimplifiedBankOnboarding/requests/nonUSD/signerInfo';
 import REQUEST_NAMES from '@pages/SimplifiedBankOnboarding/requests/REQUEST_NAMES';
+import getRequestKey from '@pages/SimplifiedBankOnboarding/requests/requestKey';
 import SBO_CONST from '@pages/SimplifiedBankOnboarding/SBO_CONST';
 import INPUT_IDS from '@pages/SimplifiedBankOnboarding/types/form';
 
@@ -33,24 +34,27 @@ function getIsDirectorPage({answers, translate}: NonUSDStepInput): QuestionPageC
     };
 }
 
-/** A director who is also an owner signs with the name of the owner step */
-function getSignerFullName({answers}: NonUSDStepInput, isUserOwner: boolean): string {
-    if (!isUserOwner) {
-        return answers.signerFullName;
+/**
+ * A director who is also an owner signs with the name of the owner step. The answer "I own 25%" may still be only in the
+ * draft, with no owner details saved, and then there is no owner name to take.
+ */
+function getUserOwnerName({answers}: NonUSDStepInput): string | undefined {
+    if (!answers.ownsMoreThan25Percent) {
+        return undefined;
     }
     const userOwner = findOwner(answers.owners, SBO_CONST.NON_USD.CURRENT_USER_KEY);
-    return userOwner ? getOwnerFullName(userOwner) : '';
+    return userOwner ? getOwnerFullName(userOwner) : undefined;
 }
 
 function getDirectorPages(input: NonUSDStepInput): PageConfig[] {
     const {answers, corpay, bankAccount, translate} = input;
-    const isUserOwner = answers.ownsMoreThan25Percent ?? false;
-    const signerFullName = getSignerFullName(input, isUserOwner);
+    const userOwnerName = getUserOwnerName(input);
+    const signerFullName = userOwnerName ?? answers.signerFullName;
     const {formPages, confirmation} = getSignerDetailsPages({
         pageIDs: {name: SUB_PAGES.NAME, jobTitle: SUB_PAGES.JOB_TITLE, confirmation: SUB_PAGES.CONFIRMATION},
         fullName: signerFullName,
         jobTitle: answers.signerJobTitle,
-        shouldAskForName: !isUserOwner,
+        shouldAskForName: !userOwnerName,
         isConfirmationComplete: !!corpay?.signerFullName,
         translate,
     });
@@ -59,7 +63,7 @@ function getDirectorPages(input: NonUSDStepInput): PageConfig[] {
         {
             ...confirmation,
             submit: () => saveDirectorInfo(bankAccount, {signerFullName, signerJobTitle: answers.signerJobTitle}),
-            requestName: REQUEST_NAMES.SAVE_DIRECTOR_INFO,
+            requestKey: getRequestKey(REQUEST_NAMES.SAVE_DIRECTOR_INFO, bankAccount),
         },
     ];
 }
@@ -131,7 +135,7 @@ function getEnterEmailPage(input: NonUSDStepInput, isUserDirector: boolean): For
                     ? {secondSignerEmail: answers.secondSignerEmail}
                     : {signerEmail: answers.signerEmail, secondSignerEmail: isAUD ? answers.secondSignerEmail : undefined},
             ),
-        requestName: REQUEST_NAMES.ASK_FOR_SIGNER_INFO,
+        requestKey: getRequestKey(REQUEST_NAMES.ASK_FOR_SIGNER_INFO, bankAccount),
     };
 }
 
@@ -162,7 +166,7 @@ function getSignerInfoStep(input: NonUSDStepInput): StepConfig {
     return {
         id: SBO_CONST.NON_USD.PAGE_NAMES.SIGNER_INFO,
         title: input.translate('signerInfoStep.signerInfo'),
-        counterIndex: 4,
+        counterIndex: SBO_CONST.NON_USD.STEP_INDEX.SIGNER_INFO,
         isComplete: areSignersKnown(input),
         pages: getPages(input),
     };

@@ -1,6 +1,7 @@
 import type {FieldConfig, StepConfig} from '@pages/SimplifiedBankOnboarding/formConfig/types';
 import isFormPageComplete from '@pages/SimplifiedBankOnboarding/formConfig/validation/isFormPageComplete';
 import REQUEST_NAMES from '@pages/SimplifiedBankOnboarding/requests/REQUEST_NAMES';
+import getRequestKey from '@pages/SimplifiedBankOnboarding/requests/requestKey';
 import acceptACHContract from '@pages/SimplifiedBankOnboarding/requests/usd/acceptACHContract';
 import SBO_CONST from '@pages/SimplifiedBankOnboarding/SBO_CONST';
 import INPUT_IDS from '@pages/SimplifiedBankOnboarding/types/form';
@@ -42,7 +43,7 @@ function getCompleteVerificationStep({answers, achData, bankAccount, translate}:
     return {
         id: SBO_CONST.USD.PAGE_NAMES.ACH_CONTRACT,
         title: translate('completeVerificationStep.completeVerification'),
-        counterIndex: 5,
+        counterIndex: SBO_CONST.USD.STEP_INDEX.COMPLETE_VERIFICATION,
         isComplete: hasPassedServerStep(achData, SBO_CONST.USD.STEP.ACH_CONTRACT),
         pages: [
             {
@@ -60,7 +61,7 @@ function getCompleteVerificationStep({answers, achData, bankAccount, translate}:
                 certifyTrueInformation: answers.certifyTrueInformation,
                 acceptTermsAndConditions: answers.acceptTermsAndConditions,
             }),
-        requestName: REQUEST_NAMES.ACCEPT_ACH_CONTRACT,
+        requestKey: getRequestKey(REQUEST_NAMES.ACCEPT_ACH_CONTRACT, bankAccount),
     };
 }
 

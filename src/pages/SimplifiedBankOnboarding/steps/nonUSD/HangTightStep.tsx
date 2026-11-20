@@ -18,6 +18,7 @@ import type {CustomStepProps} from '@pages/SimplifiedBankOnboarding/controller/t
 import getBankAccountParams from '@pages/SimplifiedBankOnboarding/requests/getBankAccountParams';
 import {sendSignerReminder} from '@pages/SimplifiedBankOnboarding/requests/nonUSD/signerInfo';
 import REQUEST_NAMES from '@pages/SimplifiedBankOnboarding/requests/REQUEST_NAMES';
+import getRequestKey from '@pages/SimplifiedBankOnboarding/requests/requestKey';
 import useRequestState from '@pages/SimplifiedBankOnboarding/requests/useRequestState';
 import type {OnboardingAccount} from '@pages/SimplifiedBankOnboarding/types/onyx';
 
@@ -43,10 +44,11 @@ function HangTightStep({policyID, canContinue, openSignerForm, onComplete}: Hang
     const {translate} = useLocalize();
     const styles = useThemeStyles();
     const [bankAccountID] = useOnyx(ONYXKEYS.SIMPLIFIED_BANK_ONBOARDING_ACCOUNT, {selector: bankAccountIDSelector});
-    const reminderState = useRequestState(REQUEST_NAMES.SEND_SIGNER_REMINDER);
+    const bankAccount = getBankAccountParams(policyID, {bankAccountID});
+    const reminderState = useRequestState(getRequestKey(REQUEST_NAMES.SEND_SIGNER_REMINDER, bankAccount));
 
     const sendReminder = () => {
-        sendSignerReminder(getBankAccountParams(policyID, {bankAccountID}));
+        sendSignerReminder(bankAccount);
     };
 
     return (

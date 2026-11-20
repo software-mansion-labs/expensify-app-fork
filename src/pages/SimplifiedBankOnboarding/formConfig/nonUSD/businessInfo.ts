@@ -9,6 +9,7 @@ import type {FieldConfig, FormPageConfig, PicklistOption, StepConfig} from '@pag
 import isFormPageComplete from '@pages/SimplifiedBankOnboarding/formConfig/validation/isFormPageComplete';
 import saveGlobalCompany from '@pages/SimplifiedBankOnboarding/requests/nonUSD/saveGlobalCompany';
 import REQUEST_NAMES from '@pages/SimplifiedBankOnboarding/requests/REQUEST_NAMES';
+import getRequestKey from '@pages/SimplifiedBankOnboarding/requests/requestKey';
 import SBO_CONST from '@pages/SimplifiedBankOnboarding/SBO_CONST';
 import INPUT_IDS from '@pages/SimplifiedBankOnboarding/types/form';
 
@@ -69,7 +70,7 @@ function getBusinessInfoStep(input: NonUSDStepInput): StepConfig {
     return {
         id: SBO_CONST.NON_USD.PAGE_NAMES.BUSINESS_INFO,
         title: translate('businessInfoStep.businessInfoTitle'),
-        counterIndex: 2,
+        counterIndex: SBO_CONST.NON_USD.STEP_INDEX.BUSINESS_INFO,
         isComplete: !!corpay?.companyName && !!corpay.businessType,
         pages: [
             getNamePage(input),
@@ -86,7 +87,7 @@ function getBusinessInfoStep(input: NonUSDStepInput): StepConfig {
             },
         ],
         submit: () => saveGlobalCompany(bankAccount, {companyName: answers.companyName, businessType: answers.businessType}),
-        requestName: REQUEST_NAMES.SAVE_GLOBAL_COMPANY,
+        requestKey: getRequestKey(REQUEST_NAMES.SAVE_GLOBAL_COMPANY, bankAccount),
     };
 }
 

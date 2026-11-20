@@ -6,6 +6,7 @@ import type {FieldConfig, FormPageConfig, PageConfig, StepConfig} from '@pages/S
 import isFormPageComplete from '@pages/SimplifiedBankOnboarding/formConfig/validation/isFormPageComplete';
 import failRequest from '@pages/SimplifiedBankOnboarding/requests/failRequest';
 import REQUEST_NAMES from '@pages/SimplifiedBankOnboarding/requests/REQUEST_NAMES';
+import getRequestKey from '@pages/SimplifiedBankOnboarding/requests/requestKey';
 import type {RequestOutcome} from '@pages/SimplifiedBankOnboarding/requests/types';
 import {connectBankAccountManually, connectBankAccountWithPlaid} from '@pages/SimplifiedBankOnboarding/requests/usd/connectBankAccount';
 import SBO_CONST from '@pages/SimplifiedBankOnboarding/SBO_CONST';
@@ -72,13 +73,13 @@ function getBankPage(input: USDStepInput): PageConfig {
 }
 
 /** The entry opens a flow with a workspace and the Plaid page blocks Next until an account is picked, so the failures are only a guard */
-function submitBankAccount({answers, policyID}: USDStepInput): Promise<RequestOutcome> {
+function submitBankAccount({answers, policyID, bankAccount}: USDStepInput): Promise<RequestOutcome> {
     if (!policyID) {
-        return failRequest(REQUEST_NAMES.CONNECT_BANK_ACCOUNT);
+        return failRequest(getRequestKey(REQUEST_NAMES.CONNECT_BANK_ACCOUNT, bankAccount));
     }
     if (answers.setupType === SBO_CONST.SETUP_TYPE.PLAID) {
         if (!answers.plaidAccountID) {
-            return failRequest(REQUEST_NAMES.CONNECT_BANK_ACCOUNT);
+            return failRequest(getRequestKey(REQUEST_NAMES.CONNECT_BANK_ACCOUNT, bankAccount));
         }
         return connectBankAccountWithPlaid({policyID, plaidAccountID: answers.plaidAccountID});
     }
@@ -90,11 +91,11 @@ function getBankAccountStep(input: USDStepInput): StepConfig {
     return {
         id: SBO_CONST.USD.PAGE_NAMES.BANK_ACCOUNT,
         title: input.translate('bankAccount.bankInfo'),
-        counterIndex: 1,
+        counterIndex: SBO_CONST.USD.STEP_INDEX.BANK_ACCOUNT,
         isComplete: hasPassedServerStep(input.achData, SBO_CONST.USD.STEP.BANK_ACCOUNT),
         pages: [getBankPage(input)],
         submit: () => submitBankAccount(input),
-        requestName: REQUEST_NAMES.CONNECT_BANK_ACCOUNT,
+        requestKey: getRequestKey(REQUEST_NAMES.CONNECT_BANK_ACCOUNT, input.bankAccount),
     };
 }
 

@@ -11,6 +11,7 @@ type ACHContract = Omit<WriteCommandParams[typeof WRITE_COMMANDS.ACCEPT_ACH_CONT
 function acceptACHContract(bankAccount: BankAccountParams, contract: ACHContract): Promise<RequestOutcome> {
     return runRequest({
         name: REQUEST_NAMES.ACCEPT_ACH_CONTRACT,
+        scope: bankAccount,
         type: 'write',
         command: WRITE_COMMANDS.ACCEPT_ACH_CONTRACT,
         params: {...bankAccount, ...contract},

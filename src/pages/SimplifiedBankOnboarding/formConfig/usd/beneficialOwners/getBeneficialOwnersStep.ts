@@ -11,6 +11,7 @@ import {canAddMoreUSDOwners} from '@pages/SimplifiedBankOnboarding/model/owners/
 import {getUSDOwnerBuffer, getUSDOwnerFromBuffer} from '@pages/SimplifiedBankOnboarding/model/owners/ownerBuffer';
 import {getOwnerFullName} from '@pages/SimplifiedBankOnboarding/model/owners/ownerNames';
 import REQUEST_NAMES from '@pages/SimplifiedBankOnboarding/requests/REQUEST_NAMES';
+import getRequestKey from '@pages/SimplifiedBankOnboarding/requests/requestKey';
 import saveOwners from '@pages/SimplifiedBankOnboarding/requests/usd/saveOwners';
 import SBO_CONST from '@pages/SimplifiedBankOnboarding/SBO_CONST';
 import type {OnboardingDraft, USDOwnerDraft} from '@pages/SimplifiedBankOnboarding/types/form';
@@ -89,11 +90,11 @@ function getBeneficialOwnersStep(input: USDStepInput): StepConfig {
     return {
         id: SBO_CONST.USD.PAGE_NAMES.BENEFICIAL_OWNERS,
         title: translate('beneficialOwnerInfoStep.companyOwner'),
-        counterIndex: 4,
+        counterIndex: SBO_CONST.USD.STEP_INDEX.BENEFICIAL_OWNERS,
         isComplete: hasPassedServerStep(achData, SBO_CONST.USD.STEP.BENEFICIAL_OWNERS),
         pages: getOwnerPages(getOwnersDefinition(input, isUserOwner, hasOtherOwners)),
         submit: () => saveOwners(bankAccount, {ownsMoreThan25Percent: isUserOwner, owners: hasOtherOwners ? answers.owners : []}),
-        requestName: REQUEST_NAMES.SAVE_OWNERS,
+        requestKey: getRequestKey(REQUEST_NAMES.SAVE_OWNERS, bankAccount),
     };
 }
 

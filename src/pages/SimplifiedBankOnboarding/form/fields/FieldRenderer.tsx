@@ -15,51 +15,27 @@ import ReadOnlyField from './ReadOnlyField';
 import TextField from './TextField';
 
 type FieldRendererProps = {
-    /** The form of the page. The file field writes its draft and its upload error to it. */
+    /** The form of the page. The file field writes its upload error to it. */
     formID: OnboardingFormID;
     field: FieldConfig;
-
-    /** False in edit mode, so a value the user changed but did not confirm never reaches the draft */
-    shouldSaveDraft: boolean;
 };
 
 /** Picks the input component of a field by its type */
-function FieldRenderer({formID, field, shouldSaveDraft}: FieldRendererProps) {
+function FieldRenderer({formID, field}: FieldRendererProps) {
     switch (field.type) {
         case 'text':
-            return (
-                <TextField
-                    field={field}
-                    shouldSaveDraft={shouldSaveDraft}
-                />
-            );
+            return <TextField field={field} />;
         case 'date':
-            return (
-                <DateField
-                    field={field}
-                    shouldSaveDraft={shouldSaveDraft}
-                />
-            );
+            return <DateField field={field} />;
         case 'picklist':
-            return (
-                <PicklistField
-                    field={field}
-                    shouldSaveDraft={shouldSaveDraft}
-                />
-            );
+            return <PicklistField field={field} />;
         case 'checkbox':
-            return (
-                <CheckboxField
-                    field={field}
-                    shouldSaveDraft={shouldSaveDraft}
-                />
-            );
+            return <CheckboxField field={field} />;
         case 'file':
             return (
                 <FileField
                     formID={formID}
                     field={field}
-                    shouldSaveDraft={shouldSaveDraft}
                 />
             );
         case 'readOnly':

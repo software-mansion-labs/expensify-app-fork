@@ -16,6 +16,7 @@ type PlaidBankAccountParams = WriteCommandParams[typeof WRITE_COMMANDS.CONNECT_B
 function connectBankAccountManually(params: ManualBankAccountParams): Promise<RequestOutcome> {
     return runRequest({
         name: REQUEST_NAMES.CONNECT_BANK_ACCOUNT,
+        scope: {policyID: params.policyID},
         type: 'write',
         command: WRITE_COMMANDS.CONNECT_BANK_ACCOUNT_MANUALLY,
         params,
@@ -27,6 +28,7 @@ function connectBankAccountManually(params: ManualBankAccountParams): Promise<Re
 function connectBankAccountWithPlaid(params: PlaidBankAccountParams): Promise<RequestOutcome> {
     return runRequest({
         name: REQUEST_NAMES.CONNECT_BANK_ACCOUNT,
+        scope: {policyID: params.policyID},
         type: 'write',
         command: WRITE_COMMANDS.CONNECT_BANK_ACCOUNT_WITH_PLAID,
         params,

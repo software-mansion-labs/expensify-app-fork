@@ -30,7 +30,7 @@ function getCountryStep({answers, achData, currency, isCountryConfirmed, transla
     return {
         id: SBO_CONST.NON_USD.PAGE_NAMES.COUNTRY,
         title: translate('countryStep.confirmCurrency'),
-        counterIndex: 0,
+        counterIndex: SBO_CONST.NON_USD.STEP_INDEX.COUNTRY,
         isComplete: isCountryConfirmed,
         pages: [
             {

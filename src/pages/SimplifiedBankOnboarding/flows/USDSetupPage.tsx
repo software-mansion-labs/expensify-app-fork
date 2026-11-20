@@ -10,14 +10,16 @@ import React from 'react';
 
 import SetupFlowPage from './SetupFlowPage';
 import usdFlow from './usdFlow';
+import useSetupFlow from './useSetupFlow';
 
 type USDSetupPageProps = PlatformStackScreenProps<BankOnboardingLabParamList, typeof SCREENS.SETTINGS.BANK_ONBOARDING_LAB.USD_SETUP>;
 
 function USDSetupPage({route}: USDSetupPageProps) {
+    const setup = useSetupFlow('usd', route.params);
     return (
         <SetupFlowPage
             flow={usdFlow}
-            kind="usd"
+            setup={setup}
             params={route.params}
         />
     );

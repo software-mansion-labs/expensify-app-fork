@@ -12,10 +12,9 @@ import React, {useState} from 'react';
 
 type DateFieldProps = {
     field: DateFieldConfig;
-    shouldSaveDraft: boolean;
 };
 
-function DateField({field, shouldSaveDraft}: DateFieldProps) {
+function DateField({field}: DateFieldProps) {
     const {translate} = useLocalize();
     // The age bounds are measured from the day the page opened, so a render never moves them
     const [today] = useState(() => new Date());
@@ -29,7 +28,6 @@ function DateField({field, shouldSaveDraft}: DateFieldProps) {
             defaultValue={field.defaultValue}
             minDate={field.isDateOfBirth ? subYears(today, CONST.DATE_BIRTH.MAX_AGE) : undefined}
             maxDate={field.isDateOfBirth ? subYears(today, CONST.DATE_BIRTH.MIN_AGE_FOR_PAYMENT) : undefined}
-            shouldSaveDraft={shouldSaveDraft}
             forwardedFSClass={CONST.FULLSTORY.CLASS.MASK}
         />
     );

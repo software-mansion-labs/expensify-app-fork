@@ -11,6 +11,7 @@ type FinishDetails = Omit<WriteCommandParams[typeof WRITE_COMMANDS.FINISH_GLOBAL
 function finishGlobalOnboarding(bankAccount: BankAccountParams, details: FinishDetails): Promise<RequestOutcome> {
     return runRequest({
         name: REQUEST_NAMES.FINISH_GLOBAL_ONBOARDING,
+        scope: bankAccount,
         type: 'write',
         command: WRITE_COMMANDS.FINISH_GLOBAL_BANK_ACCOUNT_ONBOARDING,
         params: {...bankAccount, ...details},

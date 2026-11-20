@@ -77,6 +77,17 @@ const SBO_CONST = {
         },
         PAGE_NAMES: USD_PAGE_NAMES,
         STEP_NAMES: ['1', '2', '3', '4', '5', '6', '7'],
+
+        /** The position of each step in STEP_NAMES. The identity check counts as part of the personal info step. */
+        STEP_INDEX: {
+            COUNTRY: 0,
+            BANK_ACCOUNT: 1,
+            PERSONAL_INFO: 2,
+            BUSINESS_INFO: 3,
+            BENEFICIAL_OWNERS: 4,
+            COMPLETE_VERIFICATION: 5,
+            VALIDATION: 6,
+        },
         MAX_NUMBER_OF_UBOS: 3,
         COUNTRY_SUB_PAGES: {
             CONFIRM_CURRENCY: 'confirm-currency',
@@ -133,6 +144,17 @@ const SBO_CONST = {
         PAGE_NAMES: NON_USD_PAGE_NAMES,
         STEP_NAMES: ['1', '2', '3', '4', '5', '6'],
         DOCUSIGN_REQUIRED_STEP_NAMES: ['1', '2', '3', '4', '5', '6', '7'],
+
+        /** The position of each step in STEP_NAMES, or in DOCUSIGN_REQUIRED_STEP_NAMES for the DocuSign step */
+        STEP_INDEX: {
+            COUNTRY: 0,
+            BANK_INFO: 1,
+            BUSINESS_INFO: 2,
+            BENEFICIAL_OWNERS: 3,
+            SIGNER_INFO: 4,
+            AGREEMENTS: 5,
+            DOCUSIGN: 6,
+        },
         ACCOUNT_HOLDER_KEY_PREFIX: 'accountHolder',
 
         /** The owner ID of the current user. Every other owner gets a generated one. */

@@ -7,9 +7,8 @@ import type {LocalizedTranslate} from '@components/LocaleContextProvider';
 import type {ConfirmationRow, FormPageConfig, ListRow, PageID, PageTransition} from '@pages/SimplifiedBankOnboarding/formConfig/types';
 import type {OwnerQuestionAnswers} from '@pages/SimplifiedBankOnboarding/model/answers/types';
 import type {OwnerBuffer} from '@pages/SimplifiedBankOnboarding/model/owners/ownerBuffer';
+import type {Owner} from '@pages/SimplifiedBankOnboarding/model/owners/ownerList';
 import type {OnboardingDraft} from '@pages/SimplifiedBankOnboarding/types/form';
-
-type Owner = {id: string};
 
 type OwnerSubPages = {
     isUserOwner: PageID;

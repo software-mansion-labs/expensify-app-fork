@@ -12,6 +12,7 @@ import {isGlobalAccountCreated} from '@pages/SimplifiedBankOnboarding/model/setu
 import failRequest from '@pages/SimplifiedBankOnboarding/requests/failRequest';
 import createGlobalBankAccount from '@pages/SimplifiedBankOnboarding/requests/nonUSD/createGlobalBankAccount';
 import REQUEST_NAMES from '@pages/SimplifiedBankOnboarding/requests/REQUEST_NAMES';
+import getRequestKey from '@pages/SimplifiedBankOnboarding/requests/requestKey';
 import SBO_CONST from '@pages/SimplifiedBankOnboarding/SBO_CONST';
 import type {BankFormField} from '@pages/SimplifiedBankOnboarding/types/onyx';
 
@@ -68,22 +69,22 @@ function getBankFieldValues(input: NonUSDStepInput): Record<string, string> {
 }
 
 function getBankInfoStep(input: NonUSDStepInput): StepConfig {
-    const {answers, achData, policyID, currency, translate} = input;
+    const {answers, achData, policyID, currency, bankAccount, translate} = input;
     return {
         id: SBO_CONST.NON_USD.PAGE_NAMES.BANK_INFO,
         title: translate('bankAccount.bankInfo'),
-        counterIndex: 1,
+        counterIndex: SBO_CONST.NON_USD.STEP_INDEX.BANK_INFO,
         isComplete: isGlobalAccountCreated(achData),
         pages: getPages(input),
         submit: () => {
             // The account belongs to a workspace, so a flow opened without one cannot create it. The entry always opens
             // the flow with a workspace, so the page shows an error instead of a Next that does nothing.
             if (!policyID) {
-                return failRequest(REQUEST_NAMES.CREATE_GLOBAL_BANK_ACCOUNT);
+                return failRequest(getRequestKey(REQUEST_NAMES.CREATE_GLOBAL_BANK_ACCOUNT, bankAccount));
             }
             return createGlobalBankAccount({policyID, country: answers.country, currency, fields: getBankFieldValues(input)});
         },
-        requestName: REQUEST_NAMES.CREATE_GLOBAL_BANK_ACCOUNT,
+        requestKey: getRequestKey(REQUEST_NAMES.CREATE_GLOBAL_BANK_ACCOUNT, bankAccount),
     };
 }
 

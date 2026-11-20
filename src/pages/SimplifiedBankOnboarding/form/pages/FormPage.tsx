@@ -58,7 +58,6 @@ function FormPage({formID, page, isEditing, isLoading, errorText, onSubmit}: For
                     <FieldRenderer
                         formID={formID}
                         field={field}
-                        shouldSaveDraft={!isEditing}
                     />
                 </View>
             ))}

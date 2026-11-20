@@ -7,6 +7,7 @@ import type {CheckboxFieldConfig, FieldConfig, StepConfig} from '@pages/Simplifi
 import isFormPageComplete from '@pages/SimplifiedBankOnboarding/formConfig/validation/isFormPageComplete';
 import finishGlobalOnboarding from '@pages/SimplifiedBankOnboarding/requests/nonUSD/finishGlobalOnboarding';
 import REQUEST_NAMES from '@pages/SimplifiedBankOnboarding/requests/REQUEST_NAMES';
+import getRequestKey from '@pages/SimplifiedBankOnboarding/requests/requestKey';
 import SBO_CONST from '@pages/SimplifiedBankOnboarding/SBO_CONST';
 import INPUT_IDS from '@pages/SimplifiedBankOnboarding/types/form';
 
@@ -59,7 +60,7 @@ function getAgreementsStep(input: NonUSDStepInput): StepConfig {
     return {
         id: SBO_CONST.NON_USD.PAGE_NAMES.AGREEMENTS,
         title: translate('agreementsStep.agreements'),
-        counterIndex: 5,
+        counterIndex: SBO_CONST.NON_USD.STEP_INDEX.AGREEMENTS,
         isComplete,
         pages: [
             {
@@ -72,7 +73,7 @@ function getAgreementsStep(input: NonUSDStepInput): StepConfig {
                 enabledWhenOffline: false,
             },
         ],
-        ...(isAUD ? {} : {submit: () => finishGlobalOnboarding(bankAccount, getAgreementDetails(answers)), requestName: REQUEST_NAMES.FINISH_GLOBAL_ONBOARDING}),
+        ...(isAUD ? {} : {submit: () => finishGlobalOnboarding(bankAccount, getAgreementDetails(answers)), requestKey: getRequestKey(REQUEST_NAMES.FINISH_GLOBAL_ONBOARDING, bankAccount)}),
     };
 }
 

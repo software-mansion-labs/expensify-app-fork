@@ -13,6 +13,7 @@ type OpenOnboardingPageParams = Partial<ReadCommandParams[typeof READ_COMMANDS.O
 function openOnboardingPage({policyID, bankAccountID, stepToOpen = '', subStep = '', localCurrentStep = ''}: OpenOnboardingPageParams): Promise<RequestOutcome> {
     return runRequest({
         name: REQUEST_NAMES.OPEN_ONBOARDING_PAGE,
+        scope: {policyID, bankAccountID},
         type: 'read',
         command: READ_COMMANDS.OPEN_ONBOARDING_PAGE,
         params: {policyID, bankAccountID, stepToOpen, subStep, localCurrentStep},

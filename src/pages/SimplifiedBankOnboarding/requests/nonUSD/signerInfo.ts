@@ -19,6 +19,7 @@ type SignerEmails = Omit<WriteCommandParams[typeof WRITE_COMMANDS.ASK_FOR_SIGNER
 function saveDirectorInfo(bankAccount: BankAccountParams, directorInfo: DirectorInfo): Promise<RequestOutcome> {
     return runRequest({
         name: REQUEST_NAMES.SAVE_DIRECTOR_INFO,
+        scope: bankAccount,
         type: 'write',
         command: WRITE_COMMANDS.SAVE_ONBOARDING_DIRECTOR_INFORMATION,
         params: {...bankAccount, ...directorInfo},
@@ -33,6 +34,7 @@ function saveDirectorInfo(bankAccount: BankAccountParams, directorInfo: Director
 function saveSignerInfo(bankAccount: BankAccountParams, directorInfo: DirectorInfo): Promise<RequestOutcome> {
     return runRequest({
         name: REQUEST_NAMES.SAVE_SIGNER_INFO,
+        scope: bankAccount,
         type: 'write',
         command: WRITE_COMMANDS.SAVE_ONBOARDING_DIRECTOR_INFORMATION,
         params: {...bankAccount, ...directorInfo},
@@ -45,6 +47,7 @@ function saveSignerInfo(bankAccount: BankAccountParams, directorInfo: DirectorIn
 function askForSignerInfo(bankAccount: BankAccountParams, signerEmails: SignerEmails): Promise<RequestOutcome> {
     return runRequest({
         name: REQUEST_NAMES.ASK_FOR_SIGNER_INFO,
+        scope: bankAccount,
         type: 'write',
         command: WRITE_COMMANDS.ASK_FOR_SIGNER_INFORMATION,
         params: {...bankAccount, ...signerEmails},
@@ -55,6 +58,7 @@ function askForSignerInfo(bankAccount: BankAccountParams, signerEmails: SignerEm
 function sendSignerReminder(bankAccount: BankAccountParams): Promise<RequestOutcome> {
     return runRequest({
         name: REQUEST_NAMES.SEND_SIGNER_REMINDER,
+        scope: bankAccount,
         type: 'write',
         command: WRITE_COMMANDS.SEND_REMINDER_FOR_SIGNER_INFORMATION,
         params: bankAccount,

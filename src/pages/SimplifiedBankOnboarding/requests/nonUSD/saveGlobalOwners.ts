@@ -17,6 +17,7 @@ type GlobalOwnersAnswers = {
 function saveGlobalOwners(bankAccount: BankAccountParams, {ownsMoreThan25Percent, owners}: GlobalOwnersAnswers): Promise<RequestOutcome> {
     return runRequest({
         name: REQUEST_NAMES.SAVE_GLOBAL_OWNERS,
+        scope: bankAccount,
         type: 'write',
         command: WRITE_COMMANDS.SAVE_ONBOARDING_BENEFICIAL_OWNERS,
         params: {...bankAccount, ownsMoreThan25Percent, ...getGlobalOwnersParams(owners)},

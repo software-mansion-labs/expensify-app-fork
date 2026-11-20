@@ -1,11 +1,11 @@
-import getResumePosition from '@pages/SimplifiedBankOnboarding/flow/resume';
-import type {PlanContext} from '@pages/SimplifiedBankOnboarding/formConfig/types';
-import getNonUSDCurrency from '@pages/SimplifiedBankOnboarding/model/getNonUSDCurrency';
-import {isNonUSDCurrency} from '@pages/SimplifiedBankOnboarding/model/setupStatus';
 /**
  * Opens the bank account flow of a workspace where it resumes. The entry page and the verify account page call it from
  * their handlers with the data that the handler just wrote, so the plan already knows the setup type the user picked.
  */
+import getResumePosition from '@pages/SimplifiedBankOnboarding/flow/resume';
+import type {PlanContext} from '@pages/SimplifiedBankOnboarding/formConfig/types';
+import getNonUSDCurrency from '@pages/SimplifiedBankOnboarding/model/getNonUSDCurrency';
+import {isNonUSDCurrency} from '@pages/SimplifiedBankOnboarding/model/setupStatus';
 import type FlowData from '@pages/SimplifiedBankOnboarding/model/types';
 import {goToPosition, openFlow, replacePosition} from '@pages/SimplifiedBankOnboarding/navigation/flowNavigation';
 import type {FlowRouteTarget} from '@pages/SimplifiedBankOnboarding/navigation/routes';

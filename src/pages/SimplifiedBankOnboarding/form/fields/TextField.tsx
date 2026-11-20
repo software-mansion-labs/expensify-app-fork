@@ -9,10 +9,9 @@ import React from 'react';
 
 type TextFieldProps = {
     field: TextFieldConfig;
-    shouldSaveDraft: boolean;
 };
 
-function TextField({field, shouldSaveDraft}: TextFieldProps) {
+function TextField({field}: TextFieldProps) {
     return (
         <InputWrapper
             InputComponent={TextInput}
@@ -25,7 +24,6 @@ function TextField({field, shouldSaveDraft}: TextFieldProps) {
             maxLength={field.maxLength}
             placeholder={field.placeholder}
             hint={field.hint}
-            shouldSaveDraft={shouldSaveDraft}
             shouldUseDefaultValue={field.isLocked}
             disabled={field.isLocked}
             sentryLabel={CONST.SENTRY_LABEL.BANK_ONBOARDING_LAB.EDIT_INPUT}

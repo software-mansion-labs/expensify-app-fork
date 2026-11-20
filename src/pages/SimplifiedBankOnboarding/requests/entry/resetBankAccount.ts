@@ -71,6 +71,7 @@ function getResetOnyxData(policyID: string | undefined, achAccount: WorkspaceACH
 function resetBankAccount(bankAccount: BankAccountParams, workspaceACHAccount: WorkspaceACHAccount, isNonUSD: boolean): Promise<RequestOutcome> {
     return runRequest({
         name: REQUEST_NAMES.RESET_BANK_ACCOUNT,
+        scope: bankAccount,
         type: 'write',
         command: isNonUSD ? WRITE_COMMANDS.RESET_GLOBAL_BANK_ACCOUNT : WRITE_COMMANDS.RESTART_BANK_ACCOUNT_SETUP,
         params: bankAccount,

@@ -10,6 +10,7 @@ import getUSDOnyxData, {USD_ERROR_KEY} from './getUSDOnyxData';
 function uploadKYBDocuments(bankAccount: BankAccountParams, documentNames: string[]): Promise<RequestOutcome> {
     return runRequest({
         name: REQUEST_NAMES.UPLOAD_KYB_DOCUMENTS,
+        scope: bankAccount,
         type: 'write',
         command: WRITE_COMMANDS.UPLOAD_KYB_DOCUMENTS,
         params: {...bankAccount, documentNames},

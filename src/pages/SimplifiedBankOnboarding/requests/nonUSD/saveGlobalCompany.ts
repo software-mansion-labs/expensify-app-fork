@@ -10,6 +10,7 @@ type GlobalCompanyDetails = Omit<WriteCommandParams[typeof WRITE_COMMANDS.SAVE_O
 function saveGlobalCompany(bankAccount: BankAccountParams, details: GlobalCompanyDetails): Promise<RequestOutcome> {
     return runRequest({
         name: REQUEST_NAMES.SAVE_GLOBAL_COMPANY,
+        scope: bankAccount,
         type: 'write',
         command: WRITE_COMMANDS.SAVE_ONBOARDING_COMPANY_DETAILS,
         params: {...bankAccount, ...details},

@@ -9,7 +9,7 @@ function getCountryStep({answers, achData, translate}: USDStepInput): StepConfig
     return {
         id: SBO_CONST.USD.PAGE_NAMES.COUNTRY,
         title: translate('countryStep.confirmCurrency'),
-        counterIndex: 0,
+        counterIndex: SBO_CONST.USD.STEP_INDEX.COUNTRY,
         isComplete: !!answers.country || !!achData?.accountNumber,
         pages: [
             {

@@ -4,7 +4,7 @@
  */
 /* eslint-disable rulesdir/prefer-actions-set-data -- This file is the action layer of an isolated research module, so it lives outside src/libs/actions */
 import DEFAULT_ACCOUNT from '@pages/SimplifiedBankOnboarding/model/defaultAccount';
-import type {OnboardingDraft} from '@pages/SimplifiedBankOnboarding/types/form';
+import type {InputID, OnboardingDraft} from '@pages/SimplifiedBankOnboarding/types/form';
 
 import ONYXKEYS from '@src/ONYXKEYS';
 
@@ -13,6 +13,14 @@ import Onyx from 'react-native-onyx';
 /** Arrays such as the owner lists replace the saved ones, and `null` removes a value */
 function saveDraft(values: OnboardingDraft): Promise<void> {
     return Onyx.merge(ONYXKEYS.FORMS.SIMPLIFIED_BANK_ONBOARDING_FORM_DRAFT, values);
+}
+
+function clearDraftInputs(inputIDs: InputID[]): Promise<void> {
+    const removedValues: Partial<Record<InputID, null>> = {};
+    for (const inputID of inputIDs) {
+        removedValues[inputID] = null;
+    }
+    return Onyx.merge(ONYXKEYS.FORMS.SIMPLIFIED_BANK_ONBOARDING_FORM_DRAFT, removedValues);
 }
 
 function clearDraft(): Promise<void> {
@@ -35,4 +43,4 @@ function saveSignerDraft({signerFullName, signerJobTitle}: OnboardingDraft): Pro
     return Onyx.merge(ONYXKEYS.FORMS.SIMPLIFIED_BANK_ONBOARDING_SIGNER_FORM_DRAFT, {signerFullName, signerJobTitle});
 }
 
-export {clearDraft, prepareNewBankAccountSetup, saveDraft, saveSignerDraft};
+export {clearDraft, clearDraftInputs, prepareNewBankAccountSetup, saveDraft, saveSignerDraft};
