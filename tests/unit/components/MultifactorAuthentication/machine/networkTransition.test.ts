@@ -184,6 +184,31 @@ describe('MFA offline', () => {
             actor.stop();
         });
 
+        it.each([
+            {description: 'the credential ceremony', running: CREATING_KEY, held: WAITING_TO_CREATE},
+            {description: 'the signing ceremony', running: SIGNING_CHALLENGE, held: WAITING_TO_SIGN},
+        ])('keeps $description held when back online with the dialog still up and starts it on dismiss', ({running, held}) => {
+            // Given the dialog stopped the ceremony and the device then went offline
+            const actor = createActorAtState(openAt(running), {registrationChallenge: MFA_TEST_REGISTRATION_CHALLENGE});
+            actor.start();
+            actor.send({type: 'REQUEST_CANCEL'});
+            actor.send({type: 'NETWORK_OFFLINE'});
+
+            // When the device comes back online while the dialog is still up
+            actor.send({type: 'NETWORK_ONLINE'});
+
+            // Then the ceremony stays held, because the platform prompt would cover the dialog
+            expect(isAt(actor, openAt(held, VISIBLE))).toBe(true);
+
+            // When the user dismisses the dialog
+            actor.send({type: 'DISMISS_CANCEL'});
+
+            // Then the ceremony starts
+            expect(isAt(actor, openAt(running))).toBe(true);
+
+            actor.stop();
+        });
+
         it('holds a key created offline and registers it once back online', () => {
             // Given the credential ceremony runs and the device goes offline before it finishes
             const actor = createActorAtState(openAt(CREATING_KEY, HIDDEN, OFFLINE), {registrationChallenge: MFA_TEST_REGISTRATION_CHALLENGE});

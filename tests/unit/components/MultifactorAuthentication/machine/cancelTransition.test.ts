@@ -1304,6 +1304,7 @@ describe('MFA cancel', () => {
         const AUTHORIZE_TRANSACTION = CONST.MULTIFACTOR_AUTHENTICATION.SCENARIO.AUTHORIZE_TRANSACTION;
         const AWAITING_RESULT = {[MFA_STATE.PROMPT]: {[MFA_STATE.AUTHORIZING]: {[MFA_STATE.EXECUTING_SCENARIO_ACTION]: MFA_STATE.AWAITING_RESULT}}};
         const CANCELLING_IN_FLIGHT = {[MFA_STATE.PROMPT]: {[MFA_STATE.AUTHORIZING]: {[MFA_STATE.EXECUTING_SCENARIO_ACTION]: MFA_STATE.CANCELLING_IN_FLIGHT}}};
+
         // A request already out may still land, so the offline shortcut leaves the scenario action to the online rules.
         const STEP_STATES_BEFORE_SCENARIO_ACTION = STEP_STATES.filter(({flow}) => !matchesState(EXECUTING_SCENARIO_ACTION, flow));
         const OFFLINE_CANCEL_BREADCRUMB = ['Flow cancelled - closing directly', {hasScenario: true, isOffline: true}, 'warning'];
@@ -1365,22 +1366,29 @@ describe('MFA cancel', () => {
             actor.stop();
         });
 
-        it('closes the modal on confirm when the device went offline with the dialog up', () => {
-            // Given the dialog opened online and the device then went offline
-            const flow = {[MFA_STATE.VALIDATE_CODE]: {[MFA_STATE.AWAITING_VALIDATE_CODE]: MFA_STATE.AWAITING_INPUT}};
-            const actor = createActorAtState(openAt(flow, VISIBLE));
-            actor.start();
-            actor.send({type: 'NETWORK_OFFLINE'});
+        // The dialog moves a running ceremony back to its `waitingTo*` state, and `readyToRegister` passes straight
+        // through online, so only the held ceremonies can have the dialog up.
+        const CEREMONY_STATES_WITH_DIALOG = CEREMONY_STATES.filter(({flow}) => flow === WAITING_TO_CREATE || flow === WAITING_TO_SIGN);
 
-            // When the user confirms the cancel
-            actor.send({type: 'CONFIRM_CANCEL'});
+        it.each([...STEP_STATES_BEFORE_SCENARIO_ACTION, ...CEREMONY_STATES_WITH_DIALOG])(
+            'closes the modal on confirm while $description when the device went offline with the dialog up',
+            ({flow}) => {
+                // Given the dialog opened online and the device then went offline
+                const actor = createActorAtState(openAt(flow, VISIBLE));
+                actor.start();
+                actor.send({type: 'NETWORK_OFFLINE'});
+                expect(matchesState(openAt(flow, VISIBLE, OFFLINE), actor.getSnapshot().value)).toBe(true);
 
-            // Then the modal closes instead of moving to cancelling, which would wait on a request that can't go out
-            expect(actor.getSnapshot().matches(MFA_STATE.CLOSING)).toBe(true);
-            expect(addMFABreadcrumb).toHaveBeenCalledWith(...OFFLINE_CANCEL_BREADCRUMB);
+                // When the user confirms the cancel
+                actor.send({type: 'CONFIRM_CANCEL'});
 
-            actor.stop();
-        });
+                // Then the modal closes instead of moving to cancelling, which would wait on a request that can't go out
+                expect(actor.getSnapshot().matches(MFA_STATE.CLOSING)).toBe(true);
+                expect(addMFABreadcrumb).toHaveBeenCalledWith(...OFFLINE_CANCEL_BREADCRUMB);
+
+                actor.stop();
+            },
+        );
 
         it('waits for the result on confirm during a scenario action without onCancel when the device went offline with the dialog up', () => {
             // Given a scenario without onCancel whose approve is out, with the dialog opened online before the device went offline

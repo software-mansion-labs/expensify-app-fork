@@ -32,6 +32,7 @@ function startWatching() {
 describe('watchNetwork actor', () => {
     afterEach(() => {
         setForceOffline(false);
+        jest.restoreAllMocks();
     });
 
     it('sends nothing on start while online', () => {
@@ -86,7 +87,5 @@ describe('watchNetwork actor', () => {
 
         // Then it unsubscribes, so a closed flow never keeps a listener behind
         expect(unsubscribe).toHaveBeenCalledTimes(1);
-
-        subscribeSpy.mockRestore();
     });
 });

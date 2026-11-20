@@ -148,6 +148,7 @@ function resetMfaUiMocks() {
     executeScenarioActionControl.reset();
     finalizeOutcomeControl.reset();
     cancelScenarioControl.reset();
+
     // A journey that ends offline would otherwise leave the next path offline.
     setForceOffline(false);
 }

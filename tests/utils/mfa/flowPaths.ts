@@ -375,7 +375,7 @@ const DRIVING_JOURNEYS: DrivingJourney[] = [
         },
     },
     {
-        description: 'the start-offline journey holds the ceremony until the device is back online',
+        description: 'the offline-while-preparing journey holds the ceremony until the device is back online',
         events: [
             createInitEvent(),
             createActorDoneEvent('validateDevice', {success: true}),
