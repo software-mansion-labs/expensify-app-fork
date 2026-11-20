@@ -69,12 +69,12 @@ import MerchantListItemHeader from './MerchantListItemHeader';
 import MonthListItemHeader from './MonthListItemHeader';
 import QuarterListItemHeader from './QuarterListItemHeader';
 import ReportListItemHeader from './ReportListItemHeader';
-import {useRegisterSearchListFocusTarget} from './SearchListFocusTarget';
 import TagListItemHeader from './TagListItemHeader';
 import TransactionGroupListExpandedItem from './TransactionGroupListExpanded';
 import useGroupChildren from './useGroupChildren';
 import useGroupOpenForShiftRange from './useGroupOpenForShiftRange';
 import useLiveRowCapabilities from './useLiveRowCapabilities';
+import {useRegisterSearchListFocusTarget} from './useSearchListFocusTarget';
 import WeekListItemHeader from './WeekListItemHeader';
 import WithdrawalIDListItemHeader from './WithdrawalIDListItemHeader';
 import YearListItemHeader from './YearListItemHeader';
@@ -468,7 +468,7 @@ function TransactionGroupListItemImpl({
         return headers[groupBy];
     };
 
-    useSyncFocus(pressableRef, !!isFocused, shouldSyncFocus);
+    useSyncFocus(pressableRef, !!isFocused, shouldSyncFocus, true);
 
     const snapshotData = transactionsSnapshot?.data;
     const groupViolations: Record<string, TransactionViolations | undefined> = {};

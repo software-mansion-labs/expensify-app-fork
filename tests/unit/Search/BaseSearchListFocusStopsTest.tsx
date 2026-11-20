@@ -3,8 +3,8 @@ import {act, fireEvent, render, screen} from '@testing-library/react-native';
 import {PressableWithFeedback} from '@components/Pressable';
 import type BaseSearchListProps from '@components/Search/SearchList/BaseSearchList/types';
 import type {SearchListFocusStop} from '@components/Search/SearchList/BaseSearchList/types';
-import SearchListFocusTarget from '@components/Search/SearchList/ListItem/SearchListFocusTarget';
 import type {SearchListItem} from '@components/Search/SearchList/ListItem/types';
+import useSearchListFocusTarget from '@components/Search/SearchList/ListItem/useSearchListFocusTarget';
 import type {ListItemFocusEventHandler} from '@components/SelectionList/ListItem/types';
 import Text from '@components/Text';
 
@@ -64,6 +64,22 @@ const STOPS_WITH_CLOSED_GROUP: SearchListFocusStop[] = [
 
 const activateExpense = jest.fn();
 
+function ExpenseRow() {
+    const {ref, isFocused, onFocus} = useSearchListFocusTarget({keyForList: EXPENSE_STOP.keyForList, activate: activateExpense});
+    return (
+        <PressableWithFeedback
+            ref={ref}
+            testID="expense"
+            onFocus={onFocus}
+            accessibilityRole={CONST.ROLE.BUTTON}
+            accessibilityLabel="expense"
+            sentryLabel={CONST.SENTRY_LABEL.SEARCH.EXPANDED_TRANSACTION_ROW}
+        >
+            <Text>{isFocused ? 'expense focused' : 'expense'}</Text>
+        </PressableWithFeedback>
+    );
+}
+
 function GroupRow({item, onFocus}: {item: SearchListItem; onFocus?: ListItemFocusEventHandler}) {
     return (
         <View>
@@ -76,30 +92,12 @@ function GroupRow({item, onFocus}: {item: SearchListItem; onFocus?: ListItemFocu
             >
                 <Text>{item.keyForList}</Text>
             </PressableWithFeedback>
-            {item.keyForList === 'group-0' && (
-                <SearchListFocusTarget
-                    keyForList={EXPENSE_STOP.keyForList}
-                    activate={activateExpense}
-                >
-                    {({ref, isFocused, onFocus: onExpenseFocus}) => (
-                        <PressableWithFeedback
-                            ref={ref}
-                            testID="expense"
-                            onFocus={onExpenseFocus}
-                            accessibilityRole={CONST.ROLE.BUTTON}
-                            accessibilityLabel="expense"
-                            sentryLabel={CONST.SENTRY_LABEL.SEARCH.EXPANDED_TRANSACTION_ROW}
-                        >
-                            <Text>{isFocused ? 'expense focused' : 'expense'}</Text>
-                        </PressableWithFeedback>
-                    )}
-                </SearchListFocusTarget>
-            )}
+            {item.keyForList === 'group-0' && <ExpenseRow />}
         </View>
     );
 }
 
-function renderList(focusStops: SearchListFocusStop[], {onSelectRow = jest.fn(), onSelectFocusStop = jest.fn()} = {}) {
+function renderList(focusStops: SearchListFocusStop[] | undefined, {onSelectRow = jest.fn(), onSelectFocusStop = jest.fn()} = {}) {
     const ref = createRef<FlashListRef<SearchListItem>>();
     const renderItem: BaseSearchListProps['renderItem'] = (item, index, onFocus) => (
         <GroupRow
@@ -107,7 +105,7 @@ function renderList(focusStops: SearchListFocusStop[], {onSelectRow = jest.fn(),
             onFocus={onFocus}
         />
     );
-    const listElement = (stops: SearchListFocusStop[]) => (
+    const listElement = (stops: SearchListFocusStop[] | undefined) => (
         <BaseSearchList
             data={DATA}
             columns={[]}
@@ -227,5 +225,19 @@ describe('BaseSearchList with focus stops', () => {
         pressKey('Enter');
         expect(onSelectRow).toHaveBeenCalledWith(DATA.at(1));
         expect(mockRevealFocusStop).toHaveBeenCalledTimes(revealCallCount);
+    });
+});
+
+describe('BaseSearchList without focus stops', () => {
+    it('brings each row the arrow keys reach into view the same way as a focus stop', () => {
+        // Given a list that moves focus from row to row, as ungrouped Search does
+        renderList(undefined);
+
+        // When the down arrow is pressed twice
+        pressKey('ArrowDown');
+        pressKey('ArrowDown');
+
+        // Then the second row is revealed as a row stop, so it only scrolls as far as needed and clears the floating header
+        expect(mockRevealFocusStop).toHaveBeenLastCalledWith({keyForList: 'group-1', rowIndex: 1, isRow: true});
     });
 });

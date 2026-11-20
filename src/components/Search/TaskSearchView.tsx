@@ -53,8 +53,12 @@ function TaskSearchView({
 }: TaskSearchViewProps) {
     const {type} = queryJSON;
 
-    const {isOffline, isKeyboardShown, safeAreaPaddingBottomStyle, isLargeScreenWidth, toggleAll, selectedTransactions, listRef, onLongPressRow, handleSelectRow, scrollToListIndex} =
-        useSearchListViewState({data, isMobileSelectionModeEnabled, onSelectRow, shouldPreventLongPressRow: true});
+    const {isOffline, isKeyboardShown, safeAreaPaddingBottomStyle, isLargeScreenWidth, toggleAll, selectedTransactions, listRef, onLongPressRow, handleSelectRow} = useSearchListViewState({
+        data,
+        isMobileSelectionModeEnabled,
+        onSelectRow,
+        shouldPreventLongPressRow: true,
+    });
 
     // Task is a flat list, so visibility and selection counts are a single pass over the rows.
     const isItemVisible = (item: SearchListItem) => !isRowDeleted(item) || isOffline;
@@ -123,7 +127,6 @@ function TaskSearchView({
                 showsVerticalScrollIndicator={false}
                 ref={listRef}
                 columns={columns}
-                scrollToIndex={scrollToListIndex}
                 flattenedItemsLength={data.length}
                 onEndReached={onEndReached}
                 onEndReachedThreshold={0.75}

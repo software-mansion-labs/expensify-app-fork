@@ -54,13 +54,12 @@ function ChatSearchView({
 }: ChatSearchViewProps) {
     const {type} = queryJSON;
 
-    const {isKeyboardShown, safeAreaPaddingBottomStyle, isLargeScreenWidth, toggleAll, selectedTransactions, listRef, onLongPressRow, handleSelectRow, scrollToListIndex} =
-        useSearchListViewState({
-            data,
-            isMobileSelectionModeEnabled,
-            onSelectRow,
-            shouldPreventLongPressRow: true,
-        });
+    const {isKeyboardShown, safeAreaPaddingBottomStyle, isLargeScreenWidth, toggleAll, selectedTransactions, listRef, onLongPressRow, handleSelectRow} = useSearchListViewState({
+        data,
+        isMobileSelectionModeEnabled,
+        onSelectRow,
+        shouldPreventLongPressRow: true,
+    });
 
     // Chat is a flat list: no group children, no empty groups, so selection counts are a single pass.
     const selectedItemsLength = data.reduce((acc, item) => acc + (item.keyForList && selectedTransactions[item.keyForList]?.isSelected ? 1 : 0), 0);
@@ -125,7 +124,6 @@ function ChatSearchView({
                 showsVerticalScrollIndicator={false}
                 ref={listRef}
                 columns={columns}
-                scrollToIndex={scrollToListIndex}
                 flattenedItemsLength={data.length}
                 onEndReached={onEndReached}
                 onEndReachedThreshold={0.75}

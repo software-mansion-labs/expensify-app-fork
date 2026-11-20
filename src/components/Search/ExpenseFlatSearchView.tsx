@@ -82,7 +82,6 @@ function ExpenseFlatSearchView({
         handleUndelete,
         onLongPressRow,
         handleSelectRow,
-        scrollToListIndex,
     } = useSearchListViewState({data, isMobileSelectionModeEnabled, onSelectRow, shouldPreventLongPressRow: false});
 
     // Flat lists have no group children to skip, so visibility is computed straight off the rendered rows.
@@ -173,7 +172,6 @@ function ExpenseFlatSearchView({
                 showsVerticalScrollIndicator={false}
                 ref={listRef}
                 columns={columns}
-                scrollToIndex={scrollToListIndex}
                 flattenedItemsLength={data.length}
                 onEndReached={onEndReached}
                 onEndReachedThreshold={0.75}

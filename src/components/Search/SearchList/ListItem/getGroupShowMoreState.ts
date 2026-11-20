@@ -1,3 +1,7 @@
+/**
+ * Decides what sits below an open group's expenses: its "Show more" link, its loading spinner, or neither. Expense
+ * report groups page through rows they already hold, while other groups load more from their own search.
+ */
 type GroupShowMoreStateParams = {
     /** Expense report groups page through the rows they already hold, other groups ask their own search for more */
     isExpenseReportType: boolean;

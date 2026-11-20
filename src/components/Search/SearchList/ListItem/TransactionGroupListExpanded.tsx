@@ -1,11 +1,8 @@
 import ActivityIndicator from '@components/ActivityIndicator';
-import LinkButton from '@components/Button/composed/LinkButton';
 import OfflineWithFeedback from '@components/OfflineWithFeedback';
 import {usePersonalDetails} from '@components/OnyxListItemProvider';
-import {PressableWithFeedback} from '@components/Pressable';
 import ScrollView from '@components/ScrollView';
 import {useSyncedHorizontalScroll} from '@components/Search/hooks/useSyncedHorizontalScroll';
-import {getShowMoreFocusKey} from '@components/Search/SearchList/groupedFocusStops';
 import SearchTableHeader from '@components/Search/SearchTableHeader';
 import type {ListItem} from '@components/SelectionList/types';
 import Text from '@components/Text';
@@ -56,8 +53,9 @@ import {View} from 'react-native';
 
 import type {TransactionGroupListExpandedProps, TransactionListItemType} from './types';
 
+import ExpandedTransactionPressable from './ExpandedTransactionPressable';
 import getGroupShowMoreState from './getGroupShowMoreState';
-import SearchListFocusTarget from './SearchListFocusTarget';
+import GroupShowMoreLink from './GroupShowMoreLink';
 
 /**
  * Non-generic implementation so OXC's React Compiler can memoize the component.
@@ -381,113 +379,90 @@ function TransactionGroupListExpandedImpl({
                 // Enter on the focused row does what a click does, so both check the same conditions.
                 const isRowPressable = !isRowDisabled && (!isDeletedOrPendingDelete || !!canSelectMultiple);
 
-                // The focus target wraps OfflineWithFeedback, which would call the target's function child itself if it sat inside.
                 return (
-                    <SearchListFocusTarget
+                    <OfflineWithFeedback
                         key={transaction.transactionID}
-                        keyForList={transaction.keyForList}
-                        activate={isRowPressable ? () => handleOnPress(transaction) : undefined}
+                        pendingAction={transaction.pendingAction}
                     >
-                        {({ref: focusTargetRef, isFocused, onFocus}) => (
-                            <OfflineWithFeedback pendingAction={transaction.pendingAction}>
-                                <PressableWithFeedback
-                                    ref={focusTargetRef}
-                                    onFocus={onFocus}
-                                    style={
-                                        isFocused &&
-                                        StyleUtils.getItemBackgroundColorStyle(!!transaction.isSelected, isFocused, !!transaction.isDisabled, theme.activeComponentBG, theme.hoverComponentBG)
-                                    }
-                                    onPress={isRowPressable ? (event) => handleOnPress(transaction, event) : undefined}
-                                    disabled={isRowDisabled}
-                                    onLongPress={() => {
-                                        if (shouldSuppressCopyableTextRowLongPress()) {
-                                            return;
-                                        }
-                                        onLongPress?.(transaction);
-                                    }}
-                                    accessibilityRole={CONST.ROLE.BUTTON}
-                                    accessibilityLabel={transaction.text ?? ''}
-                                    isNested
-                                    shouldAllowTextSelection
-                                    onMouseDown={(e) => {
-                                        const isCopyableTarget = markMouseDownOnCopyableText(e?.target);
-                                        if (isCopyableTarget) {
-                                            return;
-                                        }
-                                        e.preventDefault();
-                                    }}
-                                    onTouchStart={(event) => {
-                                        markTouchStartOnCopyableText(event, isPressStartOnCopyableText(event));
-                                    }}
-                                    hoverStyle={[!transaction.isDisabled && styles.hoveredComponentBG, transaction.isSelected && styles.activeComponentBG]}
-                                    wrapperStyle={isDeletedOrPendingDelete ? styles.cursorDisabled : undefined}
-                                    dataSet={{...COPYABLE_ROW_DATA_SET, [CONST.INNER_BOX_SHADOW_ELEMENT]: true}}
-                                    id={transaction.transactionID}
-                                    sentryLabel={CONST.SENTRY_LABEL.SEARCH.EXPANDED_TRANSACTION_ROW}
-                                >
-                                    {({hovered}) => (
-                                        <TransactionItemRow
-                                            report={transaction.report}
-                                            policy={transaction.policy}
-                                            policyCategories={getPolicyCategoriesForTransaction(transaction)}
-                                            policyTagLists={getPolicyTagListsForTransaction(transaction)}
-                                            transactionItem={transaction}
-                                            violations={violations?.[`${ONYXKEYS.COLLECTION.TRANSACTION_VIOLATIONS}${transaction.transactionID}`]}
-                                            isSelected={!!transaction.isSelected}
-                                            isDisabled={isTransactionPendingDelete(transaction)}
-                                            dateColumnSize={dateColumnSize}
-                                            submittedColumnSize={submittedColumnSize}
-                                            approvedColumnSize={approvedColumnSize}
-                                            paidColumnSize={paidColumnSize}
-                                            postedColumnSize={postedColumnSize}
-                                            exportedColumnSize={exportedColumnSize}
-                                            amountColumnSize={amountColumnSize}
-                                            taxAmountColumnSize={taxAmountColumnSize}
-                                            shouldShowTooltip={showTooltip}
-                                            shouldUseNarrowLayout={!isLargeScreenWidth}
-                                            shouldShowCheckbox={!!canSelectMultiple}
-                                            checkboxSentryLabel={CONST.SENTRY_LABEL.SEARCH.EXPANDED_TRANSACTION_ROW_CHECKBOX}
-                                            onCheckboxPress={(_transactionID, shiftKey) => onSelectionButtonPress?.(transaction as ListItem, undefined, shiftKey)}
-                                            columns={currentColumns}
-                                            onButtonPress={(event) => handleButtonPress(transaction, event)}
-                                            style={[styles.noBorderRadius, isLargeScreenWidth ? [styles.p3, styles.pv2, styles.tableRowHeight] : styles.p4, styles.flex1]}
-                                            isReportItemChild
-                                            isInSingleTransactionReport={isInSingleTransactionReport}
-                                            shouldShowBottomBorder={shouldShowBottomBorder}
-                                            onArrowRightPress={isDeletedOrPendingDelete ? undefined : (event) => openReportInRHP(transaction, event)}
-                                            shouldShowArrowRightOnNarrowLayout
-                                            reportActions={reportActions}
-                                            nonPersonalAndWorkspaceCards={nonPersonalAndWorkspaceCards}
-                                            isActionColumnWide={isActionColumnWide}
-                                            isHover={hovered}
-                                        />
-                                    )}
-                                </PressableWithFeedback>
-                            </OfflineWithFeedback>
-                        )}
-                    </SearchListFocusTarget>
+                        <ExpandedTransactionPressable
+                            keyForList={transaction.keyForList}
+                            activate={isRowPressable ? () => handleOnPress(transaction) : undefined}
+                            isSelected={!!transaction.isSelected}
+                            isDisabled={!!transaction.isDisabled}
+                            onPress={isRowPressable ? (event) => handleOnPress(transaction, event) : undefined}
+                            disabled={isRowDisabled}
+                            onLongPress={() => {
+                                if (shouldSuppressCopyableTextRowLongPress()) {
+                                    return;
+                                }
+                                onLongPress?.(transaction);
+                            }}
+                            accessibilityRole={CONST.ROLE.BUTTON}
+                            accessibilityLabel={transaction.text ?? ''}
+                            isNested
+                            shouldAllowTextSelection
+                            onMouseDown={(e) => {
+                                const isCopyableTarget = markMouseDownOnCopyableText(e?.target);
+                                if (isCopyableTarget) {
+                                    return;
+                                }
+                                e.preventDefault();
+                            }}
+                            onTouchStart={(event) => {
+                                markTouchStartOnCopyableText(event, isPressStartOnCopyableText(event));
+                            }}
+                            hoverStyle={[!transaction.isDisabled && styles.hoveredComponentBG, transaction.isSelected && styles.activeComponentBG]}
+                            wrapperStyle={isDeletedOrPendingDelete ? styles.cursorDisabled : undefined}
+                            dataSet={{...COPYABLE_ROW_DATA_SET, [CONST.INNER_BOX_SHADOW_ELEMENT]: true}}
+                            id={transaction.transactionID}
+                        >
+                            {({hovered}) => (
+                                <TransactionItemRow
+                                    report={transaction.report}
+                                    policy={transaction.policy}
+                                    policyCategories={getPolicyCategoriesForTransaction(transaction)}
+                                    policyTagLists={getPolicyTagListsForTransaction(transaction)}
+                                    transactionItem={transaction}
+                                    violations={violations?.[`${ONYXKEYS.COLLECTION.TRANSACTION_VIOLATIONS}${transaction.transactionID}`]}
+                                    isSelected={!!transaction.isSelected}
+                                    isDisabled={isTransactionPendingDelete(transaction)}
+                                    dateColumnSize={dateColumnSize}
+                                    submittedColumnSize={submittedColumnSize}
+                                    approvedColumnSize={approvedColumnSize}
+                                    paidColumnSize={paidColumnSize}
+                                    postedColumnSize={postedColumnSize}
+                                    exportedColumnSize={exportedColumnSize}
+                                    amountColumnSize={amountColumnSize}
+                                    taxAmountColumnSize={taxAmountColumnSize}
+                                    shouldShowTooltip={showTooltip}
+                                    shouldUseNarrowLayout={!isLargeScreenWidth}
+                                    shouldShowCheckbox={!!canSelectMultiple}
+                                    checkboxSentryLabel={CONST.SENTRY_LABEL.SEARCH.EXPANDED_TRANSACTION_ROW_CHECKBOX}
+                                    onCheckboxPress={(_transactionID, shiftKey) => onSelectionButtonPress?.(transaction as ListItem, undefined, shiftKey)}
+                                    columns={currentColumns}
+                                    onButtonPress={(event) => handleButtonPress(transaction, event)}
+                                    style={[styles.noBorderRadius, isLargeScreenWidth ? [styles.p3, styles.pv2, styles.tableRowHeight] : styles.p4, styles.flex1]}
+                                    isReportItemChild
+                                    isInSingleTransactionReport={isInSingleTransactionReport}
+                                    shouldShowBottomBorder={shouldShowBottomBorder}
+                                    onArrowRightPress={isDeletedOrPendingDelete ? undefined : (event) => openReportInRHP(transaction, event)}
+                                    shouldShowArrowRightOnNarrowLayout
+                                    reportActions={reportActions}
+                                    nonPersonalAndWorkspaceCards={nonPersonalAndWorkspaceCards}
+                                    isActionColumnWide={isActionColumnWide}
+                                    isHover={hovered}
+                                />
+                            )}
+                        </ExpandedTransactionPressable>
+                    </OfflineWithFeedback>
                 );
             })}
             {shouldShowMoreButton && (
                 <View style={[styles.w100, styles.flexRow, isLargeScreenWidth && styles.pl10]}>
-                    <SearchListFocusTarget
-                        keyForList={getShowMoreFocusKey(groupKey)}
-                        activate={onShowMoreButtonPress}
-                    >
-                        {({ref: focusTargetRef, onFocus}) => (
-                            <LinkButton
-                                ref={focusTargetRef}
-                                onFocus={onFocus}
-                                sentryLabel={CONST.SENTRY_LABEL.SEARCH.GROUP_SHOW_MORE_BUTTON}
-                                onPress={onShowMoreButtonPress}
-                                isNested
-                                size={CONST.BUTTON_SIZE.MEDIUM}
-                                innerStyles={[styles.ph2]}
-                            >
-                                <LinkButton.Text style={[styles.fontSizeNormal]}>{translate('common.showMore')}</LinkButton.Text>
-                            </LinkButton>
-                        )}
-                    </SearchListFocusTarget>
+                    <GroupShowMoreLink
+                        groupKey={groupKey}
+                        onPress={onShowMoreButtonPress}
+                    />
                 </View>
             )}
             {shouldDisplayLoadingIndicator && (

@@ -57,7 +57,6 @@ type BaseSearchListProps = Pick<
     onSelectRow: (item: SearchListItem) => void;
 
     ref: RefObject<FlashListRef<SearchListItem> | null>;
-    scrollToIndex?: (index: number, animated?: boolean) => void;
 
     /** Precomputed attendee-tracking boolean (derived from policy-for-moving-expenses) */
     isAttendeesEnabledForMovingPolicy?: boolean;

@@ -1,3 +1,7 @@
+/**
+ * Works out how far the Search list scrolls so the arrow keys never leave the focused row hidden under the floating
+ * header or tab bar.
+ */
 type ScrollDeltaToRevealParams = {
     /** Distance from the top of the viewport to the top of the row, negative when the row starts above it */
     top: number;

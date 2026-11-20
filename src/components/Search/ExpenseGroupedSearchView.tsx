@@ -199,7 +199,7 @@ function ExpenseGroupedSearchView({
         handleUndelete,
         onLongPressRow,
         handleSelectRow,
-    } = useSearchListViewState({data, listData, isMobileSelectionModeEnabled, onSelectRow});
+    } = useSearchListViewState({data, isMobileSelectionModeEnabled, onSelectRow});
 
     // Enter on the focused row must do what clicking it does, and a group that isn't a report has no page to open.
     const activateFocusedRow = (item: SearchListItem) => {
