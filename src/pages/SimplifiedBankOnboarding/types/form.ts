@@ -166,6 +166,15 @@ type OnboardingForm = OnboardingFormExtraProps &
 /** The draft as Onyx holds it. Any input may be missing until the user typed it. */
 type OnboardingDraft = Partial<OnboardingForm>;
 
+/** The inputs whose value has the given type, so a field can only point at an input that holds its kind of value */
+type InputIDWithValue<TValue> = {
+    [TID in InputID]: OnboardingForm[TID] extends TValue ? TID : never;
+}[InputID];
+
+type TextInputID = InputIDWithValue<string>;
+type BooleanInputID = InputIDWithValue<boolean>;
+type FileInputID = InputIDWithValue<FileObject[]>;
+
 const SIGNER_INPUT_IDS = {
     SIGNER_FULL_NAME: 'signerFullName',
     SIGNER_JOB_TITLE: 'signerJobTitle',
@@ -182,6 +191,6 @@ type EnterSignerInfoForm = Form<
     }
 >;
 
-export type {EnterSignerInfoForm, GlobalOwnerDraft, InputID, OnboardingDraft, OnboardingForm, USDOwnerDraft};
+export type {BooleanInputID, EnterSignerInfoForm, FileInputID, GlobalOwnerDraft, InputID, OnboardingDraft, OnboardingForm, TextInputID, USDOwnerDraft};
 export {SIGNER_INPUT_IDS};
 export default INPUT_IDS;

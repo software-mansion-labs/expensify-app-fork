@@ -1,22 +1,26 @@
 /**
- * Builds a plain form page. The page counts as complete when every field of it holds a valid value, so the resume
- * position and the step counter agree with what the user sees.
+ * Builds a form page. The page counts as complete when the answers pass the rules of its inputs, so the resume position
+ * and the step counter agree with what the user sees. A page whose completeness the server decides passes it instead.
  */
 import type {LocalizedTranslate} from '@components/LocaleContextProvider';
 
-import type {FieldConfig, FormPageConfig, PageID} from './types';
+import type {OnboardingDraft} from '@pages/SimplifiedBankOnboarding/types/form';
 
-import isFormPageComplete from './validation/isFormPageComplete';
+import type {FormPageConfig} from './types';
 
-type FormPageOptions = {
-    translate: LocalizedTranslate;
+import areInputsComplete from './validation/areInputsComplete';
 
-    /** The page saves only to the draft, so it can be submitted offline */
-    enabledWhenOffline?: boolean;
+type FormPageDefinition = Omit<FormPageConfig, 'kind' | 'isComplete'> & {
+    isComplete?: boolean;
 };
 
-function getFormPage(id: PageID, title: string, fields: FieldConfig[], {translate, enabledWhenOffline}: FormPageOptions): FormPageConfig {
-    return {kind: 'form', id, title, fields, isComplete: isFormPageComplete(fields, translate), enabledWhenOffline};
+function getFormPage(definition: FormPageDefinition, answers: OnboardingDraft, translate: LocalizedTranslate): FormPageConfig {
+    return {
+        ...definition,
+        kind: 'form',
+        isComplete: definition.isComplete ?? areInputsComplete(definition.inputs, answers, translate),
+    };
 }
 
 export default getFormPage;
+export type {FormPageDefinition};

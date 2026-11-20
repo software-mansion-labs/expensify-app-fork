@@ -1,34 +1,53 @@
 import InputWrapper from '@components/Form/InputWrapper';
 import TextInput from '@components/TextInput';
 
-import type {TextFieldConfig} from '@pages/SimplifiedBankOnboarding/formConfig/types';
+import useThemeStyles from '@hooks/useThemeStyles';
+
+import type {TextInputID} from '@pages/SimplifiedBankOnboarding/types/form';
 
 import CONST from '@src/CONST';
 
+import type {ValueOf} from 'type-fest';
+
 import React from 'react';
+import {View} from 'react-native';
 
 type TextFieldProps = {
-    field: TextFieldConfig;
+    inputID: TextInputID;
+    label: string;
+    defaultValue: string;
+    inputMode?: ValueOf<typeof CONST.INPUT_MODE>;
+    maxLength?: number;
+    placeholder?: string;
+    hint?: string;
+
+    /** The server accepted the value and no longer takes a new one */
+    isLocked?: boolean;
 };
 
-function TextField({field}: TextFieldProps) {
+function TextField({inputID, label, defaultValue, inputMode, maxLength, placeholder, hint, isLocked}: TextFieldProps) {
+    const styles = useThemeStyles();
+
     return (
-        <InputWrapper
-            InputComponent={TextInput}
-            inputID={field.id}
-            label={field.label}
-            aria-label={field.label}
-            role={CONST.ROLE.PRESENTATION}
-            defaultValue={field.defaultValue}
-            inputMode={field.inputMode}
-            maxLength={field.maxLength}
-            placeholder={field.placeholder}
-            hint={field.hint}
-            shouldUseDefaultValue={field.isLocked}
-            disabled={field.isLocked}
-            sentryLabel={CONST.SENTRY_LABEL.BANK_ONBOARDING_LAB.EDIT_INPUT}
-        />
+        <View style={styles.mb6}>
+            <InputWrapper
+                InputComponent={TextInput}
+                inputID={inputID}
+                label={label}
+                aria-label={label}
+                role={CONST.ROLE.PRESENTATION}
+                defaultValue={defaultValue}
+                inputMode={inputMode}
+                maxLength={maxLength}
+                placeholder={placeholder}
+                hint={hint}
+                shouldUseDefaultValue={isLocked}
+                disabled={isLocked}
+                sentryLabel={CONST.SENTRY_LABEL.BANK_ONBOARDING_LAB.EDIT_INPUT}
+            />
+        </View>
     );
 }
 
 export default TextField;
+export type {TextFieldProps};

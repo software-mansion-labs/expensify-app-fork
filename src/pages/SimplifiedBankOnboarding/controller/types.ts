@@ -1,6 +1,6 @@
 import type {CustomPageConfig, FlowPlan, PlanContext, StepID} from '@pages/SimplifiedBankOnboarding/formConfig/types';
-import type {OnboardingFormID} from '@pages/SimplifiedBankOnboarding/formConfig/validation/types';
 import type {InputID, OnboardingDraft} from '@pages/SimplifiedBankOnboarding/types/form';
+import type {OnboardingFormID} from '@pages/SimplifiedBankOnboarding/types/formID';
 
 import type {ComponentType} from 'react';
 

@@ -1,5 +1,5 @@
 import type {FlowDescriptor} from '@pages/SimplifiedBankOnboarding/controller/types';
-import buildNonUSDPlan from '@pages/SimplifiedBankOnboarding/formConfig/nonUSD/buildNonUSDPlan';
+import buildNonUSDPlan from '@pages/SimplifiedBankOnboarding/formConfig/buildNonUSDPlan';
 import getNonUSDFlowState from '@pages/SimplifiedBankOnboarding/model/getNonUSDFlowState';
 import {requiresDocusignStep} from '@pages/SimplifiedBankOnboarding/model/setupStatus';
 import type FlowData from '@pages/SimplifiedBankOnboarding/model/types';

@@ -3,8 +3,8 @@
  * itself. Each page is keyed by its ID, so moving to another page starts it with fresh local state.
  */
 import type {CustomPageConfig, PageConfig, PageID} from '@pages/SimplifiedBankOnboarding/formConfig/types';
-import type {OnboardingFormID} from '@pages/SimplifiedBankOnboarding/formConfig/validation/types';
 import type {OnboardingDraft} from '@pages/SimplifiedBankOnboarding/types/form';
+import type {OnboardingFormID} from '@pages/SimplifiedBankOnboarding/types/formID';
 
 import React from 'react';
 

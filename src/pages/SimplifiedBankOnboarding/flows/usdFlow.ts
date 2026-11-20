@@ -1,5 +1,5 @@
 import type {FlowDescriptor} from '@pages/SimplifiedBankOnboarding/controller/types';
-import buildUSDPlan from '@pages/SimplifiedBankOnboarding/formConfig/usd/buildUSDPlan';
+import buildUSDPlan from '@pages/SimplifiedBankOnboarding/formConfig/buildUSDPlan';
 import type FlowData from '@pages/SimplifiedBankOnboarding/model/types';
 import {clearDraftInputs, saveDraft} from '@pages/SimplifiedBankOnboarding/requests/draft';
 import SBO_CONST from '@pages/SimplifiedBankOnboarding/SBO_CONST';

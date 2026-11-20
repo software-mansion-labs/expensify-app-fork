@@ -1,27 +1,17 @@
 /**
- * The shape of a flow: a plan of steps, each step a list of pages, each form page a list of fields. The builders in
- * `formConfig/` produce it from the answers, the controller walks it and `form/` renders one page of it. Labels are
- * already translated, so the renderer needs no knowledge of the flow.
+ * The shape of a flow: a plan of steps, each step a list of pages. The builders in `formConfig/` produce it from the
+ * answers, the controller walks it and `form/` renders one page of it. A form page holds its fields as JSX next to the
+ * rules of its inputs, and labels are already translated, so the renderer needs no knowledge of the flow.
  */
 import type {LocalizedTranslate} from '@components/LocaleContextProvider';
 
 import type {RequestKey} from '@pages/SimplifiedBankOnboarding/requests/requestKey';
 import type {RequestOutcome} from '@pages/SimplifiedBankOnboarding/requests/types';
-import type {InputID, OnboardingDraft, OnboardingForm} from '@pages/SimplifiedBankOnboarding/types/form';
+import type {BooleanInputID, InputID, OnboardingDraft, OnboardingForm} from '@pages/SimplifiedBankOnboarding/types/form';
 
-import type CONST from '@src/CONST';
-import type {FileObject} from '@src/types/utils/Attachment';
-
-import type {ValueOf} from 'type-fest';
+import type {ReactNode} from 'react';
 
 import type {PageID, StepID} from './ids';
-
-/** The inputs whose value has the given type, so a field can only point at an input that holds its kind of value */
-type InputIDWithValue<TValue> = {[TID in InputID]: OnboardingForm[TID] extends TValue ? TID : never}[InputID];
-
-type TextInputID = InputIDWithValue<string>;
-type BooleanInputID = InputIDWithValue<boolean>;
-type FileInputID = InputIDWithValue<FileObject[]>;
 
 /**
  * Returns the translated error of a value, or undefined when the value is valid. The other values of the form are there
@@ -29,93 +19,25 @@ type FileInputID = InputIDWithValue<FileObject[]>;
  */
 type FieldValidator = (value: string, values: OnboardingDraft) => string | undefined;
 
-type RequiredFieldProps = {
-    isRequired?: boolean;
+/** How the form page checks one of its inputs. An input is required unless it is optional. */
+type InputRule = {
+    isOptional?: boolean;
 
-    /** The error of an empty required field. The generic "field required" error is shown without it. */
+    /** The error of an empty required input. The generic "field required" error is shown without it. */
     requiredErrorText?: string;
 };
 
-type TextFieldConfig = RequiredFieldProps & {
-    type: 'text';
-    id: TextInputID;
-    label: string;
-    defaultValue: string;
+type TextInputRule = InputRule & {
     validate?: FieldValidator;
-
-    /** The server accepted the value and no longer takes a new one */
-    isLocked?: boolean;
-    inputMode?: ValueOf<typeof CONST.INPUT_MODE>;
-    maxLength?: number;
-    placeholder?: string;
-    hint?: string;
 };
 
-type DateFieldConfig = RequiredFieldProps & {
-    type: 'date';
-    id: TextInputID;
-    label: string;
-    defaultValue: string;
-
-    /** The date must give an age between the payment minimum and the maximum of CONST.DATE_BIRTH */
-    isDateOfBirth?: boolean;
+/**
+ * The inputs of a form page and their rules. The form validates them, submits only their values and the plan counts the
+ * page as complete when the answers pass them, so the fields that the page renders must all be listed here.
+ */
+type PageInputs = {
+    [TID in InputID]?: OnboardingForm[TID] extends string ? TextInputRule : InputRule;
 };
-
-type PicklistOption = {
-    value: string;
-    label: string;
-};
-
-type PicklistFieldConfig = RequiredFieldProps & {
-    type: 'picklist';
-    id: TextInputID;
-    label: string;
-    defaultValue: string;
-    options: PicklistOption[];
-    isLocked?: boolean;
-
-    /** The title of the list that opens from the row. Defaults to the label. */
-    modalTitle?: string;
-
-    /** The label of the search input of that list. Defaults to the label. */
-    searchTitle?: string;
-};
-
-type CheckboxFieldConfig = RequiredFieldProps & {
-    type: 'checkbox';
-    id: BooleanInputID;
-    label: string;
-    defaultValue: boolean;
-};
-
-type FileFieldConfig = RequiredFieldProps & {
-    type: 'file';
-    id: FileInputID;
-    label: string;
-    defaultValue: FileObject[];
-
-    /** The text under the file button, such as what the document must show */
-    description?: string;
-    acceptedFileTypes: Array<ValueOf<typeof CONST.API_ATTACHMENT_VALIDATIONS.ALLOWED_RECEIPT_EXTENSIONS>>;
-    fileLimit: number;
-
-    /** In bytes */
-    maxFileSize?: number;
-};
-
-/** A value the user sees on the page but does not type, such as data that the server already holds */
-type ReadOnlyFieldConfig = {
-    type: 'readOnly';
-
-    /** The React key of the row. It is not an input. */
-    id: string;
-    label: string;
-    value: string;
-};
-
-type InputFieldConfig = TextFieldConfig | DateFieldConfig | PicklistFieldConfig | CheckboxFieldConfig | FileFieldConfig;
-
-type FieldConfig = InputFieldConfig | ReadOnlyFieldConfig;
 
 /** What happens after a page: the draft values to save and the page to show next */
 type PageTransition = {
@@ -164,7 +86,10 @@ type FormPageConfig = PageBase & {
     kind: 'form';
     title: string;
     description?: string;
-    fields: FieldConfig[];
+    inputs: PageInputs;
+
+    /** The fields of the page from `form/fields`, and anything shown between them */
+    content: ReactNode;
 
     /** Defaults to "Next", or to "Confirm" in edit mode */
     submitLabel?: string;
@@ -263,32 +188,23 @@ type PlanContext = {
 };
 
 export type {
-    BooleanInputID,
-    CheckboxFieldConfig,
     ConfirmationPageConfig,
     ConfirmationRow,
     CustomPageConfig,
     CustomStepName,
-    DateFieldConfig,
-    FieldConfig,
     FieldValidator,
-    FileFieldConfig,
-    FileInputID,
     FlowPlan,
     FormPageConfig,
-    InputFieldConfig,
+    InputRule,
     ListPageConfig,
     ListRow,
     PageConfig,
     PageID,
+    PageInputs,
     PageTransition,
-    PicklistFieldConfig,
-    PicklistOption,
     PlanContext,
     QuestionPageConfig,
-    ReadOnlyFieldConfig,
     StepConfig,
     StepID,
-    TextFieldConfig,
-    TextInputID,
+    TextInputRule,
 };

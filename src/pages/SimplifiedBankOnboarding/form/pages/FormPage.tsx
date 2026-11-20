@@ -1,6 +1,6 @@
 /**
- * A page of input fields. It renders the fields of the config inside the form of the flow, validates them with their
- * rules and submits only their values. What happens after the submit is up to the caller.
+ * A page of input fields. It renders the fields of the plan inside the form of the flow, validates them with the rules
+ * of the page and submits only the values of its inputs. What happens after the submit is up to the caller.
  */
 import FormProvider from '@components/Form/FormProvider';
 import FormHelpMessage from '@components/FormHelpMessage';
@@ -9,17 +9,16 @@ import Text from '@components/Text';
 import useLocalize from '@hooks/useLocalize';
 import useThemeStyles from '@hooks/useThemeStyles';
 
-import FieldRenderer from '@pages/SimplifiedBankOnboarding/form/fields/FieldRenderer';
+import OnboardingFormIDContext from '@pages/SimplifiedBankOnboarding/form/fields/OnboardingFormIDContext';
 import type {FormPageConfig} from '@pages/SimplifiedBankOnboarding/formConfig/types';
-import getFieldValues from '@pages/SimplifiedBankOnboarding/formConfig/validation/getFieldValues';
-import type {OnboardingFormID} from '@pages/SimplifiedBankOnboarding/formConfig/validation/types';
-import validateFields from '@pages/SimplifiedBankOnboarding/formConfig/validation/validateFields';
+import getInputValues from '@pages/SimplifiedBankOnboarding/formConfig/validation/getInputValues';
+import validateInputs from '@pages/SimplifiedBankOnboarding/formConfig/validation/validateInputs';
 import type {OnboardingDraft} from '@pages/SimplifiedBankOnboarding/types/form';
+import type {OnboardingFormID} from '@pages/SimplifiedBankOnboarding/types/formID';
 
 import CONST from '@src/CONST';
 
 import React from 'react';
-import {View} from 'react-native';
 
 type FormPageProps = {
     /** The form that holds the values, which keeps the draft of the inputs while the user types */
@@ -38,31 +37,23 @@ function FormPage({formID, page, isEditing, isLoading, errorText, onSubmit}: For
     const styles = useThemeStyles();
 
     return (
-        <FormProvider
-            formID={formID}
-            submitButtonText={page.submitLabel ?? translate(isEditing ? 'common.confirm' : 'common.next')}
-            validate={(values, validateTranslate) => validateFields(page.fields, values, validateTranslate)}
-            onSubmit={(values) => onSubmit(getFieldValues(page.fields, values))}
-            style={[styles.mh5, styles.flexGrow1]}
-            isLoading={isLoading}
-            enabledWhenOffline={page.enabledWhenOffline}
-            sentryLabel={CONST.SENTRY_LABEL.BANK_ONBOARDING_LAB.SUBMIT_STEP}
-        >
-            <Text style={[styles.textHeadlineLineHeightXXL, styles.mb5]}>{page.title}</Text>
-            {!!page.description && <Text style={[styles.textSupporting, styles.mb5]}>{page.description}</Text>}
-            {page.fields.map((field) => (
-                <View
-                    key={field.id}
-                    style={styles.mb6}
-                >
-                    <FieldRenderer
-                        formID={formID}
-                        field={field}
-                    />
-                </View>
-            ))}
-            <FormHelpMessage message={errorText} />
-        </FormProvider>
+        <OnboardingFormIDContext.Provider value={formID}>
+            <FormProvider
+                formID={formID}
+                submitButtonText={page.submitLabel ?? translate(isEditing ? 'common.confirm' : 'common.next')}
+                validate={(values, validateTranslate) => validateInputs(page.inputs, values, validateTranslate)}
+                onSubmit={(values) => onSubmit(getInputValues(page.inputs, values))}
+                style={[styles.mh5, styles.flexGrow1]}
+                isLoading={isLoading}
+                enabledWhenOffline={page.enabledWhenOffline}
+                sentryLabel={CONST.SENTRY_LABEL.BANK_ONBOARDING_LAB.SUBMIT_STEP}
+            >
+                <Text style={[styles.textHeadlineLineHeightXXL, styles.mb5]}>{page.title}</Text>
+                {!!page.description && <Text style={[styles.textSupporting, styles.mb5]}>{page.description}</Text>}
+                {page.content}
+                <FormHelpMessage message={errorText} />
+            </FormProvider>
+        </OnboardingFormIDContext.Provider>
     );
 }
 

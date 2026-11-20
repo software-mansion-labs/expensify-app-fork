@@ -1,6 +1,7 @@
 /**
- * A file input. The upload control reports only the files that the user just added, so the field keeps the whole list
- * in its own state and hands it to the form as the value.
+ * A required document with the limits of the global provider: one file of the accepted types and size. The upload
+ * control reports only the files that the user just added, so the field keeps the whole list in its own state and hands
+ * it to the form as the value.
  */
 import InputWrapper from '@components/Form/InputWrapper';
 import Text from '@components/Text';
@@ -9,25 +10,34 @@ import UploadFile from '@components/UploadFile';
 import useLocalize from '@hooks/useLocalize';
 import useThemeStyles from '@hooks/useThemeStyles';
 
-import type {FileFieldConfig} from '@pages/SimplifiedBankOnboarding/formConfig/types';
-import type {OnboardingFormID} from '@pages/SimplifiedBankOnboarding/formConfig/validation/types';
+import type {FileInputID} from '@pages/SimplifiedBankOnboarding/types/form';
 
 import {clearErrorFields, setErrorFields} from '@userActions/FormActions';
 
+import CONST from '@src/CONST';
 import type {FileObject} from '@src/types/utils/Attachment';
 
-import React, {useState} from 'react';
+import type {ReactNode} from 'react';
+
+import React, {useContext, useState} from 'react';
 import {View} from 'react-native';
 
+import OnboardingFormIDContext from './OnboardingFormIDContext';
+
 type FileFieldProps = {
-    formID: OnboardingFormID;
-    field: FileFieldConfig;
+    inputID: FileInputID;
+    label: string;
+    defaultValue: FileObject[];
+
+    /** Shown under the file button, such as a `FileFieldDescription` of what the document must show */
+    children?: ReactNode;
 };
 
-function FileField({formID, field}: FileFieldProps) {
+function FileField({inputID, label, defaultValue, children}: FileFieldProps) {
     const {translate} = useLocalize();
     const styles = useThemeStyles();
-    const [files, setFiles] = useState<FileObject[]>(field.defaultValue);
+    const formID = useContext(OnboardingFormIDContext);
+    const [files, setFiles] = useState<FileObject[]>(defaultValue);
 
     const changeFiles = (newFiles: FileObject[]) => {
         setFiles(newFiles);
@@ -39,26 +49,26 @@ function FileField({formID, field}: FileFieldProps) {
             clearErrorFields(formID);
             return;
         }
-        setErrorFields(formID, {[field.id]: {onUpload: error}});
+        setErrorFields(formID, {[inputID]: {onUpload: error}});
     };
 
     return (
-        <View>
-            <Text style={[styles.textNormalThemeText, styles.textLineHeightNormal, styles.textStrong, styles.mb3]}>{field.label}</Text>
+        <View style={styles.mb6}>
+            <Text style={[styles.textNormalThemeText, styles.textLineHeightNormal, styles.textStrong, styles.mb3]}>{label}</Text>
             <InputWrapper
                 InputComponent={UploadFile}
-                inputID={field.id}
+                inputID={inputID}
                 buttonText={translate('common.chooseFile')}
                 uploadedFiles={files}
                 value={files}
                 onUpload={(addedFiles) => changeFiles([...files, ...addedFiles])}
                 onRemove={(fileName) => changeFiles(files.filter((file) => file.name !== fileName))}
                 setError={setUploadError}
-                acceptedFileTypes={field.acceptedFileTypes}
-                fileLimit={field.fileLimit}
-                maxFileSize={field.maxFileSize}
+                acceptedFileTypes={[...CONST.CORPAY_DOCUMENT.ALLOWED_FILE_TYPES]}
+                fileLimit={CONST.CORPAY_DOCUMENT.FILE_LIMIT}
+                maxFileSize={CONST.CORPAY_DOCUMENT.MAX_FILE_SIZE}
             />
-            {!!field.description && <Text style={[styles.mutedTextLabel, styles.mt3]}>{field.description}</Text>}
+            {children}
         </View>
     );
 }

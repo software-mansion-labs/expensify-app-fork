@@ -5,7 +5,7 @@ import {findStep} from '@pages/SimplifiedBankOnboarding/flow/position';
 import isPositionReachable from '@pages/SimplifiedBankOnboarding/flow/reachability';
 import getResumePosition from '@pages/SimplifiedBankOnboarding/flow/resume';
 import {getNextStepPosition} from '@pages/SimplifiedBankOnboarding/flow/transitions';
-import buildNonUSDPlan from '@pages/SimplifiedBankOnboarding/formConfig/nonUSD/buildNonUSDPlan';
+import buildNonUSDPlan from '@pages/SimplifiedBankOnboarding/formConfig/buildNonUSDPlan';
 import type {FlowPlan, PageID, StepID} from '@pages/SimplifiedBankOnboarding/formConfig/types';
 import {WRITE_COMMANDS} from '@pages/SimplifiedBankOnboarding/mockBackend/commands';
 import {buildClientACHData} from '@pages/SimplifiedBankOnboarding/mockBackend/handlers/buildResponse';

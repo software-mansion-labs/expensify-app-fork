@@ -1,7 +1,20 @@
 import type {PageConfig, StepConfig} from '@pages/SimplifiedBankOnboarding/formConfig/types';
-import type {InputID} from '@pages/SimplifiedBankOnboarding/types/form';
+import getInputIDs from '@pages/SimplifiedBankOnboarding/formConfig/validation/getInputIDs';
+import type {FileInputID, InputID} from '@pages/SimplifiedBankOnboarding/types/form';
+import INPUT_IDS from '@pages/SimplifiedBankOnboarding/types/form';
 
 /** Files never come back from the server, so a document stays in the draft and the step can still show it */
+const FILE_INPUT_IDS = {
+    [INPUT_IDS.COMPANY_TAX_ID_DOCUMENT]: true,
+    [INPUT_IDS.COMPANY_ADDRESS_DOCUMENT]: true,
+    [INPUT_IDS.BANK_STATEMENT]: true,
+    [INPUT_IDS.ACH_AUTHORIZATION_FORM]: true,
+} satisfies Record<FileInputID, true>;
+
+function isFileInputID(inputID: InputID): boolean {
+    return inputID in FILE_INPUT_IDS;
+}
+
 function getPageInputIDs(page: PageConfig): InputID[] {
     if (page.kind === 'question') {
         return [page.fieldID];
@@ -9,7 +22,7 @@ function getPageInputIDs(page: PageConfig): InputID[] {
     if (page.kind !== 'form') {
         return [];
     }
-    return page.fields.flatMap((field) => (field.type === 'readOnly' || field.type === 'file' ? [] : [field.id]));
+    return getInputIDs(page.inputs).filter((inputID) => !isFileInputID(inputID));
 }
 
 /**

@@ -1,23 +1,32 @@
 import CheckboxWithLabel from '@components/CheckboxWithLabel';
 import InputWrapper from '@components/Form/InputWrapper';
 
-import type {CheckboxFieldConfig} from '@pages/SimplifiedBankOnboarding/formConfig/types';
+import useThemeStyles from '@hooks/useThemeStyles';
+
+import type {BooleanInputID} from '@pages/SimplifiedBankOnboarding/types/form';
 
 import React from 'react';
+import {View} from 'react-native';
 
 type CheckboxFieldProps = {
-    field: CheckboxFieldConfig;
+    inputID: BooleanInputID;
+    label: string;
+    defaultValue: boolean;
 };
 
-function CheckboxField({field}: CheckboxFieldProps) {
+function CheckboxField({inputID, label, defaultValue}: CheckboxFieldProps) {
+    const styles = useThemeStyles();
+
     return (
-        <InputWrapper
-            InputComponent={CheckboxWithLabel}
-            inputID={field.id}
-            label={field.label}
-            accessibilityLabel={field.label}
-            defaultValue={field.defaultValue}
-        />
+        <View style={styles.mb6}>
+            <InputWrapper
+                InputComponent={CheckboxWithLabel}
+                inputID={inputID}
+                label={label}
+                accessibilityLabel={label}
+                defaultValue={defaultValue}
+            />
+        </View>
     );
 }
 

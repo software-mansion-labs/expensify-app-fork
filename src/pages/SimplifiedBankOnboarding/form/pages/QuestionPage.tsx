@@ -7,8 +7,8 @@ import YesNoStep from '@components/SubStepForms/YesNoStep';
 
 import useThemeStyles from '@hooks/useThemeStyles';
 
-import type {BooleanInputID, QuestionPageConfig} from '@pages/SimplifiedBankOnboarding/formConfig/types';
-import type {OnboardingDraft} from '@pages/SimplifiedBankOnboarding/types/form';
+import type {QuestionPageConfig} from '@pages/SimplifiedBankOnboarding/formConfig/types';
+import type {BooleanInputID, OnboardingDraft} from '@pages/SimplifiedBankOnboarding/types/form';
 
 import React from 'react';
 

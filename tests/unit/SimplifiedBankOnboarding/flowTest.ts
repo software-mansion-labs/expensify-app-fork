@@ -27,7 +27,8 @@ function formPage(id: PageID, {isComplete = true, previousPageID}: PageOptions =
         kind: 'form',
         id,
         title: id,
-        fields: [],
+        inputs: {},
+        content: null,
         isComplete,
         previousPageID,
     };

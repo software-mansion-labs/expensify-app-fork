@@ -12,18 +12,30 @@ describe('getStepInputIDsToClear', () => {
             title: 'Owners',
             isComplete: true,
             pages: [
-                {kind: 'question', id: BENEFICIAL_OWNERS_SUB_PAGES.IS_USER_UBO, fieldID: 'ownsMoreThan25Percent', title: '', description: '', defaultValue: false, isComplete: true},
+                {
+                    kind: 'question',
+                    id: BENEFICIAL_OWNERS_SUB_PAGES.IS_USER_UBO,
+                    fieldID: 'ownsMoreThan25Percent',
+                    title: '',
+                    description: '',
+                    defaultValue: false,
+                    isComplete: true,
+                },
                 {
                     kind: 'form',
                     id: BENEFICIAL_OWNERS_SUB_PAGES.LEGAL_NAME,
                     title: '',
                     isComplete: true,
-                    fields: [
-                        {type: 'text', id: 'ownerFirstName', label: '', defaultValue: ''},
-                        {type: 'text', id: 'ownerLastName', label: '', defaultValue: ''},
-                    ],
+                    inputs: {ownerFirstName: {}, ownerLastName: {}},
+                    content: null,
                 },
-                {kind: 'confirmation', id: BENEFICIAL_OWNERS_SUB_PAGES.CONFIRMATION, title: '', rows: [], isComplete: true},
+                {
+                    kind: 'confirmation',
+                    id: BENEFICIAL_OWNERS_SUB_PAGES.CONFIRMATION,
+                    title: '',
+                    rows: [],
+                    isComplete: true,
+                },
             ],
         };
 
@@ -34,8 +46,8 @@ describe('getStepInputIDsToClear', () => {
         expect(inputIDs).toEqual(['ownsMoreThan25Percent', 'ownerFirstName', 'ownerLastName']);
     });
 
-    it('keeps files and read-only rows out of the list', () => {
-        // Given a step with a file field, a read-only row and a date field
+    it('keeps files out of the list', () => {
+        // Given a step whose page has a file input and a date input
         const step: StepConfig = {
             id: PAGE_NAMES.KYB_DOCS,
             title: 'Documents',
@@ -46,11 +58,8 @@ describe('getStepInputIDsToClear', () => {
                     id: KYB_DOCUMENTS_SUB_PAGES.UPLOAD,
                     title: '',
                     isComplete: true,
-                    fields: [
-                        {type: 'file', id: 'companyTaxIDDocument', label: '', defaultValue: [], acceptedFileTypes: [], fileLimit: 1},
-                        {type: 'readOnly', id: 'companyName', label: '', value: ''},
-                        {type: 'date', id: 'dob', label: '', defaultValue: ''},
-                    ],
+                    inputs: {companyTaxIDDocument: {}, dob: {}},
+                    content: null,
                 },
             ],
         };
@@ -58,7 +67,7 @@ describe('getStepInputIDsToClear', () => {
         // When the inputs to clear are listed
         const inputIDs = getStepInputIDsToClear(step);
 
-        // Then only the date is listed: the server never sends files back, and a read-only row is not an input
+        // Then only the date is listed, because the server never sends files back and clearing them would lose the upload
         expect(inputIDs).toEqual(['dob']);
     });
 
@@ -68,7 +77,14 @@ describe('getStepInputIDsToClear', () => {
             id: PAGE_NAMES.REQUESTOR,
             title: 'Identity',
             isComplete: true,
-            pages: [{kind: 'custom', id: PERSONAL_INFO_SUB_PAGES.CONFIRMATION, component: 'onfido', isComplete: true}],
+            pages: [
+                {
+                    kind: 'custom',
+                    id: PERSONAL_INFO_SUB_PAGES.CONFIRMATION,
+                    component: 'onfido',
+                    isComplete: true,
+                },
+            ],
         };
 
         // When the inputs to clear are listed
