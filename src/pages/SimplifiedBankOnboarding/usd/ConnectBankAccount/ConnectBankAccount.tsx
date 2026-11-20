@@ -21,12 +21,9 @@ import ConnectedBankAccount from './ConnectedBankAccount';
 import FinishReviewCard from './FinishReviewCard';
 import MaxAttemptsReachedMessage from './MaxAttemptsReachedMessage';
 
-type ConnectBankAccountProps = Pick<USDPageProps, 'onSubmit' | 'onBackButtonPress' | 'policyID' | 'stepNames' | 'backTo'>;
+type ConnectBankAccountProps = Pick<USDPageProps, 'onSubmit' | 'onBackButtonPress' | 'policyID' | 'stepNames' | 'startStepIndex' | 'backTo'>;
 
-// The position of this step in the step counter of the header
-const STEP_INDEX = 6;
-
-function ConnectBankAccount({onSubmit, onBackButtonPress, policyID, stepNames, backTo}: ConnectBankAccountProps) {
+function ConnectBankAccount({onSubmit, onBackButtonPress, policyID, stepNames, startStepIndex, backTo}: ConnectBankAccountProps) {
     const {translate} = useLocalize();
     const [account] = useOnyx(ONYXKEYS.SIMPLIFIED_BANK_ONBOARDING_ACCOUNT);
 
@@ -64,7 +61,7 @@ function ConnectBankAccount({onSubmit, onBackButtonPress, policyID, stepNames, b
             shouldEnableMaxHeight
             headerTitle={isBankAccountPending ? translate('connectBankAccountStep.validateYourBankAccount') : translate('bankAccount.addBankAccount')}
             handleBackButtonPress={onBackButtonPress}
-            startStepIndex={STEP_INDEX}
+            startStepIndex={startStepIndex}
             stepNames={stepNames}
         >
             {renderContent()}

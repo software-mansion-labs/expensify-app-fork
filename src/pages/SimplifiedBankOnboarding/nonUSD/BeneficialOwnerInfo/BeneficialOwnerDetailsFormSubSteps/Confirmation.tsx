@@ -5,23 +5,20 @@
 import ConfirmationStep from '@components/SubStepForms/ConfirmationStep';
 
 import useLocalize from '@hooks/useLocalize';
-import useOnyx from '@hooks/useOnyx';
 
 import type BeneficialOwnerSubPageProps from '@pages/SimplifiedBankOnboarding/nonUSD/BeneficialOwnerInfo/types';
-import getValuesForBeneficialOwner from '@pages/SimplifiedBankOnboarding/nonUSD/BeneficialOwnerInfo/utils/getValuesForBeneficialOwner';
 import SBO_CONST from '@pages/SimplifiedBankOnboarding/SBO_CONST';
-
-import ONYXKEYS from '@src/ONYXKEYS';
+import {toParams} from '@pages/SimplifiedBankOnboarding/values/codecs/nonUSDBeneficialOwners';
 
 import React from 'react';
 
 const {BENEFICIAL_OWNER_INFO: SUBSTEP_INDEX} = SBO_CONST.NON_USD.SUBSTEP_INDEX;
 
-function Confirmation({onNext, onMove, isEditing, ownerBeingModifiedID}: BeneficialOwnerSubPageProps) {
+function Confirmation({onNext, onMove, isEditing, ownerBeingModifiedID, ownerValues}: BeneficialOwnerSubPageProps) {
     const {translate} = useLocalize();
-    const [draft] = useOnyx(ONYXKEYS.FORMS.SIMPLIFIED_BANK_ONBOARDING_FORM_DRAFT);
 
-    const values = getValuesForBeneficialOwner(ownerBeingModifiedID, draft);
+    // The summary shows the owner as the server will store it, with the two names joined.
+    const values = toParams(ownerBeingModifiedID, ownerValues);
 
     // The details form starts at the name page, so its page positions are the step positions minus that one.
     const moveToSubStep = (subStepIndex: number) => onMove(subStepIndex - SUBSTEP_INDEX.NAME);

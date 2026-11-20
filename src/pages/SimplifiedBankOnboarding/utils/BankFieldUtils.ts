@@ -4,10 +4,9 @@
  */
 import SBO_CONST from '@pages/SimplifiedBankOnboarding/SBO_CONST';
 import type {BankFieldID, BankFields, BankFormField} from '@pages/SimplifiedBankOnboarding/types/onyx';
+import type {ResolvedValues} from '@pages/SimplifiedBankOnboarding/values/resolveValue';
 
 import type {OnyxEntry} from 'react-native-onyx';
-
-import type {SubStepValues} from './getSubStepValues';
 
 const {ACCOUNT_HOLDER_KEY_PREFIX, SUBSTEP_INDEX} = SBO_CONST.NON_USD;
 const CONFIRMATION_INDEX = SUBSTEP_INDEX.BANK_INFO.ACCOUNT_HOLDER_DETAILS + 1;
@@ -38,13 +37,13 @@ function getBankFieldRuleError(field: BankFormField, value: string): string | un
     return field.validationRules.find((rule) => !!rule.regEx && !new RegExp(rule.regEx).test(value))?.errorMessage;
 }
 
-function isBankFieldInvalidOrMissing(field: BankFormField, values: Partial<SubStepValues<BankFieldID>>): boolean {
+function isBankFieldInvalidOrMissing(field: BankFormField, values: Partial<ResolvedValues<BankFieldID>>): boolean {
     const value = values[field.id];
     return !value || !!getBankFieldRuleError(field, value);
 }
 
 /** Returns the index of the first sub page of the bank step that still misses valid data */
-function getInitialSubStepForBankInfo(values: Partial<SubStepValues<BankFieldID>>, bankFields: OnyxEntry<BankFields>): number {
+function getInitialSubStepForBankInfo(values: Partial<ResolvedValues<BankFieldID>>, bankFields: OnyxEntry<BankFields>): number {
     if (!bankFields?.formFields) {
         return SUBSTEP_INDEX.BANK_INFO.BANK_ACCOUNT_DETAILS;
     }

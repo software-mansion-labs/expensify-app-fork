@@ -1,7 +1,7 @@
 /**
  * The API layer of the mock backend. It stands in for `API.write` and `API.read`: it applies the optimistic data at once,
  * runs the command on the mock server after the configured latency, then applies the server response and the success or
- * failure data. Writes made offline wait in a queue, reads made offline are dropped.
+ * failure data. Writes made offline wait in a queue, reads made offline fail and are dropped.
  */
 /* eslint-disable no-param-reassign -- The mock server keeps its database in memory and the handlers change it in place */
 import Log from '@libs/Log';
@@ -107,7 +107,9 @@ function write<TCommand extends WriteCommand, TKey extends OnyxKey>(command: TCo
 function read<TCommand extends ReadCommand, TKey extends OnyxKey>(command: TCommand, params: ReadCommandParams[TCommand], onyxData: OnyxData<TKey> = {}) {
     Onyx.update(onyxData.optimisticData ?? []);
     if (getIsOffline()) {
-        logRequest({command, type: 'read', status: 'dropped', message: 'Offline, reads are not retried'});
+        // A read that never reaches the server fails, so nothing that it started stays pending. It is not retried.
+        Onyx.update(onyxData.failureData ?? []);
+        logRequest({command, type: 'read', status: 'dropped', message: 'Offline, the read fails and is not retried'});
         return;
     }
     enqueueRequest({command, type: 'read', onyxData, runHandler: (database) => readHandlers[command](params, database)});

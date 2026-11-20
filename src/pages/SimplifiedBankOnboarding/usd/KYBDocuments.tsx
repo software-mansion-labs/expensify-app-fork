@@ -1,8 +1,7 @@
 /**
  * The document step of the USD flow, shown only when the verification asks for documents. Like the real step it renders
  * one file input per required document, keeps the picked files both in local state and in the form draft, and has no step
- * counter in the header. The mock request carries only the file names. The submit waits for the answer with the shared
- * `isLoading` (request style 1).
+ * counter in the header. The mock request carries only the file names. The submit follows its request by its own ID.
  */
 import FormProvider from '@components/Form/FormProvider';
 import InputWrapper from '@components/Form/InputWrapper';
@@ -16,10 +15,8 @@ import useLocalize from '@hooks/useLocalize';
 import useOnyx from '@hooks/useOnyx';
 import useThemeStyles from '@hooks/useThemeStyles';
 
-import {getLatestErrorMessage} from '@libs/ErrorUtils';
-
 import {uploadKYBDocuments} from '@pages/SimplifiedBankOnboarding/actions/USDBankAccount';
-import useOnboardingSubmitCallback from '@pages/SimplifiedBankOnboarding/hooks/useOnboardingSubmitCallback';
+import useStepRequest from '@pages/SimplifiedBankOnboarding/requests/useStepRequest';
 import SBO_CONST from '@pages/SimplifiedBankOnboarding/SBO_CONST';
 import INPUT_IDS from '@pages/SimplifiedBankOnboarding/types/form';
 import {getBankAccountParams} from '@pages/SimplifiedBankOnboarding/utils/OnboardingAccountUtils';
@@ -38,6 +35,9 @@ import type USDPageProps from './types';
 type KYBDocumentsProps = Pick<USDPageProps, 'onSubmit' | 'onBackButtonPress'>;
 
 type KYBInputID = typeof INPUT_IDS.COMPANY_TAX_ID_DOCUMENT | typeof INPUT_IDS.COMPANY_ADDRESS_DOCUMENT;
+
+/** The server keeps only the document names, so the picked files leave the draft once the server saved them */
+const KYB_FIELDS_TO_CLEAR: KYBInputID[] = [INPUT_IDS.COMPANY_TAX_ID_DOCUMENT, INPUT_IDS.COMPANY_ADDRESS_DOCUMENT];
 
 type UploadedFiles = Record<KYBInputID, FileObject[]>;
 
@@ -61,7 +61,7 @@ function KYBDocuments({onSubmit, onBackButtonPress}: KYBDocumentsProps) {
     const styles = useThemeStyles();
     const [account] = useOnyx(ONYXKEYS.SIMPLIFIED_BANK_ONBOARDING_ACCOUNT);
     const [draft] = useOnyx(ONYXKEYS.FORMS.SIMPLIFIED_BANK_ONBOARDING_FORM_DRAFT);
-    const markSubmitting = useOnboardingSubmitCallback(onSubmit);
+    const {send, isPending, errorMessage} = useStepRequest({onSuccess: onSubmit});
 
     const [uploadedFiles, setUploadedFiles] = useState<UploadedFiles>(() => ({
         [INPUT_IDS.COMPANY_TAX_ID_DOCUMENT]: draft?.[INPUT_IDS.COMPANY_TAX_ID_DOCUMENT] ?? [],
@@ -97,8 +97,7 @@ function KYBDocuments({onSubmit, onBackButtonPress}: KYBDocumentsProps) {
 
     const submit = () => {
         const documentNames = requiredDocuments.map((document) => uploadedFiles[document.inputID].at(0)?.name ?? '').filter((documentName) => !!documentName);
-        uploadKYBDocuments(getBankAccountParams(achData?.policyID, achData), documentNames);
-        markSubmitting();
+        send((requestID) => uploadKYBDocuments(requestID, getBankAccountParams(achData?.policyID, achData), documentNames, KYB_FIELDS_TO_CLEAR));
     };
 
     return (
@@ -117,7 +116,7 @@ function KYBDocuments({onSubmit, onBackButtonPress}: KYBDocumentsProps) {
                 style={[styles.mh5, styles.flexGrow1]}
                 submitButtonStyles={styles.mb0}
                 enabledWhenOffline={false}
-                isLoading={!!account?.isLoading}
+                isLoading={isPending}
             >
                 <Text style={[styles.textHeadlineLineHeightXXL, styles.mb5]}>{translate('documentsStep.beforeYouGo')}</Text>
                 <Text style={[styles.textSupporting, styles.mb5]}>{translate('documentsStep.verificationFailed')}</Text>
@@ -147,7 +146,7 @@ function KYBDocuments({onSubmit, onBackButtonPress}: KYBDocumentsProps) {
                 ))}
                 <FormHelpMessage
                     style={styles.mt3}
-                    message={getLatestErrorMessage(account)}
+                    message={errorMessage}
                 />
             </FormProvider>
         </InteractiveStepWrapper>

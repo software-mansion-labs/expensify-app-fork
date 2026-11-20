@@ -11,13 +11,12 @@ import Text from '@components/Text';
 import TextInput from '@components/TextInput';
 
 import useLocalize from '@hooks/useLocalize';
-import useOnyx from '@hooks/useOnyx';
 import useThemeStyles from '@hooks/useThemeStyles';
 
 import useOnboardingStepFormSubmit from '@pages/SimplifiedBankOnboarding/hooks/useOnboardingStepFormSubmit';
-import type {BankFormField} from '@pages/SimplifiedBankOnboarding/types/onyx';
+import type {BankFieldID, BankFormField} from '@pages/SimplifiedBankOnboarding/types/onyx';
 import {getBankFieldRuleError} from '@pages/SimplifiedBankOnboarding/utils/BankFieldUtils';
-import {getSubStepValue} from '@pages/SimplifiedBankOnboarding/utils/getSubStepValues';
+import type {ResolvedValues} from '@pages/SimplifiedBankOnboarding/values/resolveValue';
 
 import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';
@@ -30,6 +29,9 @@ type ServerDrivenFieldsFormProps = {
 
     /** The inputs to render. The list is empty until the server has described them. */
     fields: BankFormField[];
+
+    /** The values of every bank input that the step resolved */
+    defaultValues: ResolvedValues<BankFieldID>;
     isLoading: boolean;
     isEditing: boolean;
     onNext: () => void;
@@ -39,11 +41,9 @@ function getPicklistOptions(field: BankFormField): Record<string, string> {
     return Object.fromEntries((field.valueSet ?? []).map((option) => [option.id, option.text]));
 }
 
-function ServerDrivenFieldsForm({title, fields, isLoading, isEditing, onNext}: ServerDrivenFieldsFormProps) {
+function ServerDrivenFieldsForm({title, fields, defaultValues, isLoading, isEditing, onNext}: ServerDrivenFieldsFormProps) {
     const {translate} = useLocalize();
     const styles = useThemeStyles();
-    const [account] = useOnyx(ONYXKEYS.SIMPLIFIED_BANK_ONBOARDING_ACCOUNT);
-    const [draft] = useOnyx(ONYXKEYS.FORMS.SIMPLIFIED_BANK_ONBOARDING_FORM_DRAFT);
 
     const fieldIds = fields.map((field) => field.id);
 
@@ -68,7 +68,7 @@ function ServerDrivenFieldsForm({title, fields, isLoading, isEditing, onNext}: S
     const handleSubmit = useOnboardingStepFormSubmit({fieldIds, onNext, shouldSaveDraft: true});
 
     const inputs = fields.map((field) => {
-        const defaultValue = getSubStepValue(field.id, draft, account);
+        const defaultValue = defaultValues[field.id];
         if (field.valueSet) {
             return (
                 <View

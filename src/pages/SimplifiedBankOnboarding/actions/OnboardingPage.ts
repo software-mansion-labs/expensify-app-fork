@@ -8,7 +8,7 @@ import {getMicroSecondOnyxErrorWithTranslationKey} from '@libs/ErrorUtils';
 import {READ_COMMANDS, WRITE_COMMANDS} from '@pages/SimplifiedBankOnboarding/mockBackend/commands';
 import {read, write} from '@pages/SimplifiedBankOnboarding/mockBackend/mockApi';
 import {resetDatabase} from '@pages/SimplifiedBankOnboarding/mockBackend/serverDatabase';
-import type {SetupType, USDStep} from '@pages/SimplifiedBankOnboarding/types/onyx';
+import {buildTrackedReadData} from '@pages/SimplifiedBankOnboarding/requests/buildTrackedRequestData';
 
 import ONYXKEYS from '@src/ONYXKEYS';
 import type {OnyxData} from '@src/types/onyx/Request';
@@ -19,11 +19,6 @@ type OpenOnboardingPageParams = {
     /** The page names the workspace or the bank account. With the bank account, the server picks the step. */
     policyID?: string;
     bankAccountID?: number;
-
-    /** The step that the client wants to show. The server answers with it when the account already reached that step. */
-    stepToOpen?: USDStep | '';
-    subStep?: SetupType | '';
-    localCurrentStep?: USDStep | '';
 };
 
 function openLandingPage() {
@@ -38,13 +33,21 @@ function getAccountLoadingDataForOnyx(): OnyxData<typeof ONYXKEYS.SIMPLIFIED_BAN
     };
 }
 
-function openOnboardingPage({policyID, bankAccountID, stepToOpen = '', subStep = '', localCurrentStep = ''}: OpenOnboardingPageParams) {
-    read(READ_COMMANDS.OPEN_ONBOARDING_PAGE, {policyID, bankAccountID, stepToOpen, subStep, localCurrentStep}, getAccountLoadingDataForOnyx());
+/**
+ * The URL owns the position in the flow, so the read never asks the server to keep or move a step. The read is tracked by
+ * its own ID, so the page that sent it waits only for it and not for `isLoading`, which other pages raise too.
+ */
+function openOnboardingPage(requestID: string, {policyID, bankAccountID}: OpenOnboardingPageParams) {
+    read(
+        READ_COMMANDS.OPEN_ONBOARDING_PAGE,
+        {policyID, bankAccountID, stepToOpen: '', subStep: '', localCurrentStep: ''},
+        buildTrackedReadData(requestID, READ_COMMANDS.OPEN_ONBOARDING_PAGE, getMicroSecondOnyxErrorWithTranslationKey('common.genericErrorMessage')),
+    );
 }
 
 /**
  * The read of the page that stands in for the Payments tab of a workspace. Like `openWorkspaceView`, it belongs to a page
- * outside the flow and still raises `isLoading` on the account key, which the entry page takes for its own loading.
+ * outside the flow and still raises `isLoading` on the account key. The onboarding pages no longer read that flag.
  */
 function openWorkspacePaymentsPage() {
     read(READ_COMMANDS.OPEN_LANDING_PAGE, {}, getAccountLoadingDataForOnyx());
@@ -77,6 +80,7 @@ function resetLabData() {
         [ONYXKEYS.SIMPLIFIED_BANK_ONBOARDING_OPTION_PRESSED]: null,
         [ONYXKEYS.SIMPLIFIED_BANK_ONBOARDING_PLAID_DATA]: null,
         [ONYXKEYS.SIMPLIFIED_BANK_ONBOARDING_ONFIDO_TOKEN]: null,
+        [ONYXKEYS.RAM_ONLY_SIMPLIFIED_BANK_ONBOARDING_REQUESTS]: null,
         [ONYXKEYS.SIMPLIFIED_BANK_ONBOARDING_BANK_FIELDS]: null,
         [ONYXKEYS.SIMPLIFIED_BANK_ONBOARDING_PICKLISTS]: null,
         [ONYXKEYS.FORMS.SIMPLIFIED_BANK_ONBOARDING_FORM_DRAFT]: null,

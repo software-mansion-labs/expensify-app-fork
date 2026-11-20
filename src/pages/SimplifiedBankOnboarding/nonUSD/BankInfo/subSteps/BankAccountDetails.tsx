@@ -10,7 +10,7 @@ import {getBankAccountDetailsFields} from '@pages/SimplifiedBankOnboarding/utils
 
 import React from 'react';
 
-function BankAccountDetails({onNext, isEditing, bankFields}: BankInfoSubStepProps) {
+function BankAccountDetails({onNext, isEditing, bankFields, values}: BankInfoSubStepProps) {
     const {translate} = useLocalize();
 
     return (
@@ -18,6 +18,7 @@ function BankAccountDetails({onNext, isEditing, bankFields}: BankInfoSubStepProp
             title={translate('bankInfoStep.whatAreYour')}
             fields={getBankAccountDetailsFields(bankFields)}
             isLoading={!!bankFields?.isLoading}
+            defaultValues={values}
             isEditing={isEditing}
             onNext={onNext}
         />

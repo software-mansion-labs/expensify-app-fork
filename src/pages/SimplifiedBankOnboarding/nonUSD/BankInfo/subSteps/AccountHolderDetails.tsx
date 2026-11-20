@@ -10,7 +10,7 @@ import {getAccountHolderDetailsFields} from '@pages/SimplifiedBankOnboarding/uti
 
 import React from 'react';
 
-function AccountHolderDetails({onNext, isEditing, bankFields}: BankInfoSubStepProps) {
+function AccountHolderDetails({onNext, isEditing, bankFields, values}: BankInfoSubStepProps) {
     const {translate} = useLocalize();
 
     return (
@@ -18,6 +18,7 @@ function AccountHolderDetails({onNext, isEditing, bankFields}: BankInfoSubStepPr
             title={translate('addPersonalBankAccount.accountHolderInformationStepHeader')}
             fields={getAccountHolderDetailsFields(bankFields)}
             isLoading={!!bankFields?.isLoading}
+            defaultValues={values}
             isEditing={isEditing}
             onNext={onNext}
         />

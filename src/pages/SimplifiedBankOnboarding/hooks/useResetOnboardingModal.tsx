@@ -1,7 +1,7 @@
 /**
- * Opens the modal that confirms starting over or disconnecting the bank account. A screen asks for the modal by setting
- * `shouldShowResetModal` on the shared account object, and the hook answers by updating the state that the screens mirror.
- * It mirrors `useResetBankAccountModal`.
+ * Returns the function that opens the modal that confirms starting over or disconnecting the bank account. The buttons
+ * call it directly. The screens update nothing after a reset, because the entry page derives its screen from the
+ * account data that the reset changes. It mirrors `useResetBankAccountModal`.
  */
 import {ModalActions} from '@components/Modal/Global/ModalContext';
 import RenderHTML from '@components/RenderHTML';
@@ -13,7 +13,6 @@ import useThemeStyles from '@hooks/useThemeStyles';
 
 import Navigation from '@libs/Navigation/Navigation';
 
-import {cancelResetBankAccount} from '@pages/SimplifiedBankOnboarding/actions/OnboardingAccount';
 import {resetNonUSDBankAccount, resetUSDBankAccount} from '@pages/SimplifiedBankOnboarding/actions/ResetBankAccount';
 import SBO_CONST from '@pages/SimplifiedBankOnboarding/SBO_CONST';
 import type {OnboardingAccount, Workspaces} from '@pages/SimplifiedBankOnboarding/types/onyx';
@@ -26,14 +25,12 @@ import ROUTES from '@src/ROUTES';
 
 import type {OnyxEntry} from 'react-native-onyx';
 
-import React, {useEffect, useEffectEvent, useRef} from 'react';
+import React, {useEffect, useRef} from 'react';
 import {View} from 'react-native';
 
 type ResetOnboardingModalOptions = {
     account: OnyxEntry<OnboardingAccount>;
     isNonUSDWorkspace: boolean;
-    setShouldShowConnectedBankAccount?: (shouldShowConnectedBankAccount: boolean) => void;
-    setShouldShowContinueSetupButton?: (shouldShowContinueSetupButton: boolean) => void;
 
     /** Runs after the reset was sent, for a screen that has to leave the flow then */
     navigateAfterReset?: () => void;
@@ -44,7 +41,7 @@ type ResetOnboardingModalOptions = {
 
 const VISIBLE_ACCOUNT_NUMBER_DIGITS = 4;
 
-function useResetOnboardingModal({account, isNonUSDWorkspace, setShouldShowConnectedBankAccount, setShouldShowContinueSetupButton, navigateAfterReset, backTo}: ResetOnboardingModalOptions) {
+function useResetOnboardingModal({account, isNonUSDWorkspace, navigateAfterReset, backTo}: ResetOnboardingModalOptions) {
     const styles = useThemeStyles();
     const {translate} = useLocalize();
     const {showConfirmModal} = useConfirmModal();
@@ -52,7 +49,6 @@ function useResetOnboardingModal({account, isNonUSDWorkspace, setShouldShowConne
     const policyID = achData?.policyID;
     const selectWorkspaceACHAccount = (workspaces: OnyxEntry<Workspaces>) => (policyID ? workspaces?.[policyID]?.achAccount : undefined);
     const [workspaceACHAccount] = useOnyx(ONYXKEYS.SIMPLIFIED_BANK_ONBOARDING_WORKSPACES, {selector: selectWorkspaceACHAccount});
-    const shouldShowResetModal = account?.shouldShowResetModal ?? false;
     const isInOpenState = achData?.state === SBO_CONST.STATE.OPEN;
     const bankShortName = `${achData?.bankName ?? ''} ${(achData?.accountNumber ?? '').slice(-VISIBLE_ACCOUNT_NUMBER_DIGITS)}`;
 
@@ -62,19 +58,12 @@ function useResetOnboardingModal({account, isNonUSDWorkspace, setShouldShowConne
 
         if (isNonUSDWorkspace) {
             resetNonUSDBankAccount(bankAccountParams, workspaceACHAccount);
-            setShouldShowConnectedBankAccount?.(false);
-            setShouldShowContinueSetupButton?.(false);
             Navigation.navigate(ROUTES.SETTINGS_BANK_ONBOARDING_LAB_NON_USD_SETUP.getRoute({policyID, page: SBO_CONST.NON_USD.PAGE_NAMES.COUNTRY, backTo}));
         } else {
             resetUSDBankAccount(bankAccountParams, workspaceACHAccount);
-            setShouldShowContinueSetupButton?.(false);
-            setShouldShowConnectedBankAccount?.(false);
         }
         navigateAfterReset?.();
     };
-
-    // Several effects may ask for the modal while it is open, so this keeps it from opening twice.
-    const isModalOpenRef = useRef(false);
 
     // The modal outlives the screen that opened it, so its answer is dropped when that screen is gone.
     const isMountedRef = useRef(true);
@@ -85,11 +74,7 @@ function useResetOnboardingModal({account, isNonUSDWorkspace, setShouldShowConne
         };
     }, []);
 
-    const showResetModal = useEffectEvent(() => {
-        if (isModalOpenRef.current) {
-            return;
-        }
-        isModalOpenRef.current = true;
+    const showResetModal = () => {
         showConfirmModal({
             title: translate('workspace.bankAccount.areYouSure'),
             confirmText: isInOpenState ? translate('workspace.bankAccount.yesDisconnectMyBankAccount') : translate('workspace.bankAccount.yesStartOver'),
@@ -104,25 +89,14 @@ function useResetOnboardingModal({account, isNonUSDWorkspace, setShouldShowConne
             buttonVariant: CONST.BUTTON_VARIANT.DANGER,
             shouldShowCancelButton: true,
         }).then(({action}) => {
-            isModalOpenRef.current = false;
-            if (!isMountedRef.current) {
-                return;
-            }
-            if (action !== ModalActions.CONFIRM) {
-                cancelResetBankAccount();
+            if (!isMountedRef.current || action !== ModalActions.CONFIRM) {
                 return;
             }
             resetBankAccount();
         });
-    });
+    };
 
-    useEffect(() => {
-        if (!shouldShowResetModal) {
-            isModalOpenRef.current = false;
-            return;
-        }
-        showResetModal();
-    }, [shouldShowResetModal]);
+    return showResetModal;
 }
 
 export default useResetOnboardingModal;

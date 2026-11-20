@@ -6,22 +6,20 @@
 import InteractiveStepWrapper from '@components/InteractiveStepWrapper';
 
 import useLocalize from '@hooks/useLocalize';
-import useOnyx from '@hooks/useOnyx';
 import useSubPage from '@hooks/useSubPage';
 
 import Navigation from '@libs/Navigation/Navigation';
 
 import SubPageRedirectIndicator from '@pages/SimplifiedBankOnboarding/components/SubPageRedirectIndicator';
 import SBO_CONST from '@pages/SimplifiedBankOnboarding/SBO_CONST';
+import type {UBOValues} from '@pages/SimplifiedBankOnboarding/values/codecs/usdBeneficialOwners';
 
-import ONYXKEYS from '@src/ONYXKEYS';
 import ROUTES from '@src/ROUTES';
 
 import React from 'react';
 
 import type BeneficialOwnerSubPageProps from './types';
 
-import STEP_INDEX from './STEP_INDEX';
 import ConfirmationUBO from './subSteps/ConfirmationUBO';
 import DateOfBirthUBO from './subSteps/DateOfBirthUBO';
 import LegalNameUBO from './subSteps/LegalNameUBO';
@@ -32,12 +30,21 @@ type BeneficialOwnerDetailsFormPagesProps = {
     /** The owner that the form changes. The page shows a loader while the draft has not stored it yet. */
     beneficialOwnerBeingModifiedID: string | undefined;
 
+    /** The fields of that owner that the step resolved */
+    ownerValues: UBOValues | undefined;
+
     /** Whether the user opened the form from the list to change an owner that is already added */
     isEditingCreatedBeneficialOwner: boolean;
+
+    /** Whether the list already holds an owner, which decides the outer page that the back button returns to */
+    hasExistingBeneficialOwners: boolean;
 
     /** Called after the confirmation page */
     onFinished: () => void;
     stepNames?: readonly string[];
+
+    /** Position of the step in the step counter of the header */
+    startStepIndex?: number;
     backTo?: string;
 };
 
@@ -49,10 +56,18 @@ const pages = [
     {pageName: SUB_PAGE_NAMES.CONFIRMATION, component: ConfirmationUBO},
 ];
 
-function BeneficialOwnerDetailsFormPages({policyID, beneficialOwnerBeingModifiedID, isEditingCreatedBeneficialOwner, onFinished, stepNames, backTo}: BeneficialOwnerDetailsFormPagesProps) {
+function BeneficialOwnerDetailsFormPages({
+    policyID,
+    beneficialOwnerBeingModifiedID,
+    ownerValues,
+    isEditingCreatedBeneficialOwner,
+    hasExistingBeneficialOwners,
+    onFinished,
+    stepNames,
+    startStepIndex,
+    backTo,
+}: BeneficialOwnerDetailsFormPagesProps) {
     const {translate} = useLocalize();
-    const [draft] = useOnyx(ONYXKEYS.FORMS.SIMPLIFIED_BANK_ONBOARDING_FORM_DRAFT);
-    const hasExistingBeneficialOwners = (draft?.beneficialOwnerKeys ?? []).length > 0;
 
     const buildRoute = (pageName: string, action?: 'edit') =>
         ROUTES.SETTINGS_BANK_ONBOARDING_LAB_USD_SETUP.getRoute({policyID, page: PAGE_NAMES.BENEFICIAL_OWNERS, subPage: pageName, action, backTo});
@@ -90,10 +105,10 @@ function BeneficialOwnerDetailsFormPages({policyID, beneficialOwnerBeingModified
             shouldEnableMaxHeight
             headerTitle={translate('beneficialOwnerInfoStep.companyOwner')}
             handleBackButtonPress={handleBackButtonPress}
-            startStepIndex={STEP_INDEX}
+            startStepIndex={startStepIndex}
             stepNames={stepNames}
         >
-            {isRedirecting || !beneficialOwnerBeingModifiedID ? (
+            {isRedirecting || !beneficialOwnerBeingModifiedID || !ownerValues ? (
                 <SubPageRedirectIndicator />
             ) : (
                 <CurrentPage
@@ -102,6 +117,7 @@ function BeneficialOwnerDetailsFormPages({policyID, beneficialOwnerBeingModified
                     onMove={moveTo}
                     currentPageName={currentPageName}
                     beneficialOwnerBeingModifiedID={beneficialOwnerBeingModifiedID}
+                    ownerValues={ownerValues}
                 />
             )}
         </InteractiveStepWrapper>

@@ -1,7 +1,7 @@
 /**
  * The page that an invited director opens from the email. It mirrors `ReimbursementAccount/EnterSignerInfo`: a separate
- * form with its own draft and request flags, the same signer sub pages as the onboarding, and the same director request,
- * which this page awaits through the flags of its own form. In the lab the signer step opens it with a mock button.
+ * form with its own draft, the same signer sub pages as the onboarding, and the same director request, which this page
+ * follows by its own request ID. In the lab the signer step opens it with a mock button.
  */
 import Button from '@components/Button';
 import InteractiveStepWrapper from '@components/InteractiveStepWrapper';
@@ -16,12 +16,13 @@ import Navigation from '@libs/Navigation/Navigation';
 import type BankOnboardingLabParamList from '@libs/Navigation/paramLists/BankOnboardingLabParamList';
 import type {PlatformStackScreenProps} from '@libs/Navigation/PlatformStackNavigation/types';
 
-import {clearEnterSignerInformationFormSave, saveOnboardingDirectorInformation} from '@pages/SimplifiedBankOnboarding/actions/GlobalBankAccount';
+import {saveOnboardingDirectorInformation} from '@pages/SimplifiedBankOnboarding/actions/GlobalBankAccount';
 import SubPageRedirectIndicator from '@pages/SimplifiedBankOnboarding/components/SubPageRedirectIndicator';
 import Confirmation from '@pages/SimplifiedBankOnboarding/nonUSD/SignerInfo/subSteps/Confirmation';
 import JobTitle from '@pages/SimplifiedBankOnboarding/nonUSD/SignerInfo/subSteps/JobTitle';
 import Name from '@pages/SimplifiedBankOnboarding/nonUSD/SignerInfo/subSteps/Name';
 import type {SignerDetailsSubPageProps} from '@pages/SimplifiedBankOnboarding/nonUSD/SignerInfo/types';
+import useStepRequest from '@pages/SimplifiedBankOnboarding/requests/useStepRequest';
 import SBO_CONST from '@pages/SimplifiedBankOnboarding/SBO_CONST';
 
 import {clearDraftValues, clearErrors} from '@userActions/FormActions';
@@ -51,17 +52,20 @@ function EnterSignerInfoPage({route}: EnterSignerInfoPageProps) {
     const bankAccountID = Number(route.params?.bankAccountID);
     const isCompleted = route.params?.isCompleted === 'true';
 
-    const [signerForm] = useOnyx(ONYXKEYS.FORMS.SIMPLIFIED_BANK_ONBOARDING_SIGNER_FORM);
     const [signerFormDraft] = useOnyx(ONYXKEYS.FORMS.SIMPLIFIED_BANK_ONBOARDING_SIGNER_FORM_DRAFT);
 
+    const {send, isPending, errorMessage} = useStepRequest({
+        onSuccess: () => {
+            clearDraftValues(ONYXKEYS.FORMS.SIMPLIFIED_BANK_ONBOARDING_SIGNER_FORM);
+            Navigation.goBack();
+        },
+    });
+
+    // The invited director writes to a form of their own, so the request leaves the onboarding draft as it is.
+    const directorInformation = {signerFullName: signerFormDraft?.signerFullName ?? '', signerJobTitle: signerFormDraft?.signerJobTitle ?? ''};
+
     const submit = () => {
-        saveOnboardingDirectorInformation(
-            {policyID, bankAccountID},
-            {
-                signerFullName: signerFormDraft?.signerFullName ?? '',
-                signerJobTitle: signerFormDraft?.signerJobTitle ?? '',
-            },
-        );
+        send((requestID) => saveOnboardingDirectorInformation(requestID, {policyID, bankAccountID}, directorInformation, []));
     };
 
     const buildRoute = (pageName: string, action?: 'edit') =>
@@ -73,20 +77,6 @@ function EnterSignerInfoPage({route}: EnterSignerInfoPageProps) {
         onFinished: submit,
         buildRoute,
     });
-
-    useEffect(() => {
-        if (signerForm?.errors || signerForm?.isSavingSignerInformation || !signerForm?.isSuccess) {
-            return;
-        }
-        clearEnterSignerInformationFormSave();
-        clearDraftValues(ONYXKEYS.FORMS.SIMPLIFIED_BANK_ONBOARDING_SIGNER_FORM);
-        Navigation.goBack();
-
-        // As in the real page, this cleanup runs whenever a flag changes and not only on unmount, so it can clear a request that just started.
-        return () => {
-            clearEnterSignerInformationFormSave();
-        };
-    }, [signerForm?.errors, signerForm?.isSavingSignerInformation, signerForm?.isSuccess]);
 
     useEffect(() => {
         clearErrors(ONYXKEYS.FORMS.SIMPLIFIED_BANK_ONBOARDING_SIGNER_FORM);
@@ -139,6 +129,10 @@ function EnterSignerInfoPage({route}: EnterSignerInfoPageProps) {
                     onNext={nextPage}
                     onMove={moveTo}
                     formID={ONYXKEYS.FORMS.SIMPLIFIED_BANK_ONBOARDING_SIGNER_FORM}
+                    values={directorInformation}
+                    isNamePageSkipped={false}
+                    isRequestPending={isPending}
+                    requestErrorMessage={errorMessage}
                 />
             )}
         </InteractiveStepWrapper>

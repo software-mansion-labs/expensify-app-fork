@@ -1,21 +1,12 @@
 /**
- * The confirmation sub page of a signer. It reads the values from the draft only, like the real one, and shows the
- * progress of the director request from the key that its form watches: the account for the signer step, the signer form
- * for the page of an invited director. In the signer step, a user who is also an owner gets no name row, because the
- * name page was skipped.
+ * The confirmation sub page of a signer. It shows the values that the page around it resolved and the state of the
+ * director request that this page sent. A form that skipped the name page shows no name row.
  */
 import ConfirmationStep from '@components/SubStepForms/ConfirmationStep';
 
 import useLocalize from '@hooks/useLocalize';
-import useOnyx from '@hooks/useOnyx';
-
-import {getLatestErrorMessage} from '@libs/ErrorUtils';
 
 import type {SignerDetailsSubPageProps} from '@pages/SimplifiedBankOnboarding/nonUSD/SignerInfo/types';
-import useSignerDraftValue from '@pages/SimplifiedBankOnboarding/nonUSD/SignerInfo/useSignerDraftValue';
-import {SIGNER_INPUT_IDS} from '@pages/SimplifiedBankOnboarding/types/form';
-
-import ONYXKEYS from '@src/ONYXKEYS';
 
 import React from 'react';
 
@@ -25,34 +16,24 @@ const DETAILS_SUBSTEP_INDEX = {
     JOB_TITLE: 1,
 };
 
-function Confirmation({onNext, onMove, isEditing, formID}: SignerDetailsSubPageProps) {
+function Confirmation({onNext, onMove, isEditing, values, isNamePageSkipped, isRequestPending, requestErrorMessage}: SignerDetailsSubPageProps) {
     const {translate} = useLocalize();
-    const [account] = useOnyx(ONYXKEYS.SIMPLIFIED_BANK_ONBOARDING_ACCOUNT);
-    const [onboardingDraft] = useOnyx(ONYXKEYS.FORMS.SIMPLIFIED_BANK_ONBOARDING_FORM_DRAFT);
-    const [signerForm] = useOnyx(ONYXKEYS.FORMS.SIMPLIFIED_BANK_ONBOARDING_SIGNER_FORM);
-    const fullName = useSignerDraftValue(formID, SIGNER_INPUT_IDS.SIGNER_FULL_NAME);
-    const jobTitle = useSignerDraftValue(formID, SIGNER_INPUT_IDS.SIGNER_JOB_TITLE);
-
-    const isOnboardingForm = formID === ONYXKEYS.FORMS.SIMPLIFIED_BANK_ONBOARDING_FORM;
-    const isLoading = isOnboardingForm ? !!account?.isSavingCorpayOnboardingDirectorInformation : !!signerForm?.isSavingSignerInformation;
-    const error = isOnboardingForm ? getLatestErrorMessage(account) : getLatestErrorMessage(signerForm);
-    const isUserOwner = isOnboardingForm && (account?.achData?.corpay?.ownsMoreThan25Percent ?? onboardingDraft?.ownsMoreThan25Percent ?? false);
 
     const nameItem = {
         id: 'legal-name',
-        title: fullName,
+        title: values.signerFullName,
         description: translate('signerInfoStep.legalName'),
         shouldShowRightIcon: true,
         onPress: () => onMove(DETAILS_SUBSTEP_INDEX.NAME),
     };
     const jobTitleItem = {
         id: 'job-title',
-        title: jobTitle,
+        title: values.signerJobTitle,
         description: translate('signerInfoStep.jobTitle'),
         shouldShowRightIcon: true,
         onPress: () => onMove(DETAILS_SUBSTEP_INDEX.JOB_TITLE),
     };
-    const summaryItems = isUserOwner ? [jobTitleItem] : [nameItem, jobTitleItem];
+    const summaryItems = isNamePageSkipped ? [jobTitleItem] : [nameItem, jobTitleItem];
 
     return (
         <ConfirmationStep
@@ -62,8 +43,8 @@ function Confirmation({onNext, onMove, isEditing, formID}: SignerDetailsSubPageP
             pageTitle={translate('signerInfoStep.letsDoubleCheck')}
             summaryItems={summaryItems}
             showOnfidoLinks={false}
-            isLoading={isLoading}
-            error={error}
+            isLoading={isRequestPending}
+            error={requestErrorMessage}
         />
     );
 }

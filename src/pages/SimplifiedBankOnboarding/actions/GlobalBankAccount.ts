@@ -1,7 +1,7 @@
 /**
- * The requests of the global (NonUSD) flow. Each request has its own in-progress flag on the account object, but all of
- * them share one `isSuccess`, so a step has to clear both when it is done. They mirror the Corpay actions of
- * `libs/actions/BankAccounts`.
+ * The requests of the global (NonUSD) flow. They mirror the Corpay actions of `libs/actions/BankAccounts`. Every write
+ * takes the ID that the step created for it, and the step follows that request with `useStepRequest`. A write also
+ * takes the draft fields that the step saves, which its success removes from the draft.
  */
 /* eslint-disable rulesdir/prefer-actions-set-data -- This file is the action layer of an isolated research module, so it lives outside src/libs/actions */
 import {getMicroSecondOnyxErrorWithTranslationKey} from '@libs/ErrorUtils';
@@ -9,20 +9,13 @@ import {getMicroSecondOnyxErrorWithTranslationKey} from '@libs/ErrorUtils';
 import {READ_COMMANDS, WRITE_COMMANDS} from '@pages/SimplifiedBankOnboarding/mockBackend/commands';
 import type {BankAccountParams, WriteCommandParams} from '@pages/SimplifiedBankOnboarding/mockBackend/commands';
 import {read, write} from '@pages/SimplifiedBankOnboarding/mockBackend/mockApi';
-import type {OnboardingAccount} from '@pages/SimplifiedBankOnboarding/types/onyx';
+import buildTrackedRequestData from '@pages/SimplifiedBankOnboarding/requests/buildTrackedRequestData';
+import type {DraftFields} from '@pages/SimplifiedBankOnboarding/requests/buildTrackedRequestData';
 
 import ONYXKEYS from '@src/ONYXKEYS';
 import type {OnyxData} from '@src/types/onyx/Request';
 
 import Onyx from 'react-native-onyx';
-
-type GlobalRequestFlag =
-    | 'isLoading'
-    | 'isCreateCorpayBankAccount'
-    | 'isSavingCorpayOnboardingCompanyFields'
-    | 'isSavingCorpayOnboardingBeneficialOwnersFields'
-    | 'isSendingReminderForCorpaySignerInformation'
-    | 'isFinishingCorpayBankAccountOnboarding';
 
 type GlobalBankAccountDetails = WriteCommandParams[typeof WRITE_COMMANDS.CREATE_GLOBAL_BANK_ACCOUNT];
 type CompanyDetails = Omit<WriteCommandParams[typeof WRITE_COMMANDS.SAVE_ONBOARDING_COMPANY_DETAILS], keyof BankAccountParams>;
@@ -31,19 +24,9 @@ type DirectorInformation = Omit<WriteCommandParams[typeof WRITE_COMMANDS.SAVE_ON
 type SignerEmails = Omit<WriteCommandParams[typeof WRITE_COMMANDS.ASK_FOR_SIGNER_INFORMATION], keyof BankAccountParams>;
 type FinishDetails = Omit<WriteCommandParams[typeof WRITE_COMMANDS.FINISH_GLOBAL_BANK_ACCOUNT_ONBOARDING], keyof BankAccountParams>;
 
-/** Builds the Onyx data of a request that tracks its progress with its own flag and its result with the shared `isSuccess` */
-function getGlobalRequestDataForOnyx(buildRequestFlag: (isInProgress: boolean) => Pick<OnboardingAccount, GlobalRequestFlag>): OnyxData<typeof ONYXKEYS.SIMPLIFIED_BANK_ONBOARDING_ACCOUNT> {
-    return {
-        optimisticData: [{onyxMethod: Onyx.METHOD.MERGE, key: ONYXKEYS.SIMPLIFIED_BANK_ONBOARDING_ACCOUNT, value: {...buildRequestFlag(true), errors: null}}],
-        successData: [{onyxMethod: Onyx.METHOD.MERGE, key: ONYXKEYS.SIMPLIFIED_BANK_ONBOARDING_ACCOUNT, value: {...buildRequestFlag(false), isSuccess: true}}],
-        failureData: [
-            {
-                onyxMethod: Onyx.METHOD.MERGE,
-                key: ONYXKEYS.SIMPLIFIED_BANK_ONBOARDING_ACCOUNT,
-                value: {...buildRequestFlag(false), isSuccess: false, errors: getMicroSecondOnyxErrorWithTranslationKey('common.genericErrorMessage')},
-            },
-        ],
-    };
+/** The Onyx data of a NonUSD request that a step waits for under its own ID */
+function getTrackedRequestData(requestID: string, command: string, draftFieldsToClear: DraftFields = []) {
+    return buildTrackedRequestData({requestID, command, errors: getMicroSecondOnyxErrorWithTranslationKey('common.genericErrorMessage'), draftFieldsToClear});
 }
 
 /** Asks the server which bank inputs the country needs */
@@ -65,148 +48,50 @@ function getOnboardingFields(countryISO: string) {
     read(READ_COMMANDS.GET_ONBOARDING_FIELDS, {countryISO}, onyxData);
 }
 
-/**
- * Creates the bank account. It is the only request of this flow that also raises the shared `isLoading`, like
- * `createCorpayBankAccount`, so the entry page has to tell it apart from its own loading with `isCreateCorpayBankAccount`.
- */
-function createGlobalBankAccount(details: GlobalBankAccountDetails) {
-    write(
-        WRITE_COMMANDS.CREATE_GLOBAL_BANK_ACCOUNT,
-        details,
-        getGlobalRequestDataForOnyx((isInProgress) => ({isLoading: isInProgress, isCreateCorpayBankAccount: isInProgress})),
-    );
+function createGlobalBankAccount(requestID: string, details: GlobalBankAccountDetails, draftFieldsToClear: DraftFields) {
+    write(WRITE_COMMANDS.CREATE_GLOBAL_BANK_ACCOUNT, details, getTrackedRequestData(requestID, WRITE_COMMANDS.CREATE_GLOBAL_BANK_ACCOUNT, draftFieldsToClear));
 }
 
-function saveOnboardingCompanyDetails(bankAccount: BankAccountParams, details: CompanyDetails) {
-    write(
-        WRITE_COMMANDS.SAVE_ONBOARDING_COMPANY_DETAILS,
-        {...bankAccount, ...details},
-        getGlobalRequestDataForOnyx((isSavingCorpayOnboardingCompanyFields) => ({isSavingCorpayOnboardingCompanyFields})),
-    );
+function saveOnboardingCompanyDetails(requestID: string, bankAccount: BankAccountParams, details: CompanyDetails, draftFieldsToClear: DraftFields) {
+    write(WRITE_COMMANDS.SAVE_ONBOARDING_COMPANY_DETAILS, {...bankAccount, ...details}, getTrackedRequestData(requestID, WRITE_COMMANDS.SAVE_ONBOARDING_COMPANY_DETAILS, draftFieldsToClear));
 }
 
-function saveOnboardingBeneficialOwners(bankAccount: BankAccountParams, details: GlobalBeneficialOwnersDetails) {
+function saveOnboardingBeneficialOwners(requestID: string, bankAccount: BankAccountParams, details: GlobalBeneficialOwnersDetails, draftFieldsToClear: DraftFields) {
     write(
         WRITE_COMMANDS.SAVE_ONBOARDING_BENEFICIAL_OWNERS,
         {...bankAccount, ...details},
-        getGlobalRequestDataForOnyx((isSavingCorpayOnboardingBeneficialOwnersFields) => ({isSavingCorpayOnboardingBeneficialOwnersFields})),
+        getTrackedRequestData(requestID, WRITE_COMMANDS.SAVE_ONBOARDING_BENEFICIAL_OWNERS, draftFieldsToClear),
     );
 }
 
-/**
- * Saves the director. Two flows send this request: the signer step of the onboarding and the page that an invited
- * director opens. Each of them watches its own Onyx key, so the request writes its progress to both.
- */
-function saveOnboardingDirectorInformation(bankAccount: BankAccountParams, directorInformation: DirectorInformation) {
-    const onyxData: OnyxData<typeof ONYXKEYS.SIMPLIFIED_BANK_ONBOARDING_ACCOUNT | typeof ONYXKEYS.FORMS.SIMPLIFIED_BANK_ONBOARDING_SIGNER_FORM> = {
-        optimisticData: [
-            {onyxMethod: Onyx.METHOD.MERGE, key: ONYXKEYS.SIMPLIFIED_BANK_ONBOARDING_ACCOUNT, value: {isSavingCorpayOnboardingDirectorInformation: true, errors: null}},
-            {onyxMethod: Onyx.METHOD.MERGE, key: ONYXKEYS.FORMS.SIMPLIFIED_BANK_ONBOARDING_SIGNER_FORM, value: {isSavingSignerInformation: true, errors: null}},
-        ],
-        successData: [
-            {onyxMethod: Onyx.METHOD.MERGE, key: ONYXKEYS.SIMPLIFIED_BANK_ONBOARDING_ACCOUNT, value: {isSavingCorpayOnboardingDirectorInformation: false, isSuccess: true}},
-            {onyxMethod: Onyx.METHOD.MERGE, key: ONYXKEYS.FORMS.SIMPLIFIED_BANK_ONBOARDING_SIGNER_FORM, value: {isSavingSignerInformation: false, isSuccess: true}},
-        ],
-        failureData: [
-            {
-                onyxMethod: Onyx.METHOD.MERGE,
-                key: ONYXKEYS.SIMPLIFIED_BANK_ONBOARDING_ACCOUNT,
-                value: {isSavingCorpayOnboardingDirectorInformation: false, isSuccess: false, errors: getMicroSecondOnyxErrorWithTranslationKey('common.genericErrorMessage')},
-            },
-            {
-                onyxMethod: Onyx.METHOD.MERGE,
-                key: ONYXKEYS.FORMS.SIMPLIFIED_BANK_ONBOARDING_SIGNER_FORM,
-                value: {isSavingSignerInformation: false, isSuccess: false, errors: getMicroSecondOnyxErrorWithTranslationKey('common.genericErrorMessage')},
-            },
-        ],
-    };
-    write(WRITE_COMMANDS.SAVE_ONBOARDING_DIRECTOR_INFORMATION, {...bankAccount, ...directorInformation}, onyxData);
-}
-
-/** Emails a director who is not the current user. Unlike the other requests it reports the result with its own success flag. */
-function askForSignerInformation(bankAccount: BankAccountParams, signerEmails: SignerEmails) {
-    const onyxData: OnyxData<typeof ONYXKEYS.SIMPLIFIED_BANK_ONBOARDING_ACCOUNT> = {
-        optimisticData: [{onyxMethod: Onyx.METHOD.MERGE, key: ONYXKEYS.SIMPLIFIED_BANK_ONBOARDING_ACCOUNT, value: {isAskingForCorpaySignerInformation: true, errors: null}}],
-        successData: [
-            {
-                onyxMethod: Onyx.METHOD.MERGE,
-                key: ONYXKEYS.SIMPLIFIED_BANK_ONBOARDING_ACCOUNT,
-                value: {isAskingForCorpaySignerInformation: false, isAskingForCorpaySignerInformationSuccess: true},
-            },
-        ],
-        failureData: [
-            {
-                onyxMethod: Onyx.METHOD.MERGE,
-                key: ONYXKEYS.SIMPLIFIED_BANK_ONBOARDING_ACCOUNT,
-                value: {
-                    isAskingForCorpaySignerInformation: false,
-                    isAskingForCorpaySignerInformationSuccess: false,
-                    errors: getMicroSecondOnyxErrorWithTranslationKey('common.genericErrorMessage'),
-                },
-            },
-        ],
-    };
-    write(WRITE_COMMANDS.ASK_FOR_SIGNER_INFORMATION, {...bankAccount, ...signerEmails}, onyxData);
-}
-
-function sendReminderForSignerInformation(bankAccount: BankAccountParams) {
+/** Saves the director. The signer step of the onboarding and the page that an invited director opens both send it. */
+function saveOnboardingDirectorInformation(requestID: string, bankAccount: BankAccountParams, directorInformation: DirectorInformation, draftFieldsToClear: DraftFields) {
     write(
-        WRITE_COMMANDS.SEND_REMINDER_FOR_SIGNER_INFORMATION,
-        bankAccount,
-        getGlobalRequestDataForOnyx((isSendingReminderForCorpaySignerInformation) => ({isSendingReminderForCorpaySignerInformation})),
+        WRITE_COMMANDS.SAVE_ONBOARDING_DIRECTOR_INFORMATION,
+        {...bankAccount, ...directorInformation},
+        getTrackedRequestData(requestID, WRITE_COMMANDS.SAVE_ONBOARDING_DIRECTOR_INFORMATION, draftFieldsToClear),
     );
 }
 
-function finishGlobalBankAccountOnboarding(bankAccount: BankAccountParams, details: FinishDetails) {
+/** Emails a director who is not the current user */
+function askForSignerInformation(requestID: string, bankAccount: BankAccountParams, signerEmails: SignerEmails, draftFieldsToClear: DraftFields) {
+    write(WRITE_COMMANDS.ASK_FOR_SIGNER_INFORMATION, {...bankAccount, ...signerEmails}, getTrackedRequestData(requestID, WRITE_COMMANDS.ASK_FOR_SIGNER_INFORMATION, draftFieldsToClear));
+}
+
+function sendReminderForSignerInformation(requestID: string, bankAccount: BankAccountParams) {
+    write(WRITE_COMMANDS.SEND_REMINDER_FOR_SIGNER_INFORMATION, bankAccount, getTrackedRequestData(requestID, WRITE_COMMANDS.SEND_REMINDER_FOR_SIGNER_INFORMATION));
+}
+
+function finishGlobalBankAccountOnboarding(requestID: string, bankAccount: BankAccountParams, details: FinishDetails, draftFieldsToClear: DraftFields) {
     write(
         WRITE_COMMANDS.FINISH_GLOBAL_BANK_ACCOUNT_ONBOARDING,
         {...bankAccount, ...details},
-        getGlobalRequestDataForOnyx((isFinishingCorpayBankAccountOnboarding) => ({isFinishingCorpayBankAccountOnboarding})),
+        getTrackedRequestData(requestID, WRITE_COMMANDS.FINISH_GLOBAL_BANK_ACCOUNT_ONBOARDING, draftFieldsToClear),
     );
-}
-
-function clearGlobalBankAccountCreation() {
-    Onyx.merge(ONYXKEYS.SIMPLIFIED_BANK_ONBOARDING_ACCOUNT, {isCreateCorpayBankAccount: null, isSuccess: null, isLoading: null});
-}
-
-function clearSaveOnboardingCompanyDetails() {
-    Onyx.merge(ONYXKEYS.SIMPLIFIED_BANK_ONBOARDING_ACCOUNT, {isSavingCorpayOnboardingCompanyFields: null, isSuccess: null});
-}
-
-function clearSaveOnboardingBeneficialOwners() {
-    Onyx.merge(ONYXKEYS.SIMPLIFIED_BANK_ONBOARDING_ACCOUNT, {isSavingCorpayOnboardingBeneficialOwnersFields: null, isSuccess: null});
-}
-
-function clearSaveOnboardingDirectorInformation() {
-    Onyx.merge(ONYXKEYS.SIMPLIFIED_BANK_ONBOARDING_ACCOUNT, {isSavingCorpayOnboardingDirectorInformation: null, isSuccess: null});
-}
-
-function clearAskForSignerInformation() {
-    Onyx.merge(ONYXKEYS.SIMPLIFIED_BANK_ONBOARDING_ACCOUNT, {isAskingForCorpaySignerInformation: null, isAskingForCorpaySignerInformationSuccess: null});
-}
-
-function clearSendReminderForSignerInformation() {
-    Onyx.merge(ONYXKEYS.SIMPLIFIED_BANK_ONBOARDING_ACCOUNT, {isSendingReminderForCorpaySignerInformation: null, isSuccess: null});
-}
-
-function clearFinishGlobalBankAccountOnboarding() {
-    Onyx.merge(ONYXKEYS.SIMPLIFIED_BANK_ONBOARDING_ACCOUNT, {isFinishingCorpayBankAccountOnboarding: null, isSuccess: null});
-}
-
-function clearEnterSignerInformationFormSave() {
-    Onyx.merge(ONYXKEYS.FORMS.SIMPLIFIED_BANK_ONBOARDING_SIGNER_FORM, {isSavingSignerInformation: null, isSuccess: null});
 }
 
 export {
     askForSignerInformation,
-    clearAskForSignerInformation,
-    clearEnterSignerInformationFormSave,
-    clearFinishGlobalBankAccountOnboarding,
-    clearGlobalBankAccountCreation,
-    clearSaveOnboardingBeneficialOwners,
-    clearSaveOnboardingCompanyDetails,
-    clearSaveOnboardingDirectorInformation,
-    clearSendReminderForSignerInformation,
     createGlobalBankAccount,
     finishGlobalBankAccountOnboarding,
     getBankAccountFields,

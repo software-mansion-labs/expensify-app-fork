@@ -1,19 +1,17 @@
 /**
- * The company name sub page: a one-field form with a validator in the component. Like the real step, the default value
- * comes from the server data only, and the input locks once the server holds a name for an account past the review.
+ * The company name sub page: a one-field form with a validator in the component. Like the real step, the input locks once
+ * the account is past the review and a name is saved.
  */
 import type {FormInputErrors, FormOnyxValues} from '@components/Form/types';
 import SingleFieldStep from '@components/SubStepForms/SingleFieldStep';
 
 import useLocalize from '@hooks/useLocalize';
-import useOnyx from '@hooks/useOnyx';
-import type {SubPageProps} from '@hooks/useSubPage/types';
 
 import {getFieldRequiredErrors, isValidCompanyName} from '@libs/ValidationUtils';
 
 import useOnboardingStepFormSubmit from '@pages/SimplifiedBankOnboarding/hooks/useOnboardingStepFormSubmit';
-import SBO_CONST from '@pages/SimplifiedBankOnboarding/SBO_CONST';
 import INPUT_IDS from '@pages/SimplifiedBankOnboarding/types/form';
+import type BusinessInfoSubPageProps from '@pages/SimplifiedBankOnboarding/usd/BusinessInfo/types';
 
 import ONYXKEYS from '@src/ONYXKEYS';
 
@@ -21,14 +19,11 @@ import React from 'react';
 
 const STEP_FIELDS = [INPUT_IDS.COMPANY_NAME];
 
-function Name({onNext, onMove, isEditing}: SubPageProps) {
+function Name({onNext, onMove, isEditing, values: stepValues, isLocked}: BusinessInfoSubPageProps) {
     const {translate} = useLocalize();
-    const [account] = useOnyx(ONYXKEYS.SIMPLIFIED_BANK_ONBOARDING_ACCOUNT);
 
-    const defaultCompanyName = account?.achData?.companyName ?? '';
-    const bankAccountState = account?.achData?.state ?? '';
-    const shouldDisableCompanyName =
-        !!account?.achData?.bankAccountID && !!defaultCompanyName && bankAccountState !== SBO_CONST.STATE.SETUP && bankAccountState !== SBO_CONST.STATE.VERIFYING;
+    const defaultCompanyName = stepValues.companyName;
+    const shouldDisableCompanyName = isLocked && !!defaultCompanyName;
 
     const validate = (values: FormOnyxValues<typeof ONYXKEYS.FORMS.SIMPLIFIED_BANK_ONBOARDING_FORM>): FormInputErrors<typeof ONYXKEYS.FORMS.SIMPLIFIED_BANK_ONBOARDING_FORM> => {
         const errors = getFieldRequiredErrors(values, STEP_FIELDS, translate);

@@ -1,16 +1,15 @@
 /**
- * The business name sub page. Like the real one it takes its default value from the server data only, not from the draft.
+ * The business name sub page. It shows the value that the step resolved.
  */
 import type {FormInputErrors, FormOnyxValues} from '@components/Form/types';
 import SingleFieldStep from '@components/SubStepForms/SingleFieldStep';
 
 import useLocalize from '@hooks/useLocalize';
-import useOnyx from '@hooks/useOnyx';
-import type {SubPageProps} from '@hooks/useSubPage/types';
 
 import {getFieldRequiredErrors, isValidCompanyName} from '@libs/ValidationUtils';
 
 import useOnboardingStepFormSubmit from '@pages/SimplifiedBankOnboarding/hooks/useOnboardingStepFormSubmit';
+import type BusinessInfoSubPageProps from '@pages/SimplifiedBankOnboarding/nonUSD/BusinessInfo/types';
 import INPUT_IDS from '@pages/SimplifiedBankOnboarding/types/form';
 
 import CONST from '@src/CONST';
@@ -20,11 +19,10 @@ import React from 'react';
 
 const STEP_FIELDS = [INPUT_IDS.COMPANY_NAME];
 
-function Name({onNext, onMove, isEditing}: SubPageProps) {
+function Name({onNext, onMove, isEditing, values: stepValues}: BusinessInfoSubPageProps) {
     const {translate} = useLocalize();
-    const [account] = useOnyx(ONYXKEYS.SIMPLIFIED_BANK_ONBOARDING_ACCOUNT);
 
-    const defaultValue = account?.achData?.corpay?.companyName ?? '';
+    const defaultValue = stepValues.companyName;
 
     const validate = (values: FormOnyxValues<typeof ONYXKEYS.FORMS.SIMPLIFIED_BANK_ONBOARDING_FORM>): FormInputErrors<typeof ONYXKEYS.FORMS.SIMPLIFIED_BANK_ONBOARDING_FORM> => {
         const errors = getFieldRequiredErrors(values, STEP_FIELDS, translate);

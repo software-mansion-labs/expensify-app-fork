@@ -1,8 +1,7 @@
 /**
  * The agreements step of the USD flow. The real step splits it into a container and one sub page. Here it is one file,
  * because the step has one form with three required checkboxes. Each checkbox saves to the draft on change, the defaults
- * come from the draft and then from the server, and the submit waits for the answer with the shared `isLoading` (request
- * style 1).
+ * come from the draft and then from the server, and the success of the submit removes them from the draft.
  */
 import CheckboxWithLabel from '@components/CheckboxWithLabel';
 import FormProvider from '@components/Form/FormProvider';
@@ -16,13 +15,13 @@ import useLocalize from '@hooks/useLocalize';
 import useOnyx from '@hooks/useOnyx';
 import useThemeStyles from '@hooks/useThemeStyles';
 
-import {getLatestErrorMessage} from '@libs/ErrorUtils';
 import {isRequiredFulfilled} from '@libs/ValidationUtils';
 
 import {acceptACHContract} from '@pages/SimplifiedBankOnboarding/actions/USDBankAccount';
-import useOnboardingSubmitCallback from '@pages/SimplifiedBankOnboarding/hooks/useOnboardingSubmitCallback';
+import useStepRequest from '@pages/SimplifiedBankOnboarding/requests/useStepRequest';
 import INPUT_IDS from '@pages/SimplifiedBankOnboarding/types/form';
 import {getBankAccountParams} from '@pages/SimplifiedBankOnboarding/utils/OnboardingAccountUtils';
+import {FIELDS_TO_CLEAR, resolveAgreements, toParams} from '@pages/SimplifiedBankOnboarding/values/codecs/usdAgreements';
 
 import ONYXKEYS from '@src/ONYXKEYS';
 
@@ -30,24 +29,17 @@ import React from 'react';
 
 import type USDPageProps from './types';
 
-type CompleteVerificationProps = Pick<USDPageProps, 'onSubmit' | 'onBackButtonPress' | 'stepNames'>;
+type CompleteVerificationProps = Pick<USDPageProps, 'onSubmit' | 'onBackButtonPress' | 'stepNames' | 'startStepIndex'>;
 
-// The position of this step in the step counter of the header
-const STEP_INDEX = 5;
-
-function CompleteVerification({onSubmit, onBackButtonPress, stepNames}: CompleteVerificationProps) {
+function CompleteVerification({onSubmit, onBackButtonPress, stepNames, startStepIndex}: CompleteVerificationProps) {
     const {translate} = useLocalize();
     const styles = useThemeStyles();
     const [account] = useOnyx(ONYXKEYS.SIMPLIFIED_BANK_ONBOARDING_ACCOUNT);
     const [draft] = useOnyx(ONYXKEYS.FORMS.SIMPLIFIED_BANK_ONBOARDING_FORM_DRAFT);
-    const markSubmitting = useOnboardingSubmitCallback(onSubmit);
+    const {send, isPending, errorMessage} = useStepRequest({onSuccess: onSubmit});
 
     const achData = account?.achData;
-    const defaultValues = {
-        isAuthorizedToUseBankAccount: draft?.isAuthorizedToUseBankAccount ?? achData?.isAuthorizedToUseBankAccount ?? false,
-        certifyTrueInformation: draft?.certifyTrueInformation ?? achData?.certifyTrueInformation ?? false,
-        acceptTermsAndConditions: draft?.acceptTermsAndConditions ?? achData?.acceptTermsAndConditions ?? false,
-    };
+    const defaultValues = resolveAgreements(draft, achData);
 
     const validate = (values: FormOnyxValues<typeof ONYXKEYS.FORMS.SIMPLIFIED_BANK_ONBOARDING_FORM>): FormInputErrors<typeof ONYXKEYS.FORMS.SIMPLIFIED_BANK_ONBOARDING_FORM> => {
         const errors: FormInputErrors<typeof ONYXKEYS.FORMS.SIMPLIFIED_BANK_ONBOARDING_FORM> = {};
@@ -64,12 +56,7 @@ function CompleteVerification({onSubmit, onBackButtonPress, stepNames}: Complete
     };
 
     const submit = (values: FormOnyxValues<typeof ONYXKEYS.FORMS.SIMPLIFIED_BANK_ONBOARDING_FORM>) => {
-        acceptACHContract(getBankAccountParams(achData?.policyID, achData), {
-            isAuthorizedToUseBankAccount: !!values.isAuthorizedToUseBankAccount,
-            certifyTrueInformation: !!values.certifyTrueInformation,
-            acceptTermsAndConditions: !!values.acceptTermsAndConditions,
-        });
-        markSubmitting();
+        send((requestID) => acceptACHContract(requestID, getBankAccountParams(achData?.policyID, achData), toParams(values), FIELDS_TO_CLEAR));
     };
 
     return (
@@ -79,7 +66,7 @@ function CompleteVerification({onSubmit, onBackButtonPress, stepNames}: Complete
             shouldEnableMaxHeight
             headerTitle={translate('completeVerificationStep.completeVerification')}
             handleBackButtonPress={onBackButtonPress}
-            startStepIndex={STEP_INDEX}
+            startStepIndex={startStepIndex}
             stepNames={stepNames}
         >
             <FormProvider
@@ -88,7 +75,7 @@ function CompleteVerification({onSubmit, onBackButtonPress, stepNames}: Complete
                 onSubmit={submit}
                 submitButtonText={translate('common.saveAndContinue')}
                 style={[styles.mh5, styles.flexGrow1]}
-                isLoading={!!account?.isLoading}
+                isLoading={isPending}
                 enabledWhenOffline={false}
             >
                 <Text style={styles.textHeadlineLineHeightXXL}>{translate('completeVerificationStep.confirmAgreements')}</Text>
@@ -121,7 +108,7 @@ function CompleteVerification({onSubmit, onBackButtonPress, stepNames}: Complete
                 />
                 <FormHelpMessage
                     style={styles.mt3}
-                    message={getLatestErrorMessage(account)}
+                    message={errorMessage}
                 />
             </FormProvider>
         </InteractiveStepWrapper>

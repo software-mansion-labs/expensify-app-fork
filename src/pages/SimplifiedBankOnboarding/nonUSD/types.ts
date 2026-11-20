@@ -15,6 +15,9 @@ type NonUSDPageProps = {
     /** The names of the steps in the step counter of the header */
     stepNames?: readonly string[];
 
+    /** Position of the step in the step counter of the header */
+    startStepIndex?: number;
+
     /** The sub page from the URL, for the steps that pick their own content with it */
     currentSubPage?: string;
 

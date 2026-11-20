@@ -116,12 +116,6 @@ type OnboardingAccount = {
     errorFields?: OnyxCommon.ErrorFields | null;
     pendingAction?: OnyxCommon.PendingAction;
 
-    /** The step that the success data of the last USD request stored */
-    draftStep?: USDStep;
-
-    /** Set by the start-over and disconnect buttons. A hook watches it and opens the confirmation modal. */
-    shouldShowResetModal?: boolean;
-
     /** True after three wrong tries at the test deposit amounts */
     maxAttemptsReached?: boolean;
 
@@ -214,6 +208,16 @@ type OnboardingPicklists = {
     };
 };
 
+/** The state of one request that a step sent, kept under the ID that the step created for it */
+type RequestStatus = {
+    command: string;
+    status: ValueOf<typeof SBO_CONST.REQUEST_STATUS>;
+    errors?: OnyxCommon.Errors;
+};
+
+/** Every tracked request of the onboarding, keyed by its ID. The key lives only in memory, so nothing waits after a reload. */
+type StepRequests = Record<string, RequestStatus | null>;
+
 export type {
     ACHData,
     BankAccountState,
@@ -230,7 +234,9 @@ export type {
     OnboardingUser,
     PlaidBankAccount,
     PlaidData,
+    RequestStatus,
     SetupType,
+    StepRequests,
     USDStep,
     Workspace,
     Workspaces,

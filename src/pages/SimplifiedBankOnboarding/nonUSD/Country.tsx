@@ -32,9 +32,6 @@ import type NonUSDPageProps from './types';
 
 const STEP_FIELDS = [INPUT_IDS.COUNTRY];
 
-// The position of this step in the step counter of the header
-const STEP_INDEX = 0;
-
 function getCountryOptions(currency: string, translate: LocalizedTranslate): Record<string, string> {
     if (currency === SBO_CONST.CURRENCY.EUR) {
         return Object.fromEntries(SBO_CONST.EUR_COUNTRIES.map((country) => [country, translate(`allCountries.${country}`)]));
@@ -45,7 +42,7 @@ function getCountryOptions(currency: string, translate: LocalizedTranslate): Rec
     return {};
 }
 
-function Country({onBackButtonPress, onSubmit, currency = '', stepNames}: NonUSDPageProps) {
+function Country({onBackButtonPress, onSubmit, currency = '', stepNames, startStepIndex}: NonUSDPageProps) {
     const {translate} = useLocalize();
     const styles = useThemeStyles();
     const [account] = useOnyx(ONYXKEYS.SIMPLIFIED_BANK_ONBOARDING_ACCOUNT);
@@ -80,7 +77,7 @@ function Country({onBackButtonPress, onSubmit, currency = '', stepNames}: NonUSD
             handleBackButtonPress={handleBackButtonPress}
             headerTitle={translate('countryStep.confirmCurrency')}
             stepNames={stepNames}
-            startStepIndex={STEP_INDEX}
+            startStepIndex={startStepIndex}
         >
             <FormProvider
                 formID={ONYXKEYS.FORMS.SIMPLIFIED_BANK_ONBOARDING_FORM}

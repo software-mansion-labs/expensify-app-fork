@@ -6,27 +6,24 @@ import type {FormInputErrors, FormOnyxValues} from '@components/Form/types';
 import SingleFieldStep from '@components/SubStepForms/SingleFieldStep';
 
 import useLocalize from '@hooks/useLocalize';
-import useOnyx from '@hooks/useOnyx';
 
 import {getFieldRequiredErrors, isValidOwnershipPercentage} from '@libs/ValidationUtils';
 
 import useOnboardingStepFormSubmit from '@pages/SimplifiedBankOnboarding/hooks/useOnboardingStepFormSubmit';
-import {OWNER_FIELDS} from '@pages/SimplifiedBankOnboarding/nonUSD/BeneficialOwnerInfo/const';
 import type BeneficialOwnerSubPageProps from '@pages/SimplifiedBankOnboarding/nonUSD/BeneficialOwnerInfo/types';
-import {getOwnerDraftValue, getOwnerInputID} from '@pages/SimplifiedBankOnboarding/utils/owners/OwnerDraftUtils';
+import {getOwnerInputID} from '@pages/SimplifiedBankOnboarding/utils/owners/OwnerDraftUtils';
+import {OWNER_FIELDS} from '@pages/SimplifiedBankOnboarding/values/codecs/nonUSDBeneficialOwners';
 
 import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';
 
 import React from 'react';
 
-function OwnershipPercentage({onNext, onMove, isEditing, ownerBeingModifiedID, totalOwnedPercentage}: BeneficialOwnerSubPageProps) {
+function OwnershipPercentage({onNext, onMove, isEditing, ownerBeingModifiedID, ownerValues, totalOwnedPercentage}: BeneficialOwnerSubPageProps) {
     const {translate} = useLocalize();
-    const [draft] = useOnyx(ONYXKEYS.FORMS.SIMPLIFIED_BANK_ONBOARDING_FORM_DRAFT);
 
     const ownershipPercentageInputID = getOwnerInputID(ownerBeingModifiedID, OWNER_FIELDS.OWNERSHIP_PERCENTAGE);
     const stepFields = [ownershipPercentageInputID];
-    const defaultOwnershipPercentage = getOwnerDraftValue(draft, ownerBeingModifiedID, OWNER_FIELDS.OWNERSHIP_PERCENTAGE);
 
     const validate = (values: FormOnyxValues<typeof ONYXKEYS.FORMS.SIMPLIFIED_BANK_ONBOARDING_FORM>): FormInputErrors<typeof ONYXKEYS.FORMS.SIMPLIFIED_BANK_ONBOARDING_FORM> => {
         const errors = getFieldRequiredErrors(values, stepFields, translate);
@@ -51,7 +48,7 @@ function OwnershipPercentage({onNext, onMove, isEditing, ownerBeingModifiedID, t
             inputId={ownershipPercentageInputID}
             inputLabel={translate('ownershipInfoStep.ownership')}
             inputMode={CONST.INPUT_MODE.NUMERIC}
-            defaultValue={defaultOwnershipPercentage}
+            defaultValue={ownerValues.ownershipPercentage}
             shouldShowHelpLinks={false}
             shouldDelayAutoFocus
         />

@@ -20,10 +20,7 @@ import Navigation from '@libs/Navigation/Navigation';
 
 import {
     clearOnboardingAccountErrors,
-    goToSetupStep,
     prepareNewBankAccountSetup,
-    requestResetBankAccount,
-    setBankAccountSubStep,
     setSetupOptionPressed,
     updateOnboardingAccount,
     updateOnboardingDraft,
@@ -68,9 +65,6 @@ type OnboardingFlowEntryPointProps = {
     shouldShowContinueSetupButton: boolean;
     isNonUSDWorkspace: boolean;
 
-    /** Lets the reset modal bring the setup options back once the setup is cleared */
-    setShouldShowContinueSetupButton: (shouldShowContinueSetupButton: boolean) => void;
-
     /** True on the instance that collects a new bank account while the old one is still connected */
     isChangingBankAccount: boolean;
 };
@@ -79,10 +73,9 @@ const NO_BANK_ACCOUNT_ID = 0;
 
 const isUserValidatedSelector = (user: OnyxEntry<OnboardingUser>) => !!user?.validated;
 
-/** Stores the picked option and the first step, which the USD flow page reads when it opens */
+/** Stores the picked option in the draft, where the flow definition reads it when the user leaves the country page */
 function prepareUSDSetup(setupType: SetupType) {
-    setBankAccountSubStep(setupType);
-    goToSetupStep(SBO_CONST.USD.STEP.COUNTRY);
+    updateOnboardingDraft({setupType});
 }
 
 function OnboardingFlowEntryPoint({
@@ -94,7 +87,6 @@ function OnboardingFlowEntryPoint({
     backTo,
     shouldShowContinueSetupButton,
     isNonUSDWorkspace,
-    setShouldShowContinueSetupButton,
     isChangingBankAccount,
 }: OnboardingFlowEntryPointProps) {
     const styles = useThemeStyles();
@@ -193,7 +185,7 @@ function OnboardingFlowEntryPoint({
         Navigation.goBack(ROUTES.SETTINGS_BANK_ONBOARDING_LAB);
     };
 
-    useResetOnboardingModal({account, isNonUSDWorkspace, setShouldShowContinueSetupButton, navigateAfterReset, backTo});
+    const showResetModal = useResetOnboardingModal({account, isNonUSDWorkspace, navigateAfterReset, backTo});
 
     return (
         <ScreenWrapper
@@ -242,7 +234,7 @@ function OnboardingFlowEntryPoint({
                                     sentryLabel={CONST.SENTRY_LABEL.BANK_ONBOARDING_LAB.START_OVER}
                                     title={translate('workspace.bankAccount.startOver')}
                                     icon={icons.RotateLeft}
-                                    onPress={requestResetBankAccount}
+                                    onPress={showResetModal}
                                     isDisabled={isContinueMenuDisabled}
                                 />
                             </OfflineWithFeedback>

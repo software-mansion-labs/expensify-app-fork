@@ -99,7 +99,7 @@ function MockServerPanel() {
             <ToggleSettingOptionRow
                 wrapperStyle={styles.mt5}
                 title="Force offline"
-                subtitle="This is the offline switch of the whole app. Writes wait in a queue, reads are dropped."
+                subtitle="This is the offline switch of the whole app. Writes wait in a queue, reads fail and are dropped."
                 switchAccessibilityLabel="Force offline"
                 switchSentryLabel={SWITCH_SENTRY_LABEL}
                 isActive={shouldForceOffline}

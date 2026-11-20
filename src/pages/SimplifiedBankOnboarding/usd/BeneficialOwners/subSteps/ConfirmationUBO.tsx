@@ -5,23 +5,16 @@
 import ConfirmationStep from '@components/SubStepForms/ConfirmationStep';
 
 import useLocalize from '@hooks/useLocalize';
-import useOnyx from '@hooks/useOnyx';
 
 import SBO_CONST from '@pages/SimplifiedBankOnboarding/SBO_CONST';
 import type BeneficialOwnerSubPageProps from '@pages/SimplifiedBankOnboarding/usd/BeneficialOwners/types';
-import getValuesForBeneficialOwner from '@pages/SimplifiedBankOnboarding/usd/BeneficialOwners/utils/getValuesForBeneficialOwner';
-
-import ONYXKEYS from '@src/ONYXKEYS';
 
 import React from 'react';
 
 const {UBO: SUBSTEP_INDEX} = SBO_CONST.USD.SUBSTEP_INDEX;
 
-function ConfirmationUBO({onNext, onMove, isEditing, beneficialOwnerBeingModifiedID}: BeneficialOwnerSubPageProps) {
+function ConfirmationUBO({onNext, onMove, isEditing, ownerValues: values}: BeneficialOwnerSubPageProps) {
     const {translate} = useLocalize();
-    const [draft] = useOnyx(ONYXKEYS.FORMS.SIMPLIFIED_BANK_ONBOARDING_FORM_DRAFT);
-
-    const values = getValuesForBeneficialOwner(beneficialOwnerBeingModifiedID, draft);
 
     // The details form starts at the legal name page, so its page positions are the step positions minus that one.
     const moveToSubStep = (subStepIndex: number) => onMove(subStepIndex - SUBSTEP_INDEX.LEGAL_NAME);

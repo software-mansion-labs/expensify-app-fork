@@ -1,7 +1,7 @@
 /**
  * Constants of the simplified bank onboarding module.
- * They keep the three step vocabularies of the real flow: STEP is what the server stores, PAGE_NAMES is what the URL holds,
- * and the position in STEP_NAMES is what the header shows.
+ * STEP is what the USD server stores and PAGE_NAMES is what the URL holds. The order of the steps and the step counter of
+ * the header come from the flow definitions in `flow/`.
  */
 const USD_PAGE_NAMES = {
     COUNTRY: 'country',
@@ -52,6 +52,13 @@ const SBO_CONST = {
         MANUAL: 'manual',
         PLAID: 'plaid',
     },
+
+    /** The states of a request that a step tracks by its ID */
+    REQUEST_STATUS: {
+        PENDING: 'pending',
+        SUCCEEDED: 'succeeded',
+        FAILED: 'failed',
+    },
     STATE: {
         SETUP: 'SETUP',
         VERIFYING: 'VERIFYING',
@@ -76,7 +83,6 @@ const SBO_CONST = {
             ENABLE: 'EnableStep',
         },
         PAGE_NAMES: USD_PAGE_NAMES,
-        STEP_NAMES: ['1', '2', '3', '4', '5', '6', '7'],
         MAX_NUMBER_OF_UBOS: 3,
         BANK_INFO_SUB_PAGES: {
             MANUAL: 'manual',
@@ -140,19 +146,7 @@ const SBO_CONST = {
         },
     },
     NON_USD: {
-        STEP: {
-            COUNTRY: 'CountryStep',
-            BANK_INFO: 'BankInfoStep',
-            BUSINESS_INFO: 'BusinessInfoStep',
-            BENEFICIAL_OWNER_INFO: 'BeneficialOwnerInfoStep',
-            SIGNER_INFO: 'SignerInfoStep',
-            AGREEMENTS: 'AgreementsStep',
-            DOCUSIGN: 'DocusignStep',
-            FINISH: 'FinishStep',
-        },
         PAGE_NAMES: NON_USD_PAGE_NAMES,
-        STEP_NAMES: ['1', '2', '3', '4', '5', '6'],
-        DOCUSIGN_REQUIRED_STEP_NAMES: ['1', '2', '3', '4', '5', '6', '7'],
         ACCOUNT_HOLDER_KEY_PREFIX: 'accountHolder',
 
         /** The owner ID of the current user. Every other owner gets a generated one. */

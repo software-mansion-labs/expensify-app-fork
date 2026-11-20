@@ -16,6 +16,7 @@ import type {
     OnboardingUser as SimplifiedBankOnboardingOnboardingUser,
     PlaidData as SimplifiedBankOnboardingPlaidData,
     SetupType as SimplifiedBankOnboardingSetupType,
+    StepRequests as SimplifiedBankOnboardingStepRequests,
     Workspaces as SimplifiedBankOnboardingWorkspaces,
 } from './pages/SimplifiedBankOnboarding/types/onyx';
 import type * as FormTypes from './types/form';
@@ -527,6 +528,9 @@ const ONYXKEYS = {
 
     /** Simplified bank onboarding: token of the mock Plaid widget, never persisted */
     RAM_ONLY_SIMPLIFIED_BANK_ONBOARDING_PLAID_LINK_TOKEN: 'simplifiedBankOnboardingPlaidLinkToken',
+
+    /** Simplified bank onboarding: the state of every request that a step waits for, keyed by request ID, never persisted */
+    RAM_ONLY_SIMPLIFIED_BANK_ONBOARDING_REQUESTS: 'simplifiedBankOnboardingRequests',
 
     /** Simplified bank onboarding: token of the mock identity check */
     SIMPLIFIED_BANK_ONBOARDING_ONFIDO_TOKEN: 'simplifiedBankOnboardingOnfidoToken',
@@ -2000,6 +2004,7 @@ type OnyxValuesMapping = {
     [ONYXKEYS.SIMPLIFIED_BANK_ONBOARDING_USER]: SimplifiedBankOnboardingOnboardingUser;
     [ONYXKEYS.SIMPLIFIED_BANK_ONBOARDING_PLAID_DATA]: SimplifiedBankOnboardingPlaidData;
     [ONYXKEYS.RAM_ONLY_SIMPLIFIED_BANK_ONBOARDING_PLAID_LINK_TOKEN]: string;
+    [ONYXKEYS.RAM_ONLY_SIMPLIFIED_BANK_ONBOARDING_REQUESTS]: SimplifiedBankOnboardingStepRequests;
     [ONYXKEYS.SIMPLIFIED_BANK_ONBOARDING_ONFIDO_TOKEN]: string;
     [ONYXKEYS.SIMPLIFIED_BANK_ONBOARDING_BANK_FIELDS]: SimplifiedBankOnboardingBankFields;
     [ONYXKEYS.SIMPLIFIED_BANK_ONBOARDING_PICKLISTS]: SimplifiedBankOnboardingOnboardingPicklists;

@@ -1,14 +1,15 @@
 /**
- * The date of birth sub page. It prefers the server data over the draft, the opposite of what the confirmation page does.
+ * The date of birth sub page. It shows the value that the step resolved.
  */
 import DateOfBirthStep from '@components/SubStepForms/DateOfBirthStep';
 
 import useLocalize from '@hooks/useLocalize';
-import useOnyx from '@hooks/useOnyx';
 import type {SubPageProps} from '@hooks/useSubPage/types';
 
 import useOnboardingStepFormSubmit from '@pages/SimplifiedBankOnboarding/hooks/useOnboardingStepFormSubmit';
 import INPUT_IDS from '@pages/SimplifiedBankOnboarding/types/form';
+import type {PersonalInfoValues} from '@pages/SimplifiedBankOnboarding/values/codecs/usdPersonalInfo';
+import type ResolvedValuesProps from '@pages/SimplifiedBankOnboarding/values/types';
 
 import ONYXKEYS from '@src/ONYXKEYS';
 
@@ -16,12 +17,8 @@ import React from 'react';
 
 const STEP_FIELDS = [INPUT_IDS.DOB];
 
-function DateOfBirth({onNext, onMove, isEditing}: SubPageProps) {
+function DateOfBirth({onNext, onMove, isEditing, values}: SubPageProps & ResolvedValuesProps<PersonalInfoValues>) {
     const {translate} = useLocalize();
-    const [account] = useOnyx(ONYXKEYS.SIMPLIFIED_BANK_ONBOARDING_ACCOUNT);
-    const [draft] = useOnyx(ONYXKEYS.FORMS.SIMPLIFIED_BANK_ONBOARDING_FORM_DRAFT);
-
-    const dobDefaultValue = account?.achData?.dob ?? draft?.dob ?? '';
 
     const handleSubmit = useOnboardingStepFormSubmit({fieldIds: STEP_FIELDS, onNext, shouldSaveDraft: isEditing});
 
@@ -35,7 +32,7 @@ function DateOfBirth({onNext, onMove, isEditing}: SubPageProps) {
             onSubmit={handleSubmit}
             stepFields={STEP_FIELDS}
             dobInputID={INPUT_IDS.DOB}
-            dobDefaultValue={dobDefaultValue}
+            dobDefaultValue={values.dob}
         />
     );
 }

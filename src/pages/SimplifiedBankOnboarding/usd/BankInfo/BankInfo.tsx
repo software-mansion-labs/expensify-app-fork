@@ -1,7 +1,6 @@
 /**
- * The bank step of the USD flow. Like the real step it has no sub pages of its own: the setup type stored in
- * `achData.subStep` picks the Plaid or the manual variant, and the URL sub page is only a copy of it. The container owns
- * the request and waits for it with the shared `isLoading` (request style 1).
+ * The bank step of the USD flow. The sub page of the URL picks the Plaid or the manual variant, and the flow definition
+ * puts it there. The container owns the request, follows it by its own ID, and passes its state to the variant.
  */
 import ActivityIndicator from '@components/ActivityIndicator';
 import InteractiveStepWrapper from '@components/InteractiveStepWrapper';
@@ -12,12 +11,19 @@ import useThemeStyles from '@hooks/useThemeStyles';
 
 import {clearOnboardingAccountErrors} from '@pages/SimplifiedBankOnboarding/actions/OnboardingAccount';
 import {connectBankAccountManually, connectBankAccountWithPlaid} from '@pages/SimplifiedBankOnboarding/actions/USDBankAccount';
-import useOnboardingSubmitCallback from '@pages/SimplifiedBankOnboarding/hooks/useOnboardingSubmitCallback';
+import {getBankAccountSubPage} from '@pages/SimplifiedBankOnboarding/flow/usdFlow';
+import useStepRequest from '@pages/SimplifiedBankOnboarding/requests/useStepRequest';
 import SBO_CONST from '@pages/SimplifiedBankOnboarding/SBO_CONST';
+import type {OnboardingForm} from '@pages/SimplifiedBankOnboarding/types/form';
+import type {ACHData, OnboardingAccount} from '@pages/SimplifiedBankOnboarding/types/onyx';
 import type USDPageProps from '@pages/SimplifiedBankOnboarding/usd/types';
+import {FIELDS_TO_CLEAR, MANUAL_KEYS} from '@pages/SimplifiedBankOnboarding/values/codecs/usdBankAccount';
+import {resolveValues} from '@pages/SimplifiedBankOnboarding/values/resolveValue';
 
 import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';
+
+import type {OnyxEntry} from 'react-native-onyx';
 
 import React from 'react';
 import {View} from 'react-native';
@@ -27,39 +33,58 @@ import type {BankAccountValues} from './types';
 import Manual from './subSteps/Manual';
 import Plaid from './subSteps/Plaid';
 
-type BankInfoProps = Pick<USDPageProps, 'onSubmit' | 'onBackButtonPress' | 'policyID' | 'stepNames'>;
+type BankInfoProps = Pick<USDPageProps, 'onSubmit' | 'onBackButtonPress' | 'policyID' | 'currentSubPage' | 'stepNames' | 'startStepIndex'>;
 
-// The position of this step in the step counter of the header
-const STEP_INDEX = 1;
+function selectSavedBankAccount(account: OnyxEntry<OnboardingAccount>): Pick<ACHData, 'bankAccountID' | 'routingNumber' | 'accountNumber'> {
+    return {bankAccountID: account?.achData?.bankAccountID, routingNumber: account?.achData?.routingNumber, accountNumber: account?.achData?.accountNumber};
+}
 
-function BankInfo({onSubmit, onBackButtonPress, policyID, stepNames}: BankInfoProps) {
+function selectBankDraft(draft: OnyxEntry<OnboardingForm>): Partial<Pick<OnboardingForm, 'setupType' | 'routingNumber' | 'accountNumber'>> {
+    return {setupType: draft?.setupType, routingNumber: draft?.routingNumber, accountNumber: draft?.accountNumber};
+}
+
+function BankInfo({onSubmit, onBackButtonPress, policyID, currentSubPage, stepNames, startStepIndex}: BankInfoProps) {
     const {translate} = useLocalize();
     const styles = useThemeStyles();
-    const [account] = useOnyx(ONYXKEYS.SIMPLIFIED_BANK_ONBOARDING_ACCOUNT);
-    const markSubmitting = useOnboardingSubmitCallback(onSubmit);
+    const [savedBankAccount] = useOnyx(ONYXKEYS.SIMPLIFIED_BANK_ONBOARDING_ACCOUNT, {selector: selectSavedBankAccount});
+    const [bankDraft] = useOnyx(ONYXKEYS.FORMS.SIMPLIFIED_BANK_ONBOARDING_FORM_DRAFT, {selector: selectBankDraft});
+    const {send, isPending, errorMessage} = useStepRequest({onSuccess: onSubmit});
 
-    const setupType = account?.achData?.subStep ?? '';
+    const bankAccountID = savedBankAccount?.bankAccountID;
+    const setupType = currentSubPage ?? getBankAccountSubPage(bankAccountID, bankDraft?.setupType);
 
     const submit = (values: BankAccountValues) => {
         if (!policyID) {
             return;
         }
+        const {plaidAccountID} = values;
         if (setupType === SBO_CONST.SETUP_TYPE.MANUAL) {
-            connectBankAccountManually(policyID, values.routingNumber ?? '', values.accountNumber ?? '');
-        } else if (setupType === SBO_CONST.SETUP_TYPE.PLAID && values.plaidAccountID) {
-            connectBankAccountWithPlaid(policyID, values.plaidAccountID);
-        } else {
-            return;
+            send((requestID) => connectBankAccountManually(requestID, policyID, values.routingNumber ?? '', values.accountNumber ?? '', FIELDS_TO_CLEAR));
+        } else if (setupType === SBO_CONST.SETUP_TYPE.PLAID && plaidAccountID) {
+            send((requestID) => connectBankAccountWithPlaid(requestID, policyID, plaidAccountID, FIELDS_TO_CLEAR));
         }
-        markSubmitting();
     };
 
     const renderBankInfo = () => {
         switch (setupType) {
             case SBO_CONST.SETUP_TYPE.PLAID:
-                return <Plaid onNext={submit} />;
+                return (
+                    <Plaid
+                        onNext={submit}
+                        isRequestPending={isPending}
+                        requestErrorMessage={errorMessage}
+                    />
+                );
             case SBO_CONST.SETUP_TYPE.MANUAL:
-                return <Manual onNext={submit} />;
+                return (
+                    <Manual
+                        onNext={submit}
+                        isRequestPending={isPending}
+                        requestErrorMessage={errorMessage}
+                        values={resolveValues(MANUAL_KEYS, bankDraft, savedBankAccount)}
+                        isLocked={!!bankAccountID}
+                    />
+                );
             default:
                 return (
                     <View style={[styles.flex1, styles.alignItemsCenter, styles.justifyContentCenter]}>
@@ -80,7 +105,7 @@ function BankInfo({onSubmit, onBackButtonPress, policyID, stepNames}: BankInfoPr
             shouldEnablePickerAvoiding={false}
             handleBackButtonPress={handleBackButtonPress}
             headerTitle={translate('bankAccount.bankInfo')}
-            startStepIndex={STEP_INDEX}
+            startStepIndex={startStepIndex}
             stepNames={stepNames}
         >
             {renderBankInfo()}

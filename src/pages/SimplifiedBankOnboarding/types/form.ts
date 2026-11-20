@@ -2,6 +2,8 @@
  * Form types of the simplified bank onboarding. Like the real flow, one form type holds the inputs of every step of both
  * flows, plus the control state that the steps keep in the draft.
  */
+import type SBO_CONST from '@pages/SimplifiedBankOnboarding/SBO_CONST';
+
 import type Form from '@src/types/form/Form';
 import type {FileObject} from '@src/types/utils/Attachment';
 
@@ -84,6 +86,9 @@ type OnboardingFormExtraProps = {
     isEditingCreatedOwner?: boolean;
     isUserDirector?: boolean;
     currency?: string;
+
+    /** The setup type that the user picked on the entry point. The country page sits between the choice and the bank page. */
+    setupType?: ValueOf<typeof SBO_CONST.SETUP_TYPE>;
 };
 
 type OnboardingForm = OnboardingFormExtraProps &

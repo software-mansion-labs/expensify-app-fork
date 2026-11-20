@@ -10,7 +10,6 @@ import useStepFormSubmit from '@hooks/useStepFormSubmit';
 import {getFieldRequiredErrors} from '@libs/ValidationUtils';
 
 import type {SignerDetailsSubPageProps, SignerFormID} from '@pages/SimplifiedBankOnboarding/nonUSD/SignerInfo/types';
-import useSignerDraftValue from '@pages/SimplifiedBankOnboarding/nonUSD/SignerInfo/useSignerDraftValue';
 import {SIGNER_INPUT_IDS} from '@pages/SimplifiedBankOnboarding/types/form';
 
 import CONST from '@src/CONST';
@@ -19,11 +18,10 @@ import React from 'react';
 
 const STEP_FIELDS = [SIGNER_INPUT_IDS.SIGNER_JOB_TITLE];
 
-function JobTitle({onNext, onMove, isEditing, formID}: SignerDetailsSubPageProps) {
+function JobTitle({onNext, onMove, isEditing, formID, values}: SignerDetailsSubPageProps) {
     const {translate} = useLocalize();
-    const defaultValue = useSignerDraftValue(formID, SIGNER_INPUT_IDS.SIGNER_JOB_TITLE);
 
-    const validate = (values: FormOnyxValues<SignerFormID>): FormInputErrors<SignerFormID> => getFieldRequiredErrors(values, STEP_FIELDS, translate);
+    const validate = (formValues: FormOnyxValues<SignerFormID>): FormInputErrors<SignerFormID> => getFieldRequiredErrors(formValues, STEP_FIELDS, translate);
 
     const handleSubmit = useStepFormSubmit<SignerFormID>({formId: formID, fieldIds: STEP_FIELDS, onNext, shouldSaveDraft: isEditing});
 
@@ -39,7 +37,7 @@ function JobTitle({onNext, onMove, isEditing, formID}: SignerDetailsSubPageProps
             inputId={SIGNER_INPUT_IDS.SIGNER_JOB_TITLE}
             inputLabel={translate('signerInfoStep.jobTitle')}
             inputMode={CONST.INPUT_MODE.TEXT}
-            defaultValue={defaultValue}
+            defaultValue={values.signerJobTitle}
             shouldShowHelpLinks={false}
             shouldDelayAutoFocus
         />

@@ -9,8 +9,6 @@ import PushRowWithModal from '@components/PushRowWithModal';
 import Text from '@components/Text';
 
 import useLocalize from '@hooks/useLocalize';
-import useOnyx from '@hooks/useOnyx';
-import type {SubPageProps} from '@hooks/useSubPage/types';
 import useThemeStyles from '@hooks/useThemeStyles';
 
 import {getFieldRequiredErrors} from '@libs/ValidationUtils';
@@ -18,6 +16,7 @@ import {getFieldRequiredErrors} from '@libs/ValidationUtils';
 import useOnboardingStepFormSubmit from '@pages/SimplifiedBankOnboarding/hooks/useOnboardingStepFormSubmit';
 import SBO_CONST from '@pages/SimplifiedBankOnboarding/SBO_CONST';
 import INPUT_IDS from '@pages/SimplifiedBankOnboarding/types/form';
+import type BusinessInfoSubPageProps from '@pages/SimplifiedBankOnboarding/usd/BusinessInfo/types';
 
 import ONYXKEYS from '@src/ONYXKEYS';
 
@@ -29,12 +28,9 @@ const INCORPORATION_TYPE_OPTIONS: Record<string, string> = Object.fromEntries(
     Object.values(SBO_CONST.USD.INCORPORATION_TYPES).map((incorporationType) => [incorporationType, incorporationType]),
 );
 
-function IncorporationType({onNext, isEditing}: SubPageProps) {
+function IncorporationType({onNext, isEditing, values: stepValues}: BusinessInfoSubPageProps) {
     const {translate} = useLocalize();
     const styles = useThemeStyles();
-    const [account] = useOnyx(ONYXKEYS.SIMPLIFIED_BANK_ONBOARDING_ACCOUNT);
-
-    const defaultIncorporationType = account?.achData?.incorporationType ?? '';
 
     const validate = (values: FormOnyxValues<typeof ONYXKEYS.FORMS.SIMPLIFIED_BANK_ONBOARDING_FORM>): FormInputErrors<typeof ONYXKEYS.FORMS.SIMPLIFIED_BANK_ONBOARDING_FORM> =>
         getFieldRequiredErrors(values, STEP_FIELDS, translate);
@@ -58,7 +54,7 @@ function IncorporationType({onNext, isEditing}: SubPageProps) {
                 description={translate('businessInfoStep.companyType')}
                 modalHeaderTitle={translate('businessInfoStep.companyType')}
                 searchInputTitle={translate('businessInfoStep.companyType')}
-                defaultValue={defaultIncorporationType}
+                defaultValue={stepValues.incorporationType}
                 inputID={INPUT_IDS.INCORPORATION_TYPE}
                 shouldSaveDraft={!isEditing}
             />

@@ -1,7 +1,7 @@
 /**
  * The card of an account in review. The real card offers a chat with Concierge, a way back to the details and a reset.
- * The lab keeps the way back to the details, with the same order of writes as the real one: the setup type first, then the
- * step, then the navigation. In place of the chat it shows the buttons that play the reviewer on the mock server.
+ * The lab keeps the way back to the details, which only navigates because the URL owns the position in the flow. In place
+ * of the chat it shows the buttons that play the reviewer on the mock server.
  */
 import Button from '@components/Button';
 import ScrollView from '@components/ScrollView';
@@ -12,7 +12,6 @@ import useThemeStyles from '@hooks/useThemeStyles';
 
 import Navigation from '@libs/Navigation/Navigation';
 
-import {goToSetupStep, setBankAccountSubStep} from '@pages/SimplifiedBankOnboarding/actions/OnboardingAccount';
 import MockReviewButtons from '@pages/SimplifiedBankOnboarding/components/MockReviewButtons';
 import SBO_CONST from '@pages/SimplifiedBankOnboarding/SBO_CONST';
 import type USDPageProps from '@pages/SimplifiedBankOnboarding/usd/types';
@@ -29,17 +28,14 @@ function FinishReviewCard({policyID, backTo}: FinishReviewCardProps) {
     const styles = useThemeStyles();
 
     const updateDetails = () => {
-        setBankAccountSubStep(SBO_CONST.SETUP_TYPE.MANUAL).then(() => {
-            goToSetupStep(SBO_CONST.USD.STEP.REQUESTOR);
-            Navigation.navigate(
-                ROUTES.SETTINGS_BANK_ONBOARDING_LAB_USD_SETUP.getRoute({
-                    policyID,
-                    page: SBO_CONST.USD.PAGE_NAMES.REQUESTOR,
-                    subPage: SBO_CONST.USD.PERSONAL_INFO_SUB_PAGES.FULL_NAME,
-                    backTo,
-                }),
-            );
-        });
+        Navigation.navigate(
+            ROUTES.SETTINGS_BANK_ONBOARDING_LAB_USD_SETUP.getRoute({
+                policyID,
+                page: SBO_CONST.USD.PAGE_NAMES.REQUESTOR,
+                subPage: SBO_CONST.USD.PERSONAL_INFO_SUB_PAGES.FULL_NAME,
+                backTo,
+            }),
+        );
     };
 
     return (

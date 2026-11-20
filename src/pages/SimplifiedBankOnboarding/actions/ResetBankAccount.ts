@@ -42,7 +42,7 @@ function getResetDataForOnyx(policyID: string | undefined, achAccount: Workspace
             {
                 onyxMethod: Onyx.METHOD.MERGE,
                 key: ONYXKEYS.SIMPLIFIED_BANK_ONBOARDING_ACCOUNT,
-                value: {shouldShowResetModal: false, isLoading: true, pendingAction: CONST.RED_BRICK_ROAD_PENDING_ACTION.DELETE, achData: null},
+                value: {isLoading: true, pendingAction: CONST.RED_BRICK_ROAD_PENDING_ACTION.DELETE, achData: null},
             },
             ...buildWorkspaceSummaryUpdates(policyID, null),
         ],
@@ -60,7 +60,7 @@ function getResetDataForOnyx(policyID: string | undefined, achAccount: Workspace
         failureData: [
             {onyxMethod: Onyx.METHOD.MERGE, key: ONYXKEYS.SIMPLIFIED_BANK_ONBOARDING_ACCOUNT, value: {isLoading: false, pendingAction: null}},
 
-            // The account data is not restored here. It comes back with the next read of the entry page, but the summary has no such read.
+            // The account data is not restored here. The entry page reads it again once the data no longer names its route, but the summary has no such read.
             ...buildWorkspaceSummaryUpdates(policyID, achAccount ?? null),
         ],
     };

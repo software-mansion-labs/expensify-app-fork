@@ -1,8 +1,6 @@
 /**
  * The bank step of the NonUSD flow, and the reference for the steps of this flow. The server describes the inputs, and
- * the single request at the end creates the bank account. The step waits for it with its own ref and the `isSuccess`
- * flag that every NonUSD request shares, then clears the flag by hand. Unlike the other steps of this flow, it watches
- * the shared `isLoading` and not a flag of its own, like the real step.
+ * the single request at the end creates the bank account. The step moves on once that request succeeds.
  */
 import InteractiveStepWrapper from '@components/InteractiveStepWrapper';
 
@@ -14,19 +12,21 @@ import useSubPage from '@hooks/useSubPage';
 import Navigation from '@libs/Navigation/Navigation';
 
 import NotFoundPage from '@pages/ErrorPage/NotFoundPage';
-import {clearGlobalBankAccountCreation, createGlobalBankAccount, getBankAccountFields} from '@pages/SimplifiedBankOnboarding/actions/GlobalBankAccount';
+import {createGlobalBankAccount, getBankAccountFields} from '@pages/SimplifiedBankOnboarding/actions/GlobalBankAccount';
 import SubPageRedirectIndicator from '@pages/SimplifiedBankOnboarding/components/SubPageRedirectIndicator';
 import type NonUSDPageProps from '@pages/SimplifiedBankOnboarding/nonUSD/types';
+import useStepRequest from '@pages/SimplifiedBankOnboarding/requests/useStepRequest';
 import SBO_CONST from '@pages/SimplifiedBankOnboarding/SBO_CONST';
 import {getInitialSubStepForBankInfo, getInputKeysForBankInfoStep} from '@pages/SimplifiedBankOnboarding/utils/BankFieldUtils';
-import getSubStepValues from '@pages/SimplifiedBankOnboarding/utils/getSubStepValues';
+import {getFieldsToClear} from '@pages/SimplifiedBankOnboarding/values/codecs/nonUSDBankInfo';
+import {resolveValues} from '@pages/SimplifiedBankOnboarding/values/resolveValue';
 
 import {clearErrors} from '@userActions/FormActions';
 
 import ONYXKEYS from '@src/ONYXKEYS';
 import ROUTES from '@src/ROUTES';
 
-import React, {useEffect, useRef} from 'react';
+import React, {useEffect} from 'react';
 
 import type BankInfoSubStepProps from './types';
 
@@ -42,10 +42,7 @@ const pages = [
     {pageName: SUB_PAGE_NAMES.CONFIRMATION, component: Confirmation},
 ];
 
-// The position of this step in the step counter of the header
-const STEP_INDEX = 1;
-
-function BankInfo({onBackButtonPress, onSubmit, policyID, currency = '', stepNames, backTo}: NonUSDPageProps) {
+function BankInfo({onBackButtonPress, onSubmit, policyID, currency = '', stepNames, startStepIndex, backTo}: NonUSDPageProps) {
     const {translate} = useLocalize();
     const [account] = useOnyx(ONYXKEYS.SIMPLIFIED_BANK_ONBOARDING_ACCOUNT);
     const [draft] = useOnyx(ONYXKEYS.FORMS.SIMPLIFIED_BANK_ONBOARDING_FORM_DRAFT);
@@ -53,16 +50,15 @@ function BankInfo({onBackButtonPress, onSubmit, policyID, currency = '', stepNam
 
     const country = draft?.country ?? account?.achData?.country ?? '';
     const inputKeys = getInputKeysForBankInfoStep(bankFields);
-    const values = getSubStepValues(inputKeys, draft, account);
+    const values = resolveValues(inputKeys, draft, account?.achData);
     const startFrom = getInitialSubStepForBankInfo(values, bankFields);
-    const isSubmittingRef = useRef(false);
+    const {send, isPending, errorMessage} = useStepRequest({onSuccess: onSubmit});
 
     const submit = () => {
         if (!policyID) {
             return;
         }
-        isSubmittingRef.current = true;
-        createGlobalBankAccount({policyID, country, currency, fields: values});
+        send((requestID) => createGlobalBankAccount(requestID, {policyID, country, currency, fields: values}, getFieldsToClear(inputKeys)));
     };
 
     useNetwork({
@@ -70,19 +66,6 @@ function BankInfo({onBackButtonPress, onSubmit, policyID, currency = '', stepNam
             getBankAccountFields(country, currency);
         },
     });
-
-    useEffect(() => {
-        if (account?.isLoading === true || !!account?.errors) {
-            return;
-        }
-
-        // The shared `isSuccess` can still be true from the previous step, so the ref tells whether this step sent the request.
-        if (account?.isSuccess === true && isSubmittingRef.current) {
-            isSubmittingRef.current = false;
-            onSubmit();
-            clearGlobalBankAccountCreation();
-        }
-    }, [account?.errors, account?.isLoading, account?.isSuccess, onSubmit]);
 
     useEffect(() => {
         if (country === '') {
@@ -129,7 +112,7 @@ function BankInfo({onBackButtonPress, onSubmit, policyID, currency = '', stepNam
             handleBackButtonPress={handleBackButtonPress}
             headerTitle={translate('bankAccount.bankInfo')}
             stepNames={stepNames}
-            startStepIndex={STEP_INDEX}
+            startStepIndex={startStepIndex}
         >
             {isRedirecting ? (
                 <SubPageRedirectIndicator />
@@ -140,6 +123,9 @@ function BankInfo({onBackButtonPress, onSubmit, policyID, currency = '', stepNam
                     onMove={moveTo}
                     currentPageName={currentPageName}
                     bankFields={bankFields}
+                    values={values}
+                    isRequestPending={isPending}
+                    requestErrorMessage={errorMessage}
                 />
             )}
         </InteractiveStepWrapper>

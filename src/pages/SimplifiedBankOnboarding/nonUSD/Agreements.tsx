@@ -18,65 +18,45 @@ import useThemeStyles from '@hooks/useThemeStyles';
 
 import {getFieldRequiredErrors} from '@libs/ValidationUtils';
 
-import {clearFinishGlobalBankAccountOnboarding, finishGlobalBankAccountOnboarding} from '@pages/SimplifiedBankOnboarding/actions/GlobalBankAccount';
+import {finishGlobalBankAccountOnboarding} from '@pages/SimplifiedBankOnboarding/actions/GlobalBankAccount';
+import useStepRequest from '@pages/SimplifiedBankOnboarding/requests/useStepRequest';
 import INPUT_IDS from '@pages/SimplifiedBankOnboarding/types/form';
 import {getBankAccountParams, requiresDocusignStep} from '@pages/SimplifiedBankOnboarding/utils/OnboardingAccountUtils';
+import {FIELDS_TO_CLEAR as AGREEMENT_FIELDS_TO_CLEAR, resolveAgreements} from '@pages/SimplifiedBankOnboarding/values/codecs/nonUSDAgreements';
 
 import {clearErrors} from '@userActions/FormActions';
 
 import ONYXKEYS from '@src/ONYXKEYS';
 import type {FileObject} from '@src/types/utils/Attachment';
 
-import React, {useEffect, useRef, useState} from 'react';
+import React, {useRef, useState} from 'react';
 
 import type NonUSDPageProps from './types';
 
 import DraftFileInput from './DraftFileInput';
-import getAgreementValues from './getAgreementValues';
 
 const STEP_FIELDS = [INPUT_IDS.AUTHORIZED_TO_BIND_CLIENT_TO_AGREEMENT, INPUT_IDS.AGREE_TO_TERMS_AND_CONDITIONS, INPUT_IDS.CONSENT_TO_PRIVACY_NOTICE];
 
-// The position of this step in the step counter of the header
-const STEP_INDEX = 5;
-
-function Agreements({onBackButtonPress, onSubmit, policyID, currency, stepNames}: NonUSDPageProps) {
+function Agreements({onBackButtonPress, onSubmit, policyID, currency, stepNames, startStepIndex}: NonUSDPageProps) {
     const {translate} = useLocalize();
     const styles = useThemeStyles();
     const [account] = useOnyx(ONYXKEYS.SIMPLIFIED_BANK_ONBOARDING_ACCOUNT);
     const [draft] = useOnyx(ONYXKEYS.FORMS.SIMPLIFIED_BANK_ONBOARDING_FORM_DRAFT);
 
-    const agreementValues = getAgreementValues(draft, account);
+    const agreementValues = resolveAgreements(draft, account?.achData);
     const isDocusignStepRequired = requiresDocusignStep(currency);
-    const isSubmittingRef = useRef(false);
     const formRef = useRef<FormRef | null>(null);
     const [bankStatements, setBankStatements] = useState<FileObject[]>(draft?.bankStatement ?? []);
+
+    const {send, isPending} = useStepRequest({onSuccess: onSubmit});
 
     const submit = () => {
         if (isDocusignStepRequired) {
             onSubmit();
             return;
         }
-        isSubmittingRef.current = true;
-        finishGlobalBankAccountOnboarding(getBankAccountParams(policyID, account?.achData), agreementValues);
+        send((requestID) => finishGlobalBankAccountOnboarding(requestID, getBankAccountParams(policyID, account?.achData), agreementValues, AGREEMENT_FIELDS_TO_CLEAR));
     };
-
-    useEffect(() => {
-        if (isDocusignStepRequired || account?.errors || account?.isFinishingCorpayBankAccountOnboarding || !account?.isSuccess) {
-            return;
-        }
-
-        // The shared `isSuccess` can still be true from the previous step, so the ref tells whether this step sent the request.
-        if (isSubmittingRef.current) {
-            isSubmittingRef.current = false;
-            onSubmit();
-            clearFinishGlobalBankAccountOnboarding();
-        }
-
-        // As in the real step, this cleanup runs whenever a flag changes and not only on unmount, so it can clear a request that just started.
-        return () => {
-            clearFinishGlobalBankAccountOnboarding();
-        };
-    }, [account?.errors, account?.isFinishingCorpayBankAccountOnboarding, account?.isSuccess, isDocusignStepRequired, onSubmit]);
 
     const validate = (values: FormOnyxValues<typeof ONYXKEYS.FORMS.SIMPLIFIED_BANK_ONBOARDING_FORM>): FormInputErrors<typeof ONYXKEYS.FORMS.SIMPLIFIED_BANK_ONBOARDING_FORM> => {
         const errors = getFieldRequiredErrors(values, isDocusignStepRequired ? [...STEP_FIELDS, INPUT_IDS.BANK_STATEMENT] : STEP_FIELDS, translate);
@@ -103,7 +83,7 @@ function Agreements({onBackButtonPress, onSubmit, policyID, currency, stepNames}
             handleBackButtonPress={handleBackButtonPress}
             headerTitle={translate('agreementsStep.agreements')}
             stepNames={stepNames}
-            startStepIndex={STEP_INDEX}
+            startStepIndex={startStepIndex}
         >
             <FormProvider
                 ref={formRef}
@@ -113,7 +93,7 @@ function Agreements({onBackButtonPress, onSubmit, policyID, currency, stepNames}
                 submitButtonText={translate(isDocusignStepRequired ? 'common.confirm' : 'agreementsStep.accept')}
                 style={[styles.mh5, styles.flexGrow1]}
                 enabledWhenOffline={false}
-                isLoading={!!account?.isFinishingCorpayBankAccountOnboarding}
+                isLoading={isPending}
             >
                 <Text style={styles.textHeadlineLineHeightXXL}>{translate('agreementsStep.pleaseConfirm')}</Text>
                 <InputWrapper
