@@ -15,7 +15,7 @@ import type {
     OnboardingPicklists as SimplifiedBankOnboardingOnboardingPicklists,
     OnboardingUser as SimplifiedBankOnboardingOnboardingUser,
     PlaidData as SimplifiedBankOnboardingPlaidData,
-    SetupType as SimplifiedBankOnboardingSetupType,
+    OnboardingRequests as SimplifiedBankOnboardingRequests,
     Workspaces as SimplifiedBankOnboardingWorkspaces,
 } from './pages/SimplifiedBankOnboarding/types/onyx';
 import type * as FormTypes from './types/form';
@@ -510,11 +510,11 @@ const ONYXKEYS = {
     /** Stores the bank connection type user wants to set up before validation code modal */
     REIMBURSEMENT_ACCOUNT_OPTION_PRESSED: 'reimbursementAccountOptionPressed',
 
-    /** Simplified bank onboarding (research module): server data, request flags and form state of the account being set up */
+    /** Simplified bank onboarding (research module): server data and request flags of the account being set up */
     SIMPLIFIED_BANK_ONBOARDING_ACCOUNT: 'simplifiedBankOnboardingAccount',
 
-    /** Simplified bank onboarding: the setup type picked before the account validation gate */
-    SIMPLIFIED_BANK_ONBOARDING_OPTION_PRESSED: 'simplifiedBankOnboardingOptionPressed',
+    /** Simplified bank onboarding: the status and the error of each request of the flow, keyed by request name */
+    SIMPLIFIED_BANK_ONBOARDING_REQUESTS: 'simplifiedBankOnboardingRequests',
 
     /** Simplified bank onboarding: mock workspaces, the stand-in for policies */
     SIMPLIFIED_BANK_ONBOARDING_WORKSPACES: 'simplifiedBankOnboardingWorkspaces',
@@ -1410,8 +1410,8 @@ const ONYXKEYS = {
         REIMBURSEMENT_ACCOUNT_FORM_DRAFT: 'reimbursementAccountDraft',
         ENTER_SINGER_INFO_FORM: 'enterSignerInfoForm',
         ENTER_SINGER_INFO_FORM_DRAFT: 'enterSignerInfoFormDraft',
-        SIMPLIFIED_BANK_ONBOARDING_FORM: 'simplifiedBankOnboardingAccount',
-        SIMPLIFIED_BANK_ONBOARDING_FORM_DRAFT: 'simplifiedBankOnboardingAccountDraft',
+        SIMPLIFIED_BANK_ONBOARDING_FORM: 'simplifiedBankOnboardingForm',
+        SIMPLIFIED_BANK_ONBOARDING_FORM_DRAFT: 'simplifiedBankOnboardingFormDraft',
         SIMPLIFIED_BANK_ONBOARDING_SIGNER_FORM: 'simplifiedBankOnboardingSignerForm',
         SIMPLIFIED_BANK_ONBOARDING_SIGNER_FORM_DRAFT: 'simplifiedBankOnboardingSignerFormDraft',
         PERSONAL_BANK_ACCOUNT_FORM: 'personalBankAccount',
@@ -1995,7 +1995,7 @@ type OnyxValuesMapping = {
     [ONYXKEYS.IS_CHANGING_TO_NEW_BANK_ACCOUNT]: boolean;
     [ONYXKEYS.REIMBURSEMENT_ACCOUNT_OPTION_PRESSED]: ValueOf<typeof CONST.BANK_ACCOUNT.SETUP_TYPE>;
     [ONYXKEYS.SIMPLIFIED_BANK_ONBOARDING_ACCOUNT]: SimplifiedBankOnboardingOnboardingAccount;
-    [ONYXKEYS.SIMPLIFIED_BANK_ONBOARDING_OPTION_PRESSED]: SimplifiedBankOnboardingSetupType;
+    [ONYXKEYS.SIMPLIFIED_BANK_ONBOARDING_REQUESTS]: SimplifiedBankOnboardingRequests;
     [ONYXKEYS.SIMPLIFIED_BANK_ONBOARDING_WORKSPACES]: SimplifiedBankOnboardingWorkspaces;
     [ONYXKEYS.SIMPLIFIED_BANK_ONBOARDING_USER]: SimplifiedBankOnboardingOnboardingUser;
     [ONYXKEYS.SIMPLIFIED_BANK_ONBOARDING_PLAID_DATA]: SimplifiedBankOnboardingPlaidData;

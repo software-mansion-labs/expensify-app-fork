@@ -46,6 +46,7 @@ import MenuItemIconNarrow from './leaves/leading/MenuItemIconNarrow';
 import MenuItemBrickRoadIndicator from './leaves/trailing/icons/MenuItemBrickRoadIndicator';
 import MenuItemChevron from './leaves/trailing/icons/MenuItemChevron';
 import MenuItemDownCaret from './leaves/trailing/icons/MenuItemDownCaret';
+import MenuItemLoadingIndicator from './leaves/trailing/icons/MenuItemLoadingIndicator';
 import MenuItemNewWindowIcon from './leaves/trailing/icons/MenuItemNewWindowIcon';
 import MenuItemCopy from './leaves/trailing/MenuItemCopy';
 import MenuItemExternalLink from './leaves/trailing/MenuItemExternalLink';
@@ -71,6 +72,7 @@ const MenuItem = Object.assign(LegacyMenuItem, {
     BrickRoadIndicator: MenuItemBrickRoadIndicator,
     Chevron: MenuItemChevron,
     DownCaret: MenuItemDownCaret,
+    LoadingIndicator: MenuItemLoadingIndicator,
     NewWindowIcon: MenuItemNewWindowIcon,
     RightLabel: MenuItemRightLabel,
     Copy: MenuItemCopy,

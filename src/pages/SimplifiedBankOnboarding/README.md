@@ -5,8 +5,9 @@ real flow and cuts the number of variants: where the real flow has nine sub page
 mock server that runs in the app, so no backend account is needed.
 
 The module exists to try other architectures on something that is small enough to rewrite, but still shows the same
-problems as the real flow. The weak patterns are reproduced on purpose. Known bugs of the real flow are not, with one
-exception: the race of the second request style, which follows directly from that pattern (see [Requests](#requests)).
+problems as the real flow. The first version (commit `a513a9853f9`) reproduced the weak patterns of the real flow on
+purpose and is the baseline of every experiment. This version replaces the architecture of the flow with a modular one,
+described in [Architecture](#architecture). The baseline stays readable in the git history.
 
 ## How to open it
 
@@ -62,26 +63,80 @@ a generic error in the UI, like the real flow, and the specific reason only in t
 
 ## Module layout
 
-Everything is under `src/pages/SimplifiedBankOnboarding/`. Paths in the table below that start with `R/` are relative to
-`src/pages/ReimbursementAccount/`.
+Everything is under `src/pages/SimplifiedBankOnboarding/`. The flow folders are listed in the order of their
+dependencies: a folder imports only from the folders above it.
 
 | Folder | Content |
 | --- | --- |
+| `types/`, `SBO_CONST.ts` | The draft type, the Onyx types, step and page IDs, mock values |
+| `model/` | The `FlowData` type, pure checks on the server data (`setupStatus.ts`), the answers of a flow built from the draft and the server data (`answers/`), the NonUSD workspace, currency and answers in one helper (`getNonUSDFlowState.ts`), owner helpers (`owners/`), the server-driven bank fields (`bankFields/`) |
+| `requests/` | Every request of the flow through `runRequest`, the request status hook `useRequestState`, the account read of a screen (`entry/useAccountRead.ts`), the draft writes |
+| `formConfig/` | The plan builders: the steps, the pages and the fields of each flow, built from the answers. Shared page groups for the owners and the signer, and the field validation |
+| `flow/` | Pure helpers over a plan: positions, the resume position, reachability, the moves between positions |
+| `navigation/` | The only place that calls `Navigation`: the mapping between a position and a route (`routes.ts`), the moves of a flow, the moves of the entry page |
+| `controller/` | The generic flow screen (`OnboardingFlowPage`) and its hook (`useOnboardingFlow`), the data source of a flow, a read of the same data for handlers (`useReadFlowData`) and the gate of a cold deep link (`useFlowAccountRead`) |
+| `form/` | The generic renderer: one component per page kind and per field type. It knows nothing of the flows |
+| `steps/` | The custom pages that are not forms: Plaid, Onfido, the validation of the deposits, Docusign, the waiting page, the finish page |
+| `flows/` | The USD and NonUSD flow descriptors, the shared screen body `SetupFlowPage` with the NonUSD server list gate, the route screens and `openFlowAtResume` |
+| `entry/` | The entry page: the account reference, the pure screen state, one view per state, the start over modal, the verify-account page |
+| `enterSignerInfo/` | The separate flow that a director opens from an email, on the same controller with its own form |
+| `actions/`, `utils/` | Old import paths that the frozen landing pages and the mock server panel still use. They only forward |
 | `landing/` | The lab page: workspace list, the other entry points, the Payments page stand-in |
-| `entry/` | The page that opens a flow, the entry point, the connected view, the verify-account gate |
-| `usd/` | The USD flow page and its steps |
-| `nonUSD/` | The NonUSD flow page and its steps |
-| `enterSignerInfo/` | The separate flow that a director opens from an email |
-| `actions/` | Request and Onyx write functions (the stand-in for `src/libs/actions`) |
-| `hooks/` | The three hooks that wait for requests or open the reset modal |
-| `utils/` | Pure helpers: value lookup, resume position, draft prefill |
-| `components/` | The few components that two flows share |
-| `types/` | The form type and the Onyx types |
 | `mockBackend/` | The server: database, command handlers, queue, UI panel |
-| `SBO_CONST.ts` | Step names, page names, sub page names and positions, mock values |
 
 The files outside the module only register it: Onyx keys, routes, screens, the navigator entries, one menu item, one
 translation key and the Sentry labels.
+
+## Architecture
+
+### The URL is the position
+
+The position of a flow is the route: `page` is the step ID, `subPage` is the page ID and `action=edit` marks a page that
+the confirmation of its step opened. Nothing else stores it: no `currentStep` written by the client, no `subStep`, no
+numeric index. The invited director page has one step, so its URL holds the page alone.
+
+The plan is built in render from the draft and the server data, so it always matches the data. Skipped pages are not in
+the plan. `getResumePosition` finds the first page that still needs an answer, and `isPositionReachable` rejects a URL
+that names a page the plan does not have or a page after the resume position. A URL without a reachable position is
+redirected to the resume position by the only effect of the controller, and the redirect waits until the data of the plan
+is there.
+
+### Every move happens in a handler
+
+A submit runs one handler: it writes the draft and awaits the write, rebuilds the plan from what Onyx holds now, runs the
+request of the page or of the step and awaits its outcome, and only then navigates. No effect watches a request flag to
+move the flow on. A second submit while a handler runs is ignored.
+
+Each request goes through `runRequest`. It writes `{requestID, status, errors}` under the name of the request to one
+status key and returns a Promise of the outcome (`succeeded`, `failed` or `skipped`). The request ID ties the outcome to
+this very request, so an older request of the same name never settles a newer one. The button spinner and the error come
+from `useRequestState(name)`. Requests keep the account `errors` that the frozen landing page shows, and write no other
+flags to the account key.
+
+### One generic controller
+
+A flow is a `FlowDescriptor`: its form ID, its draft write, its plan builder, its step names and the component of its
+custom steps (`CustomStep`), which the controller renders as an element keyed by the page ID. The
+controller knows nothing else about a flow, so the USD flow, the NonUSD flow and the invited director page share it.
+Custom steps never navigate: they report through `onComplete` and `goToStep`.
+
+### Dependency direction
+
+`model` <- `requests` <- `formConfig` <- `flow` <- `navigation` <- `controller` <- `steps`, `flows`, `entry`,
+`enterSignerInfo`. `form/` is the generic renderer and may import only `formConfig/types`, `formConfig/validation`
+and `types/form`.
+
+### The entry page
+
+`getEntryState` is a pure function of the account, the workspaces, the draft, the network and the route. It returns a
+discriminated union (offline, loading, not found, throttled, unsupported currency, connected, pending validation,
+resume setup, new setup), and the page renders one view per state with a `switch`. The page keeps no mirrored state and no navigation
+refs. `getAccountRef` turns `policyID` and `bankAccountID` into one account reference, so both entries resolve the same
+account. The page reads the account on every focus and on reconnect.
+
+An option saves `setupType` to the draft and awaits the write, then opens the verify-account page or the flow at the
+resume position. The verify-account page awaits the validation and replaces itself with the flow. The start over modal
+opens by a direct call that passes what happens after the reset, not through a flag on the account object.
 
 ## Rules for an experiment
 
@@ -111,102 +166,113 @@ Judge every experiment on the same scenarios, because they are the ones where th
 7. Lose and regain the connection with the Payments page mounted under the flow.
 8. Open the same bank account by `bankAccountID` and by its workspace.
 
+### How this version handles the scenarios
+
+These are the expected results from reading the code. None of them was walked in a browser yet.
+
+1. **Resume.** The plan is built from the draft and the server data with one rule: a draft value that is set wins. The
+   flow opens at `getResumePosition`, so no server step needs a dictionary that turns it into a page. Owners are a list
+   in the draft, so the owner name is not split and joined again while the draft lives. A name read back from the server
+   is still split once.
+2. **Failed requests.** The three request styles are gone: every page and step awaits the outcome of its request. A
+   failure keeps the user on the page with the error of the request status, and a new submit runs the request again.
+3. **Double submit and back.** A running handler ignores a second submit, and the controller navigates only when the
+   request it awaits succeeded. An older request cannot settle a newer one, because the outcome is matched by request ID.
+4. **Start over.** The modal opens by a direct call with the next screen as `onReset`. A failed reset reads the account
+   again, so the entry page shows what the server holds. Where the reset leads still depends on `backTo`.
+5. **Change bank account.** A second instance of the entry page, marked by the route, prepares a new setup and keeps
+   `backTo`. It never reads. When the user backs out, the first instance reads the account again on focus.
+6. **The 25% answer.** The draft holds the new answer, and the draft wins over the server value, so the change is kept.
+   The signer step asks for the name unless the user is an owner, and then takes the name of the owner, so it cannot
+   skip the name page with no name to send.
+7. **Reconnect with the Payments page mounted.** The entry page reads again on reconnect unless a reset is on its way.
+   Requests write no `isLoading` to the account key, so the read of the Payments page and the requests of the flow do not
+   share a flag.
+8. **`bankAccountID` and workspace entry.** `getAccountRef` resolves both entries to the same account reference, so the
+   two entries show the same screen state.
+
 ## Pattern catalog
 
-Each row names a pattern of the real flow, the real file that shows it best, and the place where this module reproduces it.
+Each row names a pattern of the real flow, the real file that shows it best, and where this version handles it. Paths
+that start with `R/` are relative to `src/pages/ReimbursementAccount/`. "Gone" means the architecture has no place for the
+pattern.
 
 ### Opening the flow and picking a screen
 
 | Pattern | Real flow | This module |
 | --- | --- | --- |
-| Chain of early returns that picks the screen (offline without data, workspace loading, loading, not found or not authorized, throttled or unsupported currency, connected, pending redirect, entry point) | `R/ReimbursementAccountPage.tsx` | `entry/OnboardingEntryPage.tsx` |
-| USD or NonUSD flow chosen by the workspace currency | `R/ReimbursementAccountPage.tsx` | `entry/OnboardingEntryPage.tsx`, `entry/OnboardingFlowEntryPoint.tsx` |
-| One account key shared by every workspace, guarded by `achData.policyID === policyID` | `R/ReimbursementAccountPage.tsx` (`isPreviousPolicy`) | `entry/OnboardingEntryPage.tsx` (`isPreviousPolicy`) |
-| State that mirrors derived values through effects (`hasACHDataBeenLoaded`, `shouldShowContinueSetupButton`, `shouldShowConnectedBankAccount`) | `R/ReimbursementAccountPage.tsx` | `entry/OnboardingEntryPage.tsx` |
-| Refetch after reconnect, asking for the step that the client shows | `R/ReimbursementAccountPage.tsx` (`fetchData(true)`) | `entry/OnboardingEntryPage.tsx` (`syncWithAccountChanges`) |
-| Cleanup of the shared keys on unmount | `R/ReimbursementAccountPage.tsx` | `entry/OnboardingEntryPage.tsx` |
-| Redirect of a pending USD account straight to the validation step, with refs that guard the round trip | `R/ReimbursementAccountPage.tsx` | `entry/OnboardingEntryPage.tsx` |
-| Fresh setup: Plaid or manual. Started setup: continue, change bank account, start over | `R/VerifiedBankAccountFlowEntryPoint.tsx` | `entry/OnboardingFlowEntryPoint.tsx` |
-| Validation gate: the picked option is stored in Onyx, the user validates on another page, the entry point finishes the choice | `R/VerifiedBankAccountFlowEntryPoint.tsx`, `R/DynamicReimbursementAccountVerifyAccountPage.tsx` | `entry/OnboardingFlowEntryPoint.tsx`, `entry/VerifyAccountPage.tsx` |
-| Reset modal requested through a flag on the account object | `src/hooks/useResetBankAccountModal.tsx` | `hooks/useResetOnboardingModal.tsx` |
-| Change bank account: a second instance of the entry page marked by a route param | `src/hooks/useChangeBankAccount.ts` | `entry/navigateToChangeBankAccount.ts`, `actions/OnboardingAccount.ts` (`prepareNewBankAccountSetup`) |
-| Connected account view | `R/ConnectedVerifiedBankAccount.tsx` | `entry/ConnectedBankAccount.tsx` |
-| `backTo` passed through every route, including the verify-account page | `ROUTES.ts`, all flow pages | `ROUTES.ts`, all flow pages |
-| `backTo` read as data: it decides whether "Change bank account" is shown and where a reset leads | `R/VerifiedBankAccountFlowEntryPoint.tsx` (`isComingFromWorkflowsPayments`, `navigateAfterReset`) | `entry/OnboardingFlowEntryPoint.tsx` (`isComingFromPaymentsPage`, `navigateAfterReset`) |
-| Entry by `bankAccountID` without a workspace: the currency comes from the account data and the flow type is a state that an effect corrects | `R/ReimbursementAccountPage.tsx` (`bankAccountIDParam`, `isNonUSDSetup`, `isOtherAccount`) | `entry/OnboardingEntryPage.tsx`, `landing/OtherEntryPoints.tsx` |
-| A page outside the flow that reads the account key | `src/pages/workspace/workflows/tabs/WorkflowsPaymentsTab.tsx` | `landing/WorkspacePaymentsPage.tsx` |
-| A read of a page outside the flow that raises `isLoading` on the account key, also on reconnect | `src/pages/workspace/WorkspacePageWithSections.tsx` (`openWorkspaceView`) | `landing/WorkspacePaymentsPage.tsx`, `actions/OnboardingPage.ts` (`openWorkspacePaymentsPage`) |
+| Chain of early returns that picks the screen | `R/ReimbursementAccountPage.tsx` | `entry/getEntryState.ts` (a pure union), `entry/OnboardingEntryPage.tsx` (one view per state) |
+| USD or NonUSD flow chosen by the workspace currency | `R/ReimbursementAccountPage.tsx` | `model/getNonUSDCurrency.ts`, `entry/getEntryState.ts` |
+| One account key shared by every workspace, guarded by `achData.policyID === policyID` | `R/ReimbursementAccountPage.tsx` (`isPreviousPolicy`) | `entry/getAccountRef.ts`, `requests/entry/useAccountRead.ts`, `controller/useFlowAccountRead.ts` (the gate of a cold deep link) |
+| State that mirrors derived values through effects | `R/ReimbursementAccountPage.tsx` | Gone: `entry/getEntryState.ts` derives everything in render |
+| Refetch after reconnect | `R/ReimbursementAccountPage.tsx` (`fetchData(true)`) | `entry/OnboardingEntryPage.tsx` (`onReconnect`) |
+| Cleanup of the shared keys on unmount | `R/ReimbursementAccountPage.tsx` | Gone: the draft of another account is cleared on focus |
+| Redirect of a pending USD account straight to the validation step | `R/ReimbursementAccountPage.tsx` | `entry/views/PendingValidationView.tsx` renders the flow at its resume position |
+| Fresh setup: Plaid or manual. Started setup: continue, change bank account, start over | `R/VerifiedBankAccountFlowEntryPoint.tsx` | `entry/views/options/NewSetupOptions.tsx`, `entry/views/options/ResumeSetupOptions.tsx` |
+| Validation gate | `R/VerifiedBankAccountFlowEntryPoint.tsx`, `R/DynamicReimbursementAccountVerifyAccountPage.tsx` | the option views save the setup type first and open the flow through `entry/views/options/useOpenSetup.ts`, `entry/VerifyAccountPage.tsx` awaits the validation and replaces itself with the flow |
+| Reset modal requested through a flag on the account object | `src/hooks/useResetBankAccountModal.tsx` | `entry/reset/useStartOverModal.tsx`, opened by a direct call |
+| Change bank account: a second instance of the entry page marked by a route param | `src/hooks/useChangeBankAccount.ts` | `navigation/entryNavigation.ts` (`goToChangeBankAccount`), `requests/draft.ts` (`prepareNewBankAccountSetup`) |
+| Connected account view | `R/ConnectedVerifiedBankAccount.tsx` | `entry/views/ConnectedBankAccountView.tsx` |
+| `backTo` read as data | `R/VerifiedBankAccountFlowEntryPoint.tsx` (`isComingFromWorkflowsPayments`, `navigateAfterReset`) | `navigation/entryNavigation.ts` (`isOpenedFromPaymentsPage`, `leaveEntryAfterReset`) |
+| Entry by `bankAccountID` without a workspace | `R/ReimbursementAccountPage.tsx` (`bankAccountIDParam`, `isNonUSDSetup`) | `entry/getAccountRef.ts` |
+| A page outside the flow that reads the account key and raises `isLoading` on it | `WorkflowsPaymentsTab.tsx`, `WorkspacePageWithSections.tsx` | `landing/WorkspacePaymentsPage.tsx`, `actions/OnboardingPage.ts` (unchanged) |
 
-### Resume
+### Position and resume
 
 | Pattern | Real flow | This module |
 | --- | --- | --- |
-| USD: the server keeps `currentStep`, a hand-written dictionary turns it into a page name | `R/ReimbursementAccountPage.tsx` (`stepToPageName`) | `entry/OnboardingEntryPage.tsx` (`STEP_TO_PAGE_NAME`) |
-| NonUSD: the client works out the first unfinished page from the account data, the draft and the currency | `R/NonUSD/utils/getStartPageForContinueSetup.ts` | `utils/getStartPageForContinueSetup.ts` |
-| `draftStep`: a request names the step it saved, an effect copies the server values of that step into the draft | `R/ReimbursementAccountPage.tsx`, `src/libs/actions/BankAccounts.ts` | `entry/OnboardingEntryPage.tsx`, `utils/getDraftValuesForStep.ts`, `actions/USDBankAccount.ts` |
-| Lossy prefill: the server returns a masked account number | `achData` of a resumed setup | `mockBackend/handlers/buildResponse.ts` (`maskAccountNumber`), `usd/BankInfo/subSteps/Manual.tsx` |
-| Lossy round trip: the owner name is sent as one string and split back into first and last name, so a middle name is lost | `R/NonUSD/BeneficialOwnerInfo/BeneficialOwnerInfo.tsx`, `R/NonUSD/utils/getDraftValuesForBeneficialOwners.ts` | `nonUSD/BeneficialOwnerInfo/utils/getValuesForBeneficialOwner.ts`, `getDraftValuesForBeneficialOwners.ts` |
-| The client writes the server-owned `currentStep` and `subStep` | `goToWithdrawalAccountSetupStep`, `setBankAccountSubStep` | `actions/OnboardingAccount.ts` |
-| Start page of a step computed from which values exist | `R/USD/utils/getInitialSubStepForPersonalInfo.ts` and its siblings | `utils/getInitialSubStepForPersonalInfo.ts`, `utils/getInitialSubPageForSignerInfo.ts` |
-
-### Flow pages and step vocabularies
-
-| Pattern | Real flow | This module |
-| --- | --- | --- |
-| Static `pages` array, URL `:page/:subPage/:action`, rules that skip pages | `R/USD/USDVerifiedBankAccountFlowPage.tsx`, `R/NonUSD/NonUSDVerifiedBankAccountFlowPage.tsx` | `usd/USDFlowPage.tsx`, `nonUSD/NonUSDFlowPage.tsx` |
-| Three vocabularies for one position: step constant, page name, numeric index | `CONST.BANK_ACCOUNT.STEP`, `PAGE_NAMES`, `startStepIndex` | `SBO_CONST.ts` (`STEP`, `PAGE_NAMES`, `SUBSTEP_INDEX`), every `startStepIndex` |
-| `goBack` as a switch on `currentStep` | `R/ReimbursementAccountPage.tsx` | `entry/OnboardingEntryPage.tsx` (`goBackFromCurrentStep`) |
-| `useSubPage` with `action=edit`, `startFrom` and `onPageChange` | `src/hooks/useSubPage` | Reused as is, for example `usd/PersonalInfo/PersonalInfo.tsx` |
-| Step header with a numeric step counter | `InteractiveStepWrapper` | Reused as is |
+| USD: the server keeps `currentStep`, a dictionary turns it into a page name | `R/ReimbursementAccountPage.tsx` (`stepToPageName`) | Gone: `flow/resume.ts` finds the first incomplete page of the plan |
+| NonUSD: the client works out the first unfinished page | `R/NonUSD/utils/getStartPageForContinueSetup.ts` | `flow/resume.ts`, the same rule for both flows |
+| `draftStep`: an effect copies the server values of a step into the draft | `R/ReimbursementAccountPage.tsx` | Gone: `model/answers/` merges the draft and the server data in render |
+| Lossy prefill: the server returns a masked account number | `achData` of a resumed setup | `formConfig/usd/bankAccount.ts` (the numbers are locked once the account exists) |
+| Lossy round trip of the owner name | `R/NonUSD/utils/getDraftValuesForBeneficialOwners.ts` | `model/owners/` (owners are a list in the draft, a name from the server is split once) |
+| The client writes the server-owned `currentStep` and `subStep` | `goToWithdrawalAccountSetupStep`, `setBankAccountSubStep` | Gone: the URL is the position |
+| Start page of a step computed from which values exist | `R/USD/utils/getInitialSubStepForPersonalInfo.ts` and its siblings | `isComplete` of each page in `formConfig/`, read by `flow/resume.ts` |
+| Three vocabularies for one position | `CONST.BANK_ACCOUNT.STEP`, `PAGE_NAMES`, `startStepIndex` | One: step ID and page ID, `flow/position.ts`, `navigation/routes.ts` |
+| A typed or stale URL that skips a page | not guarded | `flow/reachability.ts` |
+| `goBack` as a switch on `currentStep` | `R/ReimbursementAccountPage.tsx` | `flow/transitions.ts` (`getPreviousPosition`) |
 
 ### Forms
 
 | Pattern | Real flow | This module |
 | --- | --- | --- |
-| One field per sub page, saved to the draft on every change | `R/USD/Requestor/PersonalInfo/subSteps/*` | `usd/PersonalInfo/subSteps/*`, `usd/BusinessInfo/subSteps/*` |
-| Save per sub page with a `confirm` flag on the last one | `R/USD/Requestor/PersonalInfo/PersonalInfo.tsx` | `usd/PersonalInfo/PersonalInfo.tsx` |
-| Confirmation page that sends the user back by numeric `onMove(index)` | `ConfirmationStep` usages | Every `subSteps/Confirmation.tsx` |
-| Default values read in a different order by different steps (draft, then `achData`, then `corpay`; or `achData` only; or draft only) | `getSubStepValues`, the business and owner sub pages | `utils/getSubStepValues.ts`, `usd/BusinessInfo/subSteps/*`, `usd/BeneficialOwners/subSteps/*` |
-| Fields locked once the account passed review | `R/USD/BusinessInfo/subSteps/*` | `usd/BusinessInfo/subSteps/Name.tsx`, `TaxID.tsx` |
-| Value transforms before the request | tax ID stripping in `R/USD/BusinessInfo/BusinessInfo.tsx` | `usd/BusinessInfo/BusinessInfo.tsx` |
-| Validators written inside the component | most sub pages | `usd/BankInfo/subSteps/Manual.tsx`, `usd/ConnectBankAccount/BankAccountValidationForm.tsx` |
-| Fields and validation rules sent by the server | `R/NonUSD/BankInfo/*` (Corpay fields) | `nonUSD/BankInfo/ServerDrivenFieldsForm.tsx`, `utils/BankFieldUtils.ts`, `mockBackend/serverCatalog.ts` |
-| Picklists sent by the server | `R/NonUSD/BusinessInfo/subSteps/BusinessType.tsx` | `nonUSD/BusinessInfo/subSteps/BusinessType.tsx` |
-| The form key and the account key are the same Onyx string | `ONYXKEYS.REIMBURSEMENT_ACCOUNT` and `FORMS.REIMBURSEMENT_ACCOUNT_FORM` | `ONYXKEYS.SIMPLIFIED_BANK_ONBOARDING_ACCOUNT` and `FORMS.SIMPLIFIED_BANK_ONBOARDING_FORM` |
-| File uploads kept in local state and in the draft | `R/USD/KYBDocuments`, `R/NonUSD/Docusign` | `usd/KYBDocuments.tsx`, `nonUSD/DraftFileInput.tsx` |
-| A file that one step collects and a later step sends, with the resume position gated on it | bank statement in `R/NonUSD/Agreements`, sent by `R/NonUSD/Docusign` | `nonUSD/Agreements.tsx`, `nonUSD/Docusign.tsx`, `utils/getStartPageForContinueSetup.ts` |
+| One field per sub page, saved to the draft on every change | `R/USD/Requestor/PersonalInfo/subSteps/*` | `form/pages/FormPage.tsx` over the field configs of `formConfig/` |
+| Confirmation page that sends the user back by numeric `onMove(index)` | `ConfirmationStep` usages | `form/pages/ConfirmationPage.tsx`, each row carries the ID of the page to edit |
+| Default values read in a different order by different steps | `getSubStepValues`, the business and owner sub pages | `model/answers/` (one rule for every value) |
+| Fields locked once the account passed review | `R/USD/BusinessInfo/subSteps/*` | `formConfig/usd/businessInfo.ts` (`isLocked`) |
+| Validators written inside the component | most sub pages | `formConfig/validation/` |
+| Fields, rules and picklists sent by the server | `R/NonUSD/BankInfo/*`, `R/NonUSD/BusinessInfo/subSteps/BusinessType.tsx` | `model/bankFields/`, `formConfig/nonUSD/getBankFieldConfig.ts`, `flows/useNonUSDServerLists.ts`, `flows/NonUSDServerListsGate.tsx` |
+| The form key and the account key are the same Onyx string | `ONYXKEYS.REIMBURSEMENT_ACCOUNT` and `FORMS.REIMBURSEMENT_ACCOUNT_FORM` | Separate keys: `FORMS.SIMPLIFIED_BANK_ONBOARDING_FORM` |
+| File uploads kept in local state and in the draft | `R/USD/KYBDocuments`, `R/NonUSD/Docusign` | `form/fields/FileField.tsx` |
+| A file that one step collects and a later step sends | bank statement in `R/NonUSD/Agreements`, sent by `R/NonUSD/Docusign` | `formConfig/nonUSD/agreements.ts`, `formConfig/nonUSD/docusign.ts` |
 
 ### Requests
 
 | Pattern | Real flow | This module |
 | --- | --- | --- |
-| Style 1: shared `isLoading` and `errors` on the account, a hook moves on when the request ends without an error | `src/hooks/useReimbursementAccountSubmitCallback.ts` | `hooks/useOnboardingSubmitCallback.ts`, the USD steps |
-| Style 2: a flag per request, the shared `isSuccess`, a ref set by hand, and a `clear...` call that is also the cleanup of the effect | `R/NonUSD/BusinessInfo/BusinessInfo.tsx` and the other NonUSD steps | `nonUSD/BusinessInfo/BusinessInfo.tsx`, `nonUSD/BeneficialOwnerInfo/BeneficialOwnerInfo.tsx`, `nonUSD/SignerInfo/SignerInfo.tsx`, `nonUSD/SignerInfo/HangTight.tsx`, `nonUSD/Agreements.tsx`, `enterSignerInfo/EnterSignerInfoPage.tsx`, `actions/GlobalBankAccount.ts` |
-| Style 2 without the ref: any `isSuccess` on the shared object moves the step on | `R/NonUSD/Docusign/index.tsx` | `nonUSD/Docusign.tsx` |
-| Style 2 on the shared `isLoading`, which the entry page has to tell apart from its own loading | `R/NonUSD/BankInfo/BankInfo.tsx`, `R/ReimbursementAccountPage.tsx` (`isCreateCorpayBankAccount`) | `nonUSD/BankInfo/BankInfo.tsx`, `entry/OnboardingEntryPage.tsx` |
-| Style 3: send and move on without waiting | `R/USD/Requestor/VerifyIdentity/VerifyIdentity.tsx` | `usd/VerifyIdentity.tsx` |
-| State-driven screen: the form does not wait, the next screen follows the account state | `R/USD/ConnectBankAccount/*` | `usd/ConnectBankAccount/ConnectBankAccount.tsx` |
-| An if-chain over `achData.state` and `maxAttemptsReached` after submission | `R/USD/ConnectBankAccount/ConnectBankAccount.tsx` | `usd/ConnectBankAccount/ConnectBankAccount.tsx` |
-| One action that writes the account key and the workspace key before the server answers, and puts the second one back on a failure | `src/libs/actions/ReimbursementAccount/resetUSDBankAccount.ts` | `actions/ResetBankAccount.ts` |
-| One response that updates the account key and the workspace key | the responses of the connect and update commands | `mockBackend/handlers/buildResponse.ts` (`buildAccountUpdates`) |
-| A key that is never persisted | `RAM_ONLY_*` keys, the Plaid link token | `RAM_ONLY_SIMPLIFIED_BANK_ONBOARDING_PLAID_LINK_TOKEN`, `actions/Plaid.ts` |
-| A step that is blocked offline | Onfido and Plaid steps | `usd/VerifyIdentity.tsx`, `usd/BankInfo/subSteps/Plaid.tsx` |
-| Offline queue for writes, optimistic data with rollback | `API.write` | `mockBackend/mockApi.ts` |
+| Style 1: shared `isLoading` and `errors` on the account, a hook moves on when the request ends | `src/hooks/useReimbursementAccountSubmitCallback.ts` | `requests/runRequest.ts`: the handler awaits the outcome |
+| Style 2: a flag per request, the shared `isSuccess`, a ref, a `clear...` call in the cleanup of an effect | `R/NonUSD/BusinessInfo/BusinessInfo.tsx` and the other NonUSD steps | The same as style 1, with one status entry per request name read by `requests/useRequestState.ts` |
+| Style 3: send and move on without waiting | `R/USD/Requestor/VerifyIdentity/VerifyIdentity.tsx` | The same as style 1: the identity step awaits its request |
+| State-driven screen: the next screen follows the account state | `R/USD/ConnectBankAccount/*` | `steps/usd/validation/ValidationStep.tsx` |
+| One action that writes the account key and the workspace key, and restores the second on a failure | `src/libs/actions/ReimbursementAccount/resetUSDBankAccount.ts` | `requests/entry/resetBankAccount.ts` |
+| A key that is never persisted | `RAM_ONLY_*` keys, the Plaid link token | `RAM_ONLY_SIMPLIFIED_BANK_ONBOARDING_PLAID_LINK_TOKEN`, `requests/plaid.ts` |
+| A step that is blocked offline | Onfido and Plaid steps | `steps/usd/OnfidoStep.tsx`, `steps/usd/PlaidStep.tsx` |
+| Offline queue for writes, optimistic data with rollback | `API.write` | `mockBackend/mockApi.ts` (unchanged) |
 
 ### Loops, branches and the second flow
 
 | Pattern | Real flow | This module |
 | --- | --- | --- |
-| Owner loop limited by a count, owners stored under flat draft keys `beneficialOwner_<id>_<field>` | `R/USD/BeneficialOwnerInfo/*` | `usd/BeneficialOwners/*`, `utils/owners/OwnerDraftUtils.ts` |
-| Owner loop limited by the ownership sum | `R/NonUSD/BeneficialOwnerInfo/*` | `nonUSD/BeneficialOwnerInfo/*` |
-| A step container that renders question pages itself and hands the rest to a nested `useSubPage` | both owner steps | `usd/BeneficialOwners/BeneficialOwners.tsx`, `nonUSD/BeneficialOwnerInfo/BeneficialOwnerInfo.tsx` |
-| Branch on "are you a director", with an email request and a waiting page | `R/NonUSD/SignerInfo/*` | `nonUSD/SignerInfo/*` |
-| A step whose pages depend on the answer of another step: an owner already gave the name, so the signer step skips its name page and takes the name from the owner data | `R/NonUSD/SignerInfo/SignerDetailsFormPages.tsx` (`skipPages`), `R/NonUSD/SignerInfo/index.tsx` | `nonUSD/SignerInfo/SignerDetailsFormPages.tsx`, `nonUSD/SignerInfo/SignerInfo.tsx`, `nonUSD/SignerInfo/subSteps/Confirmation.tsx` |
-| The current user as an owner, stored under a reserved owner key | `R/NonUSD/BeneficialOwnerInfo/*` (`CURRENT_USER_KEY`) | `nonUSD/BeneficialOwnerInfo/BeneficialOwnerInfo.tsx`, `SBO_CONST.ts` (`CURRENT_USER_KEY`) |
-| A second flow with its own form key | `R/EnterSignerInfo/*` (its own copy of every signer page) | `enterSignerInfo/EnterSignerInfoPage.tsx` (it reuses `nonUSD/SignerInfo/subSteps/*` through a `formID` prop, see [Not reproduced](#not-reproduced)) |
-| A step that only some currencies get | Docusign for USD, CAD and AUD (`R/NonUSD/utils/requiresDocusignStep.ts`) | Docusign for AUD: `nonUSD/Docusign.tsx`, `utils/OnboardingAccountUtils.ts` (`requiresDocusignStep`) |
-| Third-party widgets: Plaid, Onfido, Docusign | their real SDK wrappers | Fake widgets with `[mock]` buttons in `usd/BankInfo/subSteps/Plaid.tsx`, `usd/VerifyIdentity.tsx`, `nonUSD/Docusign.tsx`. What surrounds the widgets is not reproduced either, see [Not reproduced](#not-reproduced) |
-| A review that ends on the backend and reaches the client as a push | Pusher updates of `reimbursementAccount` | `mockBackend/serverEvents.ts` (`finishReview`), `components/MockReviewButtons.tsx` |
+| Owner loop limited by a count, owners under flat draft keys | `R/USD/BeneficialOwnerInfo/*` | `formConfig/usd/beneficialOwners/`, `formConfig/owners/`, owners as a list in the draft edited through a buffer (`model/owners/ownerBuffer.ts`) |
+| Owner loop limited by the ownership sum | `R/NonUSD/BeneficialOwnerInfo/*` | `formConfig/nonUSD/beneficialOwners/`, `model/owners/canAddMoreOwners.ts` |
+| A step container that renders question pages itself and nests a second `useSubPage` | both owner steps | Gone: question, list and form pages are pages of one plan step |
+| Branch on "are you a director", with an email request and a waiting page | `R/NonUSD/SignerInfo/*` | `formConfig/nonUSD/signerInfo.ts`, `steps/nonUSD/HangTightStep.tsx` |
+| A step whose pages depend on the answer of another step | `R/NonUSD/SignerInfo/SignerDetailsFormPages.tsx` (`skipPages`) | `formConfig/nonUSD/signerInfo.ts` builds the pages from the current answers |
+| The current user as an owner, stored under a reserved owner key | `R/NonUSD/BeneficialOwnerInfo/*` (`CURRENT_USER_KEY`) | `formConfig/nonUSD/beneficialOwners/`, `SBO_CONST.ts` (`CURRENT_USER_KEY`) |
+| A second flow with its own form key | `R/EnterSignerInfo/*` | `enterSignerInfo/`: the shared controller with its own form, reusing `formConfig/signer/getSignerDetailsPages.ts` |
+| A step that only some currencies get | Docusign (`R/NonUSD/utils/requiresDocusignStep.ts`) | `model/setupStatus.ts` (`requiresDocusignStep`), `formConfig/nonUSD/buildNonUSDPlan.ts` |
+| Third-party widgets: Plaid, Onfido, Docusign | their real SDK wrappers | Fake widgets with `[mock]` buttons in `steps/` |
+| A review that ends on the backend and reaches the client as a push | Pusher updates of `reimbursementAccount` | `mockBackend/serverEvents.ts` (`finishReview`), `steps/MockReviewButtons.tsx` |
 
 ## What is simplified
 
@@ -214,9 +280,8 @@ Each row names a pattern of the real flow, the real file that shows it best, and
   dates and most Corpay fields are gone.
 - **Change bank account has no backup key.** The real flow copies the account to a backup key and restores it when the
   user backs out. Here the first instance of the entry page fetches the account again when the focus returns to it.
-- **`goBack` has three cases** instead of one per step, because the flow pages own the back navigation of their steps.
 - **The entry page takes no `stepToOpen` route param.**
-- **The business step of the USD flow sends one request** from its confirmation page. The real step saves after every sub
+- **The business step of the USD flow sends one request** at the end of the step. The real step saves after every sub
   page.
 - **The current user as a beneficial owner** is only a flag in the USD flow. The NonUSD flow collects the details of the
   user, because its signer step depends on them.
@@ -239,8 +304,6 @@ Shared state and requests:
 - [ ] The two reset actions differ in the real flow (parameters, the keys they clear, the payment method they fix up).
       Here both share one function.
 - [ ] The failure data of `createCorpayBankAccount` writes no error. Here every failed request writes a generic one.
-- [ ] `isAskingForCorpaySignerInformationSuccess` is never cleared after a success in the real flow. Here the step
-      clears it.
 - [ ] Requests that carry files. Here a request carries the file names.
 - [ ] The offline queue of the real app is persisted and replayed after a restart. Here it lives in memory.
 - [ ] `achContractValuesRef` on the entry page, which copies the agreement values out of the draft and writes them back
@@ -262,8 +325,8 @@ Third parties:
 
 Code shape:
 
-- [ ] The second flow has its own copy of every signer page in the real code. Here it reuses the pages of the NonUSD
-      flow, so the cost of that duplication is not visible.
+- [ ] The second flow has its own copy of every signer page in the real code. Here it reuses the signer page builders
+      of the NonUSD flow, so the cost of that duplication is not visible.
 - [ ] The cost of an incremental migration. The real flow has to move step by step with both architectures alive, and a
       rewrite of this module does not show that.
 
@@ -287,15 +350,13 @@ The server follows the rules of the real backend that the client depends on:
 ## Verification status
 
 The module passes `npm run typecheck`, the React Compiler check and the spelling check, and `npm run lint-changed`
-reports nothing inside the module. The flow has not been walked through in a browser yet, so expect runtime defects on
-the first pass through the UI. Walk the eight scenarios of [Rules for an experiment](#rules-for-an-experiment) on this
-baseline first, and write down what breaks, because an experiment can only be compared with a baseline that was measured.
+reports nothing inside the module. Neither the baseline nor this version has been walked through in a browser yet.
+Walk the eight scenarios of [Rules for an experiment](#rules-for-an-experiment) on both, and write down what breaks,
+because an experiment can only be compared with a baseline that was measured.
 
-The race of the second request style is expected to show up in scenario 3: the cleanup of the effect runs whenever a
-request flag changes, so it can clear the flags of a request that just started, and the Docusign step moves on with any
-`isSuccess` that is left on the account object.
+Gaps to check on the first walk:
 
-A review against the `app-coding-standards` rules still flags the constructs that are copied from the real flow: state
-mirrored through effects, navigation from effects that watch a request flag, subscriptions to the whole account object,
-props that pass a parent state setter down, and `handle...` callback names. They stay, because they are the subject of
-the research.
+- A flow link opened cold while offline shows the loader until the connection returns.
+- The verify-account page opened by a user who is already validated shows the form.
+- `form/pages/QuestionPage.tsx` renders `YesNoStep`, which is bound to `FORMS.REIMBURSEMENT_ACCOUNT_FORM` and ignores
+  the form ID of the flow.

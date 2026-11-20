@@ -3231,11 +3231,11 @@ const SENTRY_LABEL = {
         CONTINUE_SETUP: 'BankOnboardingLab-ContinueSetup',
         START_OVER: 'BankOnboardingLab-StartOver',
         SUBMIT_STEP: 'BankOnboardingLab-SubmitStep',
-        SELECT_OPTION: 'BankOnboardingLab-SelectOption',
         EDIT_INPUT: 'BankOnboardingLab-EditInput',
-        ATTACH_FILE: 'BankOnboardingLab-AttachFile',
         OPEN_SUMMARY_ITEM: 'BankOnboardingLab-OpenSummaryItem',
         SEND_REMINDER: 'BankOnboardingLab-SendReminder',
+        PLAID_LOGIN: 'BankOnboardingLab-PlaidLogin',
+        OPEN_SIGNER_FORM: 'BankOnboardingLab-OpenSignerForm',
     },
     SETTINGS_WALLET: {
         ADD_COMPANY_CARDS: {
