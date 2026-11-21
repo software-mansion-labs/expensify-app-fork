@@ -1,4 +1,7 @@
 import getStepInputIDsToClear from '@pages/SimplifiedBankOnboarding/flow/getStepInputIDsToClear';
+import createDateOfBirthField from '@pages/SimplifiedBankOnboarding/form/fields/createDateOfBirthField';
+import createFileField from '@pages/SimplifiedBankOnboarding/form/fields/createFileField';
+import createLegalNameField from '@pages/SimplifiedBankOnboarding/form/fields/createLegalNameField';
 import type {StepConfig} from '@pages/SimplifiedBankOnboarding/formConfig/types';
 import SBO_CONST from '@pages/SimplifiedBankOnboarding/SBO_CONST';
 
@@ -26,14 +29,12 @@ describe('getStepInputIDsToClear', () => {
                     id: BENEFICIAL_OWNERS_SUB_PAGES.LEGAL_NAME,
                     title: '',
                     isComplete: true,
-                    inputs: {ownerFirstName: {}, ownerLastName: {}},
-                    content: null,
+                    fields: [createLegalNameField('ownerFirstName', 'ownerLastName')],
                 },
                 {
                     kind: 'confirmation',
                     id: BENEFICIAL_OWNERS_SUB_PAGES.CONFIRMATION,
                     title: '',
-                    rows: [],
                     isComplete: true,
                 },
             ],
@@ -47,7 +48,7 @@ describe('getStepInputIDsToClear', () => {
     });
 
     it('keeps files out of the list', () => {
-        // Given a step whose page has a file input and a date input
+        // Given a step whose page has a file field and a date field
         const step: StepConfig = {
             id: PAGE_NAMES.KYB_DOCS,
             title: 'Documents',
@@ -58,8 +59,7 @@ describe('getStepInputIDsToClear', () => {
                     id: KYB_DOCUMENTS_SUB_PAGES.UPLOAD,
                     title: '',
                     isComplete: true,
-                    inputs: {companyTaxIDDocument: {}, dob: {}},
-                    content: null,
+                    fields: [createFileField('companyTaxIDDocument', {label: ''}), createDateOfBirthField('dob')],
                 },
             ],
         };

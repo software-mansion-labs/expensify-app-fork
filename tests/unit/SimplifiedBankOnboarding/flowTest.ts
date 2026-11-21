@@ -27,15 +27,14 @@ function formPage(id: PageID, {isComplete = true, previousPageID}: PageOptions =
         kind: 'form',
         id,
         title: id,
-        inputs: {},
-        content: null,
+        fields: [],
         isComplete,
         previousPageID,
     };
 }
 
 function confirmationPage(id: PageID, isComplete = true): PageConfig {
-    return {kind: 'confirmation', id, title: id, rows: [], isComplete};
+    return {kind: 'confirmation', id, title: id, isComplete};
 }
 
 function step(id: StepID, pages: PageConfig[], isComplete = true): StepConfig {
@@ -59,6 +58,7 @@ type PlanOptions = {
  */
 function buildPlan({isPersonalInfoComplete = true, isDateOfBirthComplete = true, isBusinessInfoComplete = false, businessNamePreviousPageID}: PlanOptions = {}): FlowPlan {
     return {
+        answers: {},
         steps: [
             step(
                 PAGE_NAMES.REQUESTOR,
@@ -245,6 +245,7 @@ describe('flow/transitions', () => {
         it('returns to the last page of the step when no confirmation follows', () => {
             // Given a step whose pages end without a confirmation
             const plan: FlowPlan = {
+                answers: {},
                 steps: [step(PAGE_NAMES.COMPANY, [formPage(BUSINESS_INFO_SUB_PAGES.NAME), formPage(BUSINESS_INFO_SUB_PAGES.TAX_ID), formPage(BUSINESS_INFO_SUB_PAGES.INCORPORATION_TYPE)])],
             };
 
@@ -331,6 +332,7 @@ describe('flow/transitions', () => {
             // Given the identity check, which leaves the plan once the server accepts it
             const previousPlan = buildPlan();
             const plan: FlowPlan = {
+                answers: {},
                 steps: previousPlan.steps.filter((planStep) => planStep.id !== PAGE_NAMES.VERIFY_IDENTITY),
             };
 
@@ -378,6 +380,7 @@ describe('flow/resume', () => {
     it('resumes on the last step when every step is complete', () => {
         // Given a plan where the server finished every step
         const plan: FlowPlan = {
+            answers: {},
             steps: [step(PAGE_NAMES.REQUESTOR, [confirmationPage(PERSONAL_INFO_SUB_PAGES.CONFIRMATION)]), step(PAGE_NAMES.VALIDATION, [formPage(VALIDATION_SUB_PAGES.VALIDATE)])],
         };
 
@@ -390,7 +393,7 @@ describe('flow/resume', () => {
 
     it('has no resume position for an empty plan', () => {
         // Given a plan without steps
-        const plan: FlowPlan = {steps: []};
+        const plan: FlowPlan = {steps: [], answers: {}};
 
         // When the flow opens
         const resumePosition = getResumePosition(plan);
@@ -432,7 +435,7 @@ describe('flow/reachability', () => {
 
     it('rejects every position of an empty plan', () => {
         // Given a plan without steps, which has no resume position
-        const plan: FlowPlan = {steps: []};
+        const plan: FlowPlan = {steps: [], answers: {}};
 
         // When the URL guard checks any position
         const isReachable = isPositionReachable(plan, position(PAGE_NAMES.REQUESTOR, PERSONAL_INFO_SUB_PAGES.FULL_NAME));

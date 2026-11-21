@@ -1,9 +1,13 @@
+/**
+ * Saves the beneficial owners of a USD account. The list holds only the other owners, and a separate flag says whether
+ * the user is an owner too.
+ */
 import {WRITE_COMMANDS} from '@pages/SimplifiedBankOnboarding/mockBackend/commands';
 import type {BankAccountParams} from '@pages/SimplifiedBankOnboarding/mockBackend/commands';
 import {getUSDOwnersParams} from '@pages/SimplifiedBankOnboarding/model/owners/ownerParams';
 import REQUEST_NAMES from '@pages/SimplifiedBankOnboarding/requests/REQUEST_NAMES';
-import runRequest from '@pages/SimplifiedBankOnboarding/requests/runRequest';
-import type {RequestOutcome} from '@pages/SimplifiedBankOnboarding/requests/types';
+import {planRequest} from '@pages/SimplifiedBankOnboarding/requests/runRequest';
+import type {PlannedRequest} from '@pages/SimplifiedBankOnboarding/requests/types';
 import type {USDOwnerDraft} from '@pages/SimplifiedBankOnboarding/types/form';
 
 import getUSDOnyxData, {USD_ERROR_KEY} from './getUSDOnyxData';
@@ -15,8 +19,8 @@ type USDOwnersAnswers = {
     owners: USDOwnerDraft[];
 };
 
-function saveOwners(bankAccount: BankAccountParams, {ownsMoreThan25Percent, owners}: USDOwnersAnswers): Promise<RequestOutcome> {
-    return runRequest({
+function getOwnersRequest(bankAccount: BankAccountParams, {ownsMoreThan25Percent, owners}: USDOwnersAnswers): PlannedRequest {
+    return planRequest({
         name: REQUEST_NAMES.SAVE_OWNERS,
         scope: bankAccount,
         type: 'write',
@@ -27,5 +31,5 @@ function saveOwners(bankAccount: BankAccountParams, {ownsMoreThan25Percent, owne
     });
 }
 
-export default saveOwners;
+export default getOwnersRequest;
 export type {USDOwnersAnswers};

@@ -3,8 +3,8 @@
  * the owner buffer, the confirmation that copies the buffer into the owner list and the list of owners. Each flow only
  * supplies its owner details pages, its copy and the rules where the flows differ.
  */
+import {areFieldsComplete} from '@pages/SimplifiedBankOnboarding/form/fields/fieldSet';
 import type {ConfirmationPageConfig, FormPageConfig, ListPageConfig, PageConfig, PageID, QuestionPageConfig} from '@pages/SimplifiedBankOnboarding/formConfig/types';
-import areInputsComplete from '@pages/SimplifiedBankOnboarding/formConfig/validation/areInputsComplete';
 import {EMPTY_OWNER_BUFFER} from '@pages/SimplifiedBankOnboarding/model/owners/ownerBuffer';
 import {commitOwner, createOwnerID, findOwner} from '@pages/SimplifiedBankOnboarding/model/owners/ownerList';
 import type {OnboardingDraft} from '@pages/SimplifiedBankOnboarding/types/form';
@@ -22,12 +22,12 @@ function getNewOwnerDraftUpdate(answer: OnboardingDraft): OnboardingDraft {
  * must not stop the user on the way to those details. Once the user owns too much for another owner to hold 25%, the
  * question has no answer to give.
  */
-function isAnyoneElseOwnerSkipped<TOwner extends Owner>({answers, userOwnerID, isUserOwner, canAddMoreOwners}: OwnersStepDefinition<TOwner>): boolean {
+function isAnyoneElseOwnerSkipped<TOwner extends Owner>({answers, userOwnerID, canAddMoreOwners}: OwnersStepDefinition<TOwner>): boolean {
     if (!userOwnerID) {
         return false;
     }
     const isAddingUser = answers.ownerBeingModifiedID === userOwnerID && !findOwner(answers.owners, userOwnerID);
-    return isAddingUser || (isUserOwner && !canAddMoreOwners(answers.owners));
+    return isAddingUser || (!!answers.ownsMoreThan25Percent && !canAddMoreOwners(answers.owners));
 }
 
 function getIsUserOwnerPage<TOwner extends Owner>({subPages, answers, copy, onUserOwnerAnswer}: OwnersStepDefinition<TOwner>): QuestionPageConfig {
@@ -44,7 +44,7 @@ function getIsUserOwnerPage<TOwner extends Owner>({subPages, answers, copy, onUs
 }
 
 function getIsAnyoneElseOwnerPage<TOwner extends Owner>(definition: OwnersStepDefinition<TOwner>): QuestionPageConfig {
-    const {subPages, answers, isUserOwner, canAddMoreOwners, detailsPages, copy} = definition;
+    const {subPages, answers, canAddMoreOwners, detailsPages, copy} = definition;
     return {
         kind: 'question',
         id: subPages.isAnyoneElseOwner,
@@ -56,7 +56,7 @@ function getIsAnyoneElseOwnerPage<TOwner extends Owner>(definition: OwnersStepDe
         onSubmit: (values) => {
             if (!values.hasOtherBeneficialOwners) {
                 // Without other owners the list only shows the user, so a user who is no owner either finishes the step here
-                return isUserOwner ? {nextPageID: subPages.ownersList} : {};
+                return answers.ownsMoreThan25Percent ? {nextPageID: subPages.ownersList} : {};
             }
             if (canAddMoreOwners(answers.owners)) {
                 return {
@@ -106,7 +106,8 @@ function getOwnerDetailsPages<TOwner extends Owner>(definition: OwnersStepDefini
     const {answers, detailsPages, translate} = definition;
     return detailsPages.map((page, index) => ({
         ...page,
-        isComplete: answers.owners.length > 0 || areInputsComplete(page.inputs, answers, translate),
+        kind: 'form',
+        isComplete: answers.owners.length > 0 || areFieldsComplete(page.fields, answers, translate),
         previousPageID: index === 0 ? getFirstDetailsPreviousPageID(definition) : undefined,
     }));
 }
@@ -116,21 +117,20 @@ function getOwnerDetailsPages<TOwner extends Owner>(definition: OwnersStepDefini
  * followed by the question about more owners, any other owner by the list.
  */
 function getOwnerConfirmationPage<TOwner extends Owner>(definition: OwnersStepDefinition<TOwner>): ConfirmationPageConfig {
-    const {subPages, answers, userOwnerID, canAddMoreOwners, confirmationTitle, confirmationRows, getOwnerFromBuffer, getOwnersDraftUpdate} = definition;
+    const {subPages, answers, ownerDraft, userOwnerID, canAddMoreOwners, confirmationTitle} = definition;
     return {
         kind: 'confirmation',
         id: subPages.confirmation,
         isComplete: answers.owners.length > 0,
         title: confirmationTitle,
-        rows: confirmationRows,
         onSubmit: () => {
             const editedOwner = findOwner(answers.owners, answers.ownerBeingModifiedID);
             const ownerID = editedOwner?.id ?? answers.ownerBeingModifiedID ?? createOwnerID();
-            const owners = commitOwner(answers.owners, getOwnerFromBuffer(ownerID, answers));
+            const owners = commitOwner(answers.owners, ownerDraft.getOwner(ownerID, answers));
             const nextQuestionPageID = ownerID === userOwnerID ? subPages.isAnyoneElseOwner : subPages.areThereMoreOwners;
             return {
                 draftUpdate: {
-                    ...getOwnersDraftUpdate(owners),
+                    ...ownerDraft.getOwnersDraftUpdate(owners),
                     ownerBeingModifiedID: ownerID,
                 },
                 nextPageID: !editedOwner && canAddMoreOwners(owners) ? nextQuestionPageID : subPages.ownersList,
@@ -143,16 +143,7 @@ function getOwnerConfirmationPage<TOwner extends Owner>(definition: OwnersStepDe
  * The owners that the step sends. A row opens the owner in the owner pages, not in edit mode, because Back from the
  * first details page must return to this list.
  */
-function getOwnersListPage<TOwner extends Owner>({
-    subPages,
-    answers,
-    hasOtherOwners,
-    canAddMoreOwners,
-    detailsPages,
-    listRows,
-    getOwnerBuffer,
-    translate,
-}: OwnersStepDefinition<TOwner>): ListPageConfig {
+function getOwnersListPage<TOwner extends Owner>({subPages, answers, ownerDraft, canAddMoreOwners, detailsPages, listRows, translate}: OwnersStepDefinition<TOwner>): ListPageConfig {
     return {
         kind: 'list',
         id: subPages.ownersList,
@@ -161,10 +152,10 @@ function getOwnersListPage<TOwner extends Owner>({
         description: translate('beneficialOwnerInfoStep.regulationRequiresUsToVerifyTheIdentity'),
         rowsTitle: `${translate('beneficialOwnerInfoStep.owners')}:`,
         rows: listRows,
-        previousPageID: hasOtherOwners && canAddMoreOwners(answers.owners) ? subPages.areThereMoreOwners : subPages.isAnyoneElseOwner,
+        previousPageID: answers.hasOtherBeneficialOwners && canAddMoreOwners(answers.owners) ? subPages.areThereMoreOwners : subPages.isAnyoneElseOwner,
         onRowPress: (rowID) => ({
             draftUpdate: {
-                ...getOwnerBuffer(findOwner(answers.owners, rowID)),
+                ...ownerDraft.getBuffer(findOwner(answers.owners, rowID)),
                 ownerBeingModifiedID: rowID,
             },
             nextPageID: detailsPages[0].id,
@@ -173,12 +164,17 @@ function getOwnersListPage<TOwner extends Owner>({
 }
 
 /**
- * The pages follow the answers: the owner pages exist only when the flow shows them, the question about more owners
- * only once someone else owns 25% and the list only when it has someone to show. A user who owns less than 25% and
- * answers that nobody else does finishes the step on the second question.
+ * The pages follow the answers: the owner pages exist only once someone has details to enter, which is another owner or
+ * a user whom the flow lists as an owner. The question about more owners exists only once someone else owns 25% and the
+ * list only when it has someone to show. A user who owns less than 25% and answers that nobody else does finishes the
+ * step on the second question.
  */
 function getOwnerPages<TOwner extends Owner>(definition: OwnersStepDefinition<TOwner>): PageConfig[] {
-    const {isUserOwner, hasOtherOwners, shouldShowOwnerPages} = definition;
+    const {answers, userOwnerID} = definition;
+    const isUserOwner = !!answers.ownsMoreThan25Percent;
+    const hasOtherOwners = !!answers.hasOtherBeneficialOwners;
+    const shouldShowOwnerPages = hasOtherOwners || (isUserOwner && !!userOwnerID);
+
     const ownerPages = shouldShowOwnerPages ? [...getOwnerDetailsPages(definition), getOwnerConfirmationPage(definition)] : [];
     const moreOwnersPages = hasOtherOwners ? [getAreThereMoreOwnersPage(definition)] : [];
     const listPages = isUserOwner || hasOtherOwners ? [getOwnersListPage(definition)] : [];

@@ -33,7 +33,7 @@ type OnboardingFlowPageProps<TData> = {
 
 function OnboardingFlowPage<TData>({flow, target, routeParams, dataSource, dataStatus}: OnboardingFlowPageProps<TData>) {
     const styles = useThemeStyles();
-    const {data, context, step, page, position, isSubmitting, errorText, submitPage, goBack, editPage, pressRow, goToStep} = useOnboardingFlow({
+    const {data, context, plan, step, page, position, isSubmitting, canSubmitOffline, errorText, submitPage, goBack, editPage, pressRow, goToStep} = useOnboardingFlow({
         flow,
         target,
         routeParams,
@@ -47,7 +47,12 @@ function OnboardingFlowPage<TData>({flow, target, routeParams, dataSource, dataS
 
     // Until the data is there, and while the redirect from a URL without a reachable position lands
     if (dataStatus === 'loading' || !step || !page || !position) {
-        return <FullScreenLoadingIndicator onGoBack={goBack} />;
+        return (
+            <FullScreenLoadingIndicator
+                shouldUseGoBackButton
+                onGoBack={goBack}
+            />
+        );
     }
 
     const {CustomStep} = flow;
@@ -79,8 +84,11 @@ function OnboardingFlowPage<TData>({flow, target, routeParams, dataSource, dataS
         return (
             <PageRenderer
                 formID={flow.formID}
+                step={step}
                 page={page}
+                answers={plan.answers}
                 isEditing={position.isEditing}
+                canSubmitOffline={canSubmitOffline}
                 isLoading={isSubmitting}
                 errorText={errorText || undefined}
                 onSubmit={submitPage}

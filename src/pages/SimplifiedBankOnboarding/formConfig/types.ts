@@ -1,43 +1,15 @@
 /**
  * The shape of a flow: a plan of steps, each step a list of pages. The builders in `formConfig/` produce it from the
- * answers, the controller walks it and `form/` renders one page of it. A form page holds its fields as JSX next to the
- * rules of its inputs, and labels are already translated, so the renderer needs no knowledge of the flow.
+ * answers, the controller walks it and `form/` renders one page of it. A form page is only a list of fields from
+ * `form/fields`, and labels are already translated, so the renderer needs no knowledge of the flow.
  */
 import type {LocalizedTranslate} from '@components/LocaleContextProvider';
 
-import type {RequestKey} from '@pages/SimplifiedBankOnboarding/requests/requestKey';
-import type {RequestOutcome} from '@pages/SimplifiedBankOnboarding/requests/types';
-import type {BooleanInputID, InputID, OnboardingDraft, OnboardingForm} from '@pages/SimplifiedBankOnboarding/types/form';
-
-import type {ReactNode} from 'react';
+import type {Field, SummaryRow} from '@pages/SimplifiedBankOnboarding/form/fields/types';
+import type {PlannedRequest} from '@pages/SimplifiedBankOnboarding/requests/types';
+import type {BooleanInputID, OnboardingDraft} from '@pages/SimplifiedBankOnboarding/types/form';
 
 import type {PageID, StepID} from './ids';
-
-/**
- * Returns the translated error of a value, or undefined when the value is valid. The other values of the form are there
- * for the rules that compare two inputs, such as two emails that must differ.
- */
-type FieldValidator = (value: string, values: OnboardingDraft) => string | undefined;
-
-/** How the form page checks one of its inputs. An input is required unless it is optional. */
-type InputRule = {
-    isOptional?: boolean;
-
-    /** The error of an empty required input. The generic "field required" error is shown without it. */
-    requiredErrorText?: string;
-};
-
-type TextInputRule = InputRule & {
-    validate?: FieldValidator;
-};
-
-/**
- * The inputs of a form page and their rules. The form validates them, submits only their values and the plan counts the
- * page as complete when the answers pass them, so the fields that the page renders must all be listed here.
- */
-type PageInputs = {
-    [TID in InputID]?: OnboardingForm[TID] extends string ? TextInputRule : InputRule;
-};
 
 /** What happens after a page: the draft values to save and the page to show next */
 type PageTransition = {
@@ -76,24 +48,19 @@ type PageBase = {
      * A request that saves the answers of the page before the next page opens, for a step that talks to the server in
      * the middle, such as the director details before the emails of the other directors. It runs after the draft write.
      */
-    submit?: () => Promise<RequestOutcome>;
-
-    /** The status key of the request of `submit`, so the page can show its pending state and its error */
-    requestKey?: RequestKey;
+    request?: PlannedRequest;
 };
 
 type FormPageConfig = PageBase & {
     kind: 'form';
     title: string;
     description?: string;
-    inputs: PageInputs;
 
-    /** The fields of the page from `form/fields`, and anything shown between them */
-    content: ReactNode;
+    /** The page renders, validates and submits them, and the plan counts the page as complete when the answers pass them */
+    fields: Field[];
 
     /** Defaults to "Next", or to "Confirm" in edit mode */
     submitLabel?: string;
-    enabledWhenOffline?: boolean;
 };
 
 /** A yes or no question saved to one boolean input */
@@ -105,19 +72,15 @@ type QuestionPageConfig = PageBase & {
     defaultValue: boolean;
 };
 
-type ConfirmationRow = {
-    id: string;
-    label: string;
-    value: string;
-
-    /** The page that edits the value. A row without it cannot be opened. */
-    editPageID?: PageID;
+/** A row of a confirmation page, which opens the page that edits its value */
+type ConfirmationRow = SummaryRow & {
+    editPageID: PageID;
 };
 
+/** Sums up the form pages that precede it in its step, so it lists no rows of its own */
 type ConfirmationPageConfig = PageBase & {
     kind: 'confirmation';
     title: string;
-    rows: ConfirmationRow[];
 };
 
 type ListRow = {
@@ -168,15 +131,15 @@ type StepConfig = {
     /** Used to find the step where the flow resumes */
     isComplete: boolean;
 
-    /** The request that runs after the last page of the step */
-    submit?: () => Promise<RequestOutcome>;
-
-    /** The status key of the request of `submit`, so the page can show its pending state and its error */
-    requestKey?: RequestKey;
+    /** The request that runs after the last page of the step, which shows its pending state and its error */
+    request?: PlannedRequest;
 };
 
 type FlowPlan = {
     steps: StepConfig[];
+
+    /** The values that the fields start with and that the confirmation pages show */
+    answers: OnboardingDraft;
 };
 
 /** What a plan builder needs besides the answers and the server data */
@@ -192,19 +155,15 @@ export type {
     ConfirmationRow,
     CustomPageConfig,
     CustomStepName,
-    FieldValidator,
     FlowPlan,
     FormPageConfig,
-    InputRule,
     ListPageConfig,
     ListRow,
     PageConfig,
     PageID,
-    PageInputs,
     PageTransition,
     PlanContext,
     QuestionPageConfig,
     StepConfig,
     StepID,
-    TextInputRule,
 };

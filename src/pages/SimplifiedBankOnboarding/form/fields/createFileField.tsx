@@ -1,7 +1,7 @@
 /**
  * A required document with the limits of the global provider: one file of the accepted types and size. The upload
- * control reports only the files that the user just added, so the field keeps the whole list in its own state and hands
- * it to the form as the value.
+ * control reports only the files that the user just added, so the input keeps the whole list in its own state and hands
+ * it to the form as the value. The server never returns a file, so the draft keeps it after the step is saved.
  */
 import InputWrapper from '@components/Form/InputWrapper';
 import Text from '@components/Text';
@@ -11,37 +11,37 @@ import useLocalize from '@hooks/useLocalize';
 import useThemeStyles from '@hooks/useThemeStyles';
 
 import type {FileInputID} from '@pages/SimplifiedBankOnboarding/types/form';
+import type {OnboardingFormID} from '@pages/SimplifiedBankOnboarding/types/formID';
 
 import {clearErrorFields, setErrorFields} from '@userActions/FormActions';
 
 import CONST from '@src/CONST';
 import type {FileObject} from '@src/types/utils/Attachment';
 
-import type {ReactNode} from 'react';
-
-import React, {useContext, useState} from 'react';
+import React, {useState} from 'react';
 import {View} from 'react-native';
 
-import OnboardingFormIDContext from './OnboardingFormIDContext';
+import type {Field} from './types';
 
-type FileFieldProps = {
-    inputID: FileInputID;
+import getInputErrors from './getInputErrors';
+
+type FileFieldOptions = {
     label: string;
-    defaultValue: FileObject[];
 
-    /** Shown under the file button, such as a `FileFieldDescription` of what the document must show */
-    children?: ReactNode;
+    /** Shown under the file button, such as what the document must show */
+    description?: string;
 };
 
-function FileField({inputID, label, defaultValue, children}: FileFieldProps) {
+type FileFieldInputProps = FileFieldOptions & {
+    inputID: FileInputID;
+    formID: OnboardingFormID;
+    defaultValue: FileObject[];
+};
+
+function FileFieldInput({inputID, formID, label, description, defaultValue}: FileFieldInputProps) {
     const {translate} = useLocalize();
     const styles = useThemeStyles();
-    const formID = useContext(OnboardingFormIDContext);
     const [files, setFiles] = useState<FileObject[]>(defaultValue);
-
-    const changeFiles = (newFiles: FileObject[]) => {
-        setFiles(newFiles);
-    };
 
     // The upload control checks the size, the type and the count of the files, and its error replaces the error of the field
     const setUploadError = (error: string) => {
@@ -61,16 +61,35 @@ function FileField({inputID, label, defaultValue, children}: FileFieldProps) {
                 buttonText={translate('common.chooseFile')}
                 uploadedFiles={files}
                 value={files}
-                onUpload={(addedFiles) => changeFiles([...files, ...addedFiles])}
-                onRemove={(fileName) => changeFiles(files.filter((file) => file.name !== fileName))}
+                onUpload={(addedFiles) => setFiles([...files, ...addedFiles])}
+                onRemove={(fileName) => setFiles(files.filter((file) => file.name !== fileName))}
                 setError={setUploadError}
                 acceptedFileTypes={[...CONST.CORPAY_DOCUMENT.ALLOWED_FILE_TYPES]}
                 fileLimit={CONST.CORPAY_DOCUMENT.FILE_LIMIT}
                 maxFileSize={CONST.CORPAY_DOCUMENT.MAX_FILE_SIZE}
             />
-            {children}
+            {!!description && <Text style={[styles.mutedTextLabel, styles.mt3]}>{description}</Text>}
         </View>
     );
 }
 
-export default FileField;
+function createFileField(inputID: FileInputID, {label, description}: FileFieldOptions): Field {
+    return {
+        key: inputID,
+        inputIDs: [inputID],
+        shouldKeepInDraft: true,
+        getErrors: (values, translate) => getInputErrors(inputID, {}, values, translate),
+
+        render: ({values, formID}) => (
+            <FileFieldInput
+                inputID={inputID}
+                formID={formID}
+                label={label}
+                description={description}
+                defaultValue={values[inputID] ?? []}
+            />
+        ),
+    };
+}
+
+export default createFileField;

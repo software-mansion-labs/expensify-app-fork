@@ -55,6 +55,9 @@ type OnboardingFlow<TData> = {
     /** The request that the open page sends is running */
     isSubmitting: boolean;
 
+    /** The open page sends no request, so its submit only writes the draft and works without a connection */
+    canSubmitOffline: boolean;
+
     /** The error of the request that the open page sends */
     errorText: string;
     submitPage: (values: OnboardingDraft) => void;
@@ -79,7 +82,8 @@ function useOnboardingFlow<TData>({flow, target, routeParams, dataSource, dataSt
     const position = isPositionReachable(plan, urlPosition) ? urlPosition : undefined;
     const step = position ? findStep(plan, position.stepID) : undefined;
     const page = step && position ? findPage(step, position.pageID) : undefined;
-    const requestState = useRequestState(getPageRequestKey(step, page));
+    const pageRequestKey = getPageRequestKey(step, page);
+    const requestState = useRequestState(pageRequestKey);
 
     // A handler is running: a second submit is ignored and the redirect waits, because the data changes under it
     const isHandlingRef = useRef(false);
@@ -96,10 +100,7 @@ function useOnboardingFlow<TData>({flow, target, routeParams, dataSource, dataSt
 
     // The status of the last render belongs to the request of the open page, which may not be the request the handler
     // sends, and it may be stale. A handler reads the status of its own request before it sends it again.
-    const isRequestPending = async (key: RequestKey | undefined) => {
-        if (!key) {
-            return false;
-        }
+    const isRequestPending = async (key: RequestKey) => {
         const requests = await Onyx.get(ONYXKEYS.RAM_ONLY_SIMPLIFIED_BANK_ONBOARDING_REQUESTS);
         return requests?.[key]?.status === 'pending';
     };
@@ -131,13 +132,14 @@ function useOnboardingFlow<TData>({flow, target, routeParams, dataSource, dataSt
     const runPageRequest = async (from: FlowPosition, currentPlan: FlowPlan): Promise<FlowPlan | undefined> => {
         const currentStep = findStep(currentPlan, from.stepID);
         const submittedPage = currentStep ? findPage(currentStep, from.pageID) : undefined;
-        if (!submittedPage?.submit) {
+        const request = submittedPage?.request;
+        if (!request?.send) {
             return currentPlan;
         }
-        if (await isRequestPending(submittedPage.requestKey)) {
+        if (await isRequestPending(request.key)) {
             return undefined;
         }
-        const outcome = await submittedPage.submit();
+        const outcome = await request.send();
         if (outcome.status !== 'succeeded') {
             return undefined;
         }
@@ -150,11 +152,12 @@ function useOnboardingFlow<TData>({flow, target, routeParams, dataSource, dataSt
         if (!finishedStep) {
             return;
         }
-        if (finishedStep.submit) {
-            if (await isRequestPending(finishedStep.requestKey)) {
+        const request = finishedStep.request;
+        if (request?.send) {
+            if (await isRequestPending(request.key)) {
                 return;
             }
-            const outcome = await finishedStep.submit();
+            const outcome = await request.send();
             if (outcome.status !== 'succeeded') {
                 return;
             }
@@ -296,6 +299,7 @@ function useOnboardingFlow<TData>({flow, target, routeParams, dataSource, dataSt
         step,
         page,
         isSubmitting: requestState.isPending,
+        canSubmitOffline: !pageRequestKey,
         errorText: getLatestErrorMessage({errors: requestState.errors}),
         submitPage,
         goBack,

@@ -1,3 +1,7 @@
+/**
+ * A value shown as a row that cannot be pressed, such as the data that the server already holds. It owns no input, so
+ * the page neither validates nor submits it.
+ */
 import MenuItemField from '@components/MenuItem/presets/MenuItemField';
 
 import useThemeStyles from '@hooks/useThemeStyles';
@@ -7,13 +11,14 @@ import CONST from '@src/CONST';
 import React from 'react';
 import {View} from 'react-native';
 
-type ReadOnlyFieldProps = {
+import type {Field} from './types';
+
+type ReadOnlyFieldRowProps = {
     label: string;
     value: string;
 };
 
-/** A value shown as a row that cannot be pressed, such as the data that the server already holds. It is not an input. */
-function ReadOnlyField({label, value}: ReadOnlyFieldProps) {
+function ReadOnlyFieldRow({label, value}: ReadOnlyFieldRowProps) {
     const styles = useThemeStyles();
 
     // The row draws its own horizontal padding, so it cancels the margin of the form to line up with the other fields
@@ -28,4 +33,19 @@ function ReadOnlyField({label, value}: ReadOnlyFieldProps) {
     );
 }
 
-export default ReadOnlyField;
+function createReadOnlyField(label: string, value: string): Field {
+    return {
+        key: `readOnly-${label}`,
+        inputIDs: [],
+        getErrors: () => ({}),
+
+        render: () => (
+            <ReadOnlyFieldRow
+                label={label}
+                value={value}
+            />
+        ),
+    };
+}
+
+export default createReadOnlyField;

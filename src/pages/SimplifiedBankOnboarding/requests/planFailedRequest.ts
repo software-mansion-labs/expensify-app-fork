@@ -1,7 +1,7 @@
 /* eslint-disable rulesdir/prefer-actions-set-data -- This file is the action layer of an isolated research module, so it lives outside src/libs/actions */
 /**
- * Records a failed attempt of a request that the flow cannot send because an input it needs is missing, such as the
- * workspace of a bank account. The page then shows an error instead of a submit that does nothing.
+ * The request of a step that the flow cannot send because an input it needs is missing, such as the workspace of a bank
+ * account. Sending it only records a failed attempt, so the page shows an error instead of a submit that does nothing.
  */
 import {getMicroSecondOnyxErrorWithTranslationKey} from '@libs/ErrorUtils';
 import {rand64} from '@libs/NumberUtils';
@@ -11,8 +11,11 @@ import ONYXKEYS from '@src/ONYXKEYS';
 
 import Onyx from 'react-native-onyx';
 
-import type {RequestKey} from './requestKey';
-import type {RequestOutcome} from './types';
+import type {RequestName} from './REQUEST_NAMES';
+import type {RequestKey, RequestScope} from './requestKey';
+import type {PlannedRequest, RequestOutcome} from './types';
+
+import getRequestKey from './requestKey';
 
 async function failRequest(key: RequestKey, errorKey: TranslationPaths = 'common.genericErrorMessage'): Promise<RequestOutcome> {
     await Onyx.merge(ONYXKEYS.RAM_ONLY_SIMPLIFIED_BANK_ONBOARDING_REQUESTS, {
@@ -21,4 +24,9 @@ async function failRequest(key: RequestKey, errorKey: TranslationPaths = 'common
     return {status: 'failed'};
 }
 
-export default failRequest;
+function planFailedRequest(name: RequestName, scope?: RequestScope): PlannedRequest {
+    const key = getRequestKey(name, scope);
+    return {key, send: () => failRequest(key)};
+}
+
+export default planFailedRequest;

@@ -1,13 +1,14 @@
 /**
  * The requests of the NonUSD signer: the save of the director details, the invitation of other directors and the
  * reminder sent to them. The invited director saves the same details from their own page under its own request name.
+ * The plans name the first three as the requests of their pages, and the hang tight page sends the reminder itself.
  */
 import {WRITE_COMMANDS} from '@pages/SimplifiedBankOnboarding/mockBackend/commands';
 import type {BankAccountParams, WriteCommandParams} from '@pages/SimplifiedBankOnboarding/mockBackend/commands';
 import getAccountErrorOnyxData from '@pages/SimplifiedBankOnboarding/requests/getAccountErrorOnyxData';
 import REQUEST_NAMES from '@pages/SimplifiedBankOnboarding/requests/REQUEST_NAMES';
-import runRequest from '@pages/SimplifiedBankOnboarding/requests/runRequest';
-import type {RequestOutcome} from '@pages/SimplifiedBankOnboarding/requests/types';
+import runRequest, {planRequest} from '@pages/SimplifiedBankOnboarding/requests/runRequest';
+import type {PlannedRequest, RequestOutcome} from '@pages/SimplifiedBankOnboarding/requests/types';
 
 import ONYXKEYS from '@src/ONYXKEYS';
 
@@ -16,13 +17,13 @@ import Onyx from 'react-native-onyx';
 type DirectorInfo = Omit<WriteCommandParams[typeof WRITE_COMMANDS.SAVE_ONBOARDING_DIRECTOR_INFORMATION], keyof BankAccountParams>;
 type SignerEmails = Omit<WriteCommandParams[typeof WRITE_COMMANDS.ASK_FOR_SIGNER_INFORMATION], keyof BankAccountParams>;
 
-function saveDirectorInfo(bankAccount: BankAccountParams, directorInfo: DirectorInfo): Promise<RequestOutcome> {
-    return runRequest({
+function getDirectorInfoRequest(bankAccount: BankAccountParams, {signerFullName, signerJobTitle}: DirectorInfo): PlannedRequest {
+    return planRequest({
         name: REQUEST_NAMES.SAVE_DIRECTOR_INFO,
         scope: bankAccount,
         type: 'write',
         command: WRITE_COMMANDS.SAVE_ONBOARDING_DIRECTOR_INFORMATION,
-        params: {...bankAccount, ...directorInfo},
+        params: {...bankAccount, signerFullName, signerJobTitle},
         onyxData: getAccountErrorOnyxData('common.genericErrorMessage'),
     });
 }
@@ -31,26 +32,26 @@ function saveDirectorInfo(bankAccount: BankAccountParams, directorInfo: Director
  * The invited director is not in the flow, so the account error of the Payments page does not apply. The saved details
  * leave the draft of the page, so the next director starts from an empty form.
  */
-function saveSignerInfo(bankAccount: BankAccountParams, directorInfo: DirectorInfo): Promise<RequestOutcome> {
-    return runRequest({
+function getSignerInfoRequest(bankAccount: BankAccountParams, {signerFullName, signerJobTitle}: DirectorInfo): PlannedRequest {
+    return planRequest({
         name: REQUEST_NAMES.SAVE_SIGNER_INFO,
         scope: bankAccount,
         type: 'write',
         command: WRITE_COMMANDS.SAVE_ONBOARDING_DIRECTOR_INFORMATION,
-        params: {...bankAccount, ...directorInfo},
+        params: {...bankAccount, signerFullName, signerJobTitle},
         onyxData: {
             successData: [{onyxMethod: Onyx.METHOD.SET, key: ONYXKEYS.FORMS.SIMPLIFIED_BANK_ONBOARDING_SIGNER_FORM_DRAFT, value: null}],
         },
     });
 }
 
-function askForSignerInfo(bankAccount: BankAccountParams, signerEmails: SignerEmails): Promise<RequestOutcome> {
-    return runRequest({
+function getSignerInvitationRequest(bankAccount: BankAccountParams, {signerEmail, secondSignerEmail}: SignerEmails): PlannedRequest {
+    return planRequest({
         name: REQUEST_NAMES.ASK_FOR_SIGNER_INFO,
         scope: bankAccount,
         type: 'write',
         command: WRITE_COMMANDS.ASK_FOR_SIGNER_INFORMATION,
-        params: {...bankAccount, ...signerEmails},
+        params: {...bankAccount, signerEmail, secondSignerEmail},
         onyxData: getAccountErrorOnyxData('common.genericErrorMessage'),
     });
 }
@@ -66,5 +67,5 @@ function sendSignerReminder(bankAccount: BankAccountParams): Promise<RequestOutc
     });
 }
 
-export {askForSignerInfo, saveDirectorInfo, saveSignerInfo, sendSignerReminder};
+export {getDirectorInfoRequest, getSignerInfoRequest, getSignerInvitationRequest, sendSignerReminder};
 export type {DirectorInfo, SignerEmails};

@@ -9,10 +9,10 @@ function getPageRequestKey(step: StepConfig | undefined, page: PageConfig | unde
     if (!step || !page) {
         return undefined;
     }
-    if (page.requestKey) {
-        return page.requestKey;
+    if (page.request) {
+        return page.request.key;
     }
-    return step.pages.at(-1)?.id === page.id ? step.requestKey : undefined;
+    return step.pages.at(-1)?.id === page.id ? step.request?.key : undefined;
 }
 
 export default getPageRequestKey;

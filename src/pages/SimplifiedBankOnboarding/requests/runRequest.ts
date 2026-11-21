@@ -22,7 +22,7 @@ import Onyx from 'react-native-onyx';
 
 import type {RequestName} from './REQUEST_NAMES';
 import type {RequestKey, RequestScope} from './requestKey';
-import type {MockRequest, RequestOutcome} from './types';
+import type {MockRequest, PlannedRequest, RequestOutcome} from './types';
 
 import getRequestKey from './requestKey';
 
@@ -57,7 +57,7 @@ function buildStatusUpdate(key: RequestKey, value: Partial<RequestState>): OnyxU
     return {onyxMethod: Onyx.METHOD.MERGE, key: ONYXKEYS.RAM_ONLY_SIMPLIFIED_BANK_ONBOARDING_REQUESTS, value: {[key]: value}};
 }
 
-function withStatusUpdates(key: RequestKey, requestID: string, errorKey: TranslationPaths, onyxData: OnyxData<RequestOnyxKey>): OnyxData<RequestOnyxKey> {
+function addStatusUpdates(key: RequestKey, requestID: string, errorKey: TranslationPaths, onyxData: OnyxData<RequestOnyxKey>): OnyxData<RequestOnyxKey> {
     return {
         ...onyxData,
         optimisticData: [...(onyxData.optimisticData ?? []), buildStatusUpdate(key, {requestID, status: 'pending', errors: null})],
@@ -115,9 +115,15 @@ function runRequest(args: RunRequestArgs): Promise<RequestOutcome> {
     const key = getRequestKey(args.name, args.scope);
     const requestID = rand64();
     const settled = waitForRequestToSettle(key, requestID);
-    sendRequest(args, withStatusUpdates(key, requestID, args.errorKey ?? 'common.genericErrorMessage', args.onyxData ?? {}));
+    sendRequest(args, addStatusUpdates(key, requestID, args.errorKey ?? 'common.genericErrorMessage', args.onyxData ?? {}));
     return settled;
 }
 
+/** Describes a request without sending it, so a plan can name the request of a step and show its status */
+function planRequest(args: RunRequestArgs): PlannedRequest {
+    return {key: getRequestKey(args.name, args.scope), send: () => runRequest(args)};
+}
+
 export default runRequest;
+export {planRequest};
 export type {RequestOnyxKey};

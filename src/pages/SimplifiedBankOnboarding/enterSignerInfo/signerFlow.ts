@@ -8,9 +8,7 @@ import type {FlowPlan, PlanContext} from '@pages/SimplifiedBankOnboarding/formCo
 import {ENTER_SIGNER_INFO_STEP_ID} from '@pages/SimplifiedBankOnboarding/navigation/routes';
 import {saveSignerDraft} from '@pages/SimplifiedBankOnboarding/requests/draft';
 import getBankAccountParams from '@pages/SimplifiedBankOnboarding/requests/getBankAccountParams';
-import {saveSignerInfo} from '@pages/SimplifiedBankOnboarding/requests/nonUSD/signerInfo';
-import REQUEST_NAMES from '@pages/SimplifiedBankOnboarding/requests/REQUEST_NAMES';
-import getRequestKey from '@pages/SimplifiedBankOnboarding/requests/requestKey';
+import {getSignerInfoRequest} from '@pages/SimplifiedBankOnboarding/requests/nonUSD/signerInfo';
 import SBO_CONST from '@pages/SimplifiedBankOnboarding/SBO_CONST';
 
 import ONYXKEYS from '@src/ONYXKEYS';
@@ -21,30 +19,24 @@ const SUB_PAGES = SBO_CONST.ENTER_SIGNER_INFO_SUB_PAGES;
 
 function buildSignerPlan({draft, bankAccountID}: SignerData, {translate, policyID}: PlanContext): FlowPlan {
     const bankAccount = getBankAccountParams(policyID, {bankAccountID});
-    const signerFullName = draft?.signerFullName ?? '';
-    const signerJobTitle = draft?.signerJobTitle ?? '';
-    const {formPages, confirmation} = getSignerDetailsPages({
-        pageIDs: {name: SUB_PAGES.NAME, jobTitle: SUB_PAGES.JOB_TITLE, confirmation: SUB_PAGES.CONFIRMATION},
-        fullName: signerFullName,
-        jobTitle: signerJobTitle,
-        shouldAskForName: true,
-        isConfirmationComplete: false,
-        translate,
-    });
+    const answers = {signerFullName: draft?.signerFullName ?? '', signerJobTitle: draft?.signerJobTitle ?? ''};
+
     return {
+        answers,
         steps: [
             {
                 id: ENTER_SIGNER_INFO_STEP_ID,
                 title: translate('signerInfoStep.signerInfo'),
                 isComplete: false,
-                pages: [
-                    ...formPages,
-                    {
-                        ...confirmation,
-                        submit: () => saveSignerInfo(bankAccount, {signerFullName, signerJobTitle}),
-                        requestKey: getRequestKey(REQUEST_NAMES.SAVE_SIGNER_INFO, bankAccount),
-                    },
-                ],
+
+                pages: getSignerDetailsPages({
+                    pageIDs: {name: SUB_PAGES.NAME, jobTitle: SUB_PAGES.JOB_TITLE, confirmation: SUB_PAGES.CONFIRMATION},
+                    answers,
+                    shouldAskForName: true,
+                    isConfirmationComplete: false,
+                    request: getSignerInfoRequest(bankAccount, answers),
+                    translate,
+                }),
             },
         ],
     };

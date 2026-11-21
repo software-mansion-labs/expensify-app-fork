@@ -1,10 +1,14 @@
+/**
+ * Saves the beneficial owners of a global account. Unlike the USD request, the list holds the user as well when the
+ * user is an owner.
+ */
 import {WRITE_COMMANDS} from '@pages/SimplifiedBankOnboarding/mockBackend/commands';
 import type {BankAccountParams} from '@pages/SimplifiedBankOnboarding/mockBackend/commands';
 import {getGlobalOwnersParams} from '@pages/SimplifiedBankOnboarding/model/owners/ownerParams';
 import getAccountErrorOnyxData from '@pages/SimplifiedBankOnboarding/requests/getAccountErrorOnyxData';
 import REQUEST_NAMES from '@pages/SimplifiedBankOnboarding/requests/REQUEST_NAMES';
-import runRequest from '@pages/SimplifiedBankOnboarding/requests/runRequest';
-import type {RequestOutcome} from '@pages/SimplifiedBankOnboarding/requests/types';
+import {planRequest} from '@pages/SimplifiedBankOnboarding/requests/runRequest';
+import type {PlannedRequest} from '@pages/SimplifiedBankOnboarding/requests/types';
 import type {GlobalOwnerDraft} from '@pages/SimplifiedBankOnboarding/types/form';
 
 type GlobalOwnersAnswers = {
@@ -14,8 +18,8 @@ type GlobalOwnersAnswers = {
     owners: GlobalOwnerDraft[];
 };
 
-function saveGlobalOwners(bankAccount: BankAccountParams, {ownsMoreThan25Percent, owners}: GlobalOwnersAnswers): Promise<RequestOutcome> {
-    return runRequest({
+function getGlobalOwnersRequest(bankAccount: BankAccountParams, {ownsMoreThan25Percent, owners}: GlobalOwnersAnswers): PlannedRequest {
+    return planRequest({
         name: REQUEST_NAMES.SAVE_GLOBAL_OWNERS,
         scope: bankAccount,
         type: 'write',
@@ -25,5 +29,5 @@ function saveGlobalOwners(bankAccount: BankAccountParams, {ownsMoreThan25Percent
     });
 }
 
-export default saveGlobalOwners;
+export default getGlobalOwnersRequest;
 export type {GlobalOwnersAnswers};
