@@ -10,7 +10,7 @@ import Section from '@components/Section';
 import useLocalize from '@hooks/useLocalize';
 import useThemeStyles from '@hooks/useThemeStyles';
 
-import {leaveEntry} from '@pages/SimplifiedBankOnboarding/navigation/entryNavigation';
+import {leaveEntry} from '@pages/SimplifiedBankOnboarding/entry/entryNavigation';
 
 import type {Route} from '@src/ROUTES';
 

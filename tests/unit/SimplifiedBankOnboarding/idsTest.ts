@@ -1,7 +1,7 @@
-import {isPageID, isStepID} from '@pages/SimplifiedBankOnboarding/formConfig/ids';
-import {getPositionFromParams} from '@pages/SimplifiedBankOnboarding/navigation/routes';
-import type {FlowRouteParams, FlowRouteTarget} from '@pages/SimplifiedBankOnboarding/navigation/routes';
-import SBO_CONST from '@pages/SimplifiedBankOnboarding/SBO_CONST';
+import {isPageID, isStepID} from '@pages/SimplifiedBankOnboarding/contract/ids';
+import SBO_CONST from '@pages/SimplifiedBankOnboarding/contract/SBO_CONST';
+import {getPositionFromParams} from '@pages/SimplifiedBankOnboarding/core/navigation/routes';
+import type {FlowRouteParams, FlowRouteTarget} from '@pages/SimplifiedBankOnboarding/core/navigation/routes';
 
 const USD_TARGET: FlowRouteTarget = {kind: 'usd', policyID: 'usd', backTo: undefined};
 const SIGNER_TARGET: FlowRouteTarget = {kind: 'enterSignerInfo', policyID: 'eur', bankAccountID: 42, isCompleted: false};

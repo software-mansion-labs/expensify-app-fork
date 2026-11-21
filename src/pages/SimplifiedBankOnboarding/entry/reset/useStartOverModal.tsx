@@ -11,11 +11,10 @@ import useLocalize from '@hooks/useLocalize';
 import useOnyx from '@hooks/useOnyx';
 import useThemeStyles from '@hooks/useThemeStyles';
 
-import openOnboardingPage from '@pages/SimplifiedBankOnboarding/requests/entry/openOnboardingPage';
-import resetBankAccount from '@pages/SimplifiedBankOnboarding/requests/entry/resetBankAccount';
-import getBankAccountParams from '@pages/SimplifiedBankOnboarding/requests/getBankAccountParams';
-import SBO_CONST from '@pages/SimplifiedBankOnboarding/SBO_CONST';
-import type {OnboardingAccount, Workspaces} from '@pages/SimplifiedBankOnboarding/types/onyx';
+import type {OnboardingAccount, Workspaces} from '@pages/SimplifiedBankOnboarding/contract/onyx';
+import SBO_CONST from '@pages/SimplifiedBankOnboarding/contract/SBO_CONST';
+import resetBankAccount from '@pages/SimplifiedBankOnboarding/entry/requests/resetBankAccount';
+import {getBankAccountParams, openOnboardingPage} from '@pages/SimplifiedBankOnboarding/flows';
 
 import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';

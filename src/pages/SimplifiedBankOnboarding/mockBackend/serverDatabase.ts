@@ -4,7 +4,7 @@
  */
 /* eslint-disable rulesdir/prefer-actions-set-data -- The mock server mirrors its state into Onyx the way a server response would */
 /* eslint-disable no-param-reassign -- The mock server keeps its database in memory and the handlers change it in place */
-import SBO_CONST from '@pages/SimplifiedBankOnboarding/SBO_CONST';
+import SBO_CONST from '@pages/SimplifiedBankOnboarding/contract/SBO_CONST';
 
 import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';

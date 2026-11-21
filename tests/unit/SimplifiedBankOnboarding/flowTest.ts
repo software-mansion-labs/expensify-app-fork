@@ -1,7 +1,8 @@
-import type {FlowPosition} from '@pages/SimplifiedBankOnboarding/flow/position';
-import {comparePositionIndexes, getPositionIndex} from '@pages/SimplifiedBankOnboarding/flow/position';
-import isPositionReachable from '@pages/SimplifiedBankOnboarding/flow/reachability';
-import getResumePosition from '@pages/SimplifiedBankOnboarding/flow/resume';
+import SBO_CONST from '@pages/SimplifiedBankOnboarding/contract/SBO_CONST';
+import type {FlowPosition} from '@pages/SimplifiedBankOnboarding/core/plan/position/position';
+import {comparePositionIndexes, getPositionIndex} from '@pages/SimplifiedBankOnboarding/core/plan/position/position';
+import isPositionReachable from '@pages/SimplifiedBankOnboarding/core/plan/position/reachability';
+import getResumePosition from '@pages/SimplifiedBankOnboarding/core/plan/position/resume';
 import {
     getEditReturnPosition,
     getFirstPosition,
@@ -11,9 +12,8 @@ import {
     getPreviousPosition,
     getStepFirstPosition,
     getStepPagePosition,
-} from '@pages/SimplifiedBankOnboarding/flow/transitions';
-import type {FlowPlan, PageConfig, PageID, StepConfig, StepID} from '@pages/SimplifiedBankOnboarding/formConfig/types';
-import SBO_CONST from '@pages/SimplifiedBankOnboarding/SBO_CONST';
+} from '@pages/SimplifiedBankOnboarding/core/plan/position/transitions';
+import type {FlowPlan, PageConfig, PageID, StepConfig, StepID} from '@pages/SimplifiedBankOnboarding/core/plan/types';
 
 const {PAGE_NAMES, PERSONAL_INFO_SUB_PAGES, VERIFY_IDENTITY_SUB_PAGES, BUSINESS_INFO_SUB_PAGES, VALIDATION_SUB_PAGES} = SBO_CONST.USD;
 

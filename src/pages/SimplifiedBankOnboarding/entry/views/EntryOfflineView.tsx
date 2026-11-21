@@ -4,7 +4,7 @@ import ScreenWrapper from '@components/ScreenWrapper';
 
 import useLocalize from '@hooks/useLocalize';
 
-import {leaveEntry} from '@pages/SimplifiedBankOnboarding/navigation/entryNavigation';
+import {leaveEntry} from '@pages/SimplifiedBankOnboarding/entry/entryNavigation';
 
 import type {Route} from '@src/ROUTES';
 

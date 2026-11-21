@@ -12,13 +12,13 @@ import useThemeStyles from '@hooks/useThemeStyles';
 
 import {getLatestError, getMicroSecondOnyxErrorWithTranslationKey} from '@libs/ErrorUtils';
 
+import type {OnboardingAccount} from '@pages/SimplifiedBankOnboarding/contract/onyx';
+import SBO_CONST from '@pages/SimplifiedBankOnboarding/contract/SBO_CONST';
+import {openFlow} from '@pages/SimplifiedBankOnboarding/core';
+import {goToChangeBankAccount, isOpenedFromPaymentsPage, leaveEntryAfterReset} from '@pages/SimplifiedBankOnboarding/entry/entryNavigation';
+import clearAccountErrors from '@pages/SimplifiedBankOnboarding/entry/requests/clearAccountErrors';
 import useStartOverModal from '@pages/SimplifiedBankOnboarding/entry/reset/useStartOverModal';
-import {goToChangeBankAccount, isOpenedFromPaymentsPage, leaveEntryAfterReset} from '@pages/SimplifiedBankOnboarding/navigation/entryNavigation';
-import {openFlow} from '@pages/SimplifiedBankOnboarding/navigation/flowNavigation';
-import clearAccountErrors from '@pages/SimplifiedBankOnboarding/requests/clearAccountErrors';
-import {saveDraft} from '@pages/SimplifiedBankOnboarding/requests/draft';
-import SBO_CONST from '@pages/SimplifiedBankOnboarding/SBO_CONST';
-import type {OnboardingAccount} from '@pages/SimplifiedBankOnboarding/types/onyx';
+import {saveDraft} from '@pages/SimplifiedBankOnboarding/flows';
 
 import CONST from '@src/CONST';
 import type {Route} from '@src/ROUTES';

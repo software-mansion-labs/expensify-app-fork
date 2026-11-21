@@ -1,7 +1,7 @@
 import FullPageNotFoundView from '@components/BlockingViews/FullPageNotFoundView';
 import ScreenWrapper from '@components/ScreenWrapper';
 
-import {leaveEntry} from '@pages/SimplifiedBankOnboarding/navigation/entryNavigation';
+import {leaveEntry} from '@pages/SimplifiedBankOnboarding/entry/entryNavigation';
 
 import type {Route} from '@src/ROUTES';
 

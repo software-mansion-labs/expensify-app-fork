@@ -3,12 +3,12 @@
  * step forward, the same way the real backend decides which step the client opens next.
  */
 /* eslint-disable no-param-reassign -- The mock server keeps its database in memory and the handlers change it in place */
+import type {SetupType} from '@pages/SimplifiedBankOnboarding/contract/onyx';
+import SBO_CONST from '@pages/SimplifiedBankOnboarding/contract/SBO_CONST';
 import {WRITE_COMMANDS} from '@pages/SimplifiedBankOnboarding/mockBackend/commands';
 import type {WriteCommandParams} from '@pages/SimplifiedBankOnboarding/mockBackend/commands';
 import {PLAID_BANK_ACCOUNTS} from '@pages/SimplifiedBankOnboarding/mockBackend/serverCatalog';
 import type {CommandHandler, MockServerDatabase, ServerBankAccount} from '@pages/SimplifiedBankOnboarding/mockBackend/types';
-import SBO_CONST from '@pages/SimplifiedBankOnboarding/SBO_CONST';
-import type {SetupType} from '@pages/SimplifiedBankOnboarding/types/onyx';
 
 import ONYXKEYS from '@src/ONYXKEYS';
 

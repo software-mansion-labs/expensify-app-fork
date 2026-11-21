@@ -1,9 +1,9 @@
-import getStepInputIDsToClear from '@pages/SimplifiedBankOnboarding/flow/getStepInputIDsToClear';
-import createDateOfBirthField from '@pages/SimplifiedBankOnboarding/form/fields/createDateOfBirthField';
-import createFileField from '@pages/SimplifiedBankOnboarding/form/fields/createFileField';
-import createLegalNameField from '@pages/SimplifiedBankOnboarding/form/fields/createLegalNameField';
-import type {StepConfig} from '@pages/SimplifiedBankOnboarding/formConfig/types';
-import SBO_CONST from '@pages/SimplifiedBankOnboarding/SBO_CONST';
+import SBO_CONST from '@pages/SimplifiedBankOnboarding/contract/SBO_CONST';
+import createDateOfBirthField from '@pages/SimplifiedBankOnboarding/core/form/fields/createDateOfBirthField';
+import createFileField from '@pages/SimplifiedBankOnboarding/core/form/fields/createFileField';
+import createLegalNameField from '@pages/SimplifiedBankOnboarding/core/form/fields/createLegalNameField';
+import getStepInputIDsToClear from '@pages/SimplifiedBankOnboarding/core/plan/getStepInputIDsToClear';
+import type {StepConfig} from '@pages/SimplifiedBankOnboarding/core/plan/types';
 
 const {PAGE_NAMES, KYB_DOCUMENTS_SUB_PAGES, BENEFICIAL_OWNERS_SUB_PAGES, PERSONAL_INFO_SUB_PAGES} = SBO_CONST.USD;
 

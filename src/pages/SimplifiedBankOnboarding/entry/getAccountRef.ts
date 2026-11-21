@@ -3,8 +3,8 @@
  * the Wallet, and both inputs become one reference, so the rest of the page asks a single question: is the account key
  * about this account?
  */
-import {belongsToPolicy} from '@pages/SimplifiedBankOnboarding/model/setupStatus';
-import type {ACHData, Workspaces} from '@pages/SimplifiedBankOnboarding/types/onyx';
+import type {ACHData, Workspaces} from '@pages/SimplifiedBankOnboarding/contract/onyx';
+import {belongsToPolicy} from '@pages/SimplifiedBankOnboarding/contract/setupStatus';
 
 import type {OnyxEntry} from 'react-native-onyx';
 

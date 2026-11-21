@@ -19,19 +19,19 @@ import {getLatestErrorMessage} from '@libs/ErrorUtils';
 import type BankOnboardingLabParamList from '@libs/Navigation/paramLists/BankOnboardingLabParamList';
 import type {PlatformStackScreenProps} from '@libs/Navigation/PlatformStackNavigation/types';
 
-import useReadFlowData from '@pages/SimplifiedBankOnboarding/controller/useReadFlowData';
-import openFlowAtResume from '@pages/SimplifiedBankOnboarding/flows/openFlowAtResume';
-import {leaveVerifyAccount} from '@pages/SimplifiedBankOnboarding/navigation/entryNavigation';
-import validateUser, {clearValidateUserErrors} from '@pages/SimplifiedBankOnboarding/requests/entry/validateUser';
-import REQUEST_NAMES from '@pages/SimplifiedBankOnboarding/requests/REQUEST_NAMES';
-import useRequestState from '@pages/SimplifiedBankOnboarding/requests/useRequestState';
-import SBO_CONST from '@pages/SimplifiedBankOnboarding/SBO_CONST';
+import REQUEST_NAMES from '@pages/SimplifiedBankOnboarding/contract/REQUEST_NAMES';
+import SBO_CONST from '@pages/SimplifiedBankOnboarding/contract/SBO_CONST';
+import {useRequestState} from '@pages/SimplifiedBankOnboarding/core';
+import {openFlowAtResume, useReadFlowData} from '@pages/SimplifiedBankOnboarding/flows';
 
 import CONST from '@src/CONST';
 import type SCREENS from '@src/SCREENS';
 
 import React, {useEffect, useState} from 'react';
 import {View} from 'react-native';
+
+import {leaveVerifyAccount} from './entryNavigation';
+import validateUser, {clearValidateUserErrors} from './requests/validateUser';
 
 type VerifyAccountPageProps = PlatformStackScreenProps<BankOnboardingLabParamList, typeof SCREENS.SETTINGS.BANK_ONBOARDING_LAB.VERIFY_ACCOUNT>;
 

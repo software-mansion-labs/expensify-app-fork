@@ -16,11 +16,11 @@ import {useMemoizedLazyExpensifyIcons} from '@hooks/useLazyAsset';
 import useLocalize from '@hooks/useLocalize';
 import useThemeStyles from '@hooks/useThemeStyles';
 
+import type {OnboardingAccount} from '@pages/SimplifiedBankOnboarding/contract/onyx';
+import {openFlow} from '@pages/SimplifiedBankOnboarding/core';
+import {goToChangeBankAccount, leaveEntry} from '@pages/SimplifiedBankOnboarding/entry/entryNavigation';
+import clearAccountErrors from '@pages/SimplifiedBankOnboarding/entry/requests/clearAccountErrors';
 import useStartOverModal from '@pages/SimplifiedBankOnboarding/entry/reset/useStartOverModal';
-import {goToChangeBankAccount, leaveEntry} from '@pages/SimplifiedBankOnboarding/navigation/entryNavigation';
-import {openFlow} from '@pages/SimplifiedBankOnboarding/navigation/flowNavigation';
-import clearAccountErrors from '@pages/SimplifiedBankOnboarding/requests/clearAccountErrors';
-import type {OnboardingAccount} from '@pages/SimplifiedBankOnboarding/types/onyx';
 
 import CONST from '@src/CONST';
 import type {Route} from '@src/ROUTES';

@@ -1,5 +1,5 @@
-import REQUEST_NAMES from '@pages/SimplifiedBankOnboarding/requests/REQUEST_NAMES';
-import getRequestKey from '@pages/SimplifiedBankOnboarding/requests/requestKey';
+import REQUEST_NAMES from '@pages/SimplifiedBankOnboarding/contract/REQUEST_NAMES';
+import getRequestKey from '@pages/SimplifiedBankOnboarding/core/requests/requestKey';
 
 describe('getRequestKey', () => {
     it('keys a request about a bank account by its workspace', () => {

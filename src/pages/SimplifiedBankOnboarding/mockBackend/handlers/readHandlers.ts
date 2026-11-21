@@ -1,12 +1,12 @@
 /**
  * Handlers of the read commands. A read never changes the bank accounts, it only describes the response.
  */
+import type {ACHData, USDStep} from '@pages/SimplifiedBankOnboarding/contract/onyx';
+import SBO_CONST from '@pages/SimplifiedBankOnboarding/contract/SBO_CONST';
 import {READ_COMMANDS} from '@pages/SimplifiedBankOnboarding/mockBackend/commands';
 import type {ReadCommandParams} from '@pages/SimplifiedBankOnboarding/mockBackend/commands';
 import {BUSINESS_TYPES, getBankFormFields, PLAID_BANK_ACCOUNTS} from '@pages/SimplifiedBankOnboarding/mockBackend/serverCatalog';
 import type {CommandHandler} from '@pages/SimplifiedBankOnboarding/mockBackend/types';
-import SBO_CONST from '@pages/SimplifiedBankOnboarding/SBO_CONST';
-import type {ACHData, USDStep} from '@pages/SimplifiedBankOnboarding/types/onyx';
 
 import ONYXKEYS from '@src/ONYXKEYS';
 

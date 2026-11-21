@@ -3,11 +3,11 @@
  * baseline page: the blockers first, then the account states, then the setup options. The page renders the result with
  * a `switch`, so no state is mirrored and no effect decides what the user sees.
  */
-import getNonUSDCurrency from '@pages/SimplifiedBankOnboarding/model/getNonUSDCurrency';
-import {hasInProgressSetup, isConnected, isNonUSDCurrency, isPendingValidation, isSupportedCurrency} from '@pages/SimplifiedBankOnboarding/model/setupStatus';
-import SBO_CONST from '@pages/SimplifiedBankOnboarding/SBO_CONST';
-import type {OnboardingDraft} from '@pages/SimplifiedBankOnboarding/types/form';
-import type {OnboardingAccount, Workspaces} from '@pages/SimplifiedBankOnboarding/types/onyx';
+import type {OnboardingDraft} from '@pages/SimplifiedBankOnboarding/contract/form';
+import getNonUSDCurrency from '@pages/SimplifiedBankOnboarding/contract/getNonUSDCurrency';
+import type {OnboardingAccount, Workspaces} from '@pages/SimplifiedBankOnboarding/contract/onyx';
+import SBO_CONST from '@pages/SimplifiedBankOnboarding/contract/SBO_CONST';
+import {hasInProgressSetup, isConnected, isNonUSDCurrency, isPendingValidation, isSupportedCurrency} from '@pages/SimplifiedBankOnboarding/contract/setupStatus';
 
 import CONST from '@src/CONST';
 

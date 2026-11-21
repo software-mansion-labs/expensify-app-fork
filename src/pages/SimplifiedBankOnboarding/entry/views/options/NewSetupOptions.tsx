@@ -7,11 +7,10 @@ import {useMemoizedLazyExpensifyIcons} from '@hooks/useLazyAsset';
 import useLocalize from '@hooks/useLocalize';
 import useThemeStyles from '@hooks/useThemeStyles';
 
-import {prepareNewBankAccountSetup, saveDraft} from '@pages/SimplifiedBankOnboarding/requests/draft';
-import {clearPlaid} from '@pages/SimplifiedBankOnboarding/requests/plaid';
-import SBO_CONST from '@pages/SimplifiedBankOnboarding/SBO_CONST';
-import INPUT_IDS from '@pages/SimplifiedBankOnboarding/types/form';
-import type {SetupType} from '@pages/SimplifiedBankOnboarding/types/onyx';
+import INPUT_IDS from '@pages/SimplifiedBankOnboarding/contract/form';
+import type {SetupType} from '@pages/SimplifiedBankOnboarding/contract/onyx';
+import SBO_CONST from '@pages/SimplifiedBankOnboarding/contract/SBO_CONST';
+import {clearPlaid, prepareNewBankAccountSetup, saveDraft} from '@pages/SimplifiedBankOnboarding/flows';
 
 import CONST from '@src/CONST';
 import type {Route} from '@src/ROUTES';

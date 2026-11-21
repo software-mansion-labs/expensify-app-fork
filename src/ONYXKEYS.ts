@@ -7,9 +7,10 @@ import type {OnboardingFeatureMapItem} from './libs/actions/Welcome/OnboardingFe
 import type {OnboardingCompanySize} from './libs/actions/Welcome/OnboardingFlow';
 import type Platform from './libs/getPlatform/types';
 import type {TransactionThreadNavigationDescriptor} from './libs/TransactionThreadNavigationUtils';
-import type {MockServerDatabase} from './pages/SimplifiedBankOnboarding/mockBackend/types';
-import type {EnterSignerInfoForm as SimplifiedBankOnboardingEnterSignerInfoForm, OnboardingForm as SimplifiedBankOnboardingForm} from './pages/SimplifiedBankOnboarding/types/form';
 import type {
+    MockServerDatabase,
+    EnterSignerInfoForm as SimplifiedBankOnboardingEnterSignerInfoForm,
+    OnboardingForm as SimplifiedBankOnboardingForm,
     BankFields as SimplifiedBankOnboardingBankFields,
     OnboardingAccount as SimplifiedBankOnboardingOnboardingAccount,
     OnboardingPicklists as SimplifiedBankOnboardingOnboardingPicklists,
@@ -17,7 +18,7 @@ import type {
     PlaidData as SimplifiedBankOnboardingPlaidData,
     OnboardingRequests as SimplifiedBankOnboardingRequests,
     Workspaces as SimplifiedBankOnboardingWorkspaces,
-} from './pages/SimplifiedBankOnboarding/types/onyx';
+} from './pages/SimplifiedBankOnboarding';
 import type * as FormTypes from './types/form';
 import type * as OnyxTypes from './types/onyx';
 import type DefaultP2PMileageRate from './types/onyx/DefaultP2PMileageRate';

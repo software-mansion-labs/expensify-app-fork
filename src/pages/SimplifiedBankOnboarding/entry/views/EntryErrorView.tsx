@@ -12,7 +12,7 @@ import useEnvironment from '@hooks/useEnvironment';
 import useLocalize from '@hooks/useLocalize';
 import useThemeStyles from '@hooks/useThemeStyles';
 
-import {CURRENCY_SETTINGS_ROUTE, leaveEntry} from '@pages/SimplifiedBankOnboarding/navigation/entryNavigation';
+import {CURRENCY_SETTINGS_ROUTE, leaveEntry} from '@pages/SimplifiedBankOnboarding/entry/entryNavigation';
 
 import type {Route} from '@src/ROUTES';
 

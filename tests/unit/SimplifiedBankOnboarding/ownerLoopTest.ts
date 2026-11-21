@@ -1,16 +1,16 @@
 import type {LocalizedTranslate} from '@components/LocaleContextProvider';
 
-import type {FlowPosition} from '@pages/SimplifiedBankOnboarding/flow/position';
-import {findPage, findStep} from '@pages/SimplifiedBankOnboarding/flow/position';
-import {getPositionAfterSubmit, getPreviousPosition, getStepPagePosition} from '@pages/SimplifiedBankOnboarding/flow/transitions';
-import buildNonUSDPlan from '@pages/SimplifiedBankOnboarding/formConfig/buildNonUSDPlan';
-import buildUSDPlan from '@pages/SimplifiedBankOnboarding/formConfig/buildUSDPlan';
-import type {FlowPlan, PageConfig, PageID, StepID} from '@pages/SimplifiedBankOnboarding/formConfig/types';
-import {canAddMoreGlobalOwners, canAddMoreUSDOwners, isValidGlobalOwnerShare} from '@pages/SimplifiedBankOnboarding/model/owners/canAddMoreOwners';
-import SBO_CONST from '@pages/SimplifiedBankOnboarding/SBO_CONST';
-import INPUT_IDS from '@pages/SimplifiedBankOnboarding/types/form';
-import type {GlobalOwnerDraft, OnboardingDraft, USDOwnerDraft} from '@pages/SimplifiedBankOnboarding/types/form';
-import type {OnboardingAccount} from '@pages/SimplifiedBankOnboarding/types/onyx';
+import INPUT_IDS from '@pages/SimplifiedBankOnboarding/contract/form';
+import type {GlobalOwnerDraft, OnboardingDraft, USDOwnerDraft} from '@pages/SimplifiedBankOnboarding/contract/form';
+import type {OnboardingAccount} from '@pages/SimplifiedBankOnboarding/contract/onyx';
+import SBO_CONST from '@pages/SimplifiedBankOnboarding/contract/SBO_CONST';
+import type {FlowPosition} from '@pages/SimplifiedBankOnboarding/core/plan/position/position';
+import {findPage, findStep} from '@pages/SimplifiedBankOnboarding/core/plan/position/position';
+import {getPositionAfterSubmit, getPreviousPosition, getStepPagePosition} from '@pages/SimplifiedBankOnboarding/core/plan/position/transitions';
+import type {FlowPlan, PageConfig, PageID, StepID} from '@pages/SimplifiedBankOnboarding/core/plan/types';
+import buildNonUSDPlan from '@pages/SimplifiedBankOnboarding/flows/nonUSD/buildNonUSDPlan';
+import {canAddMoreGlobalOwners, canAddMoreUSDOwners, isValidGlobalOwnerShare} from '@pages/SimplifiedBankOnboarding/flows/shared/owners/canAddMoreOwners';
+import buildUSDPlan from '@pages/SimplifiedBankOnboarding/flows/usd/buildUSDPlan';
 
 /** Returns the key with its parameters, so a validator error is never an empty string that would make an invalid form look complete */
 const translate: LocalizedTranslate = (path, ...parameters) => [path, ...parameters.map(String)].join(' ');

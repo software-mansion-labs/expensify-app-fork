@@ -1,10 +1,10 @@
+import DEFAULT_ACCOUNT from '@pages/SimplifiedBankOnboarding/contract/defaultAccount';
+import type {ACHData, OnboardingAccount, Workspaces} from '@pages/SimplifiedBankOnboarding/contract/onyx';
+import SBO_CONST from '@pages/SimplifiedBankOnboarding/contract/SBO_CONST';
 import getAccountRef, {hasAccountRef, isAccountOfRef} from '@pages/SimplifiedBankOnboarding/entry/getAccountRef';
 import type {AccountRef} from '@pages/SimplifiedBankOnboarding/entry/getAccountRef';
 import getEntryState from '@pages/SimplifiedBankOnboarding/entry/getEntryState';
 import type {EntryState} from '@pages/SimplifiedBankOnboarding/entry/getEntryState';
-import DEFAULT_ACCOUNT from '@pages/SimplifiedBankOnboarding/model/defaultAccount';
-import SBO_CONST from '@pages/SimplifiedBankOnboarding/SBO_CONST';
-import type {ACHData, OnboardingAccount, Workspaces} from '@pages/SimplifiedBankOnboarding/types/onyx';
 
 import CONST from '@src/CONST';
 

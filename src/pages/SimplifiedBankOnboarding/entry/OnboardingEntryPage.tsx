@@ -10,12 +10,8 @@ import useNetwork from '@hooks/useNetwork';
 import type BankOnboardingLabParamList from '@libs/Navigation/paramLists/BankOnboardingLabParamList';
 import type {PlatformStackScreenProps} from '@libs/Navigation/PlatformStackNavigation/types';
 
-import useFlowData from '@pages/SimplifiedBankOnboarding/controller/useFlowData';
-import {leaveEntry} from '@pages/SimplifiedBankOnboarding/navigation/entryNavigation';
-import clearAccountErrors from '@pages/SimplifiedBankOnboarding/requests/clearAccountErrors';
-import {clearDraft} from '@pages/SimplifiedBankOnboarding/requests/draft';
-import useAccountRead from '@pages/SimplifiedBankOnboarding/requests/entry/useAccountRead';
-import type {AccountReadParams} from '@pages/SimplifiedBankOnboarding/requests/entry/useAccountRead';
+import type {AccountReadParams} from '@pages/SimplifiedBankOnboarding/flows';
+import {clearDraft, useAccountRead, useFlowData} from '@pages/SimplifiedBankOnboarding/flows';
 
 import CONST from '@src/CONST';
 import type SCREENS from '@src/SCREENS';
@@ -23,8 +19,10 @@ import type SCREENS from '@src/SCREENS';
 import {useIsFocused} from '@react-navigation/native';
 import React, {useEffect, useEffectEvent} from 'react';
 
+import {leaveEntry} from './entryNavigation';
 import getAccountRef, {isAccountOfRef} from './getAccountRef';
 import getEntryState from './getEntryState';
+import clearAccountErrors from './requests/clearAccountErrors';
 import ConnectedBankAccountView from './views/ConnectedBankAccountView';
 import EntryErrorView from './views/EntryErrorView';
 import EntryNotFoundView from './views/EntryNotFoundView';

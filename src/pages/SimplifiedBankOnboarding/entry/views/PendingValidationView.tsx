@@ -5,12 +5,10 @@
  */
 import useLocalize from '@hooks/useLocalize';
 
-import OnboardingFlowPage from '@pages/SimplifiedBankOnboarding/controller/OnboardingFlowPage';
-import type {FlowDataSource} from '@pages/SimplifiedBankOnboarding/controller/types';
-import getResumePosition from '@pages/SimplifiedBankOnboarding/flow/resume';
-import usdFlow from '@pages/SimplifiedBankOnboarding/flows/usdFlow';
-import type FlowData from '@pages/SimplifiedBankOnboarding/model/types';
-import type {FlowRouteParams, FlowRouteTarget} from '@pages/SimplifiedBankOnboarding/navigation/routes';
+import type {FlowDataSource, FlowRouteParams, FlowRouteTarget} from '@pages/SimplifiedBankOnboarding/core';
+import {OnboardingFlowPage, getResumePosition} from '@pages/SimplifiedBankOnboarding/core';
+import type {FlowData} from '@pages/SimplifiedBankOnboarding/flows';
+import {usdFlow} from '@pages/SimplifiedBankOnboarding/flows';
 
 import type {Route} from '@src/ROUTES';
 

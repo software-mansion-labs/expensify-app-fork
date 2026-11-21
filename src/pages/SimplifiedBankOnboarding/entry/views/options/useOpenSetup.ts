@@ -5,10 +5,9 @@
 import useLocalize from '@hooks/useLocalize';
 import useOnyx from '@hooks/useOnyx';
 
-import useReadFlowData from '@pages/SimplifiedBankOnboarding/controller/useReadFlowData';
-import openFlowAtResume from '@pages/SimplifiedBankOnboarding/flows/openFlowAtResume';
-import {goToVerifyAccount} from '@pages/SimplifiedBankOnboarding/navigation/entryNavigation';
-import type {OnboardingUser} from '@pages/SimplifiedBankOnboarding/types/onyx';
+import type {OnboardingUser} from '@pages/SimplifiedBankOnboarding/contract/onyx';
+import {goToVerifyAccount} from '@pages/SimplifiedBankOnboarding/entry/entryNavigation';
+import {openFlowAtResume, useReadFlowData} from '@pages/SimplifiedBankOnboarding/flows';
 
 import ONYXKEYS from '@src/ONYXKEYS';
 import type {Route} from '@src/ROUTES';
