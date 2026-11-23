@@ -24,6 +24,7 @@ import type {
 } from '@libs/API/parameters';
 import type LockAccountParams from '@libs/API/parameters/LockAccountParams';
 import {READ_COMMANDS, SIDE_EFFECT_REQUEST_COMMANDS, WRITE_COMMANDS} from '@libs/API/types';
+import {getActiveServer} from '@libs/ApiUtils';
 import DateUtils from '@libs/DateUtils';
 import * as ErrorUtils from '@libs/ErrorUtils';
 import type Platform from '@libs/getPlatform/types';
@@ -73,7 +74,7 @@ import applyOnyxUpdatesReliably from './applyOnyxUpdatesReliably';
 import {getDeviceInfoWithID} from './Device';
 import {openOldDotLink} from './Link';
 import {showReportActionNotification} from './Report';
-import {isAnonymousUser, resendValidateCode as sessionResendValidateCode} from './Session';
+import {isAnonymousUser, resendValidateCode as sessionResendValidateCode, signOutAndRedirectToSignIn} from './Session';
 import redirectToSignIn from './SignInRedirect';
 
 function getExpensifyLoginKey(contactMethod: string) {
@@ -1024,10 +1025,23 @@ function updateChatPriorityMode(mode: ValueOf<typeof CONST.PRIORITY_MODE>, autom
     }
 }
 
-function setActiveServer(server: ValueOf<typeof CONST.SERVER>) {
+/**
+ * QA and the other environments hold entirely separate databases, so the same email is a different account
+ * on each, and any move into or out of QA has to sign the user out.
+ */
+function setActiveServer(server: ValueOf<typeof CONST.SERVER>, session: OnyxEntry<Session>) {
+    const previousServer = getActiveServer();
+
     if (CONFIG.IS_HYBRID_APP) {
         HybridAppModule.shouldUseStaging(server === CONST.SERVER.STAGING);
     }
+
+    if (previousServer !== server && (previousServer === CONST.SERVER.QA || server === CONST.SERVER.QA)) {
+        // Pinned to the server being left: routing resolves the server when the request is sent, by which
+        // time the Onyx.set below has made it the new one.
+        signOutAndRedirectToSignIn(session, undefined, undefined, undefined, undefined, undefined, previousServer);
+    }
+
     Onyx.set(ONYXKEYS.ACTIVE_SERVER, server);
 }
 

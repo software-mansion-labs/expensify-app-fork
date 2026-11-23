@@ -14,6 +14,7 @@ const prefixes: LinkingOptions<RootNavigatorParamList>['prefixes'] = [
     CONST.NEW_EXPENSIFY_URL,
     CONST.STAGING_NEW_EXPENSIFY_URL,
     CONST.ADHOC_NEW_EXPENSIFY_URL,
+    CONST.QA_NEW_EXPENSIFY_URL,
 ];
 
 export default prefixes;

@@ -1,6 +1,7 @@
 import {act, fireEvent, render, screen} from '@testing-library/react-native';
 
 import HeaderWithBackButton from '@components/HeaderWithBackButton';
+import {ModalActions} from '@components/Modal/Global/ModalContext';
 import SelectionList from '@components/SelectionList';
 import TestToolMenu from '@components/TestToolMenu';
 
@@ -54,7 +55,21 @@ jest.mock('@hooks/useOnyx', () => ({
     default: () => [undefined, {status: 'loaded'}],
 }));
 
+let mockIsAuthenticated = false;
+
+jest.mock('@hooks/useIsAuthenticated', () => ({
+    __esModule: true,
+    default: () => mockIsAuthenticated,
+}));
+
 jest.mock('@libs/CloudflareAccess/Config', () => ({isQAAuthConfigured: jest.fn()}));
+
+const mockShowConfirmModal = jest.fn();
+
+jest.mock('@hooks/useConfirmModal', () => ({
+    __esModule: true,
+    default: () => ({showConfirmModal: mockShowConfirmModal}),
+}));
 
 jest.mock('@hooks/useLocalize', () => ({
     __esModule: true,
@@ -156,10 +171,12 @@ describe('Server selection', () => {
     beforeEach(() => {
         mockActiveServer = CONST.SERVER.PRODUCTION;
         mockIsPinnedByEnvironment = false;
+        mockIsAuthenticated = false;
         mockIsStagingIgnored = false;
         mockIsQASelectable = true;
         jest.clearAllMocks();
         jest.mocked(isQAAuthConfigured).mockReturnValue(false);
+        mockShowConfirmModal.mockResolvedValue({action: ModalActions.CONFIRM});
     });
 
     describe('the server row in the test tools', () => {
@@ -209,12 +226,12 @@ describe('Server selection', () => {
             expect(getConfirmButtonOptions().isDisabled).toBe(false);
         });
 
-        it('stores the picked server on Save and leaves the page, so the pick does not need a second press to dismiss', () => {
+        it('stores the picked server on Save and leaves the page, so the pick does not need a second press to dismiss', async () => {
             render(<ServerSelector />);
             act(() => getSelectionListProps().onSelectRow({keyForList: CONST.SERVER.STAGING}));
-            pressSave();
+            await act(async () => pressSave());
 
-            expect(setActiveServer).toHaveBeenCalledWith(CONST.SERVER.STAGING);
+            expect(setActiveServer).toHaveBeenCalledWith(CONST.SERVER.STAGING, undefined);
             expect(Navigation.goBack).toHaveBeenCalledWith(undefined, {compareParams: false});
         });
 
@@ -266,7 +283,7 @@ describe('Server selection', () => {
             expect(getListedServers()).toEqual([CONST.SERVER.PRODUCTION, CONST.SERVER.STAGING]);
         });
 
-        it('drops staging where a stored staging is ignored, and still commits QA, which is not', () => {
+        it('drops staging where a stored staging is ignored, and still commits QA, which is not', async () => {
             mockIsStagingIgnored = true;
             jest.mocked(isQAAuthConfigured).mockReturnValue(true);
             render(<ServerSelector />);
@@ -274,9 +291,68 @@ describe('Server selection', () => {
             expect(getListedServers()).toEqual([CONST.SERVER.PRODUCTION, CONST.SERVER.QA]);
 
             act(() => getSelectionListProps().onSelectRow({keyForList: CONST.SERVER.QA}));
-            pressSave();
+            await act(async () => pressSave());
 
-            expect(setActiveServer).toHaveBeenCalledWith(CONST.SERVER.QA);
+            expect(setActiveServer).toHaveBeenCalledWith(CONST.SERVER.QA, undefined);
+        });
+    });
+
+    describe('crossing the QA boundary', () => {
+        beforeEach(() => {
+            jest.mocked(isQAAuthConfigured).mockReturnValue(true);
+            mockIsAuthenticated = true;
+        });
+
+        it('asks before signing the user out, and leaves the server alone when they cancel', async () => {
+            mockShowConfirmModal.mockResolvedValue({action: ModalActions.CLOSE});
+            render(<ServerSelector />);
+            act(() => getSelectionListProps().onSelectRow({keyForList: CONST.SERVER.QA}));
+
+            await act(async () => pressSave());
+
+            expect(mockShowConfirmModal).toHaveBeenCalled();
+            expect(setActiveServer).not.toHaveBeenCalled();
+            expect(getSelectionListProps().data.find((item) => item.isSelected)?.keyForList).toBe(CONST.SERVER.PRODUCTION);
+        });
+
+        it('switches on confirmation', async () => {
+            render(<ServerSelector />);
+            act(() => getSelectionListProps().onSelectRow({keyForList: CONST.SERVER.QA}));
+
+            await act(async () => pressSave());
+
+            expect(setActiveServer).toHaveBeenCalledWith(CONST.SERVER.QA, undefined);
+        });
+
+        it('asks on the way out of QA too', async () => {
+            mockActiveServer = CONST.SERVER.QA;
+            render(<ServerSelector />);
+            act(() => getSelectionListProps().onSelectRow({keyForList: CONST.SERVER.PRODUCTION}));
+
+            await act(async () => pressSave());
+
+            expect(mockShowConfirmModal).toHaveBeenCalled();
+        });
+
+        it('does not ask on the sign-in screen, where there is no session to lose', async () => {
+            mockIsAuthenticated = false;
+            render(<ServerSelector />);
+            act(() => getSelectionListProps().onSelectRow({keyForList: CONST.SERVER.QA}));
+
+            await act(async () => pressSave());
+
+            expect(mockShowConfirmModal).not.toHaveBeenCalled();
+            expect(setActiveServer).toHaveBeenCalledWith(CONST.SERVER.QA, undefined);
+        });
+
+        it('does not ask when the switch stays clear of QA', async () => {
+            render(<ServerSelector />);
+            act(() => getSelectionListProps().onSelectRow({keyForList: CONST.SERVER.STAGING}));
+
+            await act(async () => pressSave());
+
+            expect(mockShowConfirmModal).not.toHaveBeenCalled();
+            expect(setActiveServer).toHaveBeenCalledWith(CONST.SERVER.STAGING, undefined);
         });
     });
 
