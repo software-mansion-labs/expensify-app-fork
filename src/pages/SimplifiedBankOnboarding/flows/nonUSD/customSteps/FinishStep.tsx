@@ -11,8 +11,8 @@ import useOnyx from '@hooks/useOnyx';
 import useThemeStyles from '@hooks/useThemeStyles';
 
 import SBO_CONST from '@pages/SimplifiedBankOnboarding/contract/SBO_CONST';
-import type {CustomStepProps} from '@pages/SimplifiedBankOnboarding/core';
 import MockReviewButtons from '@pages/SimplifiedBankOnboarding/flows/shared/MockReviewButtons';
+import type {CustomStepProps} from '@pages/SimplifiedBankOnboarding/flows/shared/plan/types';
 
 import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';

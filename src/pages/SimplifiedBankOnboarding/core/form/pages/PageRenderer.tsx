@@ -6,15 +6,14 @@ import useLocalize from '@hooks/useLocalize';
 
 import type {OnboardingDraft} from '@pages/SimplifiedBankOnboarding/contract/form';
 import type {OnboardingFormID} from '@pages/SimplifiedBankOnboarding/contract/formID';
-import type {CustomPageConfig, PageConfig, PageID, StepConfig} from '@pages/SimplifiedBankOnboarding/core/plan/types';
+import type {CustomPageConfig, PageConfig, StepConfig} from '@pages/SimplifiedBankOnboarding/core/plan/types';
 
 import React from 'react';
 
 import ConfirmationPage from './ConfirmationPage';
+import {getConfirmationStepRows, getListStepRows} from './confirmationStepRows';
 import FormPage from './FormPage';
 import getConfirmationRows from './getConfirmationRows';
-import ListPage from './ListPage';
-import QuestionPage from './QuestionPage';
 
 type PageRendererProps = {
     /** The form that the form pages render */
@@ -41,7 +40,7 @@ type PageRendererProps = {
     onSubmit: (values: OnboardingDraft) => void;
 
     /** A row of a confirmation page asks to edit its page */
-    onEdit: (pageID: PageID) => void;
+    onEdit: (pageID: string) => void;
 
     /** A row of a list page was pressed */
     onRowPress: (rowID: string) => void;
@@ -65,37 +64,27 @@ function PageRenderer({formID, step, page, answers, isEditing, canSubmitOffline,
                     onSubmit={onSubmit}
                 />
             );
-        case 'question':
-            return (
-                <QuestionPage
-                    key={page.id}
-                    page={page}
-                    isLoading={isLoading}
-                    errorText={errorText}
-                    onSubmit={onSubmit}
-                />
-            );
         case 'confirmation':
             return (
                 <ConfirmationPage
                     key={page.id}
-                    page={page}
-                    rows={getConfirmationRows(step, page.id, answers, translate)}
+                    title={page.title}
+                    rows={getConfirmationStepRows(getConfirmationRows(step, page.id, answers, translate), onEdit)}
                     isLoading={isLoading}
                     errorText={errorText}
                     onSubmit={() => onSubmit({})}
-                    onEdit={onEdit}
                 />
             );
         case 'list':
             return (
-                <ListPage
+                <ConfirmationPage
                     key={page.id}
-                    page={page}
+                    title={page.title}
+                    subtitle={page.description}
+                    rows={getListStepRows(page, onRowPress)}
                     isLoading={isLoading}
                     errorText={errorText}
                     onSubmit={() => onSubmit({})}
-                    onRowPress={onRowPress}
                 />
             );
         default:

@@ -4,11 +4,12 @@
  */
 import type BankOnboardingLabParamList from '@libs/Navigation/paramLists/BankOnboardingLabParamList';
 
-import type {FlowDataSource, FlowDataStatus, FlowRouteTarget} from '@pages/SimplifiedBankOnboarding/core';
+import type {FlowDataSource, FlowDataStatus} from '@pages/SimplifiedBankOnboarding/core';
 import useFlowAccountRead from '@pages/SimplifiedBankOnboarding/flows/shared/accountRead/useFlowAccountRead';
 import getFlowPolicyID from '@pages/SimplifiedBankOnboarding/flows/shared/flowData/getFlowPolicyID';
 import type FlowData from '@pages/SimplifiedBankOnboarding/flows/shared/flowData/types';
 import useFlowData from '@pages/SimplifiedBankOnboarding/flows/shared/flowData/useFlowData';
+import type {FlowRouteTarget} from '@pages/SimplifiedBankOnboarding/flows/shared/routes/flowRoutes';
 
 import type SCREENS from '@src/SCREENS';
 

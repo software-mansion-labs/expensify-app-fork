@@ -4,14 +4,16 @@
  */
 import getNonUSDCurrency from '@pages/SimplifiedBankOnboarding/contract/getNonUSDCurrency';
 import {isNonUSDCurrency} from '@pages/SimplifiedBankOnboarding/contract/setupStatus';
-import type {FlowRouteTarget, PlanContext} from '@pages/SimplifiedBankOnboarding/core';
-import {getResumePosition, goToPosition, openFlow, replacePosition} from '@pages/SimplifiedBankOnboarding/core';
+import type {PlanContext} from '@pages/SimplifiedBankOnboarding/core';
+import {getResumePosition, goToPosition, replacePosition} from '@pages/SimplifiedBankOnboarding/core';
 
 import type {Route} from '@src/ROUTES';
 
 import type FlowData from './shared/flowData/types';
+import type {FlowRouteTarget} from './shared/routes/flowRoutes';
 
 import nonUSDFlow from './nonUSD/nonUSDFlow';
+import {getFlowRoutes, openFlow} from './shared/routes/flowNavigation';
 import usdFlow from './usd/usdFlow';
 
 type OpenFlowOptions = {
@@ -34,10 +36,10 @@ function openFlowAtResume({data, context, backTo, shouldReplace = false}: OpenFl
         return;
     }
     if (shouldReplace) {
-        replacePosition(target, resumePosition);
+        replacePosition(getFlowRoutes(target), resumePosition);
         return;
     }
-    goToPosition(target, resumePosition);
+    goToPosition(getFlowRoutes(target), resumePosition);
 }
 
 export default openFlowAtResume;

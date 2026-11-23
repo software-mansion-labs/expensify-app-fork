@@ -1,11 +1,12 @@
 import type {LocalizedTranslate} from '@components/LocaleContextProvider';
 
 import type {OnboardingDraft} from '@pages/SimplifiedBankOnboarding/contract/form';
+import type {PageID, StepID} from '@pages/SimplifiedBankOnboarding/contract/ids';
 import SBO_CONST from '@pages/SimplifiedBankOnboarding/contract/SBO_CONST';
 import getConfirmationRows from '@pages/SimplifiedBankOnboarding/core/form/pages/getConfirmationRows';
 import {findStep} from '@pages/SimplifiedBankOnboarding/core/plan/position/position';
-import type {FlowPlan, PageID, StepID} from '@pages/SimplifiedBankOnboarding/core/plan/types';
 import buildNonUSDPlan from '@pages/SimplifiedBankOnboarding/flows/nonUSD/buildNonUSDPlan';
+import type {FlowPlan} from '@pages/SimplifiedBankOnboarding/flows/shared/plan/types';
 import buildUSDPlan from '@pages/SimplifiedBankOnboarding/flows/usd/buildUSDPlan';
 
 const USD = SBO_CONST.USD;

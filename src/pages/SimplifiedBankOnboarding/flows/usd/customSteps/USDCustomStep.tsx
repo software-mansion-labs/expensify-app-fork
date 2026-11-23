@@ -2,7 +2,7 @@
  * Picks the screen of a custom page of the USD flow. Each screen gets only the props it uses, so a screen cannot reach
  * a callback it has no business calling.
  */
-import type {CustomStepProps} from '@pages/SimplifiedBankOnboarding/core';
+import type {CustomStepProps} from '@pages/SimplifiedBankOnboarding/flows/shared/plan/types';
 
 import React from 'react';
 

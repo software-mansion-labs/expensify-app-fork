@@ -2,12 +2,13 @@ import type {LocalizedTranslate} from '@components/LocaleContextProvider';
 
 import INPUT_IDS from '@pages/SimplifiedBankOnboarding/contract/form';
 import type {GlobalOwnerDraft, OnboardingDraft, USDOwnerDraft} from '@pages/SimplifiedBankOnboarding/contract/form';
+import type {PageID, StepID} from '@pages/SimplifiedBankOnboarding/contract/ids';
 import type {OnboardingAccount} from '@pages/SimplifiedBankOnboarding/contract/onyx';
 import SBO_CONST from '@pages/SimplifiedBankOnboarding/contract/SBO_CONST';
 import type {FlowPosition} from '@pages/SimplifiedBankOnboarding/core/plan/position/position';
 import {findPage, findStep} from '@pages/SimplifiedBankOnboarding/core/plan/position/position';
 import {getPositionAfterSubmit, getPreviousPosition, getStepPagePosition} from '@pages/SimplifiedBankOnboarding/core/plan/position/transitions';
-import type {FlowPlan, PageConfig, PageID, StepID} from '@pages/SimplifiedBankOnboarding/core/plan/types';
+import type {FlowPlan, PageConfig} from '@pages/SimplifiedBankOnboarding/core/plan/types';
 import buildNonUSDPlan from '@pages/SimplifiedBankOnboarding/flows/nonUSD/buildNonUSDPlan';
 import {canAddMoreGlobalOwners, canAddMoreUSDOwners, isValidGlobalOwnerShare} from '@pages/SimplifiedBankOnboarding/flows/shared/owners/canAddMoreOwners';
 import buildUSDPlan from '@pages/SimplifiedBankOnboarding/flows/usd/buildUSDPlan';

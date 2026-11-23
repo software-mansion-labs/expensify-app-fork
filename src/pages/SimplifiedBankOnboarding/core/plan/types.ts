@@ -5,25 +5,40 @@
  */
 import type {LocalizedTranslate} from '@components/LocaleContextProvider';
 
-import type {BooleanInputID, OnboardingDraft} from '@pages/SimplifiedBankOnboarding/contract/form';
-import type {PageID, StepID} from '@pages/SimplifiedBankOnboarding/contract/ids';
+import type {OnboardingDraft} from '@pages/SimplifiedBankOnboarding/contract/form';
 import type {Field, SummaryRow} from '@pages/SimplifiedBankOnboarding/core/form/fields/types';
 import type {PlannedRequest} from '@pages/SimplifiedBankOnboarding/core/requests/types';
 
+/**
+ * The names that a flow gives to its steps, its pages and its custom steps. A flow passes closed unions of its own names,
+ * so its plan cannot point at a page that does not exist. The engine only compares the names, so its own code takes any
+ * vocabulary.
+ */
+type FlowVocabulary = {
+    /** The name of a step, which the URL holds */
+    stepID: string;
+
+    /** The name of a page of a step, which the URL holds */
+    pageID: string;
+
+    /** The name of a page that is not a form. The flow picks the screen of the page by it. */
+    customStep: string;
+};
+
 /** What happens after a page: the draft values to save and the page to show next */
-type PageTransition = {
+type PageTransition<TVocabulary extends FlowVocabulary = FlowVocabulary> = {
     /** Defaults to the values that the page submitted */
     draftUpdate?: OnboardingDraft;
 
     /** Defaults to the following page of the step, or to the end of the step */
-    nextPageID?: PageID;
+    nextPageID?: TVocabulary['pageID'];
 
     /** Opens the next page in edit mode, so its submit returns to the confirmation of the step */
     isEditing?: boolean;
 };
 
-type PageBase = {
-    id: PageID;
+type PageBase<TVocabulary extends FlowVocabulary> = {
+    id: TVocabulary['pageID'];
 
     /**
      * The page already holds a valid answer. The flow resumes at the first page that does not. A page that only edits
@@ -35,10 +50,10 @@ type PageBase = {
     shouldExitOnBack?: boolean;
 
     /** Decides the transition from the submitted values. Without it the controller saves the values and goes on. */
-    onSubmit?: (values: OnboardingDraft) => PageTransition;
+    onSubmit?: (values: OnboardingDraft) => PageTransition<TVocabulary>;
 
     /** Defaults to the preceding page, or to the last page of the previous step */
-    previousPageID?: PageID;
+    previousPageID?: TVocabulary['pageID'];
 
     /** The server data that describes the page did not arrive yet, such as the bank inputs of a country */
     isLoading?: boolean;
@@ -50,7 +65,7 @@ type PageBase = {
     request?: PlannedRequest;
 };
 
-type FormPageConfig = PageBase & {
+type FormPageConfig<TVocabulary extends FlowVocabulary = FlowVocabulary> = PageBase<TVocabulary> & {
     kind: 'form';
     title: string;
     description?: string;
@@ -62,22 +77,13 @@ type FormPageConfig = PageBase & {
     submitLabel?: string;
 };
 
-/** A yes or no question saved to one boolean input */
-type QuestionPageConfig = PageBase & {
-    kind: 'question';
-    fieldID: BooleanInputID;
-    title: string;
-    description: string;
-    defaultValue: boolean;
-};
-
 /** A row of a confirmation page, which opens the page that edits its value */
 type ConfirmationRow = SummaryRow & {
-    editPageID: PageID;
+    editPageID: string;
 };
 
 /** Sums up the form pages that precede it in its step, so it lists no rows of its own */
-type ConfirmationPageConfig = PageBase & {
+type ConfirmationPageConfig<TVocabulary extends FlowVocabulary = FlowVocabulary> = PageBase<TVocabulary> & {
     kind: 'confirmation';
     title: string;
 };
@@ -91,7 +97,7 @@ type ListRow = {
     isReadOnly?: boolean;
 };
 
-type ListPageConfig = PageBase & {
+type ListPageConfig<TVocabulary extends FlowVocabulary = FlowVocabulary> = PageBase<TVocabulary> & {
     kind: 'list';
     title: string;
     description?: string;
@@ -101,31 +107,33 @@ type ListPageConfig = PageBase & {
     rows: ListRow[];
 
     /** Decides where a row press leads */
-    onRowPress?: (rowID: string) => PageTransition;
+    onRowPress?: (rowID: string) => PageTransition<TVocabulary>;
 };
 
-/** The pages that are not forms. Each one is a screen in the `customSteps/` of its flow, picked by name. */
-type CustomStepName = 'plaid' | 'onfido' | 'hangTight' | 'validation' | 'finish';
-
-type CustomPageConfig = PageBase & {
+/** A page that is not a form. It is a screen in the `customSteps/` of its flow, picked by name. */
+type CustomPageConfig<TVocabulary extends FlowVocabulary = FlowVocabulary> = PageBase<TVocabulary> & {
     kind: 'custom';
-    component: CustomStepName;
+    component: TVocabulary['customStep'];
 
     /** False while the page waits for an input it does not have yet, such as the account picked in Plaid or the other directors. Defaults to true. */
     canComplete?: boolean;
 };
 
-type PageConfig = FormPageConfig | QuestionPageConfig | ConfirmationPageConfig | ListPageConfig | CustomPageConfig;
+type PageConfig<TVocabulary extends FlowVocabulary = FlowVocabulary> =
+    | FormPageConfig<TVocabulary>
+    | ConfirmationPageConfig<TVocabulary>
+    | ListPageConfig<TVocabulary>
+    | CustomPageConfig<TVocabulary>;
 
-type StepConfig = {
-    id: StepID;
+type StepConfig<TVocabulary extends FlowVocabulary = FlowVocabulary> = {
+    id: TVocabulary['stepID'];
     title: string;
 
     /** The position of the step in the step counter of the header. Undefined hides the counter. */
     counterIndex?: number;
 
     /** Skipped pages are left out, so the transitions never special-case them */
-    pages: PageConfig[];
+    pages: Array<PageConfig<TVocabulary>>;
 
     /** Used to find the step where the flow resumes */
     isComplete: boolean;
@@ -134,8 +142,8 @@ type StepConfig = {
     request?: PlannedRequest;
 };
 
-type FlowPlan = {
-    steps: StepConfig[];
+type FlowPlan<TVocabulary extends FlowVocabulary = FlowVocabulary> = {
+    steps: Array<StepConfig<TVocabulary>>;
 
     /** The values that the fields start with and that the confirmation pages show */
     answers: OnboardingDraft;
@@ -153,16 +161,13 @@ export type {
     ConfirmationPageConfig,
     ConfirmationRow,
     CustomPageConfig,
-    CustomStepName,
     FlowPlan,
+    FlowVocabulary,
     FormPageConfig,
     ListPageConfig,
     ListRow,
     PageConfig,
-    PageID,
     PageTransition,
     PlanContext,
-    QuestionPageConfig,
     StepConfig,
-    StepID,
 };

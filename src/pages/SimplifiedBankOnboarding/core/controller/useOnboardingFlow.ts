@@ -1,6 +1,6 @@
 /**
- * The controller of a flow screen. It builds the plan in render from the draft and the server data, reads the position
- * from the URL and gives the page its handlers. Every move happens in a handler: it writes the draft, rebuilds the plan
+ * The controller of a flow screen. It builds the plan in render from the draft and the server data, takes the position
+ * that the URL names from the screen and gives the page its handlers. Every move happens in a handler: it writes the draft, rebuilds the plan
  * from fresh Onyx data, runs the request of the page or, at the end of a step, the step request and only then navigates.
  * A request made offline waits in the queue and the page shows it as pending until it settles. A handler navigates
  * after a request only if the user is still on the page that sent it. The one effect redirects a URL that names no
@@ -11,9 +11,8 @@ import useLocalize from '@hooks/useLocalize';
 import {getLatestErrorMessage} from '@libs/ErrorUtils';
 
 import type {OnboardingDraft} from '@pages/SimplifiedBankOnboarding/contract/form';
-import {exitFlow, goBackToEntry, goBackToPosition, goToPosition, replacePosition} from '@pages/SimplifiedBankOnboarding/core/navigation/flowNavigation';
-import {getPositionFromParams} from '@pages/SimplifiedBankOnboarding/core/navigation/routes';
-import type {FlowRouteParams, FlowRouteTarget} from '@pages/SimplifiedBankOnboarding/core/navigation/routes';
+import {goBackToEntry, goBackToPosition, goToPosition, replacePosition} from '@pages/SimplifiedBankOnboarding/core/navigation/flowNavigation';
+import type {FlowRoutes} from '@pages/SimplifiedBankOnboarding/core/navigation/flowNavigation';
 import getPageRequestKey from '@pages/SimplifiedBankOnboarding/core/plan/getPageRequestKey';
 import getStepInputIDsToClear from '@pages/SimplifiedBankOnboarding/core/plan/getStepInputIDsToClear';
 import type {FlowPosition} from '@pages/SimplifiedBankOnboarding/core/plan/position/position';
@@ -21,7 +20,8 @@ import {findPage, findStep} from '@pages/SimplifiedBankOnboarding/core/plan/posi
 import isPositionReachable from '@pages/SimplifiedBankOnboarding/core/plan/position/reachability';
 import getResumePosition from '@pages/SimplifiedBankOnboarding/core/plan/position/resume';
 import {getEditReturnPosition, getNextStepPosition, getPositionAfterSubmit, getPreviousPosition, getStepFirstPosition} from '@pages/SimplifiedBankOnboarding/core/plan/position/transitions';
-import type {FlowPlan, PageConfig, PageID, PlanContext, StepConfig, StepID} from '@pages/SimplifiedBankOnboarding/core/plan/types';
+import type {FlowPlan, FlowVocabulary, PageConfig, PlanContext, StepConfig} from '@pages/SimplifiedBankOnboarding/core/plan/types';
+import clearRequestState from '@pages/SimplifiedBankOnboarding/core/requests/clearRequestState';
 import type {RequestKey} from '@pages/SimplifiedBankOnboarding/core/requests/requestKey';
 import useRequestState from '@pages/SimplifiedBankOnboarding/core/requests/useRequestState';
 
@@ -34,23 +34,28 @@ import Onyx from 'react-native-onyx';
 
 import type {FlowDataSource, FlowDataStatus, FlowDescriptor} from './types';
 
-type OnboardingFlowOptions<TData> = {
-    flow: FlowDescriptor<TData>;
-    target: FlowRouteTarget;
-    routeParams: FlowRouteParams;
+type OnboardingFlowOptions<TData, TVocabulary extends FlowVocabulary> = {
+    flow: FlowDescriptor<TData, TVocabulary>;
+    routes: FlowRoutes;
+
+    /** The position that the URL names. Undefined when it names no full and known position, so the flow opens the position where it resumes. */
+    urlPosition: FlowPosition<TVocabulary> | undefined;
+
+    /** The workspace of the URL */
+    policyID: string | undefined;
     dataSource: FlowDataSource<TData>;
 
     /** The redirect waits until the data of the plan is there */
     dataStatus: FlowDataStatus;
 };
 
-type OnboardingFlow<TData> = {
+type OnboardingFlow<TData, TVocabulary extends FlowVocabulary> = {
     data: TData;
     context: PlanContext;
-    plan: FlowPlan;
-    position: FlowPosition | undefined;
-    step: StepConfig | undefined;
-    page: PageConfig | undefined;
+    plan: FlowPlan<TVocabulary>;
+    position: FlowPosition<TVocabulary> | undefined;
+    step: StepConfig<TVocabulary> | undefined;
+    page: PageConfig<TVocabulary> | undefined;
 
     /** The request that the open page sends is running */
     isSubmitting: boolean;
@@ -62,23 +67,29 @@ type OnboardingFlow<TData> = {
     errorText: string;
     submitPage: (values: OnboardingDraft) => void;
     goBack: () => void;
-    editPage: (pageID: PageID) => void;
+    editPage: (pageID: string) => void;
     pressRow: (rowID: string) => void;
-    goToStep: (stepID: StepID) => void;
+    goToStep: (stepID: TVocabulary['stepID']) => void;
 };
 
 function getPositionKey(position: FlowPosition | undefined): string {
     return position ? `${position.stepID}/${position.pageID}/${position.isEditing ? 'edit' : ''}` : '';
 }
 
-function useOnboardingFlow<TData>({flow, target, routeParams, dataSource, dataStatus}: OnboardingFlowOptions<TData>): OnboardingFlow<TData> {
+function useOnboardingFlow<TData, TVocabulary extends FlowVocabulary>({
+    flow,
+    routes,
+    urlPosition,
+    policyID,
+    dataSource,
+    dataStatus,
+}: OnboardingFlowOptions<TData, TVocabulary>): OnboardingFlow<TData, TVocabulary> {
     const {translate} = useLocalize();
     const isFocused = useIsFocused();
     const {data, readData} = dataSource;
 
-    const context: PlanContext = {translate, policyID: target.policyID};
+    const context: PlanContext = {translate, policyID};
     const plan = flow.buildPlan(data, context);
-    const urlPosition = getPositionFromParams(target, routeParams);
     const position = isPositionReachable(plan, urlPosition) ? urlPosition : undefined;
     const step = position ? findStep(plan, position.stepID) : undefined;
     const page = step && position ? findPage(step, position.pageID) : undefined;
@@ -129,7 +140,7 @@ function useOnboardingFlow<TData>({flow, target, routeParams, dataSource, dataSt
      * Sends the request of a page that saves in the middle of its step. Returns the plan after it, or undefined when the
      * flow stays on the page: while the request is pending or after it failed.
      */
-    const runPageRequest = async (from: FlowPosition, currentPlan: FlowPlan): Promise<FlowPlan | undefined> => {
+    const runPageRequest = async (from: FlowPosition, currentPlan: FlowPlan<TVocabulary>): Promise<FlowPlan<TVocabulary> | undefined> => {
         const currentStep = findStep(currentPlan, from.stepID);
         const submittedPage = currentStep ? findPage(currentStep, from.pageID) : undefined;
         const request = submittedPage?.request;
@@ -165,7 +176,7 @@ function useOnboardingFlow<TData>({flow, target, routeParams, dataSource, dataSt
         }
         const nextPlan = await rebuildPlan();
         const nextPosition = getNextStepPosition(nextPlan, currentPlan, from.stepID);
-        leavePosition(from, () => (nextPosition ? goToPosition(target, nextPosition) : exitFlow(target)));
+        leavePosition(from, () => (nextPosition ? goToPosition(routes, nextPosition) : routes.exit()));
     };
 
     const submitPage = (values: OnboardingDraft) => {
@@ -187,40 +198,51 @@ function useOnboardingFlow<TData>({flow, target, routeParams, dataSource, dataSt
             }
             const editReturnPosition = from.isEditing ? getEditReturnPosition(nextPlan, from) : undefined;
             if (editReturnPosition) {
-                leavePosition(from, () => goBackToPosition(target, editReturnPosition));
+                leavePosition(from, () => goBackToPosition(routes, editReturnPosition));
                 return;
             }
             const nextPosition = getPositionAfterSubmit(nextPlan, from, transition);
             if (nextPosition) {
-                leavePosition(from, () => goToPosition(target, nextPosition));
+                leavePosition(from, () => goToPosition(routes, nextPosition));
                 return;
             }
             await finishStep(from, nextPlan);
         });
     };
 
+    // The error of a failed request belongs to the visit that saw it fail. The status entry outlives the page, so without
+    // this the user who leaves to correct an answer would find the old error on the page when they come back.
+    const clearShownRequestError = () => {
+        if (!pageRequestKey || !requestState.errors) {
+            return;
+        }
+        clearRequestState(pageRequestKey);
+    };
+
     const goBack = () => {
+        clearShownRequestError();
         if (!position || !page) {
-            exitFlow(target);
+            routes.exit();
             return;
         }
         if (page.shouldExitOnBack) {
-            exitFlow(target);
+            routes.exit();
             return;
         }
         const previousPosition = getPreviousPosition(plan, position);
         if (!previousPosition) {
-            goBackToEntry(target);
+            goBackToEntry(routes);
             return;
         }
-        goBackToPosition(target, previousPosition);
+        goBackToPosition(routes, previousPosition);
     };
 
-    const editPage = (pageID: PageID) => {
+    const editPage = (pageID: string) => {
         if (!position) {
             return;
         }
-        goToPosition(target, {stepID: position.stepID, pageID, isEditing: true});
+        clearShownRequestError();
+        goToPosition(routes, {stepID: position.stepID, pageID, isEditing: true});
     };
 
     const pressRow = (rowID: string) => {
@@ -237,16 +259,18 @@ function useOnboardingFlow<TData>({flow, target, routeParams, dataSource, dataSt
             if (!nextPageID) {
                 return;
             }
-            leavePosition(from, () => goToPosition(target, {stepID: from.stepID, pageID: nextPageID, isEditing: !!transition.isEditing}));
+            clearShownRequestError();
+            leavePosition(from, () => goToPosition(routes, {stepID: from.stepID, pageID: nextPageID, isEditing: !!transition.isEditing}));
         });
     };
 
-    const goToStep = (stepID: StepID) => {
+    const goToStep = (stepID: TVocabulary['stepID']) => {
         const stepPosition = getStepFirstPosition(plan, stepID);
         if (!stepPosition) {
             return;
         }
-        goToPosition(target, stepPosition);
+        clearShownRequestError();
+        goToPosition(routes, stepPosition);
     };
 
     const urlPositionKey = getPositionKey(urlPosition);
@@ -262,7 +286,7 @@ function useOnboardingFlow<TData>({flow, target, routeParams, dataSource, dataSt
             return;
         }
         leftPositionKeyRef.current = urlPositionKey;
-        replacePosition(target, resumePosition);
+        replacePosition(routes, resumePosition);
     });
 
     useEffect(() => {

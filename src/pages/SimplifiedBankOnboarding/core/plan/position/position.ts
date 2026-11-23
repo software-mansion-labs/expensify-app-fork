@@ -2,11 +2,11 @@
  * A position in a plan: the step, the page of the step and whether the page is opened from the confirmation of the
  * step. The URL holds it, so the helpers here only look positions up and compare them. They know nothing of a flow.
  */
-import type {FlowPlan, PageConfig, PageID, StepConfig, StepID} from '@pages/SimplifiedBankOnboarding/core/plan/types';
+import type {FlowPlan, FlowVocabulary, PageConfig, StepConfig} from '@pages/SimplifiedBankOnboarding/core/plan/types';
 
-type FlowPosition = {
-    stepID: StepID;
-    pageID: PageID;
+type FlowPosition<TVocabulary extends FlowVocabulary = FlowVocabulary> = {
+    stepID: TVocabulary['stepID'];
+    pageID: TVocabulary['pageID'];
     isEditing: boolean;
 };
 
@@ -15,15 +15,15 @@ type PositionIndex = {
     pageIndex: number;
 };
 
-function getPagePosition(step: StepConfig, page: PageConfig, isEditing = false): FlowPosition {
+function getPagePosition<TVocabulary extends FlowVocabulary>(step: StepConfig<TVocabulary>, page: PageConfig<TVocabulary>, isEditing = false): FlowPosition<TVocabulary> {
     return {stepID: step.id, pageID: page.id, isEditing};
 }
 
-function findStep(plan: FlowPlan, stepID: StepID): StepConfig | undefined {
+function findStep<TVocabulary extends FlowVocabulary>(plan: FlowPlan<TVocabulary>, stepID: TVocabulary['stepID']): StepConfig<TVocabulary> | undefined {
     return plan.steps.find((step) => step.id === stepID);
 }
 
-function findPage(step: StepConfig, pageID: PageID): PageConfig | undefined {
+function findPage<TVocabulary extends FlowVocabulary>(step: StepConfig<TVocabulary>, pageID: TVocabulary['pageID']): PageConfig<TVocabulary> | undefined {
     return step.pages.find((page) => page.id === pageID);
 }
 

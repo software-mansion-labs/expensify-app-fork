@@ -2,27 +2,26 @@ import SBO_CONST from '@pages/SimplifiedBankOnboarding/contract/SBO_CONST';
 import createDateOfBirthField from '@pages/SimplifiedBankOnboarding/core/form/fields/createDateOfBirthField';
 import createFileField from '@pages/SimplifiedBankOnboarding/core/form/fields/createFileField';
 import createLegalNameField from '@pages/SimplifiedBankOnboarding/core/form/fields/createLegalNameField';
+import createYesNoField from '@pages/SimplifiedBankOnboarding/core/form/fields/createYesNoField';
 import getStepInputIDsToClear from '@pages/SimplifiedBankOnboarding/core/plan/getStepInputIDsToClear';
 import type {StepConfig} from '@pages/SimplifiedBankOnboarding/core/plan/types';
 
 const {PAGE_NAMES, KYB_DOCUMENTS_SUB_PAGES, BENEFICIAL_OWNERS_SUB_PAGES, PERSONAL_INFO_SUB_PAGES} = SBO_CONST.USD;
 
 describe('getStepInputIDsToClear', () => {
-    it('lists the inputs of the form and question pages of the step', () => {
-        // Given a step with a form page, a question page and a confirmation page
+    it('lists the inputs of the form pages of the step', () => {
+        // Given a step with a question, a form page with typed inputs and a confirmation page
         const step: StepConfig = {
             id: PAGE_NAMES.BENEFICIAL_OWNERS,
             title: 'Owners',
             isComplete: true,
             pages: [
                 {
-                    kind: 'question',
+                    kind: 'form',
                     id: BENEFICIAL_OWNERS_SUB_PAGES.IS_USER_UBO,
-                    fieldID: 'ownsMoreThan25Percent',
                     title: '',
-                    description: '',
-                    defaultValue: false,
                     isComplete: true,
+                    fields: [createYesNoField('ownsMoreThan25Percent', {question: ''})],
                 },
                 {
                     kind: 'form',

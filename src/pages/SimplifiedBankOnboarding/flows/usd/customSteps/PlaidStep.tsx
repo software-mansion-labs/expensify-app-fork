@@ -19,9 +19,9 @@ import useThemeStyles from '@hooks/useThemeStyles';
 import {getLatestErrorMessage} from '@libs/ErrorUtils';
 
 import REQUEST_NAMES from '@pages/SimplifiedBankOnboarding/contract/REQUEST_NAMES';
-import type {CustomStepProps} from '@pages/SimplifiedBankOnboarding/core';
 import {useRequestState} from '@pages/SimplifiedBankOnboarding/core';
 import {saveDraft} from '@pages/SimplifiedBankOnboarding/flows/shared/draft';
+import type {CustomStepProps} from '@pages/SimplifiedBankOnboarding/flows/shared/plan/types';
 import {openPlaidBankAccountSelector, openPlaidBankLogin} from '@pages/SimplifiedBankOnboarding/flows/usd/requests/plaid';
 
 import CONST from '@src/CONST';

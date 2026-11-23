@@ -9,7 +9,7 @@ import useOnyx from '@hooks/useOnyx';
 import type {ACHData, OnboardingAccount} from '@pages/SimplifiedBankOnboarding/contract/onyx';
 import SBO_CONST from '@pages/SimplifiedBankOnboarding/contract/SBO_CONST';
 import {isPendingValidation, isVerifying} from '@pages/SimplifiedBankOnboarding/contract/setupStatus';
-import type {CustomStepProps} from '@pages/SimplifiedBankOnboarding/core';
+import type {CustomStepProps} from '@pages/SimplifiedBankOnboarding/flows/shared/plan/types';
 
 import ONYXKEYS from '@src/ONYXKEYS';
 

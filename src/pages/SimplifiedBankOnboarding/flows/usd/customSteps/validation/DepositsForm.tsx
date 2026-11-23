@@ -16,8 +16,8 @@ import useThemeStyles from '@hooks/useThemeStyles';
 import INPUT_IDS from '@pages/SimplifiedBankOnboarding/contract/form';
 import type {ACHData} from '@pages/SimplifiedBankOnboarding/contract/onyx';
 import SBO_CONST from '@pages/SimplifiedBankOnboarding/contract/SBO_CONST';
-import type {CustomStepProps} from '@pages/SimplifiedBankOnboarding/core';
 import getBankAccountParams from '@pages/SimplifiedBankOnboarding/flows/shared/getBankAccountParams';
+import type {CustomStepProps} from '@pages/SimplifiedBankOnboarding/flows/shared/plan/types';
 import validateBankAccount from '@pages/SimplifiedBankOnboarding/flows/usd/requests/validateBankAccount';
 
 import CONST from '@src/CONST';

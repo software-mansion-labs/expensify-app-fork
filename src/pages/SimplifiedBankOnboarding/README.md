@@ -80,10 +80,10 @@ the lower its level.
 | `core/` | **The generic engine.** `index.ts` is the only path that `flows/` and `entry/` import |
 | `core/controller/` | The generic flow screen (`OnboardingFlowPage`), its hook (`useOnboardingFlow`) and the `FlowDescriptor` type |
 | `core/plan/` | The shape of a plan (`types.ts`) and the pure helpers over it: positions, the resume position, reachability and the moves between positions (`position/`) |
-| `core/form/pages/` | The generic renderer: one component per page kind, and the rows of a confirmation page computed from the fields of its step (`getConfirmationRows.ts`) |
-| `core/form/fields/` | The fields of a form page, one file per kind: text, legal name, date of birth, picklist, checkbox, file, read-only row. A `createXField` factory returns a `Field` (`types.ts`): the inputs it owns, their rules, its rows on the confirmation of the step and how it renders. `fieldSet.ts` answers what the page, the plan and the controller ask of the fields of a page |
+| `core/form/pages/` | The generic renderer: a form page, and one page for confirmations and lists, which both render through the shared `ConfirmationStep`. The rows of a confirmation come from the fields of its step (`getConfirmationRows.ts`), and `confirmationStepRows.ts` shapes the rows of both for the shared step |
+| `core/form/fields/` | The fields of a form page, one file per kind: text, legal name, date of birth, picklist, checkbox, yes or no question, file, read-only row. A `createXField` factory returns a `Field` (`types.ts`): the inputs it owns, their rules, its rows on the confirmation of the step and how it renders. `fieldSet.ts` answers what the page, the plan and the controller ask of the fields of a page |
 | `core/requests/` | `runRequest`, the key of a request status and the request status hook `useRequestState` |
-| `core/navigation/` | The mapping between a position and a route (`routes.ts`) and the moves of a flow. With `entry/entryNavigation.ts` it is the only code that calls `Navigation` |
+| `core/navigation/` | The moves of a flow along the routes that the flow passes in (`flowNavigation.ts`). The mapping between a position and a route belongs to the flows (`flows/shared/routes/flowRoutes.ts`). With `entry/entryNavigation.ts` it is the only code that calls `Navigation` |
 | `contract/` | The data that every folder shares: the draft type, the Onyx types, step and page IDs, request names, mock values (`contract/SBO_CONST.ts`) and pure checks on the server data (`setupStatus.ts`) |
 | `mockBackend/` | The server: database, command handlers, queue |
 
@@ -140,7 +140,9 @@ Each request goes through `runRequest`. It writes `{requestID, status, errors}` 
 Promise of the outcome (`succeeded`, `failed` or `skipped`). The status is written by the optimistic, success and
 failure data of the request, so the Promise only tells the handler when Onyx holds the result. The real `API.write`
 resolves when the request is queued, not when the server answers, so the flow needs this bridge. The request ID ties
-the outcome to this very request, so an older request never settles a newer one.
+the outcome to this very request, so an older request never settles a newer one. The finally data marks the entry as
+answered. The real API applies neither the success nor the failure data of an answer that needs an admin (460), and
+such a request settles as failed instead of staying pending.
 
 A status entry is keyed by the request name and the workspace, or the bank account when there is no workspace
 (`core/requests/requestKey.ts`). The writer and the reader build the key from the same bank account params, so the error or
@@ -274,7 +276,7 @@ pattern.
 | Lossy round trip of the owner name | `R/NonUSD/utils/getDraftValuesForBeneficialOwners.ts` | `flows/shared/owners/` (owners are a list in the draft, a name from the server is split once) |
 | The client writes the server-owned `currentStep` and `subStep` | `goToWithdrawalAccountSetupStep`, `setBankAccountSubStep` | Gone: the URL is the position |
 | Start page of a step computed from which values exist | `R/USD/utils/getInitialSubStepForPersonalInfo.ts` and its siblings | `isComplete` of each page in the plan builders of `flows/`, read by `core/plan/position/resume.ts` |
-| Three vocabularies for one position | `CONST.BANK_ACCOUNT.STEP`, `PAGE_NAMES`, `startStepIndex` | One: step ID and page ID, `core/plan/position/position.ts`, `core/navigation/routes.ts` |
+| Three vocabularies for one position | `CONST.BANK_ACCOUNT.STEP`, `PAGE_NAMES`, `startStepIndex` | One: step ID and page ID, `core/plan/position/position.ts`, `flows/shared/routes/flowRoutes.ts` |
 | A typed or stale URL that skips a page | not guarded | `core/plan/position/reachability.ts` |
 | `goBack` as a switch on `currentStep` | `R/ReimbursementAccountPage.tsx` | `core/plan/position/transitions.ts` (`getPreviousPosition`) |
 
@@ -289,7 +291,7 @@ pattern.
 | Validators written inside the component | most sub pages | The rule of each field in `core/form/fields/`, given by the plan as `validate` where a page has its own |
 | Fields, rules and picklists sent by the server | `R/NonUSD/BankInfo/*`, `R/NonUSD/BusinessInfo/subSteps/BusinessType.tsx` | `flows/nonUSD/serverLists/`, `flows/nonUSD/buildNonUSDPlan.ts` (`createBankField`) |
 | The form key and the account key are the same Onyx string | `ONYXKEYS.REIMBURSEMENT_ACCOUNT` and `FORMS.REIMBURSEMENT_ACCOUNT_FORM` | Separate keys: `FORMS.SIMPLIFIED_BANK_ONBOARDING_FORM` |
-| File uploads kept in local state and in the draft | `R/USD/KYBDocuments`, `R/NonUSD/Docusign` | `core/form/fields/createFileField.tsx`, in local state until the page is submitted |
+| File uploads kept in local state and in the draft | `R/USD/KYBDocuments`, `R/NonUSD/Docusign` | `core/form/fields/createFileField.tsx`, in the form value until the page is submitted, kept there by the upload adapter of `DynamicForm` |
 | A file that one step collects and a later step sends | bank statement in `R/NonUSD/Agreements`, sent by `R/NonUSD/Docusign` | `flows/nonUSD/buildNonUSDPlan.ts` (the agreements and the docusign steps) |
 
 ### Requests
@@ -311,7 +313,7 @@ pattern.
 | --- | --- | --- |
 | Owner loop limited by a count, owners under flat draft keys | `R/USD/BeneficialOwnerInfo/*` | `flows/usd/buildUSDPlan.ts`, `flows/shared/owners/`, owners as a list in the draft edited through a buffer (`flows/shared/owners/ownerBuffer.ts`) |
 | Owner loop limited by the ownership sum | `R/NonUSD/BeneficialOwnerInfo/*` | `flows/nonUSD/buildNonUSDPlan.ts`, `flows/shared/owners/canAddMoreOwners.ts` |
-| A step container that renders question pages itself and nests a second `useSubPage` | both owner steps | Gone: question, list and form pages are pages of one plan step |
+| A step container that renders question pages itself and nests a second `useSubPage` | both owner steps | Gone: a question is a form page with one yes or no field, and it sits next to the list and the other form pages of one plan step |
 | Branch on "are you a director", with an email request and a waiting page | `R/NonUSD/SignerInfo/*` | `flows/nonUSD/buildNonUSDPlan.ts` (the signer step), `flows/nonUSD/customSteps/HangTightStep.tsx` |
 | A step whose pages depend on the answer of another step | `R/NonUSD/SignerInfo/SignerDetailsFormPages.tsx` (`skipPages`) | `flows/nonUSD/buildNonUSDPlan.ts` builds the pages from the current answers |
 | The current user as an owner, stored under a reserved owner key | `R/NonUSD/BeneficialOwnerInfo/*` (`CURRENT_USER_KEY`) | `flows/nonUSD/buildNonUSDPlan.ts`, `contract/SBO_CONST.ts` (`CURRENT_USER_KEY`) |
@@ -404,5 +406,3 @@ Gaps to check on the first walk:
 
 - A flow link opened cold while offline shows the loader until the connection returns.
 - The verify-account page opened by a user who is already validated shows the form.
-- `core/form/pages/QuestionPage.tsx` renders `YesNoStep`, which is bound to `FORMS.REIMBURSEMENT_ACCOUNT_FORM` and ignores
-  the form ID of the flow.

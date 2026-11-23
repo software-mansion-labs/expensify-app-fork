@@ -1,47 +1,46 @@
 /**
- * The summary page that closes most steps. It renders the rows that the fields of the step gave with the shared
- * confirmation step, so a flow only names the page.
+ * The summary page that closes most steps, and the list of the entries of a repeated group, such as the owners. It
+ * renders the rows it is given with the shared confirmation step, so a flow only names the page.
  */
+import type {SummaryGroupRow} from '@components/SubStepForms/ConfirmationStep';
 import ConfirmationStep from '@components/SubStepForms/ConfirmationStep';
 
-import type {ConfirmationPageConfig, ConfirmationRow, PageID} from '@pages/SimplifiedBankOnboarding/core/plan/types';
+import CONST from '@src/CONST';
 
 import React from 'react';
 
 type ConfirmationPageProps = {
-    page: ConfirmationPageConfig;
-    rows: ConfirmationRow[];
+    title: string;
+    subtitle?: string;
+
+    /** The answers of a step or the entries of a list. A row decides what a press on it opens. */
+    rows: SummaryGroupRow[];
     isLoading: boolean;
 
     /** The error of the request that the confirm started */
     errorText?: string;
     onSubmit: () => void;
-
-    /** Opens the page that edits a row */
-    onEdit: (pageID: PageID) => void;
 };
 
-/** A summary of the answers of a step. Each row opens the page that edits it, and Confirm submits the step. */
-function ConfirmationPage({page, rows, isLoading, errorText, onSubmit, onEdit}: ConfirmationPageProps) {
-    const summaryItems = rows.map((row) => ({
-        id: row.id,
-        description: row.label,
-        title: row.value,
-        shouldShowRightIcon: true,
-        onPress: () => onEdit(row.editPageID),
-    }));
+const ROWS_GROUP_ID = 'rows';
 
-    // The page moves through the controller, which knows the pages by ID, so the index based move of the step is not used
+function ConfirmationPage({title, subtitle, rows, isLoading, errorText, onSubmit}: ConfirmationPageProps) {
+    // The page moves through the controller, which knows the pages by ID, so the index based move of the step is not used.
+    // The rows show what the user typed, such as an account number or the name of an owner, so session recordings hide them.
     return (
         <ConfirmationStep
             isEditing={false}
-            onNext={() => onSubmit()}
+            onNext={onSubmit}
             onMove={() => {}}
-            pageTitle={page.title}
-            summaryItems={summaryItems}
+            pageTitle={title}
+            pageSubtitle={subtitle}
+            groups={[{id: ROWS_GROUP_ID, name: '', rows}]}
             showOnfidoLinks={false}
             isLoading={isLoading}
             error={errorText}
+            forwardedFSClass={CONST.FULLSTORY.CLASS.MASK}
+            shouldMarkTitleAsHeading
+            shouldAnnounceSubmitState
         />
     );
 }

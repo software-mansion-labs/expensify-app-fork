@@ -7,7 +7,6 @@ import type {LocalizedTranslate} from '@components/LocaleContextProvider';
 import {doesContainReservedWord, isValidLegalName} from '@libs/ValidationUtils';
 
 import type {TextInputID} from '@pages/SimplifiedBankOnboarding/contract/form';
-import {getOwnerFullName} from '@pages/SimplifiedBankOnboarding/contract/ownerNames';
 
 import CONST from '@src/CONST';
 
@@ -54,7 +53,7 @@ function createLegalNameField(firstNameID: TextInputID, lastNameID: TextInputID)
             {
                 id: firstNameID,
                 label: translate('personalInfoStep.legalName'),
-                value: getOwnerFullName({firstName: values[firstNameID] ?? '', lastName: values[lastNameID] ?? ''}),
+                value: `${values[firstNameID] ?? ''} ${values[lastNameID] ?? ''}`.trim(),
             },
         ],
 

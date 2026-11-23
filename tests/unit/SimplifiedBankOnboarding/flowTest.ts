@@ -1,3 +1,4 @@
+import type {PageID, StepID} from '@pages/SimplifiedBankOnboarding/contract/ids';
 import SBO_CONST from '@pages/SimplifiedBankOnboarding/contract/SBO_CONST';
 import type {FlowPosition} from '@pages/SimplifiedBankOnboarding/core/plan/position/position';
 import {comparePositionIndexes, getPositionIndex} from '@pages/SimplifiedBankOnboarding/core/plan/position/position';
@@ -13,7 +14,7 @@ import {
     getStepFirstPosition,
     getStepPagePosition,
 } from '@pages/SimplifiedBankOnboarding/core/plan/position/transitions';
-import type {FlowPlan, PageConfig, PageID, StepConfig, StepID} from '@pages/SimplifiedBankOnboarding/core/plan/types';
+import type {FlowPlan, PageConfig, StepConfig} from '@pages/SimplifiedBankOnboarding/flows/shared/plan/types';
 
 const {PAGE_NAMES, PERSONAL_INFO_SUB_PAGES, VERIFY_IDENTITY_SUB_PAGES, BUSINESS_INFO_SUB_PAGES, VALIDATION_SUB_PAGES} = SBO_CONST.USD;
 

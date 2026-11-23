@@ -3232,7 +3232,6 @@ const SENTRY_LABEL = {
         START_OVER: 'BankOnboardingLab-StartOver',
         SUBMIT_STEP: 'BankOnboardingLab-SubmitStep',
         EDIT_INPUT: 'BankOnboardingLab-EditInput',
-        OPEN_SUMMARY_ITEM: 'BankOnboardingLab-OpenSummaryItem',
         SEND_REMINDER: 'BankOnboardingLab-SendReminder',
         PLAID_LOGIN: 'BankOnboardingLab-PlaidLogin',
         OPEN_SIGNER_FORM: 'BankOnboardingLab-OpenSignerForm',

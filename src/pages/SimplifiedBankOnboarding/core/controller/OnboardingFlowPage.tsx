@@ -1,6 +1,7 @@
 /**
  * The screen body of a flow: the header with the step counter and the open page of the plan. The flow descriptor
- * supplies the form, the plan and the custom steps, so the same page serves every flow.
+ * supplies the form, the plan and the custom steps, and the screen supplies the routes and the position of the URL, so
+ * the same page serves every flow.
  */
 import ActivityIndicator from '@components/ActivityIndicator';
 import FullScreenLoadingIndicator from '@components/FullscreenLoadingIndicator';
@@ -10,7 +11,9 @@ import useThemeStyles from '@hooks/useThemeStyles';
 
 import NotFoundPage from '@pages/ErrorPage/NotFoundPage';
 import PageRenderer from '@pages/SimplifiedBankOnboarding/core/form/pages/PageRenderer';
-import type {FlowRouteParams, FlowRouteTarget} from '@pages/SimplifiedBankOnboarding/core/navigation/routes';
+import type {FlowRoutes} from '@pages/SimplifiedBankOnboarding/core/navigation/flowNavigation';
+import type {FlowPosition} from '@pages/SimplifiedBankOnboarding/core/plan/position/position';
+import type {FlowVocabulary} from '@pages/SimplifiedBankOnboarding/core/plan/types';
 
 import CONST from '@src/CONST';
 
@@ -21,22 +24,30 @@ import type {FlowDataSource, FlowDataStatus, FlowDescriptor} from './types';
 
 import useOnboardingFlow from './useOnboardingFlow';
 
-type OnboardingFlowPageProps<TData> = {
-    flow: FlowDescriptor<TData>;
-    target: FlowRouteTarget;
-    routeParams: FlowRouteParams;
+type OnboardingFlowPageProps<TData, TVocabulary extends FlowVocabulary> = {
+    flow: FlowDescriptor<TData, TVocabulary>;
+
+    /** The routes of the flow, which the controller navigates along */
+    routes: FlowRoutes;
+
+    /** The position that the URL names. Undefined when it names no full and known position, so the flow opens the position where it resumes. */
+    urlPosition: FlowPosition<TVocabulary> | undefined;
+
+    /** The workspace of the URL, which the plan builders and the custom steps get */
+    policyID: string | undefined;
     dataSource: FlowDataSource<TData>;
 
     /** Whether the data of the plan is there. The page shows a loader until it is. */
     dataStatus: FlowDataStatus;
 };
 
-function OnboardingFlowPage<TData>({flow, target, routeParams, dataSource, dataStatus}: OnboardingFlowPageProps<TData>) {
+function OnboardingFlowPage<TData, TVocabulary extends FlowVocabulary>({flow, routes, urlPosition, policyID, dataSource, dataStatus}: OnboardingFlowPageProps<TData, TVocabulary>) {
     const styles = useThemeStyles();
     const {data, context, plan, step, page, position, isSubmitting, canSubmitOffline, errorText, submitPage, goBack, editPage, pressRow, goToStep} = useOnboardingFlow({
         flow,
-        target,
-        routeParams,
+        routes,
+        urlPosition,
+        policyID,
         dataSource,
         dataStatus,
     });
@@ -73,7 +84,7 @@ function OnboardingFlowPage<TData>({flow, target, routeParams, dataSource, dataS
                 <CustomStep
                     key={page.id}
                     page={page}
-                    policyID={target.policyID}
+                    policyID={policyID}
                     isSubmitting={isSubmitting}
                     errorText={errorText || undefined}
                     onComplete={(values) => submitPage(values ?? {})}
@@ -105,6 +116,9 @@ function OnboardingFlowPage<TData>({flow, target, routeParams, dataSource, dataS
             handleBackButtonPress={goBack}
             startStepIndex={step.counterIndex}
             stepNames={step.counterIndex === undefined ? undefined : flow.getStepNames(data, context)}
+            stepAccessibilityDescription={page.kind === 'custom' ? undefined : page.title}
+            shouldAnnounceCompletedSteps
+            shouldShowOfflineIndicatorInWideScreen={!canSubmitOffline}
             shouldEnableMaxHeight
             shouldRemountSubHeaderOnStepChange
         >

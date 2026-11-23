@@ -6,8 +6,6 @@
 import {getMicroSecondOnyxErrorWithTranslationKey} from '@libs/ErrorUtils';
 import {rand64} from '@libs/NumberUtils';
 
-import type {RequestName} from '@pages/SimplifiedBankOnboarding/contract/REQUEST_NAMES';
-
 import type {TranslationPaths} from '@src/languages/types';
 import ONYXKEYS from '@src/ONYXKEYS';
 
@@ -25,7 +23,7 @@ async function failRequest(key: RequestKey, errorKey: TranslationPaths = 'common
     return {status: 'failed'};
 }
 
-function planFailedRequest(name: RequestName, scope?: RequestScope): PlannedRequest {
+function planFailedRequest(name: string, scope?: RequestScope): PlannedRequest {
     const key = getRequestKey(name, scope);
     return {key, send: () => failRequest(key)};
 }

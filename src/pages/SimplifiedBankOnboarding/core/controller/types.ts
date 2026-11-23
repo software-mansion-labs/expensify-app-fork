@@ -1,6 +1,6 @@
 import type {InputID, OnboardingDraft} from '@pages/SimplifiedBankOnboarding/contract/form';
 import type {OnboardingFormID} from '@pages/SimplifiedBankOnboarding/contract/formID';
-import type {CustomPageConfig, FlowPlan, PlanContext, StepID} from '@pages/SimplifiedBankOnboarding/core/plan/types';
+import type {CustomPageConfig, FlowPlan, FlowVocabulary, PlanContext} from '@pages/SimplifiedBankOnboarding/core/plan/types';
 
 import type {ComponentType} from 'react';
 
@@ -20,8 +20,8 @@ type FlowDataSource<TData> = {
 type FlowDataStatus = 'ready' | 'loading' | 'notFound';
 
 /** What a custom step gets from the controller. A custom step never navigates: it reports through these callbacks. */
-type CustomStepProps = {
-    page: CustomPageConfig;
+type CustomStepProps<TVocabulary extends FlowVocabulary = FlowVocabulary> = {
+    page: CustomPageConfig<TVocabulary>;
 
     /** The workspace of the flow */
     policyID: string | undefined;
@@ -36,11 +36,11 @@ type CustomStepProps = {
     onComplete: (values?: OnboardingDraft) => void;
 
     /** Opens the first page of another step, such as the personal info step from the review card */
-    goToStep: (stepID: StepID) => void;
+    goToStep: (stepID: TVocabulary['stepID']) => void;
 };
 
 /** What makes a flow: its form, its plan, its header and its custom steps. The controller knows nothing else about it. */
-type FlowDescriptor<TData> = {
+type FlowDescriptor<TData, TVocabulary extends FlowVocabulary = FlowVocabulary> = {
     /** The ID of the step wrapper, which tells the screens apart in tests and logs */
     wrapperID: string;
 
@@ -55,10 +55,10 @@ type FlowDescriptor<TData> = {
 
     /** The names of the step counter of the header */
     getStepNames: (data: TData, context: PlanContext) => readonly string[];
-    buildPlan: (data: TData, context: PlanContext) => FlowPlan;
+    buildPlan: (data: TData, context: PlanContext) => FlowPlan<TVocabulary>;
 
     /** Renders the custom pages of the plan. A flow without custom pages has none. */
-    CustomStep?: ComponentType<CustomStepProps>;
+    CustomStep?: ComponentType<CustomStepProps<TVocabulary>>;
 };
 
 export type {CustomStepProps, FlowDataSource, FlowDataStatus, FlowDescriptor};

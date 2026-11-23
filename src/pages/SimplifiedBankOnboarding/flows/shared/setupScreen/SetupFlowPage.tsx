@@ -4,9 +4,11 @@
  */
 import useThemeStyles from '@hooks/useThemeStyles';
 
-import type {FlowDescriptor} from '@pages/SimplifiedBankOnboarding/core';
 import {OnboardingFlowPage} from '@pages/SimplifiedBankOnboarding/core';
 import type FlowData from '@pages/SimplifiedBankOnboarding/flows/shared/flowData/types';
+import type {FlowDescriptor} from '@pages/SimplifiedBankOnboarding/flows/shared/plan/types';
+import {getFlowRoutes} from '@pages/SimplifiedBankOnboarding/flows/shared/routes/flowNavigation';
+import {getPositionFromParams} from '@pages/SimplifiedBankOnboarding/flows/shared/routes/flowRoutes';
 
 import React from 'react';
 import {View} from 'react-native';
@@ -26,8 +28,9 @@ function SetupFlowPage({flow, setup, params}: SetupFlowPageProps) {
         <View style={[styles.flex1, styles.appBG]}>
             <OnboardingFlowPage
                 flow={flow}
-                target={setup.target}
-                routeParams={{page: params?.page, subPage: params?.subPage, action: params?.action}}
+                routes={getFlowRoutes(setup.target)}
+                urlPosition={getPositionFromParams(setup.target, {page: params?.page, subPage: params?.subPage, action: params?.action})}
+                policyID={setup.target.policyID}
                 dataSource={setup.dataSource}
                 dataStatus={setup.dataStatus}
             />

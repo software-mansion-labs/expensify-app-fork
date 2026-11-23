@@ -14,8 +14,10 @@ import useThemeStyles from '@hooks/useThemeStyles';
 import type BankOnboardingLabParamList from '@libs/Navigation/paramLists/BankOnboardingLabParamList';
 import type {PlatformStackScreenProps} from '@libs/Navigation/PlatformStackNavigation/types';
 
-import type {FlowRouteTarget} from '@pages/SimplifiedBankOnboarding/core';
-import {OnboardingFlowPage, exitFlow} from '@pages/SimplifiedBankOnboarding/core';
+import {OnboardingFlowPage} from '@pages/SimplifiedBankOnboarding/core';
+import {exitFlow, getFlowRoutes} from '@pages/SimplifiedBankOnboarding/flows/shared/routes/flowNavigation';
+import type {FlowRouteTarget} from '@pages/SimplifiedBankOnboarding/flows/shared/routes/flowRoutes';
+import {getPositionFromParams} from '@pages/SimplifiedBankOnboarding/flows/shared/routes/flowRoutes';
 
 import CONST from '@src/CONST';
 import type SCREENS from '@src/SCREENS';
@@ -61,8 +63,9 @@ function EnterSignerInfoPage({route}: EnterSignerInfoPageProps) {
     return (
         <OnboardingFlowPage
             flow={signerFlow}
-            target={target}
-            routeParams={{subPage: route.params?.subPage, action: route.params?.action}}
+            routes={getFlowRoutes(target)}
+            urlPosition={getPositionFromParams(target, {subPage: route.params?.subPage, action: route.params?.action})}
+            policyID={target.policyID}
             dataSource={dataSource}
             dataStatus="ready"
         />

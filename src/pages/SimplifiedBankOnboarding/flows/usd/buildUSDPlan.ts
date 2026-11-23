@@ -12,7 +12,7 @@ import {getOwnerFullName} from '@pages/SimplifiedBankOnboarding/contract/ownerNa
 import REQUEST_NAMES from '@pages/SimplifiedBankOnboarding/contract/REQUEST_NAMES';
 import SBO_CONST from '@pages/SimplifiedBankOnboarding/contract/SBO_CONST';
 import {areCompanyDetailsLocked, isPendingValidation} from '@pages/SimplifiedBankOnboarding/contract/setupStatus';
-import type {FlowPlan, FormPageDefinition, PlanContext, StepConfig} from '@pages/SimplifiedBankOnboarding/core';
+import type {PlanContext} from '@pages/SimplifiedBankOnboarding/core';
 import {
     createCheckboxField,
     createDateOfBirthField,
@@ -27,6 +27,7 @@ import getBaseStepInput from '@pages/SimplifiedBankOnboarding/flows/shared/getBa
 import {canAddMoreUSDOwners} from '@pages/SimplifiedBankOnboarding/flows/shared/owners/canAddMoreOwners';
 import getOwnerPages from '@pages/SimplifiedBankOnboarding/flows/shared/owners/getOwnerPages';
 import {USD_OWNER_DRAFT} from '@pages/SimplifiedBankOnboarding/flows/shared/owners/ownerBuffer';
+import type {FlowPlan, FormPageDefinition, StepConfig} from '@pages/SimplifiedBankOnboarding/flows/shared/plan/types';
 
 import CONST from '@src/CONST';
 
@@ -133,12 +134,14 @@ function buildUSDPlan(draft: OnboardingDraft | undefined, account: OnyxEntry<Onb
                               label: translate('bankAccount.routingNumber'),
                               inputMode: CONST.INPUT_MODE.NUMERIC,
                               isLocked: areBankNumbersLocked,
+                              isSensitive: true,
                               validate: (value) => (ROUTING_NUMBER_PATTERN.test(value.trim()) ? undefined : translate('bankAccount.error.routingNumber')),
                           }),
                           createTextField(INPUT_IDS.ACCOUNT_NUMBER, {
                               label: translate('bankAccount.accountNumber'),
                               inputMode: CONST.INPUT_MODE.NUMERIC,
                               isLocked: areBankNumbersLocked,
+                              isSensitive: true,
                               validate: (value) => (isValidAccountNumber(value) ? undefined : translate('bankAccount.error.accountNumber')),
                           }),
                       ],
@@ -181,6 +184,7 @@ function buildUSDPlan(draft: OnboardingDraft | undefined, account: OnyxEntry<Onb
                         inputMode: CONST.INPUT_MODE.NUMERIC,
                         maxLength: SBO_CONST.SSN_LAST_4_LENGTH,
                         hint: `The mock server rejects ${SBO_CONST.MOCK.REJECTED_SSN_LAST_4}.`,
+                        isSensitive: true,
                         validate: (value) => (isValidSSNLastFour(value) ? undefined : translate('bankAccount.error.ssnLast4')),
                     }),
                 ],
@@ -240,6 +244,7 @@ function buildUSDPlan(draft: OnboardingDraft | undefined, account: OnyxEntry<Onb
                         inputMode: CONST.INPUT_MODE.NUMERIC,
                         hint: `The mock server rejects ${SBO_CONST.MOCK.REJECTED_TAX_ID}.`,
                         isLocked: areCompanyNumbersLocked,
+                        isSensitive: true,
                         validate: (value) => (isValidTaxID(value) ? undefined : translate('bankAccount.error.taxID')),
                     }),
                 ],

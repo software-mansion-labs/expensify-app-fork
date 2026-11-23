@@ -5,7 +5,9 @@
 import type {LocalizedTranslate} from '@components/LocaleContextProvider';
 
 import type {OnboardingDraft} from '@pages/SimplifiedBankOnboarding/contract/form';
-import type {FormPageConfig, ListRow, PageID, PageTransition} from '@pages/SimplifiedBankOnboarding/core';
+import type {PageID} from '@pages/SimplifiedBankOnboarding/contract/ids';
+import type {ListRow} from '@pages/SimplifiedBankOnboarding/core';
+import type {FormPageConfig, PageTransition} from '@pages/SimplifiedBankOnboarding/flows/shared/plan/types';
 
 import type {OwnerBuffer, OwnerDraftMapping} from './ownerBuffer';
 import type {Owner} from './ownerList';

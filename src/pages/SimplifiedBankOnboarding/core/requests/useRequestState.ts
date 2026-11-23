@@ -4,19 +4,18 @@
  */
 import useOnyx from '@hooks/useOnyx';
 
-import type {OnboardingRequests} from '@pages/SimplifiedBankOnboarding/contract/onyx';
-
 import ONYXKEYS from '@src/ONYXKEYS';
 import type * as OnyxCommon from '@src/types/onyx/OnyxCommon';
 
 import type {OnyxEntry} from 'react-native-onyx';
 
 import type {RequestKey} from './requestKey';
+import type {OnboardingRequests} from './types';
 
 type RequestStateResult = {
     isPending: boolean;
 
-    /** The errors of the last attempt. They stay until the next attempt with the same key starts or the app reloads. */
+    /** The errors of the last attempt. They stay until the next attempt with the same key starts, the user leaves the page through the flow or the app reloads. */
     errors: OnyxCommon.Errors | undefined;
 };
 

@@ -11,6 +11,8 @@ import useLocalize from '@hooks/useLocalize';
 import useOnyx from '@hooks/useOnyx';
 import useThemeStyles from '@hooks/useThemeStyles';
 
+import {getLastFourDigits} from '@libs/BankAccountUtils';
+
 import type {OnboardingAccount, Workspaces} from '@pages/SimplifiedBankOnboarding/contract/onyx';
 import SBO_CONST from '@pages/SimplifiedBankOnboarding/contract/SBO_CONST';
 import resetBankAccount from '@pages/SimplifiedBankOnboarding/entry/requests/resetBankAccount';
@@ -35,8 +37,6 @@ type StartOverOptions = {
     onReset: () => void;
 };
 
-const VISIBLE_ACCOUNT_NUMBER_DIGITS = 4;
-
 function useStartOverModal({account, policyID, isNonUSD}: StartOverModalInput) {
     const styles = useThemeStyles();
     const {translate} = useLocalize();
@@ -45,7 +45,7 @@ function useStartOverModal({account, policyID, isNonUSD}: StartOverModalInput) {
     const [workspaceACHAccount] = useOnyx(ONYXKEYS.SIMPLIFIED_BANK_ONBOARDING_WORKSPACES, {selector: selectWorkspaceACHAccount});
     const achData = account?.achData;
     const isInOpenState = achData?.state === SBO_CONST.STATE.OPEN;
-    const bankShortName = `${achData?.bankName ?? ''} ${(achData?.accountNumber ?? '').slice(-VISIBLE_ACCOUNT_NUMBER_DIGITS)}`;
+    const bankShortName = `${achData?.bankName ?? ''} ${getLastFourDigits(achData?.accountNumber ?? '')}`;
 
     const startOver = (onReset: () => void) => {
         // The account data may already be cleared, so the ID also comes from the summary on the workspace

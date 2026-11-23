@@ -1,16 +1,16 @@
+/* eslint-disable rulesdir/prefer-actions-set-data -- This file is the action layer of an isolated research module, so it lives outside src/libs/actions */
 /**
  * The one way the flow sends a request. It records the state of the request under its key in the request status key,
  * sends it through the mock API and returns a Promise that settles when the status of this very request leaves `pending`.
  * The status comes from the optimistic, success and failure data of the request, like any other server result, so the
  * Promise only tells the handler when Onyx holds the result. The status entry carries a request ID, so the result of an
- * older request with the same key never settles a newer one.
+ * older request with the same key never settles a newer one. The finally data marks the entry as answered, so a request
+ * whose answer applied neither the success nor the failure data still settles, as failed.
  */
 import {getMicroSecondOnyxErrorWithTranslationKey} from '@libs/ErrorUtils';
 import {getIsOffline} from '@libs/NetworkState';
 import {rand64} from '@libs/NumberUtils';
 
-import type {RequestState} from '@pages/SimplifiedBankOnboarding/contract/onyx';
-import type {RequestName} from '@pages/SimplifiedBankOnboarding/contract/REQUEST_NAMES';
 import {read, write} from '@pages/SimplifiedBankOnboarding/mockBackend/mockApi';
 
 import type {TranslationPaths} from '@src/languages/types';
@@ -22,7 +22,7 @@ import type {OnyxUpdate} from 'react-native-onyx';
 import Onyx from 'react-native-onyx';
 
 import type {RequestKey, RequestScope} from './requestKey';
-import type {MockRequest, PlannedRequest, RequestOutcome} from './types';
+import type {MockRequest, PlannedRequest, RequestOutcome, RequestState} from './types';
 
 import getRequestKey from './requestKey';
 
@@ -41,7 +41,8 @@ type RequestOnyxKey =
     | typeof ONYXKEYS.FORMS.SIMPLIFIED_BANK_ONBOARDING_SIGNER_FORM_DRAFT;
 
 type RunRequestArgs = MockRequest & {
-    name: RequestName;
+    /** The name of the user action. Each name is one entry of the request status key. */
+    name: string;
 
     /** The bank account that the request is about. Readers of the status pass the same scope to `getRequestKey`. */
     scope?: RequestScope;
@@ -57,12 +58,19 @@ function buildStatusUpdate(key: RequestKey, value: Partial<RequestState>): OnyxU
     return {onyxMethod: Onyx.METHOD.MERGE, key: ONYXKEYS.RAM_ONLY_SIMPLIFIED_BANK_ONBOARDING_REQUESTS, value: {[key]: value}};
 }
 
+function getFailedState(requestID: string, errorKey: TranslationPaths): Partial<RequestState> {
+    return {requestID, status: 'failed', errors: getMicroSecondOnyxErrorWithTranslationKey(errorKey)};
+}
+
 function addStatusUpdates(key: RequestKey, requestID: string, errorKey: TranslationPaths, onyxData: OnyxData<RequestOnyxKey>): OnyxData<RequestOnyxKey> {
     return {
         ...onyxData,
-        optimisticData: [...(onyxData.optimisticData ?? []), buildStatusUpdate(key, {requestID, status: 'pending', errors: null})],
+
+        // The entry may still hold the answered mark of the previous attempt with the same key, which the new attempt must not inherit
+        optimisticData: [...(onyxData.optimisticData ?? []), buildStatusUpdate(key, {requestID, status: 'pending', errors: null, hasResponse: false})],
         successData: [...(onyxData.successData ?? []), buildStatusUpdate(key, {requestID, status: 'succeeded', errors: null})],
-        failureData: [...(onyxData.failureData ?? []), buildStatusUpdate(key, {requestID, status: 'failed', errors: getMicroSecondOnyxErrorWithTranslationKey(errorKey)})],
+        failureData: [...(onyxData.failureData ?? []), buildStatusUpdate(key, getFailedState(requestID, errorKey))],
+        finallyData: [...(onyxData.finallyData ?? []), buildStatusUpdate(key, {requestID, hasResponse: true})],
     };
 }
 
@@ -74,7 +82,7 @@ function sendRequest(request: MockRequest, onyxData: OnyxData<RequestOnyxKey>) {
     write(request.command, request.params, onyxData);
 }
 
-function waitForRequestToSettle(key: RequestKey, requestID: string): Promise<RequestOutcome> {
+function waitForRequestToSettle(key: RequestKey, requestID: string, errorKey: TranslationPaths): Promise<RequestOutcome> {
     return new Promise((resolve) => {
         let hasSeenRequest = false;
 
@@ -87,6 +95,11 @@ function waitForRequestToSettle(key: RequestKey, requestID: string): Promise<Req
                 if (entry?.requestID === requestID) {
                     hasSeenRequest = true;
                     if (entry.status === 'pending') {
+                        // The answer applied neither the success nor the failure data, which the real API does when the command needs an admin.
+                        // The entry would stay pending forever, so it is failed here and the next callback settles the request.
+                        if (entry.hasResponse) {
+                            Onyx.merge(ONYXKEYS.RAM_ONLY_SIMPLIFIED_BANK_ONBOARDING_REQUESTS, {[key]: getFailedState(requestID, errorKey)});
+                        }
                         return;
                     }
                     connection.unsubscribe();
@@ -114,8 +127,9 @@ function runRequest(args: RunRequestArgs): Promise<RequestOutcome> {
     }
     const key = getRequestKey(args.name, args.scope);
     const requestID = rand64();
-    const settled = waitForRequestToSettle(key, requestID);
-    sendRequest(args, addStatusUpdates(key, requestID, args.errorKey ?? 'common.genericErrorMessage', args.onyxData ?? {}));
+    const errorKey = args.errorKey ?? 'common.genericErrorMessage';
+    const settled = waitForRequestToSettle(key, requestID, errorKey);
+    sendRequest(args, addStatusUpdates(key, requestID, errorKey, args.onyxData ?? {}));
     return settled;
 }
 

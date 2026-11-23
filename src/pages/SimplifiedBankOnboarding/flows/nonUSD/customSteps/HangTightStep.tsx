@@ -16,9 +16,9 @@ import {getLatestErrorMessage} from '@libs/ErrorUtils';
 
 import type {OnboardingAccount} from '@pages/SimplifiedBankOnboarding/contract/onyx';
 import REQUEST_NAMES from '@pages/SimplifiedBankOnboarding/contract/REQUEST_NAMES';
-import type {CustomStepProps} from '@pages/SimplifiedBankOnboarding/core';
 import {getRequestKey, useRequestState} from '@pages/SimplifiedBankOnboarding/core';
 import getBankAccountParams from '@pages/SimplifiedBankOnboarding/flows/shared/getBankAccountParams';
+import type {CustomStepProps} from '@pages/SimplifiedBankOnboarding/flows/shared/plan/types';
 import {sendSignerReminder} from '@pages/SimplifiedBankOnboarding/flows/shared/signerDetails/signerInfo';
 
 import CONST from '@src/CONST';

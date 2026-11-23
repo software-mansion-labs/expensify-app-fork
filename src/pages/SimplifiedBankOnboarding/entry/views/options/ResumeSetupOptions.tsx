@@ -14,11 +14,10 @@ import {getLatestError, getMicroSecondOnyxErrorWithTranslationKey} from '@libs/E
 
 import type {OnboardingAccount} from '@pages/SimplifiedBankOnboarding/contract/onyx';
 import SBO_CONST from '@pages/SimplifiedBankOnboarding/contract/SBO_CONST';
-import {openFlow} from '@pages/SimplifiedBankOnboarding/core';
 import {goToChangeBankAccount, isOpenedFromPaymentsPage, leaveEntryAfterReset} from '@pages/SimplifiedBankOnboarding/entry/entryNavigation';
 import clearAccountErrors from '@pages/SimplifiedBankOnboarding/entry/requests/clearAccountErrors';
 import useStartOverModal from '@pages/SimplifiedBankOnboarding/entry/reset/useStartOverModal';
-import {saveDraft} from '@pages/SimplifiedBankOnboarding/flows';
+import {openFlow, saveDraft} from '@pages/SimplifiedBankOnboarding/flows';
 
 import CONST from '@src/CONST';
 import type {Route} from '@src/ROUTES';

@@ -16,11 +16,13 @@ import {useMemoizedLazyExpensifyIcons} from '@hooks/useLazyAsset';
 import useLocalize from '@hooks/useLocalize';
 import useThemeStyles from '@hooks/useThemeStyles';
 
+import {getLastFourDigits} from '@libs/BankAccountUtils';
+
 import type {OnboardingAccount} from '@pages/SimplifiedBankOnboarding/contract/onyx';
-import {openFlow} from '@pages/SimplifiedBankOnboarding/core';
 import {goToChangeBankAccount, leaveEntry} from '@pages/SimplifiedBankOnboarding/entry/entryNavigation';
 import clearAccountErrors from '@pages/SimplifiedBankOnboarding/entry/requests/clearAccountErrors';
 import useStartOverModal from '@pages/SimplifiedBankOnboarding/entry/reset/useStartOverModal';
+import {openFlow} from '@pages/SimplifiedBankOnboarding/flows';
 
 import CONST from '@src/CONST';
 import type {Route} from '@src/ROUTES';
@@ -38,8 +40,6 @@ type ConnectedBankAccountViewProps = {
     isNonUSD: boolean;
 };
 
-const VISIBLE_ACCOUNT_NUMBER_DIGITS = 4;
-
 function ConnectedBankAccountView({account, policyID, backTo, isNonUSD}: ConnectedBankAccountViewProps) {
     const styles = useThemeStyles();
     const {translate} = useLocalize();
@@ -53,7 +53,7 @@ function ConnectedBankAccountView({account, policyID, backTo, isNonUSD}: Connect
 
     // The two flows keep the account number in different places of the same object
     const accountNumber = achData?.accountNumber ?? achData?.corpay?.iban ?? achData?.corpay?.accountNumber ?? '';
-    const formattedAccountNumber = accountNumber ? `${translate('bankAccount.accountEnding')} ${accountNumber.slice(-VISIBLE_ACCOUNT_NUMBER_DIGITS)}` : '';
+    const formattedAccountNumber = accountNumber ? `${translate('bankAccount.accountEnding')} ${getLastFourDigits(accountNumber)}` : '';
 
     // A disconnected USD account shows the setup options on this page, a NonUSD one starts its flow again right away
     const openAfterDisconnect = () => {

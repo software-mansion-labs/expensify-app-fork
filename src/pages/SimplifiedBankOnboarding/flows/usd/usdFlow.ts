@@ -1,7 +1,7 @@
 import SBO_CONST from '@pages/SimplifiedBankOnboarding/contract/SBO_CONST';
-import type {FlowDescriptor} from '@pages/SimplifiedBankOnboarding/core';
 import {clearDraftInputs, saveDraft} from '@pages/SimplifiedBankOnboarding/flows/shared/draft';
 import type FlowData from '@pages/SimplifiedBankOnboarding/flows/shared/flowData/types';
+import type {FlowDescriptor} from '@pages/SimplifiedBankOnboarding/flows/shared/plan/types';
 
 import ONYXKEYS from '@src/ONYXKEYS';
 

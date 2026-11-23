@@ -5,7 +5,8 @@
  */
 import {isPageID, isStepID} from '@pages/SimplifiedBankOnboarding/contract/ids';
 import type {StepID} from '@pages/SimplifiedBankOnboarding/contract/ids';
-import type {FlowPosition} from '@pages/SimplifiedBankOnboarding/core/plan/position/position';
+import type * as Core from '@pages/SimplifiedBankOnboarding/core';
+import type {FlowPosition} from '@pages/SimplifiedBankOnboarding/flows/shared/plan/types';
 
 import ROUTES from '@src/ROUTES';
 import type {Route} from '@src/ROUTES';
@@ -41,7 +42,7 @@ function getPositionFromParams(target: FlowRouteTarget, {page, subPage, action}:
     return {stepID, pageID: subPage, isEditing: action === 'edit'};
 }
 
-function getPositionRoute(target: FlowRouteTarget, {stepID, pageID, isEditing}: FlowPosition): Route {
+function getPositionRoute(target: FlowRouteTarget, {stepID, pageID, isEditing}: Core.FlowPosition): Route {
     const action = isEditing ? 'edit' : undefined;
     switch (target.kind) {
         case 'usd':

@@ -7,13 +7,13 @@ import type {LocalizedTranslate} from '@components/LocaleContextProvider';
 import type {OnboardingDraft} from '@pages/SimplifiedBankOnboarding/contract/form';
 import {areFieldsComplete} from '@pages/SimplifiedBankOnboarding/core/form/fields/fieldSet';
 
-import type {FormPageConfig} from './types';
+import type {FlowVocabulary, FormPageConfig} from './types';
 
-type FormPageDefinition = Omit<FormPageConfig, 'kind' | 'isComplete'> & {
+type FormPageDefinition<TVocabulary extends FlowVocabulary = FlowVocabulary> = Omit<FormPageConfig<TVocabulary>, 'kind' | 'isComplete'> & {
     isComplete?: boolean;
 };
 
-function getFormPage(definition: FormPageDefinition, answers: OnboardingDraft, translate: LocalizedTranslate): FormPageConfig {
+function getFormPage<TVocabulary extends FlowVocabulary>(definition: FormPageDefinition<TVocabulary>, answers: OnboardingDraft, translate: LocalizedTranslate): FormPageConfig<TVocabulary> {
     return {
         ...definition,
         kind: 'form',

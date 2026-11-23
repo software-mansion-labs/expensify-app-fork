@@ -1,6 +1,7 @@
 import type {LocalizedTranslate} from '@components/LocaleContextProvider';
 
 import type {OnboardingDraft} from '@pages/SimplifiedBankOnboarding/contract/form';
+import type {PageID, StepID} from '@pages/SimplifiedBankOnboarding/contract/ids';
 import type {OnboardingAccount, SetupType} from '@pages/SimplifiedBankOnboarding/contract/onyx';
 import SBO_CONST from '@pages/SimplifiedBankOnboarding/contract/SBO_CONST';
 import type {FlowPosition} from '@pages/SimplifiedBankOnboarding/core/plan/position/position';
@@ -8,7 +9,7 @@ import {findStep} from '@pages/SimplifiedBankOnboarding/core/plan/position/posit
 import isPositionReachable from '@pages/SimplifiedBankOnboarding/core/plan/position/reachability';
 import getResumePosition from '@pages/SimplifiedBankOnboarding/core/plan/position/resume';
 import {getNextStepPosition, getPreviousPosition} from '@pages/SimplifiedBankOnboarding/core/plan/position/transitions';
-import type {FlowPlan, PageID, StepID} from '@pages/SimplifiedBankOnboarding/core/plan/types';
+import type {FlowPlan} from '@pages/SimplifiedBankOnboarding/flows/shared/plan/types';
 import buildUSDPlan from '@pages/SimplifiedBankOnboarding/flows/usd/buildUSDPlan';
 import {WRITE_COMMANDS} from '@pages/SimplifiedBankOnboarding/mockBackend/commands';
 import {buildClientACHData} from '@pages/SimplifiedBankOnboarding/mockBackend/handlers/buildResponse';

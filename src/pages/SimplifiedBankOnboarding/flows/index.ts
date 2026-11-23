@@ -17,3 +17,4 @@ export type {default as FlowData} from './shared/flowData/types';
 export {default as useFlowData} from './shared/flowData/useFlowData';
 export {default as useReadFlowData} from './shared/flowData/useReadFlowData';
 export {default as getBankAccountParams} from './shared/getBankAccountParams';
+export {getFlowRoutes, openFlow} from './shared/routes/flowNavigation';

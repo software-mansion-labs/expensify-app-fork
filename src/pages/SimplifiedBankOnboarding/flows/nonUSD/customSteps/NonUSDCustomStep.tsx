@@ -2,8 +2,8 @@
  * Picks the screen of a custom page of the NonUSD flow. Each screen gets only the props it uses, and this component
  * hands a screen the navigation it may ask for, so no screen navigates itself.
  */
-import type {CustomStepProps} from '@pages/SimplifiedBankOnboarding/core';
-import {openEnterSignerInfo} from '@pages/SimplifiedBankOnboarding/core';
+import type {CustomStepProps} from '@pages/SimplifiedBankOnboarding/flows/shared/plan/types';
+import {openEnterSignerInfo} from '@pages/SimplifiedBankOnboarding/flows/shared/routes/flowNavigation';
 
 import React from 'react';
 

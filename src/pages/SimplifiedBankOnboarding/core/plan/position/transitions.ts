@@ -3,13 +3,13 @@
  * the step or the flow, so the caller decides what leaving means. Skipped pages are not in the plan, so no helper here
  * has to know which pages a flow skips.
  */
-import type {FlowPlan, PageID, PageTransition, StepConfig, StepID} from '@pages/SimplifiedBankOnboarding/core/plan/types';
+import type {FlowPlan, FlowVocabulary, PageTransition, StepConfig} from '@pages/SimplifiedBankOnboarding/core/plan/types';
 
 import type {FlowPosition} from './position';
 
 import {findPage, findStep, getPagePosition} from './position';
 
-function getStepFirstPosition(plan: FlowPlan, stepID: StepID): FlowPosition | undefined {
+function getStepFirstPosition(plan: FlowPlan, stepID: string): FlowPosition | undefined {
     const step = findStep(plan, stepID);
     const page = step?.pages.at(0);
     if (!step || !page) {
@@ -23,12 +23,12 @@ function getFirstPosition(plan: FlowPlan): FlowPosition | undefined {
     return step ? getStepFirstPosition(plan, step.id) : undefined;
 }
 
-function getStepLastPosition(step: StepConfig): FlowPosition | undefined {
+function getStepLastPosition<TVocabulary extends FlowVocabulary>(step: StepConfig<TVocabulary>): FlowPosition<TVocabulary> | undefined {
     const page = step.pages.at(-1);
     return page ? getPagePosition(step, page) : undefined;
 }
 
-function getStepPagePosition(plan: FlowPlan, stepID: StepID, pageID: PageID, isEditing = false): FlowPosition | undefined {
+function getStepPagePosition(plan: FlowPlan, stepID: string, pageID: string, isEditing = false): FlowPosition | undefined {
     const step = findStep(plan, stepID);
     const page = step ? findPage(step, pageID) : undefined;
     if (!step || !page) {
@@ -114,7 +114,7 @@ function getPreviousPosition(plan: FlowPlan, position: FlowPosition): FlowPositi
  * the step is looked up in the plan from before the request when the new plan no longer has it. Undefined means that
  * the flow is done.
  */
-function getNextStepPosition(plan: FlowPlan, previousPlan: FlowPlan, stepID: StepID): FlowPosition | undefined {
+function getNextStepPosition(plan: FlowPlan, previousPlan: FlowPlan, stepID: string): FlowPosition | undefined {
     const previousStepIndex = previousPlan.steps.findIndex((step) => step.id === stepID);
     const anchorStepIDs = previousPlan.steps
         .slice(0, previousStepIndex + 1)

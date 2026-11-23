@@ -54,7 +54,7 @@ function FormPage({formID, page, answers, isEditing, canSubmitOffline, isLoading
             <Text style={[styles.textHeadlineLineHeightXXL, styles.mb5]}>{page.title}</Text>
             {!!page.description && <Text style={[styles.textSupporting, styles.mb5]}>{page.description}</Text>}
             {page.fields.map((field) => (
-                <React.Fragment key={field.key}>{field.render({values: answers, formID, translate})}</React.Fragment>
+                <React.Fragment key={field.key}>{field.render({values: answers, translate})}</React.Fragment>
             ))}
             <FormHelpMessage message={errorText} />
         </FormProvider>

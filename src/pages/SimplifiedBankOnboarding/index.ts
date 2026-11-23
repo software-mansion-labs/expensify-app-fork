@@ -10,5 +10,6 @@ export {default as BankOnboardingLabPage} from './lab/BankOnboardingLabPage';
 export {default as WorkspacePaymentsPage} from './lab/WorkspacePaymentsPage';
 
 export type {EnterSignerInfoForm, OnboardingForm} from './contract/form';
-export type {BankFields, OnboardingAccount, OnboardingPicklists, OnboardingRequests, OnboardingUser, PlaidData, Workspaces} from './contract/onyx';
+export type {BankFields, OnboardingAccount, OnboardingPicklists, OnboardingUser, PlaidData, Workspaces} from './contract/onyx';
+export type {OnboardingRequests} from './core';
 export type {MockServerDatabase} from './mockBackend/types';

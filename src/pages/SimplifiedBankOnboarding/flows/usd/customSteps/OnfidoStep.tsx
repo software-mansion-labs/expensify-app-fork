@@ -11,7 +11,7 @@ import Text from '@components/Text';
 import useOnyx from '@hooks/useOnyx';
 import useThemeStyles from '@hooks/useThemeStyles';
 
-import type {CustomStepProps} from '@pages/SimplifiedBankOnboarding/core';
+import type {CustomStepProps} from '@pages/SimplifiedBankOnboarding/flows/shared/plan/types';
 import {openIdentityCheckFlow} from '@pages/SimplifiedBankOnboarding/flows/usd/requests/identityCheck';
 
 import CONST from '@src/CONST';

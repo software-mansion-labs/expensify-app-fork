@@ -13,7 +13,7 @@ import type {ACHData, BankFormField} from '@pages/SimplifiedBankOnboarding/contr
 import {getOwnerFullName} from '@pages/SimplifiedBankOnboarding/contract/ownerNames';
 import SBO_CONST from '@pages/SimplifiedBankOnboarding/contract/SBO_CONST';
 import {isConnected, isGlobalAccountCreated, isVerifying, requiresDocusignStep} from '@pages/SimplifiedBankOnboarding/contract/setupStatus';
-import type {Field, FlowPlan, FormPageDefinition, PageConfig, PicklistOption, PlanContext, StepConfig} from '@pages/SimplifiedBankOnboarding/core';
+import type {Field, PicklistOption, PlanContext} from '@pages/SimplifiedBankOnboarding/core';
 import {
     areFieldsComplete,
     createCheckboxField,
@@ -22,6 +22,7 @@ import {
     createPicklistField,
     createReadOnlyField,
     createTextField,
+    createYesNoField,
     getFormPage,
 } from '@pages/SimplifiedBankOnboarding/core';
 import type FlowData from '@pages/SimplifiedBankOnboarding/flows/shared/flowData/types';
@@ -30,6 +31,7 @@ import {canAddMoreGlobalOwners, isValidGlobalOwnerShare} from '@pages/Simplified
 import getOwnerPages from '@pages/SimplifiedBankOnboarding/flows/shared/owners/getOwnerPages';
 import {GLOBAL_OWNER_DRAFT} from '@pages/SimplifiedBankOnboarding/flows/shared/owners/ownerBuffer';
 import {findOwner, removeOwner} from '@pages/SimplifiedBankOnboarding/flows/shared/owners/ownerList';
+import type {FlowPlan, FormPageDefinition, PageConfig, StepConfig} from '@pages/SimplifiedBankOnboarding/flows/shared/plan/types';
 import getSignerDetailsPages from '@pages/SimplifiedBankOnboarding/flows/shared/signerDetails/getSignerDetailsPages';
 import {getDirectorInfoRequest, getSignerInvitationRequest} from '@pages/SimplifiedBankOnboarding/flows/shared/signerDetails/signerInfo';
 
@@ -75,6 +77,9 @@ function createBankField(field: BankFormField): Field {
     return createTextField(field.id, {
         label: field.label,
         isOptional: !field.isRequired,
+
+        // The server names the inputs, so the plan cannot tell an account number from a bank name and hides them all
+        isSensitive: true,
         validate: (value) => getBankFieldRuleError(field, value),
     });
 }
@@ -313,16 +318,14 @@ function buildNonUSDPlan(data: FlowData, {translate, policyID: urlPolicyID}: Pla
     // The invited directors filled in their details: the director, and for AUD also the second one
     const areSignersKnown = !!corpay?.signerFullName && (!isAUD || !!corpay.secondSignerFullName);
 
+    const directorQuestion = translate('signerInfoStep.areYouDirector', answers.companyName);
     const signerPages: PageConfig[] = [
-        {
-            kind: 'question',
+        buildFormPage({
             id: SIGNER.IS_DIRECTOR,
-            isComplete: answers.isUserDirector !== undefined,
-            fieldID: INPUT_IDS.IS_USER_DIRECTOR,
-            title: translate('signerInfoStep.areYouDirector', answers.companyName),
+            title: directorQuestion,
             description: translate('signerInfoStep.regulationRequiresUs'),
-            defaultValue: answers.isUserDirector ?? false,
-        },
+            fields: [createYesNoField(INPUT_IDS.IS_USER_DIRECTOR, {question: directorQuestion})],
+        }),
     ];
 
     if (answers.isUserDirector) {

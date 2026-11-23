@@ -5,8 +5,9 @@
  */
 import type {OnboardingDraft} from '@pages/SimplifiedBankOnboarding/contract/form';
 import INPUT_IDS from '@pages/SimplifiedBankOnboarding/contract/form';
-import type {ConfirmationPageConfig, FormPageConfig, ListPageConfig, PageConfig, PageID, QuestionPageConfig} from '@pages/SimplifiedBankOnboarding/core';
-import {areFieldsComplete} from '@pages/SimplifiedBankOnboarding/core';
+import type {PageID} from '@pages/SimplifiedBankOnboarding/contract/ids';
+import {areFieldsComplete, createYesNoField} from '@pages/SimplifiedBankOnboarding/core';
+import type {ConfirmationPageConfig, FormPageConfig, ListPageConfig, PageConfig} from '@pages/SimplifiedBankOnboarding/flows/shared/plan/types';
 
 import type {Owner, OwnersStepDefinition} from './types';
 
@@ -31,29 +32,27 @@ function isAnyoneElseOwnerSkipped<TOwner extends Owner>({answers, userOwnerID, c
     return isAddingUser || (!!answers.ownsMoreThan25Percent && !canAddMoreOwners(answers.owners));
 }
 
-function getIsUserOwnerPage<TOwner extends Owner>({subPages, answers, copy, onUserOwnerAnswer}: OwnersStepDefinition<TOwner>): QuestionPageConfig {
+function getIsUserOwnerPage<TOwner extends Owner>({subPages, answers, copy, onUserOwnerAnswer}: OwnersStepDefinition<TOwner>): FormPageConfig {
     return {
-        kind: 'question',
+        kind: 'form',
         id: subPages.isUserOwner,
         isComplete: answers.ownsMoreThan25Percent !== undefined,
-        fieldID: INPUT_IDS.OWNS_MORE_THAN_25_PERCENT,
         title: copy.isUserOwnerTitle,
         description: copy.description,
-        defaultValue: answers.ownsMoreThan25Percent ?? false,
+        fields: [createYesNoField(INPUT_IDS.OWNS_MORE_THAN_25_PERCENT, {question: copy.isUserOwnerTitle})],
         onSubmit: onUserOwnerAnswer,
     };
 }
 
-function getIsAnyoneElseOwnerPage<TOwner extends Owner>(definition: OwnersStepDefinition<TOwner>): QuestionPageConfig {
+function getIsAnyoneElseOwnerPage<TOwner extends Owner>(definition: OwnersStepDefinition<TOwner>): FormPageConfig {
     const {subPages, answers, canAddMoreOwners, detailsPages, copy} = definition;
     return {
-        kind: 'question',
+        kind: 'form',
         id: subPages.isAnyoneElseOwner,
         isComplete: answers.hasOtherBeneficialOwners !== undefined || isAnyoneElseOwnerSkipped(definition),
-        fieldID: INPUT_IDS.HAS_OTHER_BENEFICIAL_OWNERS,
         title: copy.isAnyoneElseOwnerTitle,
         description: copy.description,
-        defaultValue: answers.hasOtherBeneficialOwners ?? false,
+        fields: [createYesNoField(INPUT_IDS.HAS_OTHER_BENEFICIAL_OWNERS, {question: copy.isAnyoneElseOwnerTitle})],
         onSubmit: (values) => {
             if (!values.hasOtherBeneficialOwners) {
                 // Without other owners the list only shows the user, so a user who is no owner either finishes the step here
@@ -70,15 +69,16 @@ function getIsAnyoneElseOwnerPage<TOwner extends Owner>(definition: OwnersStepDe
     };
 }
 
-function getAreThereMoreOwnersPage<TOwner extends Owner>({subPages, answers, canAddMoreOwners, detailsPages, copy}: OwnersStepDefinition<TOwner>): QuestionPageConfig {
+function getAreThereMoreOwnersPage<TOwner extends Owner>({subPages, answers, canAddMoreOwners, detailsPages, copy}: OwnersStepDefinition<TOwner>): FormPageConfig {
     return {
-        kind: 'question',
+        kind: 'form',
         id: subPages.areThereMoreOwners,
         isComplete: answers.hasMoreBeneficialOwners !== undefined || !canAddMoreOwners(answers.owners),
-        fieldID: INPUT_IDS.HAS_MORE_BENEFICIAL_OWNERS,
         title: copy.areThereMoreOwnersTitle,
         description: copy.description,
-        defaultValue: false,
+
+        // The question is asked again after every owner, so it opens with "No" and not with the answer that led to the last owner
+        fields: [createYesNoField(INPUT_IDS.HAS_MORE_BENEFICIAL_OWNERS, {question: copy.areThereMoreOwnersTitle, defaultValue: false})],
         onSubmit: (values) => {
             if (values.hasMoreBeneficialOwners) {
                 return {

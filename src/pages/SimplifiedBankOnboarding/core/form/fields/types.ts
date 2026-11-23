@@ -6,7 +6,7 @@
 import type {LocalizedTranslate} from '@components/LocaleContextProvider';
 
 import type {InputID, OnboardingDraft} from '@pages/SimplifiedBankOnboarding/contract/form';
-import type {OnboardingFormErrors, OnboardingFormID} from '@pages/SimplifiedBankOnboarding/contract/formID';
+import type {OnboardingFormErrors} from '@pages/SimplifiedBankOnboarding/contract/formID';
 
 import type {ReactNode} from 'react';
 
@@ -36,9 +36,6 @@ type SummaryRow = {
 type FieldRenderContext = {
     /** The answers of the flow, where an input finds the value it starts with */
     values: OnboardingDraft;
-
-    /** The form of the page, for a field that reports its own errors, such as a file upload */
-    formID: OnboardingFormID;
     translate: LocalizedTranslate;
 };
 

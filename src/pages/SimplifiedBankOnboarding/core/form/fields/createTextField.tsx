@@ -28,6 +28,9 @@ type TextInputOptions = {
 
     /** The server accepted the value and no longer takes a new one */
     isLocked?: boolean;
+
+    /** The value is hidden in session recordings, such as an account number */
+    isSensitive?: boolean;
 };
 
 type TextFieldOptions = TextInputOptions &
@@ -44,7 +47,7 @@ type TextFieldInputProps = TextInputOptions & {
     defaultValue: string;
 };
 
-function TextFieldInput({inputID, label, defaultValue, inputMode, maxLength, placeholder, hint, isLocked}: TextFieldInputProps) {
+function TextFieldInput({inputID, label, defaultValue, inputMode, maxLength, placeholder, hint, isLocked, isSensitive}: TextFieldInputProps) {
     const styles = useThemeStyles();
 
     return (
@@ -62,6 +65,7 @@ function TextFieldInput({inputID, label, defaultValue, inputMode, maxLength, pla
                 hint={hint}
                 shouldUseDefaultValue={isLocked}
                 disabled={isLocked}
+                forwardedFSClass={isSensitive ? CONST.FULLSTORY.CLASS.MASK : undefined}
                 sentryLabel={CONST.SENTRY_LABEL.BANK_ONBOARDING_LAB.EDIT_INPUT}
             />
         </View>
@@ -69,7 +73,7 @@ function TextFieldInput({inputID, label, defaultValue, inputMode, maxLength, pla
 }
 
 function createTextField(inputID: TextInputID, options: TextFieldOptions): Field {
-    const {isOptional, requiredErrorText, validate, summaryLabel, formatSummaryValue, label, inputMode, maxLength, placeholder, hint, isLocked} = options;
+    const {isOptional, requiredErrorText, validate, summaryLabel, formatSummaryValue, label, inputMode, maxLength, placeholder, hint, isLocked, isSensitive} = options;
 
     return {
         key: inputID,
@@ -91,6 +95,7 @@ function createTextField(inputID: TextInputID, options: TextFieldOptions): Field
                 placeholder={placeholder}
                 hint={hint}
                 isLocked={isLocked}
+                isSensitive={isSensitive}
             />
         ),
     };
