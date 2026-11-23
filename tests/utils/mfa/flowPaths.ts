@@ -6,7 +6,6 @@ import {createLocalMFAError} from '@libs/MultifactorAuthentication/shared/MFARes
 
 import CONST from '@src/CONST';
 
-import type {TupleToUnion} from 'type-fest';
 import type {ActorLogic, DoneActorEvent, ErrorActorEvent, InputFrom, SnapshotFrom, StateValue} from 'xstate';
 
 import {matchesState} from 'xstate';
@@ -356,8 +355,8 @@ const DRIVING_JOURNEYS: DrivingJourney[] = [
         ],
         endState: MFA_STATE.CLOSING,
     },
-    // The generated paths never go offline (see `UNTRAVERSED_EVENT_TYPES`), so these journeys are the only UI
-    // coverage of the offline leaf and of the steps that wait for the network.
+    // The generated paths the UI walk drives never go offline (see `UNWALKED_EVENT_TYPES`), so these journeys are
+    // the only UI coverage of the offline leaf and of the steps that wait for the network.
     {
         description: 'the offline journey covers the validate-code form while offline and brings it back once online',
         events: [
@@ -438,15 +437,14 @@ const DRIVING_JOURNEYS: DrivingJourney[] = [
 ];
 
 /**
- * Events the generated traversal never offers. Offline outlasts the step it arrives in, so a generated path
- * would carry it onto later steps whose controls the offline screen hides. The driving journeys cover them.
+ * Events left out of the generated paths the UI walk drives. Offline outlasts the step it arrives in, so a generated
+ * path would carry it onto later steps whose controls the offline screen hides. The driving journeys cover them in the
+ * UI, and the machine-only reachability paths still traverse them.
  */
-const UNTRAVERSED_EVENT_TYPES = ['NETWORK_OFFLINE', 'NETWORK_ONLINE'] as const satisfies ReadonlyArray<MfaEvent['type']>;
-
-type MfaTraversalEventType = Exclude<MfaEvent['type'], TupleToUnion<typeof UNTRAVERSED_EVENT_TYPES>>;
+const UNWALKED_EVENT_TYPES = ['NETWORK_OFFLINE', 'NETWORK_ONLINE'] as const satisfies ReadonlyArray<MfaEvent['type']>;
 
 type MfaEventFixtures = {
-    readonly [Type in MfaTraversalEventType]: readonly [Extract<MfaEvent, {type: Type}>, ...Array<Extract<MfaEvent, {type: Type}>>];
+    readonly [Type in MfaEvent['type']]: readonly [Extract<MfaEvent, {type: Type}>, ...Array<Extract<MfaEvent, {type: Type}>>];
 };
 
 /** Pins each slot to the events of that one actor, so a fixture cannot drift to another actor's key. */
@@ -470,6 +468,8 @@ const MFA_GRAPH_EVENT_FIXTURES = {
     REQUEST_CANCEL: [{type: 'REQUEST_CANCEL'}],
     DISMISS_CANCEL: [{type: 'DISMISS_CANCEL'}],
     CONFIRM_CANCEL: [{type: 'CONFIRM_CANCEL'}],
+    NETWORK_OFFLINE: [{type: 'NETWORK_OFFLINE'}],
+    NETWORK_ONLINE: [{type: 'NETWORK_ONLINE'}],
 } satisfies MfaEventFixtures;
 
 /**
@@ -564,9 +564,6 @@ function getTraversalEvents(snapshot: MfaSnapshot): MfaMachineEvent[] {
     const declaredEventTypes = new Set<string>(snapshot._nodes.flatMap((node) => node.ownEvents));
     const events: MfaMachineEvent[] = [];
     for (const type of declaredEventTypes) {
-        if (UNTRAVERSED_EVENT_TYPES.some((untraversedType) => untraversedType === type)) {
-            continue;
-        }
         const fixtures = MFA_TRAVERSAL_EVENT_FIXTURES.filter((event) => event.type === type);
         if (fixtures.length > 0) {
             events.push(...fixtures);
@@ -586,6 +583,11 @@ function getTraversalEvents(snapshot: MfaSnapshot): MfaMachineEvent[] {
     return events;
 }
 
+/** Supplies the traversal events of the state without the ones the UI walk leaves to the driving journeys. */
+function getWalkableTraversalEvents(snapshot: MfaSnapshot): MfaMachineEvent[] {
+    return getTraversalEvents(snapshot).filter((event) => !UNWALKED_EVENT_TYPES.some((type) => type === event.type));
+}
+
 /**
  * The machine re-typed over `MfaMachineEvent`, so the tests can send the events XState raises
  * itself. The assertion is safe because the running machine really handles that union, and it goes
@@ -600,7 +602,7 @@ const mfaTestModel = new TestModel(mfaMachineWithLifecycleEvents, {
     stateMatcher: (state, stateValue) => matchesState(stateValue, state.value),
 });
 
-/** Returns the shortest coverage paths over the machine graph. */
+/** Returns the shortest coverage paths over the machine graph, driven by every event the machine handles. */
 function getMfaShortestPaths() {
     return getShortestPaths(mfaMachineWithLifecycleEvents, {events: getTraversalEvents});
 }
@@ -617,9 +619,10 @@ function getDrivingJourneyPaths() {
  * `everyStateReachable.test.ts` checks stable-state reachability over the unfiltered graph, while
  * the walk-coverage guard in `viewMatchesMachine.test.tsx` catches a state that loses every
  * UI-drivable route. `path.test` skips framework steps without an executor, such as `xstate.init`.
+ * The generated paths here leave out `UNWALKED_EVENT_TYPES`.
  */
 function getWalkedPaths() {
-    const coveragePaths = mfaTestModel.getPaths(() => getMfaShortestPaths());
+    const coveragePaths = mfaTestModel.getPaths(() => getShortestPaths(mfaMachineWithLifecycleEvents, {events: getWalkableTraversalEvents}));
     const journeyPaths = getDrivingJourneyPaths().flatMap((journey) => journey.paths);
     return [...coveragePaths, ...journeyPaths].filter(isUiDrivablePath);
 }

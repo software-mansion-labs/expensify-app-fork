@@ -71,6 +71,7 @@ const WEBAUTHN_NO_MATCHING_ERROR = createLocalMFAError(REASON.LOCAL_ERRORS.WEBAU
 const AWAITING_CODE_INPUT = {[MFA_STATE.OPEN]: {[MFA_STATE.FLOW]: {[MFA_STATE.VALIDATE_CODE]: {[MFA_STATE.AWAITING_VALIDATE_CODE]: MFA_STATE.AWAITING_INPUT}}}};
 const CANCEL_CONFIRM_VISIBLE = {[MFA_STATE.OPEN]: {[MFA_STATE.CANCEL_CONFIRM]: MFA_STATE.CANCEL_CONFIRM_VISIBLE}};
 const CANCELLING = {[MFA_STATE.OPEN]: {[MFA_STATE.FLOW]: MFA_STATE.CANCELLING}};
+const OFFLINE = {[MFA_STATE.OPEN]: {[MFA_STATE.NETWORK]: MFA_STATE.OFFLINE}};
 const CANCEL_PAYLOAD = {transactionID: 'recovery-spec-transaction'};
 const OUTCOME = {[MFA_STATE.OPEN]: {[MFA_STATE.FLOW]: MFA_STATE.OUTCOME}};
 
@@ -210,6 +211,24 @@ describe('MFA recovery', () => {
 
         // Then the telemetry fields still say so, since the outcome reports what happened in the whole flow
         expect(actor.getSnapshot().context).toMatchObject({isRegistrationComplete: true, softPromptApproved: true});
+
+        actor.stop();
+    });
+
+    it.each([MFA_TEST_REGISTRATION_REQUIRED_ERROR, KEY_ACCESS_FAILED_ERROR])('recovers after $reason while signing the challenge offline', (error) => {
+        // Given the flow is signing the challenge and the device went offline meanwhile
+        const actor = createActorAtState({[MFA_STATE.OPEN]: {[MFA_STATE.FLOW]: SIGNING_CHALLENGE_STEP.flow, [MFA_STATE.NETWORK]: MFA_STATE.OFFLINE}}, SIGNING_CHALLENGE_STEP.context);
+        actor.start();
+
+        // When signing fails in a way a fresh registration can fix
+        SIGNING_CHALLENGE_STEP.sendFailure(actor, error);
+
+        // Then recovery starts as it would online, because the new code is requested with a write that waits for the network itself
+        const result = actor.getSnapshot();
+        expect(result.matches(AWAITING_CODE_INPUT)).toBe(true);
+        expect(result.matches(OFFLINE)).toBe(true);
+        expect(requestValidateCodeActionMock).toHaveBeenCalledTimes(1);
+        expect(result.context).toMatchObject({recoveryAttempts: 1, recoveredFrom: {reason: error.reason, step: MFA_STATE.SIGNING_CHALLENGE}});
 
         actor.stop();
     });

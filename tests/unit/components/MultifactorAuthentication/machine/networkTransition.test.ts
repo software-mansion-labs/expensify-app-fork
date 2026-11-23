@@ -94,8 +94,8 @@ function isAt(actor: {getSnapshot: () => {value: StateValue}}, value: StateValue
     return matchesState(value, actor.getSnapshot().value);
 }
 
-// The graph-traversal suites never go offline (see `UNTRAVERSED_EVENT_TYPES` in `flowPaths.ts`), so this suite
-// pins by hand which steps wait for the network and how they resume.
+// The graph-traversal suites reach the offline states but don't pin which steps wait for the network and how
+// they resume, so this suite does that by hand.
 
 describe('MFA offline', () => {
     afterEach(() => {
