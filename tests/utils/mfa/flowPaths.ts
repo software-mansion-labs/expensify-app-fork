@@ -355,7 +355,93 @@ const DRIVING_JOURNEYS: DrivingJourney[] = [
         ],
         endState: MFA_STATE.CLOSING,
     },
+    // The generated paths the UI walk drives never go offline (see `UNWALKED_EVENT_TYPES`), so these journeys are
+    // the only UI coverage of the offline leaf and of the steps that wait for the network.
+    {
+        description: 'the offline journey covers the validate-code form while offline and brings it back once online',
+        events: [
+            createInitEvent(),
+            createActorDoneEvent('validateDevice', {success: true}),
+            createActorDoneEvent('loadRegistrationState', {hasServerCredentials: false, hasLocalCredentials: false, hasEverAcceptedSoftPrompt: false}),
+            {type: 'NETWORK_OFFLINE'},
+            {type: 'NETWORK_ONLINE'},
+        ],
+        endState: {
+            [MFA_STATE.OPEN]: {
+                [MFA_STATE.FLOW]: {[MFA_STATE.VALIDATE_CODE]: {[MFA_STATE.AWAITING_VALIDATE_CODE]: MFA_STATE.AWAITING_INPUT}},
+                [MFA_STATE.NETWORK]: MFA_STATE.ONLINE,
+            },
+        },
+    },
+    {
+        description: 'the offline-while-preparing journey holds the ceremony until the device is back online',
+        events: [
+            createInitEvent(),
+            createActorDoneEvent('validateDevice', {success: true}),
+            {type: 'NETWORK_OFFLINE'},
+            createActorDoneEvent('loadRegistrationState', {hasServerCredentials: false, hasLocalCredentials: true, hasEverAcceptedSoftPrompt: true}),
+            {type: 'NETWORK_ONLINE'},
+        ],
+        endState: `${MFA_STATE.OPEN}.${MFA_STATE.FLOW}.${MFA_STATE.PROMPT}.${MFA_STATE.AUTHORIZING}.${MFA_STATE.SIGNING_CHALLENGE}`,
+    },
+    {
+        description: 'the offline registration journey holds the created key and registers it once back online',
+        events: [
+            createInitEvent(),
+            createActorDoneEvent('validateDevice', {success: true}),
+            createActorDoneEvent('loadRegistrationState', {hasServerCredentials: false, hasLocalCredentials: false, hasEverAcceptedSoftPrompt: false}),
+            {type: 'VALIDATE_CODE_ENTERED', validateCode: MFA_TEST_VALIDATE_CODE},
+            createActorDoneEvent('requestRegistrationChallenge', {success: true, challenge: MFA_TEST_REGISTRATION_CHALLENGE}),
+            {type: 'SOFT_PROMPT_APPROVED'},
+            {type: 'NETWORK_OFFLINE'},
+            createActorDoneEvent('createCredential', {success: true, keyInfo: MFA_TEST_KEY_INFO}),
+            {type: 'NETWORK_ONLINE'},
+        ],
+        endState: `${MFA_STATE.OPEN}.${MFA_STATE.FLOW}.${MFA_STATE.PROMPT}.${MFA_STATE.CREATING_CREDENTIAL}.${MFA_STATE.REGISTERING_KEY}`,
+    },
+    {
+        description: 'the offline signing journey drops the signature and signs again once back online',
+        events: [
+            createInitEvent(),
+            createActorDoneEvent('validateDevice', {success: true}),
+            createActorDoneEvent('loadRegistrationState', {hasServerCredentials: false, hasLocalCredentials: true, hasEverAcceptedSoftPrompt: true}),
+            {type: 'NETWORK_OFFLINE'},
+            createActorDoneEvent('authorize', {success: true, signedChallenge: MFA_TEST_SIGNED_CHALLENGE, authenticationMethod: MFA_TEST_AUTH_METHOD}),
+            {type: 'NETWORK_ONLINE'},
+        ],
+        endState: `${MFA_STATE.OPEN}.${MFA_STATE.FLOW}.${MFA_STATE.PROMPT}.${MFA_STATE.AUTHORIZING}.${MFA_STATE.SIGNING_CHALLENGE}`,
+    },
+    {
+        description: 'the offline cancel journey closes the modal without asking',
+        events: [
+            createInitEvent(),
+            createActorDoneEvent('validateDevice', {success: true}),
+            createActorDoneEvent('loadRegistrationState', {hasServerCredentials: false, hasLocalCredentials: false, hasEverAcceptedSoftPrompt: false}),
+            {type: 'NETWORK_OFFLINE'},
+            {type: 'REQUEST_CANCEL'},
+        ],
+        endState: MFA_STATE.CLOSING,
+    },
+    {
+        description: 'the offline confirm journey closes the modal instead of running the cancel logic',
+        events: [
+            createInitEvent(),
+            createActorDoneEvent('validateDevice', {success: true}),
+            createActorDoneEvent('loadRegistrationState', {hasServerCredentials: false, hasLocalCredentials: false, hasEverAcceptedSoftPrompt: false}),
+            {type: 'REQUEST_CANCEL'},
+            {type: 'NETWORK_OFFLINE'},
+            {type: 'CONFIRM_CANCEL'},
+        ],
+        endState: MFA_STATE.CLOSING,
+    },
 ];
+
+/**
+ * Events left out of the generated paths the UI walk drives. Offline outlasts the step it arrives in, so a generated
+ * path would carry it onto later steps whose controls the offline screen hides. The driving journeys cover them in the
+ * UI, and the machine-only reachability paths still traverse them.
+ */
+const UNWALKED_EVENT_TYPES = ['NETWORK_OFFLINE', 'NETWORK_ONLINE'] as const satisfies ReadonlyArray<MfaEvent['type']>;
 
 type MfaEventFixtures = {
     readonly [Type in MfaEvent['type']]: readonly [Extract<MfaEvent, {type: Type}>, ...Array<Extract<MfaEvent, {type: Type}>>];
@@ -382,6 +468,8 @@ const MFA_GRAPH_EVENT_FIXTURES = {
     REQUEST_CANCEL: [{type: 'REQUEST_CANCEL'}],
     DISMISS_CANCEL: [{type: 'DISMISS_CANCEL'}],
     CONFIRM_CANCEL: [{type: 'CONFIRM_CANCEL'}],
+    NETWORK_OFFLINE: [{type: 'NETWORK_OFFLINE'}],
+    NETWORK_ONLINE: [{type: 'NETWORK_ONLINE'}],
 } satisfies MfaEventFixtures;
 
 /**
@@ -495,6 +583,11 @@ function getTraversalEvents(snapshot: MfaSnapshot): MfaMachineEvent[] {
     return events;
 }
 
+/** Supplies the traversal events of the state without the ones the UI walk leaves to the driving journeys. */
+function getWalkableTraversalEvents(snapshot: MfaSnapshot): MfaMachineEvent[] {
+    return getTraversalEvents(snapshot).filter((event) => !UNWALKED_EVENT_TYPES.some((type) => type === event.type));
+}
+
 /**
  * The machine re-typed over `MfaMachineEvent`, so the tests can send the events XState raises
  * itself. The assertion is safe because the running machine really handles that union, and it goes
@@ -509,7 +602,7 @@ const mfaTestModel = new TestModel(mfaMachineWithLifecycleEvents, {
     stateMatcher: (state, stateValue) => matchesState(stateValue, state.value),
 });
 
-/** Returns the shortest coverage paths over the machine graph. */
+/** Returns the shortest coverage paths over the machine graph, driven by every event the machine handles. */
 function getMfaShortestPaths() {
     return getShortestPaths(mfaMachineWithLifecycleEvents, {events: getTraversalEvents});
 }
@@ -526,9 +619,10 @@ function getDrivingJourneyPaths() {
  * `everyStateReachable.test.ts` checks stable-state reachability over the unfiltered graph, while
  * the walk-coverage guard in `viewMatchesMachine.test.tsx` catches a state that loses every
  * UI-drivable route. `path.test` skips framework steps without an executor, such as `xstate.init`.
+ * The generated paths here leave out `UNWALKED_EVENT_TYPES`.
  */
 function getWalkedPaths() {
-    const coveragePaths = mfaTestModel.getPaths(() => getMfaShortestPaths());
+    const coveragePaths = mfaTestModel.getPaths(() => getShortestPaths(mfaMachineWithLifecycleEvents, {events: getWalkableTraversalEvents}));
     const journeyPaths = getDrivingJourneyPaths().flatMap((journey) => journey.paths);
     return [...coveragePaths, ...journeyPaths].filter(isUiDrivablePath);
 }
