@@ -6,7 +6,6 @@ import type {LocalizedTranslate} from '@components/LocaleContextProvider';
 
 import INPUT_IDS from '@pages/SimplifiedBankOnboarding/contract/form';
 import type {USDOwnerDraft} from '@pages/SimplifiedBankOnboarding/contract/form';
-import SBO_CONST from '@pages/SimplifiedBankOnboarding/contract/SBO_CONST';
 import {ConfirmationSubPage, DateOfBirthSubPage, FullNameSubPage, PageLoadingIndicator, SubPage} from '@pages/SimplifiedBankOnboarding/core';
 import {canAddMoreUSDOwners} from '@pages/SimplifiedBankOnboarding/flows/shared/owners/ownerLimits';
 import {getOwnerFullName} from '@pages/SimplifiedBankOnboarding/flows/shared/owners/serverOwners';
@@ -14,7 +13,7 @@ import type {OwnerLoop} from '@pages/SimplifiedBankOnboarding/flows/shared/owner
 
 import React from 'react';
 
-const {BENEFICIAL_OWNERS_SUB_PAGES: PAGES} = SBO_CONST.USD;
+import PAGES from './ownersPages';
 
 type USDOwnerDetailsPagesOptions = {
     loop: OwnerLoop<USDOwnerDraft>;

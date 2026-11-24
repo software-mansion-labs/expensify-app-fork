@@ -7,7 +7,6 @@
 import useLocalize from '@hooks/useLocalize';
 
 import INPUT_IDS from '@pages/SimplifiedBankOnboarding/contract/form';
-import SBO_CONST from '@pages/SimplifiedBankOnboarding/contract/SBO_CONST';
 import {NEXT_STEP, OnboardingStep, SubPage, YesNoSubPage, useFlowData} from '@pages/SimplifiedBankOnboarding/core';
 import type {PageTarget} from '@pages/SimplifiedBankOnboarding/core';
 import getBusinessInfoAnswers from '@pages/SimplifiedBankOnboarding/flows/nonUSD/businessInfo/getBusinessInfoAnswers';
@@ -20,9 +19,8 @@ import React from 'react';
 
 import getOwnersAnswers from './getOwnersAnswers';
 import globalOwnersRequest from './globalOwnersRequest';
+import PAGES from './ownersPages';
 import renderOwnerDetailsPages from './renderOwnerDetailsPages';
-
-const {BENEFICIAL_OWNER_INFO_SUB_PAGES: PAGES} = SBO_CONST.NON_USD;
 
 function BeneficialOwnersStep() {
     const {translate} = useLocalize();

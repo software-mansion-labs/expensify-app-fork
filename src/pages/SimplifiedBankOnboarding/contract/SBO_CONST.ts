@@ -76,31 +76,6 @@ const SBO_CONST = {
         },
         PAGE_NAMES: USD_PAGE_NAMES,
         MAX_NUMBER_OF_UBOS: 3,
-        BANK_INFO_SUB_PAGES: {
-            MANUAL: 'manual',
-            PLAID: 'plaid',
-        },
-        PERSONAL_INFO_SUB_PAGES: {
-            FULL_NAME: 'full-name',
-            DATE_OF_BIRTH: 'date-of-birth',
-            SSN: 'ssn',
-            CONFIRMATION: 'confirmation',
-        },
-        BUSINESS_INFO_SUB_PAGES: {
-            NAME: 'name',
-            TAX_ID: 'tax-id',
-            INCORPORATION_TYPE: 'incorporation-type',
-            CONFIRMATION: 'confirmation',
-        },
-        BENEFICIAL_OWNERS_SUB_PAGES: {
-            IS_USER_UBO: 'is-user-ubo',
-            IS_ANYONE_ELSE_UBO: 'is-anyone-else-ubo',
-            LEGAL_NAME: 'legal-name',
-            DATE_OF_BIRTH: 'date-of-birth',
-            CONFIRMATION: 'confirmation',
-            ARE_THERE_MORE_UBOS: 'are-there-more-ubos',
-            UBOS_LIST: 'ubos-list',
-        },
         INCORPORATION_TYPES: {
             LLC: 'LLC',
             CORPORATION: 'Corporation',
@@ -131,38 +106,6 @@ const SBO_CONST = {
 
         /** The bank statement and the signed authorization form are one file each */
         DOCUMENT_FILE_LIMIT: 1,
-        BANK_INFO_SUB_PAGES: {
-            BANK_ACCOUNT_DETAILS: 'bank-account-details',
-            ACCOUNT_HOLDER_DETAILS: 'account-holder-details',
-            CONFIRMATION: 'confirmation',
-        },
-        BUSINESS_INFO_SUB_PAGES: {
-            NAME: 'name',
-            BUSINESS_TYPE: 'business-type',
-            CONFIRMATION: 'confirmation',
-        },
-        BENEFICIAL_OWNER_INFO_SUB_PAGES: {
-            IS_USER_BENEFICIAL_OWNER: 'is-user-beneficial-owner',
-            IS_ANYONE_ELSE_BENEFICIAL_OWNER: 'is-anyone-else-beneficial-owner',
-            NAME: 'name',
-            OWNERSHIP_PERCENTAGE: 'ownership-percentage',
-            CONFIRMATION: 'confirmation',
-            ARE_THERE_MORE_BENEFICIAL_OWNERS: 'are-there-more-beneficial-owners',
-            BENEFICIAL_OWNERS_LIST: 'beneficial-owners-list',
-        },
-        SIGNER_INFO_SUB_PAGES: {
-            IS_DIRECTOR: 'is-director',
-            NAME: 'name',
-            JOB_TITLE: 'job-title',
-            CONFIRMATION: 'confirmation',
-            ENTER_EMAIL: 'enter-email',
-            HANG_TIGHT: 'hang-tight',
-        },
-    },
-    ENTER_SIGNER_INFO_SUB_PAGES: {
-        NAME: 'name',
-        JOB_TITLE: 'job-title',
-        CONFIRMATION: 'confirmation',
     },
     SSN_LAST_4_LENGTH: 4,
     MOCK: {

@@ -43,7 +43,7 @@ import {getAdjacentSteps, getStepCounter, readFlowSteps, resolveFlowStep} from '
 type OnboardingFlowProps = {
     target: FlowTarget;
 
-    /** The route params as they are. The shell narrows them with isStepID and isPageID. */
+    /** The route params as they are. The shell narrows the step with isStepID, and the step that renders checks the page. */
     params: {page?: string; subPage?: string; action?: string} | undefined;
 
     /** FlowStep elements in flow order. Fragments and arrays are flattened. */

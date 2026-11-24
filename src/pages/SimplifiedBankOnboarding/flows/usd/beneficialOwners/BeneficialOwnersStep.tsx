@@ -8,7 +8,6 @@ import useLocalize from '@hooks/useLocalize';
 import useOnyx from '@hooks/useOnyx';
 
 import INPUT_IDS from '@pages/SimplifiedBankOnboarding/contract/form';
-import SBO_CONST from '@pages/SimplifiedBankOnboarding/contract/SBO_CONST';
 import {NEXT_STEP, OnboardingStep, SubPage, YesNoSubPage, useFlowData} from '@pages/SimplifiedBankOnboarding/core';
 import type {PageTarget} from '@pages/SimplifiedBankOnboarding/core';
 import type {OwnerRow} from '@pages/SimplifiedBankOnboarding/flows/shared/owners/OwnersListPage';
@@ -23,10 +22,9 @@ import ONYXKEYS from '@src/ONYXKEYS';
 import React from 'react';
 
 import getOwnersAnswers from './getOwnersAnswers';
+import PAGES from './ownersPages';
 import renderOwnerDetailsPages from './renderOwnerDetailsPages';
 import usdOwnersRequest from './usdOwnersRequest';
-
-const {BENEFICIAL_OWNERS_SUB_PAGES: PAGES} = SBO_CONST.USD;
 
 /** The user is listed with the details of the personal info step, which this step does not edit */
 const USER_ROW_ID = 'requestor';

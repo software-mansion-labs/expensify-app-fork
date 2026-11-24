@@ -8,7 +8,7 @@
  */
 import Navigation from '@libs/Navigation/Navigation';
 
-import {ENTER_SIGNER_INFO_STEP_ID, isPageID, isStepID} from '@pages/SimplifiedBankOnboarding/contract/ids';
+import {ENTER_SIGNER_INFO_STEP_ID, isStepID} from '@pages/SimplifiedBankOnboarding/contract/ids';
 import type {PageID, StepID} from '@pages/SimplifiedBankOnboarding/contract/ids';
 
 import ROUTES from '@src/ROUTES';
@@ -73,13 +73,12 @@ function readStringParam(params: unknown, name: string): string | undefined {
     return typeof value === 'string' ? value : undefined;
 }
 
-/** The position that route params name. A step or a page that is not an ID of the flows counts as missing. */
+/** The position that route params name. A step that is not an ID of the flows counts as missing. The step checks the page. */
 function parseFlowPosition(target: FlowTarget, params: unknown): FlowPosition {
     const step = target.kind === 'enterSignerInfo' ? ENTER_SIGNER_INFO_STEP_ID : readStringParam(params, 'page');
-    const page = readStringParam(params, 'subPage');
     return {
         step: isStepID(step) ? step : undefined,
-        page: isPageID(page) ? page : undefined,
+        page: readStringParam(params, 'subPage'),
         isEditing: readStringParam(params, 'action') === EDIT_ACTION,
     };
 }

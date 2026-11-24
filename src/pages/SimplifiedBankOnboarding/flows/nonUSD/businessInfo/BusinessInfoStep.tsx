@@ -11,7 +11,6 @@ import useThemeStyles from '@hooks/useThemeStyles';
 import {isValidCompanyName} from '@libs/ValidationUtils';
 
 import INPUT_IDS from '@pages/SimplifiedBankOnboarding/contract/form';
-import SBO_CONST from '@pages/SimplifiedBankOnboarding/contract/SBO_CONST';
 import {
     ConfirmationSubPage,
     FormSubPage,
@@ -30,10 +29,9 @@ import ONYXKEYS from '@src/ONYXKEYS';
 import React from 'react';
 import {View} from 'react-native';
 
+import PAGES from './businessInfoPages';
 import {companyDetailsRequest, picklistsRead} from './businessInfoRequests';
 import getBusinessInfoAnswers from './getBusinessInfoAnswers';
-
-const {BUSINESS_INFO_SUB_PAGES: PAGES} = SBO_CONST.NON_USD;
 
 function BusinessInfoStep() {
     const {translate} = useLocalize();

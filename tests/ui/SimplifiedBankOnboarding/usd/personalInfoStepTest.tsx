@@ -17,6 +17,7 @@ import type {FlowStepPosition, FlowTarget, OnboardingFlowActions, OnboardingFlow
 import {getFlowRoute} from '@pages/SimplifiedBankOnboarding/core/flow/flowRoutes';
 import type {FlowNavigationState} from '@pages/SimplifiedBankOnboarding/core/flow/flowRoutes';
 import {clearRequestState} from '@pages/SimplifiedBankOnboarding/core/requests/runRequest';
+import PAGES from '@pages/SimplifiedBankOnboarding/flows/usd/personalInfo/personalInfoPages';
 import PersonalInfoStep from '@pages/SimplifiedBankOnboarding/flows/usd/personalInfo/PersonalInfoStep';
 import {WRITE_COMMANDS} from '@pages/SimplifiedBankOnboarding/mockBackend/commands';
 import {write} from '@pages/SimplifiedBankOnboarding/mockBackend/mockApi';
@@ -40,7 +41,7 @@ const POLICY_ID = '1';
 const BANK_ACCOUNT_ID = 5;
 const ROUTE_KEY = 'current-route';
 const TARGET: FlowTarget = {kind: 'usd', policyID: POLICY_ID, backTo: undefined};
-const {PAGE_NAMES, PERSONAL_INFO_SUB_PAGES: PAGES} = SBO_CONST.USD;
+const {PAGE_NAMES} = SBO_CONST.USD;
 const FULL_DRAFT: OnboardingDraft = {firstName: 'Alberta', lastName: 'Charleson', dob: '1990-01-01', ssnLast4: '1234'};
 
 let mockNavigationState: FlowNavigationState = {routes: []};

@@ -21,10 +21,9 @@ import type {TranslationPaths} from '@src/languages/types';
 import React from 'react';
 import {View} from 'react-native';
 
+import PAGES from './businessInfoPages';
 import businessInfoRequest from './businessInfoRequest';
 import getBusinessInfoAnswers from './getBusinessInfoAnswers';
-
-const {BUSINESS_INFO_SUB_PAGES: PAGES} = SBO_CONST.USD;
 
 const INCORPORATION_TYPE_OPTIONS: Record<string, string> = Object.fromEntries(
     Object.values(SBO_CONST.USD.INCORPORATION_TYPES).map((incorporationType) => [incorporationType, incorporationType]),

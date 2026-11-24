@@ -18,9 +18,8 @@ import type {TranslationPaths} from '@src/languages/types';
 import React from 'react';
 
 import getPersonalInfoAnswers from './getPersonalInfoAnswers';
+import PAGES from './personalInfoPages';
 import {personalInfoProgressRequest, personalInfoRequest} from './personalInfoRequests';
-
-const {PERSONAL_INFO_SUB_PAGES: PAGES} = SBO_CONST.USD;
 
 function validateSSNLastFour(value: string): TranslationPaths | undefined {
     return isValidSSNLastFour(value) ? undefined : 'bankAccount.error.ssnLast4';

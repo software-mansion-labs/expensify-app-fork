@@ -4,11 +4,10 @@
  */
 import {requiresSecondDirector} from '@pages/SimplifiedBankOnboarding/contract/currency';
 import type {CorpayData} from '@pages/SimplifiedBankOnboarding/contract/onyx';
-import SBO_CONST from '@pages/SimplifiedBankOnboarding/contract/SBO_CONST';
 
 import type {OnyxEntry} from 'react-native-onyx';
 
-const PAGES = SBO_CONST.NON_USD.SIGNER_INFO_SUB_PAGES;
+import PAGES from './signerPages';
 
 type SignerStartPage = typeof PAGES.IS_DIRECTOR | typeof PAGES.HANG_TIGHT;
 

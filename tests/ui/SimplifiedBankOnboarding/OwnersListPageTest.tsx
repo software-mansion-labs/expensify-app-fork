@@ -19,6 +19,7 @@ import OnboardingStep from '@pages/SimplifiedBankOnboarding/core/step/Onboarding
 import SubPage from '@pages/SimplifiedBankOnboarding/core/step/SubPage';
 import OwnersListPage from '@pages/SimplifiedBankOnboarding/flows/shared/owners/OwnersListPage';
 import type {OwnerRow} from '@pages/SimplifiedBankOnboarding/flows/shared/owners/OwnersListPage';
+import PAGES from '@pages/SimplifiedBankOnboarding/flows/usd/beneficialOwners/ownersPages';
 import {WRITE_COMMANDS} from '@pages/SimplifiedBankOnboarding/mockBackend/commands';
 import {write} from '@pages/SimplifiedBankOnboarding/mockBackend/mockApi';
 
@@ -41,7 +42,7 @@ const TARGET: FlowTarget = {
     policyID: POLICY_ID,
     backTo: undefined,
 };
-const {PAGE_NAMES, BENEFICIAL_OWNERS_SUB_PAGES: PAGES} = SBO_CONST.USD;
+const {PAGE_NAMES} = SBO_CONST.USD;
 
 const mockNavigationState: FlowNavigationState = {routes: []};
 

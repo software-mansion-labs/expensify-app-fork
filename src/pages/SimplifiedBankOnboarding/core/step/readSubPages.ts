@@ -5,7 +5,6 @@
  * What it hides: the flattening of fragments and arrays, the runtime check of the element props, the start page rule
  * and the registry of the components that edit mode returns to.
  */
-import {isPageID} from '@pages/SimplifiedBankOnboarding/contract/ids';
 import type {PageID} from '@pages/SimplifiedBankOnboarding/contract/ids';
 import {flattenElements} from '@pages/SimplifiedBankOnboarding/core/flow/readFlowSteps';
 
@@ -73,11 +72,11 @@ function markAsEditReturnTarget(component: React.ComponentType<never>) {
 }
 
 function isPageTarget(value: unknown): value is PageTarget {
-    return value === NEXT_STEP || (typeof value === 'string' && isPageID(value));
+    return value === NEXT_STEP || typeof value === 'string';
 }
 
 function isBackTarget(value: unknown): value is BackTarget {
-    return value === PREVIOUS_STEP || (typeof value === 'string' && isPageID(value));
+    return value === PREVIOUS_STEP || typeof value === 'string';
 }
 
 function readSubPageProps(element: React.ReactElement<unknown>): SubPageElementProps {
@@ -86,7 +85,7 @@ function readSubPageProps(element: React.ReactElement<unknown>): SubPageElementP
         return {};
     }
     return {
-        name: 'name' in props && typeof props.name === 'string' && isPageID(props.name) ? props.name : undefined,
+        name: 'name' in props && typeof props.name === 'string' ? props.name : undefined,
         isAnswered: 'isAnswered' in props && props.isAnswered === true,
         back: 'back' in props && isBackTarget(props.back) ? props.back : undefined,
         next: 'next' in props && isPageTarget(props.next) ? props.next : undefined,

@@ -13,11 +13,10 @@ import {OnboardingStep, PageLoadingIndicator, SubPage, useFlowData} from '@pages
 
 import React from 'react';
 
+import PAGES from './bankAccountPages';
 import getBankAccountAnswers from './getBankAccountAnswers';
 import ManualBankPage from './ManualBankPage';
 import PlaidBankPage from './PlaidBankPage';
-
-const {BANK_INFO_SUB_PAGES: PAGES} = SBO_CONST.USD;
 
 function BankAccountStep() {
     const {translate} = useLocalize();

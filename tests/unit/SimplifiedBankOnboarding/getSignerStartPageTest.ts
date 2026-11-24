@@ -1,8 +1,9 @@
 import SBO_CONST from '@pages/SimplifiedBankOnboarding/contract/SBO_CONST';
 import getSignerStartPage from '@pages/SimplifiedBankOnboarding/flows/nonUSD/signer/getSignerStartPage';
+import SIGNER_PAGES from '@pages/SimplifiedBankOnboarding/flows/nonUSD/signer/signerPages';
 
 const {EUR, AUD} = SBO_CONST.CURRENCY;
-const {IS_DIRECTOR, HANG_TIGHT} = SBO_CONST.NON_USD.SIGNER_INFO_SUB_PAGES;
+const {IS_DIRECTOR, HANG_TIGHT} = SIGNER_PAGES;
 
 describe('getSignerStartPage', () => {
     it('starts at the director question before anything was saved', () => {

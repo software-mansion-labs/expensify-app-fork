@@ -7,7 +7,6 @@ import type {LocalizedTranslate} from '@components/LocaleContextProvider';
 
 import INPUT_IDS from '@pages/SimplifiedBankOnboarding/contract/form';
 import type {GlobalOwnerDraft} from '@pages/SimplifiedBankOnboarding/contract/form';
-import SBO_CONST from '@pages/SimplifiedBankOnboarding/contract/SBO_CONST';
 import {ConfirmationSubPage, FullNameSubPage, PageLoadingIndicator, SingleFieldSubPage, SubPage} from '@pages/SimplifiedBankOnboarding/core';
 import {canAddMoreGlobalOwners, isValidGlobalOwnerShare} from '@pages/SimplifiedBankOnboarding/flows/shared/owners/ownerLimits';
 import {CURRENT_USER_OWNER_ID} from '@pages/SimplifiedBankOnboarding/flows/shared/owners/ownerList';
@@ -18,7 +17,7 @@ import CONST from '@src/CONST';
 
 import React from 'react';
 
-const {BENEFICIAL_OWNER_INFO_SUB_PAGES: PAGES} = SBO_CONST.NON_USD;
+import PAGES from './ownersPages';
 
 /**
  * An owner opened from the list goes back to the list. The user goes back to the question about the user. Another new

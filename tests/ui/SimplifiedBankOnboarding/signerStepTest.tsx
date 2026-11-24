@@ -12,6 +12,7 @@ import {FlowStepPositionContext, OnboardingFlowActionsContext, OnboardingFlowSta
 import type {FlowStepPosition, FlowTarget, OnboardingFlowActions, OnboardingFlowState} from '@pages/SimplifiedBankOnboarding/core/flow/flowContext';
 import {getFlowRoute} from '@pages/SimplifiedBankOnboarding/core/flow/flowRoutes';
 import type {FlowNavigationState} from '@pages/SimplifiedBankOnboarding/core/flow/flowRoutes';
+import PAGES from '@pages/SimplifiedBankOnboarding/flows/nonUSD/signer/signerPages';
 import SignerStep from '@pages/SimplifiedBankOnboarding/flows/nonUSD/signer/SignerStep';
 
 import ONYXKEYS from '@src/ONYXKEYS';
@@ -27,7 +28,7 @@ import waitForBatchedUpdatesWithAct from '../../utils/waitForBatchedUpdatesWithA
 
 const POLICY_ID = '1';
 const TARGET: FlowTarget = {kind: 'nonUSD', policyID: POLICY_ID, backTo: undefined};
-const {PAGE_NAMES, SIGNER_INFO_SUB_PAGES: PAGES, CURRENT_USER_KEY} = SBO_CONST.NON_USD;
+const {PAGE_NAMES, CURRENT_USER_KEY} = SBO_CONST.NON_USD;
 
 const mockNavigationState: FlowNavigationState = {routes: []};
 

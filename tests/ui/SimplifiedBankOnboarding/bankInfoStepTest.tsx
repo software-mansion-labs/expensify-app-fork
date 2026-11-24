@@ -12,6 +12,7 @@ import type {OnboardingDraft} from '@pages/SimplifiedBankOnboarding/contract/for
 import type {BankFields} from '@pages/SimplifiedBankOnboarding/contract/onyx';
 import SBO_CONST from '@pages/SimplifiedBankOnboarding/contract/SBO_CONST';
 import {clearRequestState} from '@pages/SimplifiedBankOnboarding/core/requests/runRequest';
+import PAGES from '@pages/SimplifiedBankOnboarding/flows/nonUSD/bankInfo/bankInfoPages';
 import {READ_COMMANDS, WRITE_COMMANDS} from '@pages/SimplifiedBankOnboarding/mockBackend/commands';
 import {read, write} from '@pages/SimplifiedBankOnboarding/mockBackend/mockApi';
 import {getBankFormFields} from '@pages/SimplifiedBankOnboarding/mockBackend/serverCatalog';
@@ -80,7 +81,6 @@ type NonUSDFlowPageProps = PlatformStackScreenProps<BankOnboardingLabParamList, 
 const navigation = {} as NonUSDFlowPageProps['navigation'];
 
 const POLICY_ID = '1';
-const {BANK_INFO_SUB_PAGES: PAGES} = SBO_CONST.NON_USD;
 const GERMAN_FIELDS = getBankFormFields(SBO_CONST.COUNTRY.DE) ?? [];
 const VALID_IBAN = 'DE89370400440532013000';
 

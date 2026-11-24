@@ -18,6 +18,7 @@ import type {FlowStepPosition, FlowTarget, OnboardingFlowActions, OnboardingFlow
 import {getFlowRoute} from '@pages/SimplifiedBankOnboarding/core/flow/flowRoutes';
 import type {FlowNavigationState} from '@pages/SimplifiedBankOnboarding/core/flow/flowRoutes';
 import {clearRequestState} from '@pages/SimplifiedBankOnboarding/core/requests/runRequest';
+import BUSINESS_PAGES from '@pages/SimplifiedBankOnboarding/flows/usd/businessInfo/businessInfoPages';
 import BusinessInfoStep from '@pages/SimplifiedBankOnboarding/flows/usd/businessInfo/BusinessInfoStep';
 import KYBDocumentsStep from '@pages/SimplifiedBankOnboarding/flows/usd/kybDocuments/KYBDocumentsStep';
 import VerifyIdentityStep from '@pages/SimplifiedBankOnboarding/flows/usd/verifyIdentity/VerifyIdentityStep';
@@ -43,7 +44,7 @@ const POLICY_ID = '1';
 const BANK_ACCOUNT_ID = 5;
 const ROUTE_KEY = 'current-route';
 const TARGET: FlowTarget = {kind: 'usd', policyID: POLICY_ID, backTo: undefined};
-const {PAGE_NAMES, BUSINESS_INFO_SUB_PAGES: BUSINESS_PAGES, KYB_DOCUMENT_TYPES} = SBO_CONST.USD;
+const {PAGE_NAMES, KYB_DOCUMENT_TYPES} = SBO_CONST.USD;
 const INCORPORATION_TYPE = Object.values(SBO_CONST.USD.INCORPORATION_TYPES).at(0);
 const COMPANY_DRAFT: OnboardingDraft = {companyName: 'Acme', companyTaxID: '12-3456789', incorporationType: INCORPORATION_TYPE};
 const TAX_ID_DOCUMENT = {name: 'tax.pdf'};

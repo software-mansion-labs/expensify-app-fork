@@ -7,7 +7,6 @@ import {isValidLegalName} from '@libs/ValidationUtils';
 
 import {SIGNER_INPUT_IDS} from '@pages/SimplifiedBankOnboarding/contract/form';
 import type {PageID} from '@pages/SimplifiedBankOnboarding/contract/ids';
-import SBO_CONST from '@pages/SimplifiedBankOnboarding/contract/SBO_CONST';
 import {ConfirmationSubPage, SingleFieldSubPage} from '@pages/SimplifiedBankOnboarding/core';
 import type {ConfirmationRow, OnboardingRequest, PageTarget} from '@pages/SimplifiedBankOnboarding/core';
 
@@ -15,6 +14,8 @@ import CONST from '@src/CONST';
 import type {TranslationPaths} from '@src/languages/types';
 
 import React from 'react';
+
+import PAGES from './signerDetailsPages';
 
 type SignerDetailsValues = {
     signerFullName: string;
@@ -39,9 +40,6 @@ type SignerDetailsPagesOptions = {
 };
 
 type Translate = (path: TranslationPaths) => string;
-
-/** The values match SBO_CONST.NON_USD.SIGNER_INFO_SUB_PAGES, so the NonUSD signer step can name these pages too */
-const PAGES = SBO_CONST.ENTER_SIGNER_INFO_SUB_PAGES;
 
 function validateLegalName(name: string): TranslationPaths | undefined {
     return isValidLegalName(name) ? undefined : 'bankAccount.error.fullName';

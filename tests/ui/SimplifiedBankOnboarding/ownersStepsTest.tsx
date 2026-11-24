@@ -15,9 +15,11 @@ import {getFlowRoute} from '@pages/SimplifiedBankOnboarding/core/flow/flowRoutes
 import type {FlowNavigationState} from '@pages/SimplifiedBankOnboarding/core/flow/flowRoutes';
 import {clearRequestState} from '@pages/SimplifiedBankOnboarding/core/requests/runRequest';
 import NonUSDBeneficialOwnersStep from '@pages/SimplifiedBankOnboarding/flows/nonUSD/beneficialOwners/BeneficialOwnersStep';
+import NON_USD_PAGES from '@pages/SimplifiedBankOnboarding/flows/nonUSD/beneficialOwners/ownersPages';
 import {EMPTY_OWNER_BUFFER, GLOBAL_OWNER_BUFFER, USD_OWNER_BUFFER} from '@pages/SimplifiedBankOnboarding/flows/shared/owners/ownerBuffer';
 import {CURRENT_USER_OWNER_ID} from '@pages/SimplifiedBankOnboarding/flows/shared/owners/ownerList';
 import USDBeneficialOwnersStep from '@pages/SimplifiedBankOnboarding/flows/usd/beneficialOwners/BeneficialOwnersStep';
+import USD_PAGES from '@pages/SimplifiedBankOnboarding/flows/usd/beneficialOwners/ownersPages';
 import {WRITE_COMMANDS} from '@pages/SimplifiedBankOnboarding/mockBackend/commands';
 import {write} from '@pages/SimplifiedBankOnboarding/mockBackend/mockApi';
 
@@ -47,8 +49,8 @@ const NON_USD_TARGET: FlowTarget = {
     policyID: POLICY_ID,
     backTo: undefined,
 };
-const {PAGE_NAMES: USD_STEPS, BENEFICIAL_OWNERS_SUB_PAGES: USD_PAGES} = SBO_CONST.USD;
-const {PAGE_NAMES: NON_USD_STEPS, BENEFICIAL_OWNER_INFO_SUB_PAGES: NON_USD_PAGES} = SBO_CONST.NON_USD;
+const {PAGE_NAMES: USD_STEPS} = SBO_CONST.USD;
+const {PAGE_NAMES: NON_USD_STEPS} = SBO_CONST.NON_USD;
 
 let mockNavigationState: FlowNavigationState = {routes: []};
 

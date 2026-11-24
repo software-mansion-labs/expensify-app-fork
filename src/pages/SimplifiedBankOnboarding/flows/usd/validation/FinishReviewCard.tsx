@@ -13,6 +13,7 @@ import useThemeStyles from '@hooks/useThemeStyles';
 import SBO_CONST from '@pages/SimplifiedBankOnboarding/contract/SBO_CONST';
 import {useOnboardingFlow} from '@pages/SimplifiedBankOnboarding/core';
 import MockReviewButtons from '@pages/SimplifiedBankOnboarding/flows/shared/MockReviewButtons';
+import PERSONAL_INFO_PAGES from '@pages/SimplifiedBankOnboarding/flows/usd/personalInfo/personalInfoPages';
 
 import CONST from '@src/CONST';
 
@@ -24,7 +25,7 @@ function FinishReviewCard() {
     const {target, saveDraft, openStep} = useOnboardingFlow();
 
     const updateDetails = () => {
-        saveDraft({setupType: SBO_CONST.SETUP_TYPE.MANUAL}).then(() => openStep(SBO_CONST.USD.PAGE_NAMES.REQUESTOR, SBO_CONST.USD.PERSONAL_INFO_SUB_PAGES.FULL_NAME));
+        saveDraft({setupType: SBO_CONST.SETUP_TYPE.MANUAL}).then(() => openStep(SBO_CONST.USD.PAGE_NAMES.REQUESTOR, PERSONAL_INFO_PAGES.FULL_NAME));
     };
 
     return (

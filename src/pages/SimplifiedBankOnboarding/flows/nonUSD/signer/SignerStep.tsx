@@ -8,7 +8,6 @@ import useOnyx from '@hooks/useOnyx';
 
 import {requiresSecondDirector} from '@pages/SimplifiedBankOnboarding/contract/currency';
 import INPUT_IDS from '@pages/SimplifiedBankOnboarding/contract/form';
-import SBO_CONST from '@pages/SimplifiedBankOnboarding/contract/SBO_CONST';
 import {NEXT_STEP, OnboardingStep, PREVIOUS_STEP, SubPage, YesNoSubPage, useFlowData} from '@pages/SimplifiedBankOnboarding/core';
 import type {PageTarget} from '@pages/SimplifiedBankOnboarding/core';
 import getBusinessInfoAnswers from '@pages/SimplifiedBankOnboarding/flows/nonUSD/businessInfo/getBusinessInfoAnswers';
@@ -22,10 +21,9 @@ import getSignerAnswers from './getSignerAnswers';
 import getSignerStartPage from './getSignerStartPage';
 import HangTightPage from './HangTightPage';
 import SignerEmailPage from './SignerEmailPage';
+import PAGES from './signerPages';
 import {signerDetailsRequest} from './signerRequests';
 import {getSignerEmailMode, getSignerFullName, shouldAskForSignerName} from './signerRules';
-
-const PAGES = SBO_CONST.NON_USD.SIGNER_INFO_SUB_PAGES;
 
 function SignerStep() {
     const {translate} = useLocalize();
