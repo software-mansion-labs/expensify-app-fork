@@ -7,6 +7,7 @@ import Navigation from '@libs/Navigation/Navigation';
 import type {ACHData, USDStep} from '@pages/SimplifiedBankOnboarding/contract/onyx';
 import SBO_CONST from '@pages/SimplifiedBankOnboarding/contract/SBO_CONST';
 import {isPendingValidation} from '@pages/SimplifiedBankOnboarding/contract/setupStatus';
+import {openFlow} from '@pages/SimplifiedBankOnboarding/core';
 
 import type {Route} from '@src/ROUTES';
 import ROUTES from '@src/ROUTES';
@@ -29,6 +30,20 @@ function goBackFromEntryStep(step: USDStep, achData: OnyxEntry<ACHData>, backTo:
         default:
             Navigation.dismissModal();
     }
+}
+
+type FirstFlowStepInput = {
+    policyID: string | undefined;
+    backTo: Route | undefined;
+    isNonUSD: boolean;
+
+    /** The verify page replaces itself, so the Back of the first step returns to the setup options */
+    shouldReplace?: boolean;
+};
+
+/** Opens the flow of the currency on its first step. The step is named, so the flow does not resume from the data of another setup. */
+function openFirstFlowStep({policyID, backTo, isNonUSD, shouldReplace}: FirstFlowStepInput) {
+    openFlow({kind: isNonUSD ? 'nonUSD' : 'usd', policyID, backTo}, {step: isNonUSD ? SBO_CONST.NON_USD.PAGE_NAMES.COUNTRY : SBO_CONST.USD.PAGE_NAMES.COUNTRY}, {shouldReplace});
 }
 
 /** The gate for a user whose account is not validated yet */
@@ -63,4 +78,4 @@ function leaveEntryAfterReset(backTo: Route | undefined) {
     Navigation.goBack(ROUTES.SETTINGS_BANK_ONBOARDING_LAB);
 }
 
-export {goBackFromEntryStep, goToChangeBankAccount, goToVerifyAccount, isOpenedFromPaymentsPage, leaveEntryAfterReset};
+export {goBackFromEntryStep, goToChangeBankAccount, goToVerifyAccount, isOpenedFromPaymentsPage, leaveEntryAfterReset, openFirstFlowStep};

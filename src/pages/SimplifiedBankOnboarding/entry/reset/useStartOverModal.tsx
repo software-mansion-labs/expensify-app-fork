@@ -17,9 +17,9 @@ import useThemeStyles from '@hooks/useThemeStyles';
 
 import type {Workspaces} from '@pages/SimplifiedBankOnboarding/contract/onyx';
 import SBO_CONST from '@pages/SimplifiedBankOnboarding/contract/SBO_CONST';
-import {getBankAccountParams, openFlow} from '@pages/SimplifiedBankOnboarding/core';
+import {getBankAccountParams} from '@pages/SimplifiedBankOnboarding/core';
 import {ACCOUNT_ENDING_LENGTH} from '@pages/SimplifiedBankOnboarding/entry/accountEnding';
-import {leaveEntryAfterReset} from '@pages/SimplifiedBankOnboarding/entry/entryNavigation';
+import {leaveEntryAfterReset, openFirstFlowStep} from '@pages/SimplifiedBankOnboarding/entry/entryNavigation';
 import {resetBankAccount} from '@pages/SimplifiedBankOnboarding/entry/requests/resetBankAccount';
 
 import CONST from '@src/CONST';
@@ -62,7 +62,7 @@ function useStartOverModal({isNonUSD, backTo}: StartOverModalOptions): {
             workspaceACHAccount,
         });
         if (isNonUSD) {
-            openFlow({kind: 'nonUSD', policyID, backTo}, {step: SBO_CONST.NON_USD.PAGE_NAMES.COUNTRY});
+            openFirstFlowStep({policyID, backTo, isNonUSD: true});
         }
         leaveEntryAfterReset(backTo);
     }

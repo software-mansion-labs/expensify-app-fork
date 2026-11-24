@@ -1,7 +1,6 @@
 import type {BankFieldID} from '@pages/SimplifiedBankOnboarding/contract/onyx';
 import type {OnboardingRequest} from '@pages/SimplifiedBankOnboarding/core';
 import {getNonUSDAnswers} from '@pages/SimplifiedBankOnboarding/flows/nonUSD/nonUSDAnswers';
-import getNonUSDWriteOptions from '@pages/SimplifiedBankOnboarding/flows/nonUSD/nonUSDWriteOptions';
 import {READ_COMMANDS, WRITE_COMMANDS} from '@pages/SimplifiedBankOnboarding/mockBackend/commands';
 
 import ONYXKEYS from '@src/ONYXKEYS';
@@ -69,7 +68,6 @@ function getCreateBankAccountRequest(fieldIDs: BankFieldID[]): OnboardingRequest
                     currency,
                     fields: Object.fromEntries(fieldIDs.map((fieldID) => [fieldID, bankFieldValues[fieldID]])),
                 },
-                ...getNonUSDWriteOptions(),
             };
         },
     };

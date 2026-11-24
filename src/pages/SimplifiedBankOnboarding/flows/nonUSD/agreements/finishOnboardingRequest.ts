@@ -1,7 +1,6 @@
 import {requiresDocusignStep} from '@pages/SimplifiedBankOnboarding/contract/currency';
 import type {OnboardingRequest} from '@pages/SimplifiedBankOnboarding/core';
 import {getNonUSDAnswers} from '@pages/SimplifiedBankOnboarding/flows/nonUSD/nonUSDAnswers';
-import getNonUSDWriteOptions from '@pages/SimplifiedBankOnboarding/flows/nonUSD/nonUSDWriteOptions';
 import {WRITE_COMMANDS} from '@pages/SimplifiedBankOnboarding/mockBackend/commands';
 
 /**
@@ -29,7 +28,6 @@ const finishOnboardingRequest: OnboardingRequest = {
                 consentToPrivacyNotice: answers.consentToPrivacyNotice,
                 ...fileNames,
             },
-            ...getNonUSDWriteOptions(),
         };
     },
 };

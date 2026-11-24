@@ -1,6 +1,5 @@
 import type {OnboardingRequest} from '@pages/SimplifiedBankOnboarding/core';
 import {getNonUSDAnswers} from '@pages/SimplifiedBankOnboarding/flows/nonUSD/nonUSDAnswers';
-import getNonUSDWriteOptions from '@pages/SimplifiedBankOnboarding/flows/nonUSD/nonUSDWriteOptions';
 import {READ_COMMANDS, WRITE_COMMANDS} from '@pages/SimplifiedBankOnboarding/mockBackend/commands';
 
 import ONYXKEYS from '@src/ONYXKEYS';
@@ -41,7 +40,6 @@ const companyDetailsRequest: OnboardingRequest = {
             type: 'write',
             command: WRITE_COMMANDS.SAVE_ONBOARDING_COMPANY_DETAILS,
             params: {...bankAccount, companyName, businessType},
-            ...getNonUSDWriteOptions(),
         };
     },
 };

@@ -4,7 +4,6 @@
  */
 import type {OnboardingRequest} from '@pages/SimplifiedBankOnboarding/core';
 import {getNonUSDAnswers} from '@pages/SimplifiedBankOnboarding/flows/nonUSD/nonUSDAnswers';
-import getNonUSDWriteOptions from '@pages/SimplifiedBankOnboarding/flows/nonUSD/nonUSDWriteOptions';
 import {CURRENT_USER_OWNER_ID, removeOwner} from '@pages/SimplifiedBankOnboarding/flows/shared/owners/ownerList';
 import {getGlobalOwnersParams} from '@pages/SimplifiedBankOnboarding/flows/shared/owners/ownerParams';
 import {WRITE_COMMANDS} from '@pages/SimplifiedBankOnboarding/mockBackend/commands';
@@ -23,7 +22,6 @@ const globalOwnersRequest: OnboardingRequest = {
                 ownsMoreThan25Percent: isUserOwner,
                 ...getGlobalOwnersParams(sentOwners),
             },
-            ...getNonUSDWriteOptions(),
         };
     },
 };

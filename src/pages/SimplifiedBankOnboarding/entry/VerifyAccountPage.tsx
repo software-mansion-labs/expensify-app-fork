@@ -24,7 +24,6 @@ import type {PlatformStackScreenProps} from '@libs/Navigation/PlatformStackNavig
 
 import {isNonUSDCurrency} from '@pages/SimplifiedBankOnboarding/contract/currency';
 import SBO_CONST from '@pages/SimplifiedBankOnboarding/contract/SBO_CONST';
-import {openFlow} from '@pages/SimplifiedBankOnboarding/core';
 
 import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';
@@ -33,6 +32,7 @@ import type SCREENS from '@src/SCREENS';
 import React, {useEffect, useEffectEvent, useRef, useState} from 'react';
 import {View} from 'react-native';
 
+import {openFirstFlowStep} from './entryNavigation';
 import {clearValidateUserErrors, validateUser} from './requests/validateUser';
 
 type VerifyAccountPageProps = PlatformStackScreenProps<BankOnboardingLabParamList, typeof SCREENS.SETTINGS.BANK_ONBOARDING_LAB.VERIFY_ACCOUNT>;
@@ -61,13 +61,7 @@ function VerifyAccountPage({route}: VerifyAccountPageProps) {
         hasNavigatedForwardRef.current = true;
 
         // The page replaces itself, so the Back of the first step returns to the setup options and not to this form.
-        openFlow(
-            {kind: isNonUSD ? 'nonUSD' : 'usd', policyID, backTo},
-            {
-                step: isNonUSD ? SBO_CONST.NON_USD.PAGE_NAMES.COUNTRY : SBO_CONST.USD.PAGE_NAMES.COUNTRY,
-            },
-            {shouldReplace: true},
-        );
+        openFirstFlowStep({policyID, backTo, isNonUSD, shouldReplace: true});
     });
 
     useEffect(() => {

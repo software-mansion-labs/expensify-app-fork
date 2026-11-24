@@ -5,10 +5,11 @@
  * saved one (README scenario 6).
  */
 import {requiresSecondDirector} from '@pages/SimplifiedBankOnboarding/contract/currency';
-import SBO_CONST from '@pages/SimplifiedBankOnboarding/contract/SBO_CONST';
 import {areSignersKnown, isVerifying} from '@pages/SimplifiedBankOnboarding/contract/setupStatus';
 import type {FlowData} from '@pages/SimplifiedBankOnboarding/core';
 import type {NonUSDAnswers} from '@pages/SimplifiedBankOnboarding/flows/nonUSD/nonUSDAnswers';
+import {CURRENT_USER_OWNER_ID, findOwner} from '@pages/SimplifiedBankOnboarding/flows/shared/owners/ownerList';
+import {getOwnerFullName} from '@pages/SimplifiedBankOnboarding/flows/shared/owners/serverOwners';
 
 /**
  * The inputs of the email page. `two`: an AUD user who is not a director names both directors. `secondOnly`: an AUD
@@ -32,9 +33,8 @@ function getOwnerNameOfUser({ownsMoreThan25Percent, owners}: SignerAnswers): str
     if (!ownsMoreThan25Percent) {
         return undefined;
     }
-    const userOwner = owners.find((owner) => owner.id === SBO_CONST.NON_USD.CURRENT_USER_KEY);
-    const fullName = userOwner ? `${userOwner.firstName} ${userOwner.lastName}`.trim() : '';
-    return fullName || undefined;
+    const userOwner = findOwner(owners, CURRENT_USER_OWNER_ID);
+    return (userOwner && getOwnerFullName(userOwner)) || undefined;
 }
 
 /** False when the owners step already holds the user's name, so the name page is left out */

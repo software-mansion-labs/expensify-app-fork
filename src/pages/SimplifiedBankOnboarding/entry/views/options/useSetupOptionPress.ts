@@ -12,7 +12,7 @@ import type {OnboardingUser, SetupType} from '@pages/SimplifiedBankOnboarding/co
 import SBO_CONST from '@pages/SimplifiedBankOnboarding/contract/SBO_CONST';
 import {openFlow, saveDraft, useScreenGuard} from '@pages/SimplifiedBankOnboarding/core';
 import type {FlowTarget} from '@pages/SimplifiedBankOnboarding/core';
-import {goToVerifyAccount} from '@pages/SimplifiedBankOnboarding/entry/entryNavigation';
+import {goToVerifyAccount, openFirstFlowStep} from '@pages/SimplifiedBankOnboarding/entry/entryNavigation';
 import {prepareSetupOption, setSetupOptionPressed} from '@pages/SimplifiedBankOnboarding/entry/requests/setupOption';
 
 import ONYXKEYS from '@src/ONYXKEYS';
@@ -71,9 +71,7 @@ function useSetupOptionPress({policyID, backTo, isNonUSD, currency, isChangingBa
             return;
         }
         prepareOption(setupType);
-        openFlow(flowTarget, {
-            step: isNonUSD ? SBO_CONST.NON_USD.PAGE_NAMES.COUNTRY : SBO_CONST.USD.PAGE_NAMES.COUNTRY,
-        });
+        openFirstFlowStep({policyID, backTo, isNonUSD});
     }
 
     // The user picked an option, was sent to validate the account and came back validated. This prepares the data for

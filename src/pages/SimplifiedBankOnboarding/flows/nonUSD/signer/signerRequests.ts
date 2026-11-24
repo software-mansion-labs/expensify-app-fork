@@ -5,7 +5,6 @@
  */
 import type {OnboardingRequest} from '@pages/SimplifiedBankOnboarding/core';
 import {getNonUSDAnswers} from '@pages/SimplifiedBankOnboarding/flows/nonUSD/nonUSDAnswers';
-import getNonUSDWriteOptions from '@pages/SimplifiedBankOnboarding/flows/nonUSD/nonUSDWriteOptions';
 import buildDirectorRequest from '@pages/SimplifiedBankOnboarding/flows/shared/signerDetails/directorRequest';
 import {WRITE_COMMANDS} from '@pages/SimplifiedBankOnboarding/mockBackend/commands';
 import type {BankAccountParams, WriteCommandParams} from '@pages/SimplifiedBankOnboarding/mockBackend/commands';
@@ -20,7 +19,6 @@ const signerDetailsRequest: OnboardingRequest = {
         const answers = getNonUSDAnswers(draft, account, currency);
         return {
             ...buildDirectorRequest(bankAccount, {signerFullName: getSignerFullName(answers), signerJobTitle: answers.signerJobTitle}),
-            ...getNonUSDWriteOptions(),
         };
     },
 };
@@ -31,7 +29,6 @@ const signerInvitationRequest: OnboardingRequest<SignerEmails> = {
         type: 'write',
         command: WRITE_COMMANDS.ASK_FOR_SIGNER_INFORMATION,
         params: {...bankAccount, ...emails},
-        ...getNonUSDWriteOptions(),
     }),
 };
 
@@ -41,7 +38,6 @@ const signerReminderRequest: OnboardingRequest = {
         type: 'write',
         command: WRITE_COMMANDS.SEND_REMINDER_FOR_SIGNER_INFORMATION,
         params: bankAccount,
-        ...getNonUSDWriteOptions(),
     }),
 };
 
