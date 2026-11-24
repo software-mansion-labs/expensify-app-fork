@@ -6,6 +6,7 @@ import useNetwork from '@hooks/useNetwork';
 
 import Navigation from '@libs/Navigation/Navigation';
 
+import {DEFAULT_ACCOUNT} from '@pages/SimplifiedBankOnboarding/contract/defaultAccount';
 import type {OnboardingDraft} from '@pages/SimplifiedBankOnboarding/contract/form';
 import type {StepID} from '@pages/SimplifiedBankOnboarding/contract/ids';
 import type {OnboardingAccount} from '@pages/SimplifiedBankOnboarding/contract/onyx';
@@ -61,10 +62,16 @@ jest.mock('@components/ScreenWrapper', () => {
 
 const POLICY_ID = '1';
 const OTHER_POLICY_ID = '2';
-const USD_TARGET: FlowTarget = {kind: 'usd', policyID: POLICY_ID, backTo: undefined};
+const USD_TARGET: FlowTarget = {
+    kind: 'usd',
+    policyID: POLICY_ID,
+    backTo: undefined,
+};
 const SUCCEEDED: RequestOutcome = {status: 'succeeded'};
 const FAILED: RequestOutcome = {status: 'failed'};
-const ACCOUNT_OF_WORKSPACE: OnboardingAccount = {achData: {policyID: POLICY_ID, bankAccountID: 5}};
+const ACCOUNT_OF_WORKSPACE: OnboardingAccount = {
+    achData: {policyID: POLICY_ID, bankAccountID: 5},
+};
 
 /** Every test step shows its ID, so a test sees which step the flow renders */
 function ShownStep() {
@@ -130,7 +137,9 @@ describe('OnboardingFlow', () => {
     describe('the account gate', () => {
         it('does not read during a reset', async () => {
             // Given a reset of the bank account that has removed the account data and still runs
-            await setAccount({pendingAction: CONST.RED_BRICK_ROAD_PENDING_ACTION.DELETE});
+            await setAccount({
+                pendingAction: CONST.RED_BRICK_ROAD_PENDING_ACTION.DELETE,
+            });
 
             // When the flow opens
             await renderFlow({urlStep: 'country'});
@@ -143,7 +152,10 @@ describe('OnboardingFlow', () => {
         it('does not read without a policyID', async () => {
             // Given a route without a workspace and no account in Onyx
             // When the flow opens
-            await renderFlow({target: {kind: 'usd', policyID: undefined, backTo: undefined}, urlStep: 'country'});
+            await renderFlow({
+                target: {kind: 'usd', policyID: undefined, backTo: undefined},
+                urlStep: 'country',
+            });
 
             // Then nothing is read, because a read needs the workspace
             expect(openOnboardingPage).not.toHaveBeenCalled();
@@ -152,8 +164,12 @@ describe('OnboardingFlow', () => {
 
         it('clears the draft before it reads the account of another workspace', async () => {
             // Given the account and the draft of another workspace in Onyx
-            await setAccount({achData: {policyID: OTHER_POLICY_ID, bankAccountID: 9}});
-            await Onyx.set(ONYXKEYS.FORMS.SIMPLIFIED_BANK_ONBOARDING_FORM_DRAFT, {firstName: 'Ada'});
+            await setAccount({
+                achData: {policyID: OTHER_POLICY_ID, bankAccountID: 9},
+            });
+            await Onyx.set(ONYXKEYS.FORMS.SIMPLIFIED_BANK_ONBOARDING_FORM_DRAFT, {
+                firstName: 'Ada',
+            });
             let draftAtRead: OnboardingDraft | null | undefined;
             jest.mocked(openOnboardingPage).mockImplementation(() =>
                 getOnyxValue(ONYXKEYS.FORMS.SIMPLIFIED_BANK_ONBOARDING_FORM_DRAFT)
@@ -170,6 +186,18 @@ describe('OnboardingFlow', () => {
             // Then the draft is gone when the read starts, so no answer of the other workspace leaks into this one
             expect(openOnboardingPage).toHaveBeenCalledWith({policyID: POLICY_ID});
             expect(draftAtRead?.firstName).toBeUndefined();
+            expect(screen.getByText('Step country')).toBeOnTheScreen();
+        });
+
+        it('reads the account when Onyx holds an account that names no workspace', async () => {
+            // Given the empty account that the entry leaves behind when it closes
+            await Onyx.set(ONYXKEYS.SIMPLIFIED_BANK_ONBOARDING_ACCOUNT, DEFAULT_ACCOUNT);
+
+            // When the flow of a workspace opens, for example from a deep link
+            await renderFlow({urlStep: 'country'});
+
+            // Then the account of the workspace is read, because the empty account says nothing about the setup that the server holds
+            expect(openOnboardingPage).toHaveBeenCalledWith({policyID: POLICY_ID});
             expect(screen.getByText('Step country')).toBeOnTheScreen();
         });
 

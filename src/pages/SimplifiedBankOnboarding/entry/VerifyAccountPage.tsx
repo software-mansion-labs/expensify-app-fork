@@ -99,7 +99,7 @@ function VerifyAccountPage({route}: VerifyAccountPageProps) {
     };
 
     if (isUserValidated) {
-        return <FullScreenLoadingIndicator />;
+        return <FullScreenLoadingIndicator shouldUseGoBackButton />;
     }
 
     return (

@@ -19,11 +19,14 @@ import Navigation from '@libs/Navigation/Navigation';
 import NotFoundPage from '@pages/ErrorPage/NotFoundPage';
 import type {OnboardingDraft} from '@pages/SimplifiedBankOnboarding/contract/form';
 import type {PageID, StepID} from '@pages/SimplifiedBankOnboarding/contract/ids';
+import type {OnboardingAccount} from '@pages/SimplifiedBankOnboarding/contract/onyx';
 import openOnboardingPage from '@pages/SimplifiedBankOnboarding/core/accountRead/openOnboardingPage';
 import {clearDraft, saveFormDraft} from '@pages/SimplifiedBankOnboarding/core/draft/draft';
 
 import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';
+
+import type {OnyxEntry} from 'react-native-onyx';
 
 import React, {useEffect, useRef, useState} from 'react';
 import {View} from 'react-native';
@@ -52,22 +55,46 @@ type AccountReadStatus = 'idle' | 'pending' | 'succeeded' | 'failed';
 
 type AccountGateView = 'flow' | 'loading' | 'offline' | 'notFound';
 
+type GateAccount = {
+    /** The workspace that the account in Onyx describes */
+    policyID: string | undefined;
+    isResetRunning: boolean;
+};
+
+/** The two facts of the account that the gate reads, so the other changes of the account do not render the flow root again */
+function selectGateAccount(account: OnyxEntry<OnboardingAccount>): GateAccount {
+    return {
+        policyID: account?.achData?.policyID,
+        isResetRunning: account?.pendingAction === CONST.RED_BRICK_ROAD_PENDING_ACTION.DELETE,
+    };
+}
+
 /**
- * The account gate (BC-25). It reads the account of the route's workspace once per mount, when Onyx holds no account
- * or the account of another workspace, and clears the main draft right before, because that draft belongs to the
- * account that Onyx held. It never reads during a reset, and never without a policyID in the route.
+ * The account gate (BC-25). It reads the account of the route's workspace once per mount, when Onyx holds no account of
+ * that workspace, and clears the main draft right before, because that draft belongs to the account that Onyx held. It
+ * never reads during a reset, and never without a policyID in the route.
  */
 function useAccountGate(target: FlowTarget): AccountGateView {
-    const [account] = useOnyx(ONYXKEYS.SIMPLIFIED_BANK_ONBOARDING_ACCOUNT);
+    const [gateAccount] = useOnyx(ONYXKEYS.SIMPLIFIED_BANK_ONBOARDING_ACCOUNT, {
+        selector: selectGateAccount,
+    });
     const {isOffline} = useNetwork();
     const [readStatus, setReadStatus] = useState<AccountReadStatus>('idle');
     const hasStartedReadRef = useRef(false);
 
     const gatePolicyID = target.kind === 'enterSignerInfo' ? undefined : target.policyID;
-    const isResetRunning = account?.pendingAction === CONST.RED_BRICK_ROAD_PENDING_ACTION.DELETE;
-    const accountPolicyID = account?.achData?.policyID;
-    const doesAccountNameOtherWorkspace = !!accountPolicyID && accountPolicyID !== gatePolicyID;
-    const isReadNeeded = !!gatePolicyID && !isResetRunning && (account === undefined || doesAccountNameOtherWorkspace);
+    const isAccountOfWorkspace = !!gatePolicyID && gateAccount?.policyID === gatePolicyID;
+    const isReadNeeded = !!gatePolicyID && !gateAccount?.isResetRunning && !isAccountOfWorkspace;
+
+    // An answer that arrives after the flow closed or moved to another workspace must not set the state of this one.
+    // The effect below cannot cancel it in its own cleanup, because the answer itself changes `isReadNeeded`.
+    const shownPolicyIDRef = useRef<string | undefined>(undefined);
+    useEffect(() => {
+        shownPolicyIDRef.current = gatePolicyID;
+        return () => {
+            shownPolicyIDRef.current = undefined;
+        };
+    }, [gatePolicyID]);
 
     useEffect(() => {
         if (!gatePolicyID || !isReadNeeded || isOffline || hasStartedReadRef.current) {
@@ -77,10 +104,15 @@ function useAccountGate(target: FlowTarget): AccountGateView {
 
         clearDraft()
             .then(() => {
-                setReadStatus('pending');
+                if (shownPolicyIDRef.current === gatePolicyID) {
+                    setReadStatus('pending');
+                }
                 return openOnboardingPage({policyID: gatePolicyID});
             })
             .then((outcome) => {
+                if (shownPolicyIDRef.current !== gatePolicyID) {
+                    return;
+                }
                 if (outcome.status === 'skipped') {
                     // The read was not sent (the app went offline), so it may start again after the reconnect
                     hasStartedReadRef.current = false;
@@ -98,7 +130,7 @@ function useAccountGate(target: FlowTarget): AccountGateView {
         return 'notFound';
     }
     if (readStatus === 'succeeded') {
-        return doesAccountNameOtherWorkspace ? 'notFound' : 'flow';
+        return isAccountOfWorkspace ? 'flow' : 'notFound';
     }
     if (readStatus === 'pending') {
         return 'loading';
@@ -120,7 +152,9 @@ function useAccountGate(target: FlowTarget): AccountGateView {
  */
 function OnboardingFlow({target, params, resumeAt, children}: OnboardingFlowProps) {
     const styles = useThemeStyles();
-    const [achData] = useOnyx(ONYXKEYS.SIMPLIFIED_BANK_ONBOARDING_ACCOUNT, {selector: (account) => account?.achData});
+    const [achData] = useOnyx(ONYXKEYS.SIMPLIFIED_BANK_ONBOARDING_ACCOUNT, {
+        selector: (account) => account?.achData,
+    });
     const gateView = useAccountGate(target);
 
     const formID = target.kind === 'enterSignerInfo' ? ONYXKEYS.FORMS.SIMPLIFIED_BANK_ONBOARDING_SIGNER_FORM : ONYXKEYS.FORMS.SIMPLIFIED_BANK_ONBOARDING_FORM;
@@ -146,7 +180,7 @@ function OnboardingFlow({target, params, resumeAt, children}: OnboardingFlowProp
                     <Header.BackButton onPress={() => Navigation.goBack()} />
                 </Header>
                 <FullPageOfflineBlockingView>
-                    <FullScreenLoadingIndicator />
+                    <PageLoadingIndicator />
                 </FullPageOfflineBlockingView>
             </ScreenWrapper>
         );
@@ -158,7 +192,11 @@ function OnboardingFlow({target, params, resumeAt, children}: OnboardingFlowProp
         return <PageLoadingIndicator />;
     }
 
-    const flowState: OnboardingFlowState = {target, bankAccount: getFlowBankAccount(target, achData), formID};
+    const flowState: OnboardingFlowState = {
+        target,
+        bankAccount: getFlowBankAccount(target, achData),
+        formID,
+    };
     const flowActions: OnboardingFlowActions = {
         saveDraft: (values: OnboardingDraft) => saveFormDraft(formID, values),
         returnToEntry: () => Navigation.goBack(),

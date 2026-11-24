@@ -41,7 +41,10 @@ function getSignerEmails(mode: SignerEmailMode, values: FormOnyxValues<MainFormI
     if (mode === 'secondOnly') {
         return {secondSignerEmail: values.secondSignerEmail};
     }
-    return {signerEmail: values.signerEmail, secondSignerEmail: mode === 'two' ? values.secondSignerEmail : undefined};
+    return {
+        signerEmail: values.signerEmail,
+        secondSignerEmail: mode === 'two' ? values.secondSignerEmail : undefined,
+    };
 }
 
 function SignerEmailPage({mode, companyName}: SignerEmailPageProps) {
@@ -97,6 +100,7 @@ function SignerEmailPage({mode, companyName}: SignerEmailPageProps) {
                 inputMode={CONST.INPUT_MODE.EMAIL}
                 containerStyles={[styles.mt6]}
                 autoComplete="email"
+                sentryLabel={CONST.SENTRY_LABEL.BANK_ONBOARDING_LAB.EDIT_INPUT}
             />
             {shouldGatherBothEmails && (
                 <InputWrapper
@@ -108,6 +112,7 @@ function SignerEmailPage({mode, companyName}: SignerEmailPageProps) {
                     inputMode={CONST.INPUT_MODE.EMAIL}
                     containerStyles={[styles.mt6]}
                     autoComplete="email"
+                    sentryLabel={CONST.SENTRY_LABEL.BANK_ONBOARDING_LAB.EDIT_INPUT}
                 />
             )}
         </FormProvider>

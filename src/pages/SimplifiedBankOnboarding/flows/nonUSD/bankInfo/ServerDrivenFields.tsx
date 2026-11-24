@@ -101,6 +101,7 @@ function ServerDrivenFields({title, fields, isLoading}: ServerDrivenFieldsProps)
                     aria-label={field.label}
                     role={CONST.ROLE.PRESENTATION}
                     defaultValue={bankFieldValues[field.id]}
+                    sentryLabel={CONST.SENTRY_LABEL.BANK_ONBOARDING_LAB.EDIT_INPUT}
                 />
             </View>
         );

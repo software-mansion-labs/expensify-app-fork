@@ -71,7 +71,12 @@ function OnboardingEntryPage({route}: OnboardingEntryPageProps) {
             );
         case 'loading':
             if (state.waitsFor === 'workspaces') {
-                return <FullScreenLoadingIndicator onGoBack={goBack} />;
+                return (
+                    <FullScreenLoadingIndicator
+                        shouldUseGoBackButton
+                        onGoBack={goBack}
+                    />
+                );
             }
             return <ReimbursementAccountLoadingIndicator onBackButtonPress={goBackFromStep} />;
         case 'connected':
