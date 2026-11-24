@@ -7,17 +7,17 @@
 import {requiresSecondDirector} from '@pages/SimplifiedBankOnboarding/contract/currency';
 import {areSignersKnown, isVerifying} from '@pages/SimplifiedBankOnboarding/contract/setupStatus';
 import type {FlowData} from '@pages/SimplifiedBankOnboarding/core';
-import type {NonUSDAnswers} from '@pages/SimplifiedBankOnboarding/flows/nonUSD/nonUSDAnswers';
+import getOwnersAnswers from '@pages/SimplifiedBankOnboarding/flows/nonUSD/beneficialOwners/getOwnersAnswers';
 import {CURRENT_USER_OWNER_ID, findOwner} from '@pages/SimplifiedBankOnboarding/flows/shared/owners/ownerList';
 import {getOwnerFullName} from '@pages/SimplifiedBankOnboarding/flows/shared/owners/serverOwners';
+
+import getSignerAnswers from './getSignerAnswers';
 
 /**
  * The inputs of the email page. `two`: an AUD user who is not a director names both directors. `secondOnly`: an AUD
  * director names the second one. `one`: any other currency names the one director.
  */
 type SignerEmailMode = 'two' | 'secondOnly' | 'one';
-
-type SignerAnswers = Pick<NonUSDAnswers, 'ownsMoreThan25Percent' | 'owners' | 'signerFullName'>;
 
 /** The step is done once every director is known and the agreements were not sent yet, or once the setup was sent */
 function isSignerStepComplete({account, currency}: FlowData): boolean {
@@ -29,7 +29,8 @@ function isSignerStepComplete({account, currency}: FlowData): boolean {
 }
 
 /** The full name of the user's own owner entry, or undefined when the user is not an owner or the entry has no name */
-function getOwnerNameOfUser({ownsMoreThan25Percent, owners}: SignerAnswers): string | undefined {
+function getOwnerNameOfUser(data: FlowData): string | undefined {
+    const {ownsMoreThan25Percent, owners} = getOwnersAnswers(data);
     if (!ownsMoreThan25Percent) {
         return undefined;
     }
@@ -38,13 +39,13 @@ function getOwnerNameOfUser({ownsMoreThan25Percent, owners}: SignerAnswers): str
 }
 
 /** False when the owners step already holds the user's name, so the name page is left out */
-function shouldAskForSignerName(answers: SignerAnswers): boolean {
-    return getOwnerNameOfUser(answers) === undefined;
+function shouldAskForSignerName(data: FlowData): boolean {
+    return getOwnerNameOfUser(data) === undefined;
 }
 
 /** The name of the user as a director: the name of the user's owner entry when there is one, else the signer name */
-function getSignerFullName(answers: SignerAnswers): string {
-    return getOwnerNameOfUser(answers) ?? answers.signerFullName;
+function getSignerFullName(data: FlowData): string {
+    return getOwnerNameOfUser(data) ?? getSignerAnswers(data).signerFullName;
 }
 
 function getSignerEmailMode(isUserDirector: boolean | undefined, currency: string): SignerEmailMode {

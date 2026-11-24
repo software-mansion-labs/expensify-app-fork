@@ -12,8 +12,17 @@ import {isValidCompanyName} from '@libs/ValidationUtils';
 
 import INPUT_IDS from '@pages/SimplifiedBankOnboarding/contract/form';
 import SBO_CONST from '@pages/SimplifiedBankOnboarding/contract/SBO_CONST';
-import {ConfirmationSubPage, FormSubPage, OnboardingStep, PageLoadingIndicator, SingleFieldSubPage, SubPage, SubPageInput, useReadOnOpen} from '@pages/SimplifiedBankOnboarding/core';
-import {useNonUSDAnswers} from '@pages/SimplifiedBankOnboarding/flows/nonUSD/nonUSDAnswers';
+import {
+    ConfirmationSubPage,
+    FormSubPage,
+    OnboardingStep,
+    PageLoadingIndicator,
+    SingleFieldSubPage,
+    SubPage,
+    SubPageInput,
+    useReadOnOpen,
+    useFlowData,
+} from '@pages/SimplifiedBankOnboarding/core';
 
 import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';
@@ -22,13 +31,14 @@ import React from 'react';
 import {View} from 'react-native';
 
 import {companyDetailsRequest, picklistsRead} from './businessInfoRequests';
+import getBusinessInfoAnswers from './getBusinessInfoAnswers';
 
 const {BUSINESS_INFO_SUB_PAGES: PAGES} = SBO_CONST.NON_USD;
 
 function BusinessInfoStep() {
     const {translate} = useLocalize();
     const styles = useThemeStyles();
-    const {companyName, businessType} = useNonUSDAnswers();
+    const {companyName, businessType} = getBusinessInfoAnswers(useFlowData());
     const [picklists] = useOnyx(ONYXKEYS.SIMPLIFIED_BANK_ONBOARDING_PICKLISTS);
     useReadOnOpen(picklistsRead);
 

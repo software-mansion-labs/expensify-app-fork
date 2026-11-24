@@ -9,18 +9,20 @@ import useOnyx from '@hooks/useOnyx';
 
 import INPUT_IDS from '@pages/SimplifiedBankOnboarding/contract/form';
 import SBO_CONST from '@pages/SimplifiedBankOnboarding/contract/SBO_CONST';
-import {NEXT_STEP, OnboardingStep, SubPage, YesNoSubPage} from '@pages/SimplifiedBankOnboarding/core';
+import {NEXT_STEP, OnboardingStep, SubPage, YesNoSubPage, useFlowData} from '@pages/SimplifiedBankOnboarding/core';
 import type {PageTarget} from '@pages/SimplifiedBankOnboarding/core';
 import type {OwnerRow} from '@pages/SimplifiedBankOnboarding/flows/shared/owners/OwnersListPage';
 import OwnersListPage from '@pages/SimplifiedBankOnboarding/flows/shared/owners/OwnersListPage';
 import {getOwnerFullName} from '@pages/SimplifiedBankOnboarding/flows/shared/owners/serverOwners';
 import useOwnerLoop from '@pages/SimplifiedBankOnboarding/flows/shared/owners/useOwnerLoop';
-import {useUSDAnswers} from '@pages/SimplifiedBankOnboarding/flows/usd/usdAnswers';
+import getBusinessInfoAnswers from '@pages/SimplifiedBankOnboarding/flows/usd/businessInfo/getBusinessInfoAnswers';
+import getPersonalInfoAnswers from '@pages/SimplifiedBankOnboarding/flows/usd/personalInfo/getPersonalInfoAnswers';
 
 import ONYXKEYS from '@src/ONYXKEYS';
 
 import React from 'react';
 
+import getOwnersAnswers from './getOwnersAnswers';
 import renderOwnerDetailsPages from './renderOwnerDetailsPages';
 import usdOwnersRequest from './usdOwnersRequest';
 
@@ -31,7 +33,10 @@ const USER_ROW_ID = 'requestor';
 
 function BeneficialOwnersStep() {
     const {translate} = useLocalize();
-    const answers = useUSDAnswers();
+    const data = useFlowData();
+    const answers = getOwnersAnswers(data);
+    const user = getPersonalInfoAnswers(data);
+    const {companyName} = getBusinessInfoAnswers(data);
     const isUserOwner = answers.ownsMoreThan25Percent ?? false;
     const loop = useOwnerLoop({
         kind: 'usd',
@@ -50,8 +55,8 @@ function BeneficialOwnersStep() {
         ? [
               {
                   id: USER_ROW_ID,
-                  title: getOwnerFullName(answers),
-                  description: answers.dob,
+                  title: getOwnerFullName(user),
+                  description: user.dob,
                   isReadOnly: true,
               },
           ]
@@ -82,7 +87,7 @@ function BeneficialOwnersStep() {
                 name={PAGES.IS_USER_UBO}
                 isAnswered={areOwnersKnown || hasSavedStep}
                 inputID={INPUT_IDS.OWNS_MORE_THAN_25_PERCENT}
-                title={translate('beneficialOwnerInfoStep.doYouOwn25percent', answers.companyName)}
+                title={translate('beneficialOwnerInfoStep.doYouOwn25percent', companyName)}
                 description={description}
                 defaultValue={isUserOwner}
                 // The user takes one of the places, so the last owner who no longer fits leaves the list
@@ -92,7 +97,7 @@ function BeneficialOwnersStep() {
                 name={PAGES.IS_ANYONE_ELSE_UBO}
                 isAnswered={areOwnersKnown}
                 inputID={INPUT_IDS.HAS_OTHER_BENEFICIAL_OWNERS}
-                title={translate('beneficialOwnerInfoStep.doAnyIndividualOwn25percent', answers.companyName)}
+                title={translate('beneficialOwnerInfoStep.doAnyIndividualOwn25percent', companyName)}
                 description={description}
                 defaultValue={hasOtherOwners}
                 getDraftUpdate={(hasOthers) => (hasOthers && loop.canAddMore ? loop.getStartUpdate() : {})}
@@ -104,7 +109,7 @@ function BeneficialOwnersStep() {
                 name={PAGES.ARE_THERE_MORE_UBOS}
                 isAnswered={areOwnersKnown}
                 inputID={INPUT_IDS.HAS_OTHER_BENEFICIAL_OWNERS}
-                title={translate('beneficialOwnerInfoStep.areThereMoreIndividualsWhoOwn25percent', answers.companyName)}
+                title={translate('beneficialOwnerInfoStep.areThereMoreIndividualsWhoOwn25percent', companyName)}
                 description={description}
                 defaultValue={false}
                 // This question comes only after another owner joined the list, so its "no" must not undo the "yes" of the second question

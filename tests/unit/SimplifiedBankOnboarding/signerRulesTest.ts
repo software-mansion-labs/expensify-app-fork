@@ -1,7 +1,8 @@
 import type {OnboardingAccount} from '@pages/SimplifiedBankOnboarding/contract/onyx';
 import SBO_CONST from '@pages/SimplifiedBankOnboarding/contract/SBO_CONST';
-import {getNonUSDAnswers} from '@pages/SimplifiedBankOnboarding/flows/nonUSD/nonUSDAnswers';
 import {getSignerEmailMode, getSignerFullName, shouldAskForSignerName} from '@pages/SimplifiedBankOnboarding/flows/nonUSD/signer/signerRules';
+
+import {getTestFlowData} from '../../utils/BankOnboardingLabTestUtils';
 
 const {EUR, AUD} = SBO_CONST.CURRENCY;
 const {CURRENT_USER_KEY} = SBO_CONST.NON_USD;
@@ -21,56 +22,56 @@ describe('signerRules', () => {
     describe('README scenario 6: the owner answer changes between two visits of the signer step', () => {
         it('asks for the name again after the user changed "I own 25% or more" to "No"', () => {
             // Given a server that saved the user as an owner, and a draft where the user changed the answer to "No"
-            const answers = getNonUSDAnswers({ownsMoreThan25Percent: false}, ACCOUNT_WITH_SAVED_OWNER, EUR);
+            const data = getTestFlowData({draft: {ownsMoreThan25Percent: false}, account: ACCOUNT_WITH_SAVED_OWNER, currency: EUR});
 
             // When the signer step reads its rules
             // Then the new answer wins over the saved one, so the step asks for the name and sends the signer name
-            expect(shouldAskForSignerName(answers)).toBe(true);
-            expect(getSignerFullName(answers)).toBe('Saved Director');
+            expect(shouldAskForSignerName(data)).toBe(true);
+            expect(getSignerFullName(data)).toBe('Saved Director');
         });
 
         it('takes the name of the owner step after the user changed the answer to "Yes"', () => {
             // Given a server without owners, and a draft where the user answered "Yes" and gave their name as an owner
             const account: OnboardingAccount = {achData: {corpay: {ownsMoreThan25Percent: false}}};
-            const answers = getNonUSDAnswers(
-                {ownsMoreThan25Percent: true, globalOwners: [{id: CURRENT_USER_KEY, firstName: 'Typed', lastName: 'Owner', ownershipPercentage: '30'}]},
+            const data = getTestFlowData({
+                draft: {ownsMoreThan25Percent: true, globalOwners: [{id: CURRENT_USER_KEY, firstName: 'Typed', lastName: 'Owner', ownershipPercentage: '30'}]},
                 account,
-                EUR,
-            );
+                currency: EUR,
+            });
 
             // When the signer step reads its rules
             // Then the name page is left out and the director request sends the name of the owner step
-            expect(shouldAskForSignerName(answers)).toBe(false);
-            expect(getSignerFullName(answers)).toBe('Typed Owner');
+            expect(shouldAskForSignerName(data)).toBe(false);
+            expect(getSignerFullName(data)).toBe('Typed Owner');
         });
 
         it('asks for the name when the user is an owner without a name to send', () => {
             // Given an answer "Yes" whose owner entry of the user is missing
-            const answers = getNonUSDAnswers({ownsMoreThan25Percent: true, globalOwners: []}, undefined, EUR);
+            const data = getTestFlowData({draft: {ownsMoreThan25Percent: true, globalOwners: []}, currency: EUR});
 
             // When the signer step reads its rules
             // Then the step asks for the name, so the director request never sends an empty name
-            expect(shouldAskForSignerName(answers)).toBe(true);
+            expect(shouldAskForSignerName(data)).toBe(true);
         });
     });
 
     describe('getSignerFullName', () => {
         it('reads the owner name that the server saved when the draft has no owners', () => {
             // Given a user who comes back to a setup whose owners step the server saved
-            const answers = getNonUSDAnswers(undefined, ACCOUNT_WITH_SAVED_OWNER, EUR);
+            const data = getTestFlowData({account: ACCOUNT_WITH_SAVED_OWNER, currency: EUR});
 
             // When the director name is read
             // Then it is the name of the user's owner entry, not the saved director name
-            expect(getSignerFullName(answers)).toBe('Saved Owner');
+            expect(getSignerFullName(data)).toBe('Saved Owner');
         });
 
         it('uses the signer name when the user is not an owner', () => {
             // Given a user who is not an owner and typed a director name
-            const answers = getNonUSDAnswers({ownsMoreThan25Percent: false, signerFullName: 'Typed Director'}, undefined, EUR);
+            const data = getTestFlowData({draft: {ownsMoreThan25Percent: false, signerFullName: 'Typed Director'}, currency: EUR});
 
             // When the director name is read
             // Then the typed name is sent
-            expect(getSignerFullName(answers)).toBe('Typed Director');
+            expect(getSignerFullName(data)).toBe('Typed Director');
         });
     });
 

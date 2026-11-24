@@ -12,8 +12,8 @@ import {isValidCompanyName, isValidTaxID} from '@libs/ValidationUtils';
 
 import INPUT_IDS from '@pages/SimplifiedBankOnboarding/contract/form';
 import SBO_CONST from '@pages/SimplifiedBankOnboarding/contract/SBO_CONST';
-import {ConfirmationSubPage, FormSubPage, OnboardingStep, SingleFieldSubPage, SubPageInput} from '@pages/SimplifiedBankOnboarding/core';
-import {useUSDAnswers} from '@pages/SimplifiedBankOnboarding/flows/usd/usdAnswers';
+import {areCompanyDetailsLocked, isVerifying} from '@pages/SimplifiedBankOnboarding/contract/setupStatus';
+import {ConfirmationSubPage, FormSubPage, OnboardingStep, SingleFieldSubPage, SubPageInput, useFlowData} from '@pages/SimplifiedBankOnboarding/core';
 
 import CONST from '@src/CONST';
 import type {TranslationPaths} from '@src/languages/types';
@@ -22,6 +22,7 @@ import React from 'react';
 import {View} from 'react-native';
 
 import businessInfoRequest from './businessInfoRequest';
+import getBusinessInfoAnswers from './getBusinessInfoAnswers';
 
 const {BUSINESS_INFO_SUB_PAGES: PAGES} = SBO_CONST.USD;
 
@@ -40,13 +41,15 @@ function validateTaxID(value: string): TranslationPaths | undefined {
 function BusinessInfoStep() {
     const {translate} = useLocalize();
     const styles = useThemeStyles();
-    const answers = useUSDAnswers();
+    const data = useFlowData();
+    const answers = getBusinessInfoAnswers(data);
+    const achData = data.account?.achData;
 
     return (
         <OnboardingStep
             title={translate('businessInfoStep.businessInfo')}
             wrapperID="SimplifiedBankOnboardingBusinessInfo"
-            startAt={answers.isVerifying ? PAGES.NAME : undefined}
+            startAt={isVerifying(achData) ? PAGES.NAME : undefined}
             shouldEnableMaxHeight
             shouldEnablePickerAvoiding={false}
         >
@@ -58,7 +61,7 @@ function BusinessInfoStep() {
                 inputID={INPUT_IDS.COMPANY_NAME}
                 validate={validateCompanyName}
                 defaultValue={answers.companyName}
-                isLocked={answers.areCompanyDetailsLocked}
+                isLocked={areCompanyDetailsLocked(achData)}
             />
             <SingleFieldSubPage
                 name={PAGES.TAX_ID}
@@ -71,7 +74,7 @@ function BusinessInfoStep() {
                 inputMode={CONST.INPUT_MODE.NUMERIC}
                 validate={validateTaxID}
                 defaultValue={answers.companyTaxID}
-                isLocked={answers.areCompanyDetailsLocked}
+                isLocked={areCompanyDetailsLocked(achData)}
             />
             <FormSubPage
                 name={PAGES.INCORPORATION_TYPE}

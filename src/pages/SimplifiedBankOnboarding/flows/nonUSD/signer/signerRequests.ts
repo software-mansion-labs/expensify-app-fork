@@ -4,23 +4,18 @@
  * waiting page, a reminder. The emails are the input of the send and never go to the draft.
  */
 import type {OnboardingRequest} from '@pages/SimplifiedBankOnboarding/core';
-import {getNonUSDAnswers} from '@pages/SimplifiedBankOnboarding/flows/nonUSD/nonUSDAnswers';
 import buildDirectorRequest from '@pages/SimplifiedBankOnboarding/flows/shared/signerDetails/directorRequest';
 import {WRITE_COMMANDS} from '@pages/SimplifiedBankOnboarding/mockBackend/commands';
 import type {BankAccountParams, WriteCommandParams} from '@pages/SimplifiedBankOnboarding/mockBackend/commands';
 
+import getSignerAnswers from './getSignerAnswers';
 import {getSignerFullName} from './signerRules';
 
 type SignerEmails = Omit<WriteCommandParams[typeof WRITE_COMMANDS.ASK_FOR_SIGNER_INFORMATION], keyof BankAccountParams>;
 
 const signerDetailsRequest: OnboardingRequest = {
     name: 'nonUSD.signer.saveDirector',
-    build: ({bankAccount, draft, account, currency}) => {
-        const answers = getNonUSDAnswers(draft, account, currency);
-        return {
-            ...buildDirectorRequest(bankAccount, {signerFullName: getSignerFullName(answers), signerJobTitle: answers.signerJobTitle}),
-        };
-    },
+    build: (data) => buildDirectorRequest(data.bankAccount, {signerFullName: getSignerFullName(data), signerJobTitle: getSignerAnswers(data).signerJobTitle}),
 };
 
 const signerInvitationRequest: OnboardingRequest<SignerEmails> = {

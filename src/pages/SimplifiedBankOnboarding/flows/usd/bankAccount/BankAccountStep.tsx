@@ -9,11 +9,11 @@ import FullPageOfflineBlockingView from '@components/BlockingViews/FullPageOffli
 import useLocalize from '@hooks/useLocalize';
 
 import SBO_CONST from '@pages/SimplifiedBankOnboarding/contract/SBO_CONST';
-import {OnboardingStep, PageLoadingIndicator, SubPage} from '@pages/SimplifiedBankOnboarding/core';
-import {useUSDAnswers} from '@pages/SimplifiedBankOnboarding/flows/usd/usdAnswers';
+import {OnboardingStep, PageLoadingIndicator, SubPage, useFlowData} from '@pages/SimplifiedBankOnboarding/core';
 
 import React from 'react';
 
+import getBankAccountAnswers from './getBankAccountAnswers';
 import ManualBankPage from './ManualBankPage';
 import PlaidBankPage from './PlaidBankPage';
 
@@ -21,7 +21,7 @@ const {BANK_INFO_SUB_PAGES: PAGES} = SBO_CONST.USD;
 
 function BankAccountStep() {
     const {translate} = useLocalize();
-    const {setupType} = useUSDAnswers();
+    const {setupType} = getBankAccountAnswers(useFlowData());
 
     const isPlaid = setupType === SBO_CONST.SETUP_TYPE.PLAID;
     const isManual = setupType === SBO_CONST.SETUP_TYPE.MANUAL;

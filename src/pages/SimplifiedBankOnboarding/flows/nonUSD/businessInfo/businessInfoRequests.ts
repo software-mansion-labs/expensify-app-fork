@@ -1,18 +1,20 @@
 import type {OnboardingRequest} from '@pages/SimplifiedBankOnboarding/core';
-import {getNonUSDAnswers} from '@pages/SimplifiedBankOnboarding/flows/nonUSD/nonUSDAnswers';
+import getCountryAnswers from '@pages/SimplifiedBankOnboarding/flows/nonUSD/country/getCountryAnswers';
 import {READ_COMMANDS, WRITE_COMMANDS} from '@pages/SimplifiedBankOnboarding/mockBackend/commands';
 
 import ONYXKEYS from '@src/ONYXKEYS';
 
 import Onyx from 'react-native-onyx';
 
+import getBusinessInfoAnswers from './getBusinessInfoAnswers';
+
 /** The picklists of the business step, the business types among them */
 const picklistsRead: OnboardingRequest = {
     name: 'nonUSD.businessInfo.readPicklists',
-    build: ({account, draft, currency}) => ({
+    build: (data) => ({
         type: 'read',
         command: READ_COMMANDS.GET_ONBOARDING_FIELDS,
-        params: {countryISO: getNonUSDAnswers(draft, account, currency).country},
+        params: {countryISO: getCountryAnswers(data).country},
         onyxData: {
             optimisticData: [
                 {
@@ -34,14 +36,11 @@ const picklistsRead: OnboardingRequest = {
 
 const companyDetailsRequest: OnboardingRequest = {
     name: 'nonUSD.businessInfo.saveCompany',
-    build: ({bankAccount, account, draft, currency}) => {
-        const {companyName, businessType} = getNonUSDAnswers(draft, account, currency);
-        return {
-            type: 'write',
-            command: WRITE_COMMANDS.SAVE_ONBOARDING_COMPANY_DETAILS,
-            params: {...bankAccount, companyName, businessType},
-        };
-    },
+    build: (data) => ({
+        type: 'write',
+        command: WRITE_COMMANDS.SAVE_ONBOARDING_COMPANY_DETAILS,
+        params: {...data.bankAccount, ...getBusinessInfoAnswers(data)},
+    }),
 };
 
 export {companyDetailsRequest, picklistsRead};

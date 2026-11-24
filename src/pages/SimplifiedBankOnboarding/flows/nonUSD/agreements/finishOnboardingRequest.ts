@@ -1,7 +1,8 @@
 import {requiresDocusignStep} from '@pages/SimplifiedBankOnboarding/contract/currency';
 import type {OnboardingRequest} from '@pages/SimplifiedBankOnboarding/core';
-import {getNonUSDAnswers} from '@pages/SimplifiedBankOnboarding/flows/nonUSD/nonUSDAnswers';
 import {WRITE_COMMANDS} from '@pages/SimplifiedBankOnboarding/mockBackend/commands';
+
+import getAgreementsAnswers from './getAgreementsAnswers';
 
 /**
  * Ends the setup with the agreement answers. The agreements step sends it when no docusign step follows, else the
@@ -10,9 +11,9 @@ import {WRITE_COMMANDS} from '@pages/SimplifiedBankOnboarding/mockBackend/comman
  */
 const finishOnboardingRequest: OnboardingRequest = {
     name: 'nonUSD.agreements.finish',
-    build: ({bankAccount, account, draft, currency}) => {
-        const answers = getNonUSDAnswers(draft, account, currency);
-        const fileNames = requiresDocusignStep(currency)
+    build: (data) => {
+        const answers = getAgreementsAnswers(data);
+        const fileNames = requiresDocusignStep(data.currency)
             ? {
                   bankStatementName: answers.bankStatement.at(0)?.name,
                   achAuthorizationFormName: answers.achAuthorizationForm.at(0)?.name,
@@ -22,7 +23,7 @@ const finishOnboardingRequest: OnboardingRequest = {
             type: 'write',
             command: WRITE_COMMANDS.FINISH_GLOBAL_BANK_ACCOUNT_ONBOARDING,
             params: {
-                ...bankAccount,
+                ...data.bankAccount,
                 authorizedToBindClientToAgreement: answers.authorizedToBindClientToAgreement,
                 agreeToTermsAndConditions: answers.agreeToTermsAndConditions,
                 consentToPrivacyNotice: answers.consentToPrivacyNotice,

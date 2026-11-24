@@ -3,23 +3,21 @@
  * document that the server asked for.
  */
 import type {OnboardingRequest} from '@pages/SimplifiedBankOnboarding/core';
-import {getUSDAnswers} from '@pages/SimplifiedBankOnboarding/flows/usd/usdAnswers';
 import getUSDWriteOptions from '@pages/SimplifiedBankOnboarding/flows/usd/usdWriteOptions';
 import {WRITE_COMMANDS} from '@pages/SimplifiedBankOnboarding/mockBackend/commands';
 
-import getRequiredKYBDocuments from './getRequiredKYBDocuments';
+import getKYBDocumentsAnswers from './getKYBDocumentsAnswers';
 
 const kybDocumentsRequest: OnboardingRequest = {
     name: 'usd.kybDocuments.upload',
-    build: ({bankAccount, account, draft}) => {
-        const answers = getUSDAnswers(draft, account);
-        const documentNames = getRequiredKYBDocuments(answers.requiredKYBDocuments)
-            .map((document) => answers.kybFiles[document.inputID].at(0)?.name ?? '')
+    build: (data) => {
+        const documentNames = getKYBDocumentsAnswers(data)
+            .map((document) => document.files.at(0)?.name ?? '')
             .filter((documentName) => !!documentName);
         return {
             type: 'write',
             command: WRITE_COMMANDS.UPLOAD_KYB_DOCUMENTS,
-            params: {...bankAccount, documentNames},
+            params: {...data.bankAccount, documentNames},
             ...getUSDWriteOptions(),
         };
     },

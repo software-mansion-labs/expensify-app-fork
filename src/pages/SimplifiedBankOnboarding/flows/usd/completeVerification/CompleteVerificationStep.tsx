@@ -13,17 +13,17 @@ import {isRequiredFulfilled} from '@libs/ValidationUtils';
 import INPUT_IDS from '@pages/SimplifiedBankOnboarding/contract/form';
 import type {OnboardingDraft} from '@pages/SimplifiedBankOnboarding/contract/form';
 import type {SubPageFormErrors} from '@pages/SimplifiedBankOnboarding/core';
-import {FormSubPage, OnboardingStep, SubPageInput} from '@pages/SimplifiedBankOnboarding/core';
-import {useUSDAnswers} from '@pages/SimplifiedBankOnboarding/flows/usd/usdAnswers';
+import {FormSubPage, OnboardingStep, SubPageInput, useFlowData} from '@pages/SimplifiedBankOnboarding/core';
 
 import React from 'react';
 
 import achContractRequest from './achContractRequest';
+import getAgreementsAnswers from './getAgreementsAnswers';
 
 function CompleteVerificationStep() {
     const {translate} = useLocalize();
     const styles = useThemeStyles();
-    const answers = useUSDAnswers();
+    const answers = getAgreementsAnswers(useFlowData());
 
     const acceptTermsLabel = `${translate('common.iAcceptThe')} ${translate('completeVerificationStep.termsAndConditions')}`;
 

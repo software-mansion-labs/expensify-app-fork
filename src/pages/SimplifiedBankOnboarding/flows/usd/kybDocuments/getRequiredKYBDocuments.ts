@@ -5,9 +5,10 @@
 import INPUT_IDS from '@pages/SimplifiedBankOnboarding/contract/form';
 import type {KYBDocumentType} from '@pages/SimplifiedBankOnboarding/contract/onyx';
 import SBO_CONST from '@pages/SimplifiedBankOnboarding/contract/SBO_CONST';
-import type {KYBFileInputID} from '@pages/SimplifiedBankOnboarding/flows/usd/usdAnswers';
 
 import type {TranslationPaths} from '@src/languages/types';
+
+type KYBFileInputID = typeof INPUT_IDS.COMPANY_TAX_ID_DOCUMENT | typeof INPUT_IDS.COMPANY_ADDRESS_DOCUMENT;
 
 type KYBDocument = {
     inputID: KYBFileInputID;

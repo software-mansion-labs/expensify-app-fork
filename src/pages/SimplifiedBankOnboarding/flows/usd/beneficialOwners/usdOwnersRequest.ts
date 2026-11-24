@@ -5,20 +5,21 @@
 import SBO_CONST from '@pages/SimplifiedBankOnboarding/contract/SBO_CONST';
 import type {OnboardingRequest} from '@pages/SimplifiedBankOnboarding/core';
 import {getUSDOwnersParams} from '@pages/SimplifiedBankOnboarding/flows/shared/owners/ownerParams';
-import {getUSDAnswers} from '@pages/SimplifiedBankOnboarding/flows/usd/usdAnswers';
 import getUSDWriteOptions from '@pages/SimplifiedBankOnboarding/flows/usd/usdWriteOptions';
 import {WRITE_COMMANDS} from '@pages/SimplifiedBankOnboarding/mockBackend/commands';
 
+import getOwnersAnswers from './getOwnersAnswers';
+
 const usdOwnersRequest: OnboardingRequest = {
     name: 'usd.beneficialOwners.save',
-    build: ({bankAccount, account, draft}) => {
-        const answers = getUSDAnswers(draft, account);
+    build: (data) => {
+        const answers = getOwnersAnswers(data);
         const sentOwners = answers.hasOtherBeneficialOwners ? answers.owners : [];
         return {
             type: 'write',
             command: WRITE_COMMANDS.UPDATE_BENEFICIAL_OWNERS,
             params: {
-                ...bankAccount,
+                ...data.bankAccount,
                 ownsMoreThan25Percent: answers.ownsMoreThan25Percent ?? false,
                 ...getUSDOwnersParams(sentOwners),
             },

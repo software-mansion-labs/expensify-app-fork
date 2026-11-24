@@ -18,6 +18,8 @@ import type {ReactNode} from 'react';
 
 import React from 'react';
 
+import {getTestFlowData, TEST_POLICY_ID} from '../../utils/BankOnboardingLabTestUtils';
+
 const mockReadChildren = jest.fn<void, [ReactNode]>();
 
 // The test asks which step a flow page resumes at for saved data. So the data comes from the test, and the flow shell is
@@ -40,8 +42,6 @@ const usdNavigation = {} as USDFlowPageProps['navigation'];
 // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion
 const nonUSDNavigation = {} as NonUSDFlowPageProps['navigation'];
 
-const POLICY_ID = '1';
-const BANK_ACCOUNT_ID = 5;
 const {EUR, AUD} = SBO_CONST.CURRENCY;
 const CREATED = '2026-01-01';
 
@@ -58,12 +58,7 @@ const ALL_AGREEMENTS_CHECKED: OnboardingDraft = {authorizedToBindClientToAgreeme
 const BANK_STATEMENT: OnboardingDraft = {bankStatement: [{name: 'statement.pdf', uri: 'file://statement.pdf'}]};
 
 function setFlowData(achData: ACHData | undefined, draft: OnboardingDraft | undefined, currency: string) {
-    jest.mocked(useFlowDataOf).mockReturnValue({
-        bankAccount: {policyID: POLICY_ID, bankAccountID: BANK_ACCOUNT_ID},
-        account: achData ? {achData} : undefined,
-        draft: draft ?? {},
-        currency,
-    });
+    jest.mocked(useFlowDataOf).mockReturnValue(getTestFlowData({account: achData ? {achData} : undefined, draft, currency}));
 }
 
 /** The step that the rendered flow page opens for a URL without a step */
@@ -75,7 +70,7 @@ function getUSDStep(achData: ACHData | undefined): StepID | undefined {
     setFlowData(achData, undefined, SBO_CONST.CURRENCY.USD);
     render(
         <USDFlowPage
-            route={{key: 'usd', name: SCREENS.SETTINGS.BANK_ONBOARDING_LAB.USD_SETUP, params: {policyID: POLICY_ID}}}
+            route={{key: 'usd', name: SCREENS.SETTINGS.BANK_ONBOARDING_LAB.USD_SETUP, params: {policyID: TEST_POLICY_ID}}}
             navigation={usdNavigation}
         />,
     );
@@ -86,7 +81,7 @@ function getNonUSDStep(achData: ACHData | undefined, draft: OnboardingDraft | un
     setFlowData(achData, draft, currency);
     render(
         <NonUSDFlowPage
-            route={{key: 'nonUSD', name: SCREENS.SETTINGS.BANK_ONBOARDING_LAB.NON_USD_SETUP, params: {policyID: POLICY_ID}}}
+            route={{key: 'nonUSD', name: SCREENS.SETTINGS.BANK_ONBOARDING_LAB.NON_USD_SETUP, params: {policyID: TEST_POLICY_ID}}}
             navigation={nonUSDNavigation}
         />,
     );

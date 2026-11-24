@@ -9,24 +9,21 @@ import Text from '@components/Text';
 import useLocalize from '@hooks/useLocalize';
 import useThemeStyles from '@hooks/useThemeStyles';
 
-import {FormSubPage, OnboardingStep} from '@pages/SimplifiedBankOnboarding/core';
+import {FormSubPage, OnboardingStep, useFlowData} from '@pages/SimplifiedBankOnboarding/core';
 import DraftFileInput from '@pages/SimplifiedBankOnboarding/flows/shared/files/DraftFileInput';
-import {useUSDAnswers} from '@pages/SimplifiedBankOnboarding/flows/usd/usdAnswers';
 
 import CONST from '@src/CONST';
 
 import React from 'react';
 import {View} from 'react-native';
 
-import getRequiredKYBDocuments from './getRequiredKYBDocuments';
+import getKYBDocumentsAnswers from './getKYBDocumentsAnswers';
 import kybDocumentsRequest from './kybDocumentsRequest';
 
 function DocumentsPage() {
     const {translate} = useLocalize();
     const styles = useThemeStyles();
-    const answers = useUSDAnswers();
-
-    const requiredDocuments = getRequiredKYBDocuments(answers.requiredKYBDocuments);
+    const requiredDocuments = getKYBDocumentsAnswers(useFlowData());
 
     return (
         <FormSubPage
@@ -42,7 +39,7 @@ function DocumentsPage() {
                     <Text style={[styles.textNormalThemeText, styles.textLineHeightNormal, styles.textStrong, styles.mb3]}>{translate(document.title)}</Text>
                     <DraftFileInput
                         inputID={document.inputID}
-                        defaultFiles={answers.kybFiles[document.inputID]}
+                        defaultFiles={document.files}
                         fileLimit={CONST.CORPAY_DOCUMENT.FILE_LIMIT}
                     />
                     <Text style={[styles.mutedTextLabel, styles.mt3]}>{translate(document.description)}</Text>

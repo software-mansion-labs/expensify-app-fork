@@ -14,8 +14,7 @@ import useThemeStyles from '@hooks/useThemeStyles';
 import type {OnboardingDraft} from '@pages/SimplifiedBankOnboarding/contract/form';
 import type {BankFormField} from '@pages/SimplifiedBankOnboarding/contract/onyx';
 import type {SubPageFormErrors} from '@pages/SimplifiedBankOnboarding/core';
-import {SubPageInput, useOnboardingFlow, usePageNavigation, useSubPageSubmit} from '@pages/SimplifiedBankOnboarding/core';
-import {useNonUSDAnswers} from '@pages/SimplifiedBankOnboarding/flows/nonUSD/nonUSDAnswers';
+import {SubPageInput, useOnboardingFlow, usePageNavigation, useSubPageSubmit, useFlowData} from '@pages/SimplifiedBankOnboarding/core';
 
 import CONST from '@src/CONST';
 
@@ -23,6 +22,7 @@ import React from 'react';
 import {View} from 'react-native';
 
 import {getBankFieldRuleError} from './bankFields';
+import getBankInfoAnswers from './getBankInfoAnswers';
 
 type ServerDrivenFieldsProps = {
     title: string;
@@ -41,7 +41,7 @@ function ServerDrivenFields({title, fields, isLoading}: ServerDrivenFieldsProps)
     const styles = useThemeStyles();
     const {formID} = useOnboardingFlow();
     const {isEditing} = usePageNavigation();
-    const {bankFieldValues} = useNonUSDAnswers();
+    const {bankFieldValues} = getBankInfoAnswers(useFlowData());
     const {submit} = useSubPageSubmit({});
 
     const validateFields = (values: OnboardingDraft): SubPageFormErrors => {

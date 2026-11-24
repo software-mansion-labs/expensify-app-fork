@@ -4,21 +4,22 @@
  */
 import SBO_CONST from '@pages/SimplifiedBankOnboarding/contract/SBO_CONST';
 import type {OnboardingRequest} from '@pages/SimplifiedBankOnboarding/core';
-import {getUSDAnswers} from '@pages/SimplifiedBankOnboarding/flows/usd/usdAnswers';
 import getUSDWriteOptions from '@pages/SimplifiedBankOnboarding/flows/usd/usdWriteOptions';
 import {WRITE_COMMANDS} from '@pages/SimplifiedBankOnboarding/mockBackend/commands';
 
 import CONST from '@src/CONST';
 
+import getBusinessInfoAnswers from './getBusinessInfoAnswers';
+
 const businessInfoRequest: OnboardingRequest = {
     name: 'usd.businessInfo.confirm',
-    build: ({bankAccount, account, draft}) => {
-        const answers = getUSDAnswers(draft, account);
+    build: (data) => {
+        const answers = getBusinessInfoAnswers(data);
         return {
             type: 'write',
             command: WRITE_COMMANDS.UPDATE_COMPANY_INFORMATION,
             params: {
-                ...bankAccount,
+                ...data.bankAccount,
                 companyName: answers.companyName,
                 companyTaxID: answers.companyTaxID.replaceAll(CONST.REGEX.NON_NUMERIC, ''),
                 incorporationType: answers.incorporationType,

@@ -4,16 +4,16 @@
  */
 import SBO_CONST from '@pages/SimplifiedBankOnboarding/contract/SBO_CONST';
 import type {OnboardingRequest, RequestSpec, FlowData} from '@pages/SimplifiedBankOnboarding/core';
-import {getUSDAnswers} from '@pages/SimplifiedBankOnboarding/flows/usd/usdAnswers';
 import getUSDWriteOptions from '@pages/SimplifiedBankOnboarding/flows/usd/usdWriteOptions';
 import {WRITE_COMMANDS} from '@pages/SimplifiedBankOnboarding/mockBackend/commands';
 
-function buildPersonalInfo({bankAccount, account, draft}: FlowData, confirm: boolean): RequestSpec {
-    const answers = getUSDAnswers(draft, account);
+import getPersonalInfoAnswers from './getPersonalInfoAnswers';
+
+function buildPersonalInfo(data: FlowData, confirm: boolean): RequestSpec {
     return {
         type: 'write',
         command: WRITE_COMMANDS.UPDATE_PERSONAL_INFORMATION,
-        params: {...bankAccount, firstName: answers.firstName, lastName: answers.lastName, dob: answers.dob, ssnLast4: answers.ssnLast4, confirm},
+        params: {...data.bankAccount, ...getPersonalInfoAnswers(data), confirm},
         ...getUSDWriteOptions(SBO_CONST.USD.STEP.REQUESTOR),
     };
 }

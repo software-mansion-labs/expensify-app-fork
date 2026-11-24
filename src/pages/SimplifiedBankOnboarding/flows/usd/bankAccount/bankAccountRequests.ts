@@ -6,13 +6,14 @@
  */
 import SBO_CONST from '@pages/SimplifiedBankOnboarding/contract/SBO_CONST';
 import type {OnboardingRequest, RequestSpec} from '@pages/SimplifiedBankOnboarding/core';
-import {getUSDAnswers} from '@pages/SimplifiedBankOnboarding/flows/usd/usdAnswers';
 import getUSDWriteOptions from '@pages/SimplifiedBankOnboarding/flows/usd/usdWriteOptions';
 import {WRITE_COMMANDS} from '@pages/SimplifiedBankOnboarding/mockBackend/commands';
 
 import ONYXKEYS from '@src/ONYXKEYS';
 
 import Onyx from 'react-native-onyx';
+
+import getBankAccountAnswers from './getBankAccountAnswers';
 
 function getBankAccountWriteOptions(): Pick<RequestSpec, 'onyxData' | 'errorKey'> {
     const writeOptions = getUSDWriteOptions(SBO_CONST.USD.STEP.BANK_ACCOUNT);
@@ -28,15 +29,16 @@ function getBankAccountWriteOptions(): Pick<RequestSpec, 'onyxData' | 'errorKey'
 
 const connectManuallyRequest: OnboardingRequest = {
     name: 'usd.bankAccount.connectManually',
-    build: ({bankAccount, account, draft}) => {
-        if (!bankAccount.policyID) {
+    build: (data) => {
+        const {policyID} = data.bankAccount;
+        if (!policyID) {
             return undefined;
         }
-        const answers = getUSDAnswers(draft, account);
+        const answers = getBankAccountAnswers(data);
         return {
             type: 'write',
             command: WRITE_COMMANDS.CONNECT_BANK_ACCOUNT_MANUALLY,
-            params: {policyID: bankAccount.policyID, routingNumber: answers.routingNumber.trim(), accountNumber: answers.accountNumber.trim()},
+            params: {policyID, routingNumber: answers.routingNumber.trim(), accountNumber: answers.accountNumber.trim()},
             ...getBankAccountWriteOptions(),
         };
     },
@@ -44,15 +46,16 @@ const connectManuallyRequest: OnboardingRequest = {
 
 const connectWithPlaidRequest: OnboardingRequest = {
     name: 'usd.bankAccount.connectWithPlaid',
-    build: ({bankAccount, account, draft}) => {
-        const {plaidAccountID} = getUSDAnswers(draft, account);
-        if (!bankAccount.policyID || !plaidAccountID) {
+    build: (data) => {
+        const {policyID} = data.bankAccount;
+        const {plaidAccountID} = getBankAccountAnswers(data);
+        if (!policyID || !plaidAccountID) {
             return undefined;
         }
         return {
             type: 'write',
             command: WRITE_COMMANDS.CONNECT_BANK_ACCOUNT_WITH_PLAID,
-            params: {policyID: bankAccount.policyID, plaidAccountID},
+            params: {policyID, plaidAccountID},
             ...getBankAccountWriteOptions(),
         };
     },

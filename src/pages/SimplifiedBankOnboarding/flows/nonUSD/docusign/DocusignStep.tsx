@@ -10,9 +10,9 @@ import useThemeStyles from '@hooks/useThemeStyles';
 
 import INPUT_IDS from '@pages/SimplifiedBankOnboarding/contract/form';
 import SBO_CONST from '@pages/SimplifiedBankOnboarding/contract/SBO_CONST';
-import {FormSubPage, OnboardingStep} from '@pages/SimplifiedBankOnboarding/core';
+import {FormSubPage, OnboardingStep, useFlowData} from '@pages/SimplifiedBankOnboarding/core';
 import finishOnboardingRequest from '@pages/SimplifiedBankOnboarding/flows/nonUSD/agreements/finishOnboardingRequest';
-import {useNonUSDAnswers} from '@pages/SimplifiedBankOnboarding/flows/nonUSD/nonUSDAnswers';
+import getAgreementsAnswers from '@pages/SimplifiedBankOnboarding/flows/nonUSD/agreements/getAgreementsAnswers';
 import DraftFileInput from '@pages/SimplifiedBankOnboarding/flows/shared/files/DraftFileInput';
 
 import CONST from '@src/CONST';
@@ -22,7 +22,7 @@ import React, {useRef} from 'react';
 function DocusignStep() {
     const {translate} = useLocalize();
     const styles = useThemeStyles();
-    const {achAuthorizationForm} = useNonUSDAnswers();
+    const {achAuthorizationForm} = getAgreementsAnswers(useFlowData());
     const formRef = useRef<FormRef | null>(null);
 
     return (

@@ -14,9 +14,8 @@ import useThemeStyles from '@hooks/useThemeStyles';
 import INPUT_IDS from '@pages/SimplifiedBankOnboarding/contract/form';
 import type {OnboardingDraft} from '@pages/SimplifiedBankOnboarding/contract/form';
 import {hasBankAccount} from '@pages/SimplifiedBankOnboarding/contract/setupStatus';
-import {FormSubPage, SubPageInput} from '@pages/SimplifiedBankOnboarding/core';
+import {FormSubPage, SubPageInput, useFlowData} from '@pages/SimplifiedBankOnboarding/core';
 import type {SubPageFormErrors} from '@pages/SimplifiedBankOnboarding/core';
-import {useUSDAnswers} from '@pages/SimplifiedBankOnboarding/flows/usd/usdAnswers';
 
 import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';
@@ -24,6 +23,7 @@ import ONYXKEYS from '@src/ONYXKEYS';
 import React from 'react';
 
 import {connectManuallyRequest} from './bankAccountRequests';
+import getBankAccountAnswers from './getBankAccountAnswers';
 
 const ROUTING_NUMBER_PATTERN = /^\d{9}$/;
 
@@ -35,7 +35,7 @@ function ManualBankPage() {
     const {translate} = useLocalize();
     const styles = useThemeStyles();
     const {inputCallbackRef} = useAutoFocusInput();
-    const answers = useUSDAnswers();
+    const answers = getBankAccountAnswers(useFlowData());
 
     // A locked input takes its value from the answers, because the form of a screen that stayed mounted under the next
     // step still holds the typed numbers.

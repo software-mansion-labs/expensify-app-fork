@@ -14,13 +14,14 @@ import useThemeStyles from '@hooks/useThemeStyles';
 import INPUT_IDS from '@pages/SimplifiedBankOnboarding/contract/form';
 import SBO_CONST from '@pages/SimplifiedBankOnboarding/contract/SBO_CONST';
 import {isGlobalAccountCreated} from '@pages/SimplifiedBankOnboarding/contract/setupStatus';
-import {FormSubPage, OnboardingStep} from '@pages/SimplifiedBankOnboarding/core';
-import {useNonUSDAnswers} from '@pages/SimplifiedBankOnboarding/flows/nonUSD/nonUSDAnswers';
+import {FormSubPage, OnboardingStep, useFlowData} from '@pages/SimplifiedBankOnboarding/core';
 
 import ONYXKEYS from '@src/ONYXKEYS';
 
 import React from 'react';
 import {View} from 'react-native';
+
+import getCountryAnswers from './getCountryAnswers';
 
 function getCountryOptions(currency: string, translate: LocalizedTranslate): Record<string, string> {
     if (currency === SBO_CONST.CURRENCY.EUR) {
@@ -35,7 +36,9 @@ function getCountryOptions(currency: string, translate: LocalizedTranslate): Rec
 function CountryStep() {
     const {translate} = useLocalize();
     const styles = useThemeStyles();
-    const {currency, country} = useNonUSDAnswers();
+    const data = useFlowData();
+    const {currency} = data;
+    const {country} = getCountryAnswers(data);
     const [isAccountCreated] = useOnyx(ONYXKEYS.SIMPLIFIED_BANK_ONBOARDING_ACCOUNT, {selector: (account) => isGlobalAccountCreated(account?.achData)});
 
     const countryOptions = getCountryOptions(currency, translate);

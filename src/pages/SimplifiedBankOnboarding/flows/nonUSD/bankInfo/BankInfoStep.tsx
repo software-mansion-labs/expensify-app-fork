@@ -8,8 +8,8 @@ import useOnyx from '@hooks/useOnyx';
 
 import NotFoundPage from '@pages/ErrorPage/NotFoundPage';
 import SBO_CONST from '@pages/SimplifiedBankOnboarding/contract/SBO_CONST';
-import {ConfirmationSubPage, OnboardingStep, PageLoadingIndicator, SubPage, useReadOnOpen} from '@pages/SimplifiedBankOnboarding/core';
-import {useNonUSDAnswers} from '@pages/SimplifiedBankOnboarding/flows/nonUSD/nonUSDAnswers';
+import {ConfirmationSubPage, OnboardingStep, PageLoadingIndicator, SubPage, useReadOnOpen, useFlowData} from '@pages/SimplifiedBankOnboarding/core';
+import getCountryAnswers from '@pages/SimplifiedBankOnboarding/flows/nonUSD/country/getCountryAnswers';
 
 import ONYXKEYS from '@src/ONYXKEYS';
 
@@ -17,13 +17,17 @@ import React from 'react';
 
 import {areBankFieldsAnswered, areBankFieldsLoaded, getBankFieldDisplayValue, isAccountHolderField, splitBankFields} from './bankFields';
 import {bankFieldsRead, getCreateBankAccountRequest} from './bankInfoRequests';
+import getBankInfoAnswers from './getBankInfoAnswers';
 import ServerDrivenFields from './ServerDrivenFields';
 
 const {BANK_INFO_SUB_PAGES: PAGES} = SBO_CONST.NON_USD;
 
 function BankInfoStep() {
     const {translate} = useLocalize();
-    const {country, currency, bankFieldValues} = useNonUSDAnswers();
+    const data = useFlowData();
+    const {currency} = data;
+    const {country} = getCountryAnswers(data);
+    const {bankFieldValues} = getBankInfoAnswers(data);
     const [bankFields] = useOnyx(ONYXKEYS.SIMPLIFIED_BANK_ONBOARDING_BANK_FIELDS);
 
     const isLoaded = areBankFieldsLoaded(bankFields, country, currency);

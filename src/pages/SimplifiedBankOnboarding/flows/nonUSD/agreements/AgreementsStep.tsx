@@ -17,8 +17,7 @@ import INPUT_IDS from '@pages/SimplifiedBankOnboarding/contract/form';
 import type {BooleanInputID, OnboardingDraft} from '@pages/SimplifiedBankOnboarding/contract/form';
 import SBO_CONST from '@pages/SimplifiedBankOnboarding/contract/SBO_CONST';
 import type {SubPageFormErrors} from '@pages/SimplifiedBankOnboarding/core';
-import {FormSubPage, OnboardingStep, SubPageInput} from '@pages/SimplifiedBankOnboarding/core';
-import {useNonUSDAnswers} from '@pages/SimplifiedBankOnboarding/flows/nonUSD/nonUSDAnswers';
+import {FormSubPage, OnboardingStep, SubPageInput, useFlowData} from '@pages/SimplifiedBankOnboarding/core';
 import DraftFileInput from '@pages/SimplifiedBankOnboarding/flows/shared/files/DraftFileInput';
 
 import CONST from '@src/CONST';
@@ -27,6 +26,7 @@ import type {TranslationPaths} from '@src/languages/types';
 import React, {useRef} from 'react';
 
 import finishOnboardingRequest from './finishOnboardingRequest';
+import getAgreementsAnswers from './getAgreementsAnswers';
 
 /** The error of each checkbox that is not checked */
 const AGREEMENT_ERRORS: Array<{
@@ -50,10 +50,11 @@ const AGREEMENT_ERRORS: Array<{
 function AgreementsStep() {
     const {translate} = useLocalize();
     const styles = useThemeStyles();
-    const answers = useNonUSDAnswers();
+    const data = useFlowData();
+    const answers = getAgreementsAnswers(data);
     const formRef = useRef<FormRef | null>(null);
 
-    const isDocusignStepRequired = requiresDocusignStep(answers.currency);
+    const isDocusignStepRequired = requiresDocusignStep(data.currency);
 
     const validateAgreements = (values: OnboardingDraft): SubPageFormErrors => {
         const errors: SubPageFormErrors = {};

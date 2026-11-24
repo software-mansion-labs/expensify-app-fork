@@ -9,14 +9,15 @@ import {isValidSSNLastFour} from '@libs/ValidationUtils';
 
 import INPUT_IDS from '@pages/SimplifiedBankOnboarding/contract/form';
 import SBO_CONST from '@pages/SimplifiedBankOnboarding/contract/SBO_CONST';
-import {ConfirmationSubPage, DateOfBirthSubPage, FullNameSubPage, OnboardingStep, SingleFieldSubPage} from '@pages/SimplifiedBankOnboarding/core';
-import {useUSDAnswers} from '@pages/SimplifiedBankOnboarding/flows/usd/usdAnswers';
+import {isVerifying} from '@pages/SimplifiedBankOnboarding/contract/setupStatus';
+import {ConfirmationSubPage, DateOfBirthSubPage, FullNameSubPage, OnboardingStep, SingleFieldSubPage, useFlowData} from '@pages/SimplifiedBankOnboarding/core';
 
 import CONST from '@src/CONST';
 import type {TranslationPaths} from '@src/languages/types';
 
 import React from 'react';
 
+import getPersonalInfoAnswers from './getPersonalInfoAnswers';
 import {personalInfoProgressRequest, personalInfoRequest} from './personalInfoRequests';
 
 const {PERSONAL_INFO_SUB_PAGES: PAGES} = SBO_CONST.USD;
@@ -27,13 +28,14 @@ function validateSSNLastFour(value: string): TranslationPaths | undefined {
 
 function PersonalInfoStep() {
     const {translate} = useLocalize();
-    const answers = useUSDAnswers();
+    const data = useFlowData();
+    const answers = getPersonalInfoAnswers(data);
 
     return (
         <OnboardingStep
             title={translate('personalInfoStep.personalInfo')}
             wrapperID="SimplifiedBankOnboardingPersonalInfo"
-            startAt={answers.isVerifying ? PAGES.FULL_NAME : undefined}
+            startAt={isVerifying(data.account?.achData) ? PAGES.FULL_NAME : undefined}
             saveAfterEachPage={personalInfoProgressRequest}
             shouldEnableMaxHeight
             shouldEnablePickerAvoiding={false}

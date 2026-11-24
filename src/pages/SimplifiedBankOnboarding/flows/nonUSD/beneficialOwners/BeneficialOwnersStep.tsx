@@ -8,9 +8,9 @@ import useLocalize from '@hooks/useLocalize';
 
 import INPUT_IDS from '@pages/SimplifiedBankOnboarding/contract/form';
 import SBO_CONST from '@pages/SimplifiedBankOnboarding/contract/SBO_CONST';
-import {NEXT_STEP, OnboardingStep, SubPage, YesNoSubPage} from '@pages/SimplifiedBankOnboarding/core';
+import {NEXT_STEP, OnboardingStep, SubPage, YesNoSubPage, useFlowData} from '@pages/SimplifiedBankOnboarding/core';
 import type {PageTarget} from '@pages/SimplifiedBankOnboarding/core';
-import {useNonUSDAnswers} from '@pages/SimplifiedBankOnboarding/flows/nonUSD/nonUSDAnswers';
+import getBusinessInfoAnswers from '@pages/SimplifiedBankOnboarding/flows/nonUSD/businessInfo/getBusinessInfoAnswers';
 import {CURRENT_USER_OWNER_ID} from '@pages/SimplifiedBankOnboarding/flows/shared/owners/ownerList';
 import OwnersListPage from '@pages/SimplifiedBankOnboarding/flows/shared/owners/OwnersListPage';
 import {getOwnerFullName} from '@pages/SimplifiedBankOnboarding/flows/shared/owners/serverOwners';
@@ -18,6 +18,7 @@ import useOwnerLoop from '@pages/SimplifiedBankOnboarding/flows/shared/owners/us
 
 import React from 'react';
 
+import getOwnersAnswers from './getOwnersAnswers';
 import globalOwnersRequest from './globalOwnersRequest';
 import renderOwnerDetailsPages from './renderOwnerDetailsPages';
 
@@ -25,7 +26,9 @@ const {BENEFICIAL_OWNER_INFO_SUB_PAGES: PAGES} = SBO_CONST.NON_USD;
 
 function BeneficialOwnersStep() {
     const {translate} = useLocalize();
-    const answers = useNonUSDAnswers();
+    const data = useFlowData();
+    const answers = getOwnersAnswers(data);
+    const {companyName} = getBusinessInfoAnswers(data);
     const loop = useOwnerLoop({kind: 'global', owners: answers.owners});
 
     const isUserOwner = answers.ownsMoreThan25Percent ?? false;
@@ -56,7 +59,7 @@ function BeneficialOwnersStep() {
                 name={PAGES.IS_USER_BENEFICIAL_OWNER}
                 isAnswered={areOwnersKnown}
                 inputID={INPUT_IDS.OWNS_MORE_THAN_25_PERCENT}
-                title={translate('ownershipInfoStep.doYouOwn', answers.companyName)}
+                title={translate('ownershipInfoStep.doYouOwn', companyName)}
                 description={description}
                 defaultValue={isUserOwner}
                 getDraftUpdate={(isOwner) => (isOwner ? loop.getStartUserUpdate() : loop.getRemoveUpdate(CURRENT_USER_OWNER_ID))}
@@ -66,7 +69,7 @@ function BeneficialOwnersStep() {
                 name={PAGES.IS_ANYONE_ELSE_BENEFICIAL_OWNER}
                 isAnswered={areOwnersKnown}
                 inputID={INPUT_IDS.ANY_INDIVIDUAL_OWN_25_PERCENT_OR_MORE}
-                title={translate('ownershipInfoStep.doesAnyoneOwn', answers.companyName)}
+                title={translate('ownershipInfoStep.doesAnyoneOwn', companyName)}
                 description={description}
                 defaultValue={answers.anyIndividualOwn25PercentOrMore ?? false}
                 getDraftUpdate={getAnyoneElseDraftUpdate}
@@ -78,7 +81,7 @@ function BeneficialOwnersStep() {
                 name={PAGES.ARE_THERE_MORE_BENEFICIAL_OWNERS}
                 isAnswered={areOwnersKnown}
                 inputID={INPUT_IDS.ANY_INDIVIDUAL_OWN_25_PERCENT_OR_MORE}
-                title={translate('ownershipInfoStep.areThereOther', answers.companyName)}
+                title={translate('ownershipInfoStep.areThereOther', companyName)}
                 description={description}
                 defaultValue={false}
                 // This question comes only after another owner joined the list, so its "no" must not undo the "yes" of the second question

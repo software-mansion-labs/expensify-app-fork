@@ -15,8 +15,7 @@ import useThemeStyles from '@hooks/useThemeStyles';
 
 import {getLatestErrorMessage} from '@libs/ErrorUtils';
 
-import {PageLoadingIndicator, RequestErrorMessage, useOnboardingFlow, useOnboardingRequest, useReadOnOpen, useSubPageSubmit} from '@pages/SimplifiedBankOnboarding/core';
-import {useUSDAnswers} from '@pages/SimplifiedBankOnboarding/flows/usd/usdAnswers';
+import {PageLoadingIndicator, RequestErrorMessage, useOnboardingFlow, useOnboardingRequest, useReadOnOpen, useSubPageSubmit, useFlowData} from '@pages/SimplifiedBankOnboarding/core';
 
 import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';
@@ -25,13 +24,14 @@ import React from 'react';
 import {View} from 'react-native';
 
 import {connectWithPlaidRequest} from './bankAccountRequests';
+import getBankAccountAnswers from './getBankAccountAnswers';
 import {plaidAccountSelectorRead, plaidLoginRead} from './plaidRequests';
 
 function PlaidBankPage() {
     const {translate} = useLocalize();
     const styles = useThemeStyles();
     const {formID, saveDraft} = useOnboardingFlow();
-    const {plaidAccountID} = useUSDAnswers();
+    const {plaidAccountID} = getBankAccountAnswers(useFlowData());
     const [plaidData] = useOnyx(ONYXKEYS.SIMPLIFIED_BANK_ONBOARDING_PLAID_DATA);
     const [plaidLinkToken] = useOnyx(ONYXKEYS.RAM_ONLY_SIMPLIFIED_BANK_ONBOARDING_PLAID_LINK_TOKEN);
     const accountSelector = useOnboardingRequest(plaidAccountSelectorRead);
