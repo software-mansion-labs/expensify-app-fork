@@ -13,15 +13,6 @@ import ROUTES from '@src/ROUTES';
 
 import type {OnyxEntry} from 'react-native-onyx';
 
-/** Leaves the whole onboarding: back to the screen that opened it, else closes the modal */
-function leaveOnboarding(backTo: Route | undefined) {
-    if (backTo) {
-        Navigation.goBack(backTo);
-        return;
-    }
-    Navigation.dismissModal();
-}
-
 /** The Back of the entry loader and of the connected view, which depends on the step that the account reached */
 function goBackFromEntryStep(step: USDStep, achData: OnyxEntry<ACHData>, backTo: Route | undefined) {
     switch (step) {
@@ -72,4 +63,4 @@ function leaveEntryAfterReset(backTo: Route | undefined) {
     Navigation.goBack(ROUTES.SETTINGS_BANK_ONBOARDING_LAB);
 }
 
-export {goBackFromEntryStep, goToChangeBankAccount, goToVerifyAccount, isOpenedFromPaymentsPage, leaveEntryAfterReset, leaveOnboarding};
+export {goBackFromEntryStep, goToChangeBankAccount, goToVerifyAccount, isOpenedFromPaymentsPage, leaveEntryAfterReset};

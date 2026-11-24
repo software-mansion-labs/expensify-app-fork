@@ -15,14 +15,14 @@ import useOnyx from '@hooks/useOnyx';
 
 import {getSetupCurrency, isNonUSDCurrency} from '@pages/SimplifiedBankOnboarding/contract/currency';
 import {belongsToPolicy, hasInProgressSetup, isConnected} from '@pages/SimplifiedBankOnboarding/contract/setupStatus';
-import {clearDraft, useAccountRead} from '@pages/SimplifiedBankOnboarding/core';
-import type {AccountReadParams} from '@pages/SimplifiedBankOnboarding/core';
+import {clearDraft, openOnboardingPage} from '@pages/SimplifiedBankOnboarding/core';
+import type {OpenOnboardingPageParams, RequestOutcome} from '@pages/SimplifiedBankOnboarding/core';
 
 import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';
 
 import {useIsFocused} from '@react-navigation/native';
-import {useEffect, useEffectEvent, useRef} from 'react';
+import {useEffect, useEffectEvent, useRef, useState} from 'react';
 
 import {getEntryStep} from './getEntryState';
 import {clearOnboardingAccount, startAccountLoading} from './requests/resetBankAccount';
@@ -46,6 +46,13 @@ type EntryAccountRead = {
     releaseAccountOnUnmount: () => void;
 };
 
+type AccountReadParams = Pick<OpenOnboardingPageParams, 'policyID' | 'bankAccountID'>;
+
+type AccountReadExtra = Pick<OpenOnboardingPageParams, 'stepToOpen' | 'subStep' | 'localCurrentStep'>;
+
+/** Many pages read the same account, so the entry keeps the status of its own reads */
+type ReadStatus = RequestOutcome['status'] | 'pending';
+
 /** Like the real page, a route names the bank account or the workspace, and the bank account wins */
 function getReadParams(policyID: string | undefined, bankAccountID: number | undefined): AccountReadParams | undefined {
     if (bankAccountID) {
@@ -54,12 +61,42 @@ function getReadParams(policyID: string | undefined, bankAccountID: number | und
     return policyID ? {policyID} : undefined;
 }
 
+/**
+ * The status of the latest read that the page started. The reads of the page can overlap (focus, reconnect), so the
+ * answer of an older read never replaces the status of a newer one, and no answer sets the status of a page that is gone.
+ */
+function useLatestReadStatus(): {status: ReadStatus | undefined; trackRead: (read: Promise<RequestOutcome>) => void} {
+    const [status, setStatus] = useState<ReadStatus>();
+    const latestReadIDRef = useRef(0);
+
+    useEffect(
+        () => () => {
+            latestReadIDRef.current += 1;
+        },
+        [],
+    );
+
+    function trackRead(read: Promise<RequestOutcome>) {
+        latestReadIDRef.current += 1;
+        const readID = latestReadIDRef.current;
+        setStatus('pending');
+        read.then((outcome) => {
+            if (latestReadIDRef.current !== readID) {
+                return;
+            }
+            setStatus(outcome.status);
+        });
+    }
+
+    return {status, trackRead};
+}
+
 function useEntryAccountRead({policyID, bankAccountID, isChangingBankAccount}: EntryAccountReadInput): EntryAccountRead {
     const isFocused = useIsFocused();
     const [account] = useOnyx(ONYXKEYS.SIMPLIFIED_BANK_ONBOARDING_ACCOUNT);
     const [draft] = useOnyx(ONYXKEYS.FORMS.SIMPLIFIED_BANK_ONBOARDING_FORM_DRAFT);
     const [workspaces] = useOnyx(ONYXKEYS.SIMPLIFIED_BANK_ONBOARDING_WORKSPACES);
-    const {readAccount, isReadPending, hasReadFailed} = useAccountRead(getReadParams(policyID, bankAccountID), {shouldReadOnReconnect: false});
+    const {status: lastReadStatus, trackRead} = useLatestReadStatus();
 
     const achData = account?.achData;
     const workspace = policyID ? workspaces?.[policyID] : undefined;
@@ -75,6 +112,14 @@ function useEntryAccountRead({policyID, bankAccountID, isChangingBankAccount}: E
     const isChangingInstanceRef = useRef(isChangingBankAccount);
     const shouldKeepAccountRef = useRef(false);
     const hasShownConnectedAccountRef = useRef(false);
+
+    function readAccount(extra?: AccountReadExtra) {
+        const params = getReadParams(policyID, bankAccountID);
+        if (!params) {
+            return;
+        }
+        trackRead(openOnboardingPage({...params, ...extra}));
+    }
 
     /** After a reconnect the read asks for the step that the entry stands on, which is the server step (BC-10) */
     function readAccountOfPage(shouldAskForEntryStep = false) {
@@ -159,8 +204,8 @@ function useEntryAccountRead({policyID, bankAccountID, isChangingBankAccount}: E
     };
 
     return {
-        isReadPending,
-        hasReadFailed,
+        isReadPending: lastReadStatus === 'pending',
+        hasReadFailed: lastReadStatus === 'failed',
         keepAccountOnUnmount,
         releaseAccountOnUnmount,
     };

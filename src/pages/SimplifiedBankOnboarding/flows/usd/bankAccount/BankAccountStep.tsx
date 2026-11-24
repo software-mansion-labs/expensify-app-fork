@@ -4,6 +4,8 @@
  * the other variant both open it. The Plaid variant needs the network, so the step blocks it offline.
  */
 
+import FullPageOfflineBlockingView from '@components/BlockingViews/FullPageOfflineBlockingView';
+
 import useLocalize from '@hooks/useLocalize';
 
 import SBO_CONST from '@pages/SimplifiedBankOnboarding/contract/SBO_CONST';
@@ -28,12 +30,13 @@ function BankAccountStep() {
         <OnboardingStep
             title={translate('bankAccount.bankInfo')}
             wrapperID="SimplifiedBankOnboardingBankInfo"
-            isBlockedOffline={isPlaid}
             shouldEnablePickerAvoiding={false}
         >
             {isPlaid && (
                 <SubPage name={PAGES.PLAID}>
-                    <PlaidBankPage />
+                    <FullPageOfflineBlockingView>
+                        <PlaidBankPage />
+                    </FullPageOfflineBlockingView>
                 </SubPage>
             )}
             {isManual && (

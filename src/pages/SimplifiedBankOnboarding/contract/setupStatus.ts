@@ -77,16 +77,4 @@ function areSignersKnown(corpay: OnyxEntry<CorpayData>, currency: string): boole
     return !requiresSecondDirector(currency) || !!corpay.secondSignerFullName;
 }
 
-export {
-    areCompanyDetailsLocked,
-    areSignersKnown,
-    belongsToPolicy,
-    hasBankAccount,
-    hasInProgressNonUSDSetup,
-    hasInProgressSetup,
-    hasInProgressUSDSetup,
-    isConnected,
-    isGlobalAccountCreated,
-    isPendingValidation,
-    isVerifying,
-};
+export {areCompanyDetailsLocked, areSignersKnown, belongsToPolicy, hasBankAccount, hasInProgressSetup, isConnected, isGlobalAccountCreated, isPendingValidation, isVerifying};

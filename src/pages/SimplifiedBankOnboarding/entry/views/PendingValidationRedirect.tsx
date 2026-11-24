@@ -6,8 +6,7 @@
 import ReimbursementAccountLoadingIndicator from '@components/ReimbursementAccountLoadingIndicator';
 
 import SBO_CONST from '@pages/SimplifiedBankOnboarding/contract/SBO_CONST';
-import {openFlow} from '@pages/SimplifiedBankOnboarding/core';
-import {leaveOnboarding} from '@pages/SimplifiedBankOnboarding/entry/entryNavigation';
+import {leaveOnboarding, openFlow} from '@pages/SimplifiedBankOnboarding/core';
 
 import type {Route} from '@src/ROUTES';
 

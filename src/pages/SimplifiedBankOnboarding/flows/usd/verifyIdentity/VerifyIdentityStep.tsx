@@ -3,6 +3,7 @@
  * the check result. The step waits for the server to accept the result and stays with the error when it does not
  * (BC-05). The flow skips the step once the server finished the check.
  */
+import FullPageOfflineBlockingView from '@components/BlockingViews/FullPageOfflineBlockingView';
 import Button from '@components/Button';
 import Text from '@components/Text';
 
@@ -65,9 +66,10 @@ function VerifyIdentityStep() {
         <OnboardingStep
             title={translate('onfidoStep.verifyIdentity')}
             wrapperID="SimplifiedBankOnboardingVerifyIdentity"
-            isBlockedOffline
         >
-            <IdentityCheckPage />
+            <FullPageOfflineBlockingView>
+                <IdentityCheckPage />
+            </FullPageOfflineBlockingView>
         </OnboardingStep>
     );
 }

@@ -181,10 +181,7 @@ describe('OwnersListPage', () => {
     beforeEach(async () => {
         jest.clearAllMocks();
         jest.mocked(write).mockReset();
-        clearRequestState(OWNERS_REQUEST.name, {
-            policyID: POLICY_ID,
-            bankAccountID: 0,
-        });
+        await clearRequestState();
         await Onyx.clear();
         await waitForBatchedUpdatesWithAct();
     });

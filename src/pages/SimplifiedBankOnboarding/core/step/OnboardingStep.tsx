@@ -7,7 +7,6 @@
  * previous step, edit mode and its return to the confirmation, the clearing of the account error mirror on Back, the
  * progress save and the screen guard.
  */
-import FullPageOfflineBlockingView from '@components/BlockingViews/FullPageOfflineBlockingView';
 import InteractiveStepWrapper from '@components/InteractiveStepWrapper';
 
 import useOnyx from '@hooks/useOnyx';
@@ -64,8 +63,6 @@ type OnboardingStepProps = {
      */
     onBackFromStart?: () => void;
 
-    /** Shows FullPageOfflineBlockingView instead of the content while offline (Plaid, identity check) */
-    isBlockedOffline?: boolean;
     shouldEnableMaxHeight?: boolean;
     shouldEnablePickerAvoiding?: boolean;
 };
@@ -74,17 +71,7 @@ function hasAccountErrors(account: OnyxEntry<OnboardingAccount>): boolean {
     return !!account?.errors && Object.keys(account.errors).length > 0;
 }
 
-function OnboardingStep({
-    title,
-    wrapperID,
-    children,
-    startAt,
-    saveAfterEachPage,
-    onBackFromStart,
-    isBlockedOffline = false,
-    shouldEnableMaxHeight,
-    shouldEnablePickerAvoiding,
-}: OnboardingStepProps) {
+function OnboardingStep({title, wrapperID, children, startAt, saveAfterEachPage, onBackFromStart, shouldEnableMaxHeight, shouldEnablePickerAvoiding}: OnboardingStepProps) {
     const {target, returnToEntry} = useOnboardingFlow();
     const {step, previousStep, nextStep, counterIndex, counterNames, page: urlPage, isEditing: isEditingInURL} = useFlowStepPosition();
     const route = useRoute();
@@ -191,9 +178,7 @@ function OnboardingStep({
             shouldEnablePickerAvoiding={shouldEnablePickerAvoiding}
         >
             <PageNavigationStateContext.Provider value={navigationState}>
-                <PageNavigationActionsContext.Provider value={navigationActions}>
-                    {isBlockedOffline ? <FullPageOfflineBlockingView>{pageContent}</FullPageOfflineBlockingView> : pageContent}
-                </PageNavigationActionsContext.Provider>
+                <PageNavigationActionsContext.Provider value={navigationActions}>{pageContent}</PageNavigationActionsContext.Provider>
             </PageNavigationStateContext.Provider>
         </InteractiveStepWrapper>
     );

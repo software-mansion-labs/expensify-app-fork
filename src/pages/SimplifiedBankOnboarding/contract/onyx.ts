@@ -9,7 +9,6 @@ import type {ValueOf} from 'type-fest';
 import type INPUT_IDS from './form';
 import type SBO_CONST from './SBO_CONST';
 
-type Currency = ValueOf<typeof SBO_CONST.CURRENCY>;
 type BankAccountState = ValueOf<typeof SBO_CONST.STATE>;
 type SetupType = ValueOf<typeof SBO_CONST.SETUP_TYPE>;
 type USDStep = ValueOf<typeof SBO_CONST.USD.STEP>;
@@ -237,7 +236,6 @@ export type {
     BankFormField,
     BeneficialOwner,
     CorpayData,
-    Currency,
     GlobalBeneficialOwner,
     KYBDocumentType,
     OnboardingAccount,

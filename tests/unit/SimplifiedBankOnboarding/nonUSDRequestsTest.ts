@@ -1,6 +1,6 @@
 import INPUT_IDS from '@pages/SimplifiedBankOnboarding/contract/form';
 import SBO_CONST from '@pages/SimplifiedBankOnboarding/contract/SBO_CONST';
-import type {SavedOnboardingData} from '@pages/SimplifiedBankOnboarding/core';
+import type {FlowData} from '@pages/SimplifiedBankOnboarding/core';
 import finishOnboardingRequest from '@pages/SimplifiedBankOnboarding/flows/nonUSD/agreements/finishOnboardingRequest';
 import {getCreateBankAccountRequest} from '@pages/SimplifiedBankOnboarding/flows/nonUSD/bankInfo/bankInfoRequests';
 import {WRITE_COMMANDS} from '@pages/SimplifiedBankOnboarding/mockBackend/commands';
@@ -20,7 +20,7 @@ const AUTHORIZATION_FORM = {
     uri: 'file://authorization.pdf',
 };
 
-function getSavedData(saved: Partial<SavedOnboardingData>): SavedOnboardingData {
+function getSavedData(saved: Partial<FlowData>): FlowData {
     return {
         bankAccount: BANK_ACCOUNT,
         account: undefined,

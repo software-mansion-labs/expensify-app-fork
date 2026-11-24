@@ -162,7 +162,7 @@ describe('runRequest', () => {
         expect(await getOnyxValue(ONYXKEYS.SIMPLIFIED_BANK_ONBOARDING_ACCOUNT)).toBeUndefined();
     });
 
-    it('clears every status and settles the pending requests as skipped when called without a name', async () => {
+    it('clears every status and settles the pending requests as skipped', async () => {
         // Given an answered request and a request that has no answer yet
         answerRequests('success');
         await runRequest({
@@ -181,25 +181,6 @@ describe('runRequest', () => {
         // Then no page shows an old state, and the handler that waited for the pending request returns
         expect(await pendingOutcome).toEqual({status: 'skipped'});
         expect(await getOnyxValue(ONYXKEYS.RAM_ONLY_SIMPLIFIED_BANK_ONBOARDING_REQUESTS)).toBeUndefined();
-    });
-
-    it('clears one status when called with a name', async () => {
-        // Given two answered requests
-        answerRequests('success');
-        await sendValidateUser();
-        await runRequest({
-            name: 'lab.landing.open',
-            type: 'read',
-            command: READ_COMMANDS.OPEN_LANDING_PAGE,
-            params: {},
-        });
-
-        // When the status of one of them is cleared
-        await clearRequestState(VALIDATE_NAME);
-
-        // Then only that status is gone
-        expect(await getRequestState()).toBeUndefined();
-        expect((await getOnyxValue(ONYXKEYS.RAM_ONLY_SIMPLIFIED_BANK_ONBOARDING_REQUESTS))?.[getRequestKey('lab.landing.open')]?.status).toBe('succeeded');
     });
 
     it('clears the page error and the account error mirror of a failure that arrives with no mounted user', async () => {

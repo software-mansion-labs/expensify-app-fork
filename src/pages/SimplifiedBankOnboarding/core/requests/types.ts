@@ -1,12 +1,9 @@
-import type {OnboardingDraft} from '@pages/SimplifiedBankOnboarding/contract/form';
-import type {OnboardingAccount} from '@pages/SimplifiedBankOnboarding/contract/onyx';
-import type {BankAccountParams, ReadCommand, ReadCommandParams, WriteCommand, WriteCommandParams} from '@pages/SimplifiedBankOnboarding/mockBackend/commands';
+import type {FlowData} from '@pages/SimplifiedBankOnboarding/core/flow/flowData';
+import type {ReadCommand, ReadCommandParams, WriteCommand, WriteCommandParams} from '@pages/SimplifiedBankOnboarding/mockBackend/commands';
 
 import type {TranslationPaths} from '@src/languages/types';
 import type ONYXKEYS from '@src/ONYXKEYS';
 import type {OnyxData} from '@src/types/onyx/Request';
-
-import type {OnyxEntry} from 'react-native-onyx';
 
 /** One command of the mock server with the params of that command, matched per command so the call site needs no `as` */
 type MockRequest =
@@ -62,25 +59,15 @@ type RequestScope = {
     bankAccountID?: number;
 };
 
-/** The data that Onyx holds when the request is sent. Blocks save the draft first, so `draft` has the submitted values. */
-type SavedOnboardingData = {
-    /** The bank account of the open flow: the route's policyID and the account's bankAccountID */
-    bankAccount: BankAccountParams;
-    account: OnyxEntry<OnboardingAccount>;
-
-    /** The draft of the form of the open flow: the main form, or the invited director form */
-    draft: OnboardingDraft;
-    currency: string;
-};
-
 /**
  * What a page sends. The name says which user action it is, and it is the start of the request key. `build` says what
- * is sent. It returns undefined when the request cannot be built (for example no policyID). The attempt then counts as
+ * is sent, from the data that Onyx holds at the send. Blocks save the draft first, so `data.draft` has the submitted
+ * values. It returns undefined when the request cannot be built (for example no policyID). The attempt then counts as
  * failed with the generic error, and nothing is sent.
  */
 type OnboardingRequest<TInput = void> = {
     name: RequestName;
-    build: (saved: SavedOnboardingData, input: TInput) => RequestSpec | undefined;
+    build: (data: FlowData, input: TInput) => RequestSpec | undefined;
 };
 
 /**
@@ -89,4 +76,4 @@ type OnboardingRequest<TInput = void> = {
  */
 type RequestOutcome = {status: 'succeeded'} | {status: 'failed'} | {status: 'skipped'};
 
-export type {MockRequest, OnboardingRequest, RequestName, RequestOnyxKey, RequestOutcome, RequestScope, RequestSpec, SavedOnboardingData};
+export type {MockRequest, OnboardingRequest, RequestName, RequestOnyxKey, RequestOutcome, RequestScope, RequestSpec};

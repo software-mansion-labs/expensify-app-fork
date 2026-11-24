@@ -1,5 +1,5 @@
 import SBO_CONST from '@pages/SimplifiedBankOnboarding/contract/SBO_CONST';
-import type {SavedOnboardingData} from '@pages/SimplifiedBankOnboarding/core';
+import type {FlowData} from '@pages/SimplifiedBankOnboarding/core';
 import invitedSignerDetailsRequest from '@pages/SimplifiedBankOnboarding/flows/enterSignerInfo/invitedSignerDetailsRequest';
 import {signerDetailsRequest as nonUSDSignerDetailsRequest} from '@pages/SimplifiedBankOnboarding/flows/nonUSD/signer/signerRequests';
 import {WRITE_COMMANDS} from '@pages/SimplifiedBankOnboarding/mockBackend/commands';
@@ -12,7 +12,7 @@ const {EUR} = SBO_CONST.CURRENCY;
 const {CURRENT_USER_KEY} = SBO_CONST.NON_USD;
 const BANK_ACCOUNT = {policyID: '1', bankAccountID: 42};
 
-function getSavedData(saved: Partial<SavedOnboardingData>): SavedOnboardingData {
+function getSavedData(saved: Partial<FlowData>): FlowData {
     return {bankAccount: BANK_ACCOUNT, account: undefined, draft: {}, currency: EUR, ...saved};
 }
 

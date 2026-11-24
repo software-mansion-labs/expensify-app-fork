@@ -3,12 +3,12 @@
  * `confirm: false`, and the confirmation with `confirm: true`, which asks the server to move on.
  */
 import SBO_CONST from '@pages/SimplifiedBankOnboarding/contract/SBO_CONST';
-import type {OnboardingRequest, RequestSpec, SavedOnboardingData} from '@pages/SimplifiedBankOnboarding/core';
+import type {OnboardingRequest, RequestSpec, FlowData} from '@pages/SimplifiedBankOnboarding/core';
 import {getUSDAnswers} from '@pages/SimplifiedBankOnboarding/flows/usd/usdAnswers';
 import getUSDWriteOptions from '@pages/SimplifiedBankOnboarding/flows/usd/usdWriteOptions';
 import {WRITE_COMMANDS} from '@pages/SimplifiedBankOnboarding/mockBackend/commands';
 
-function buildPersonalInfo({bankAccount, account, draft}: SavedOnboardingData, confirm: boolean): RequestSpec {
+function buildPersonalInfo({bankAccount, account, draft}: FlowData, confirm: boolean): RequestSpec {
     const answers = getUSDAnswers(draft, account);
     return {
         type: 'write',

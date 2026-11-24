@@ -105,5 +105,14 @@ function findLatestRouteOfStep(state: FlowNavigationState | undefined, routeKey:
         .find((position) => position.step === step);
 }
 
-export {findLatestRouteOfStep, getFlowRoute, getStepBelow, openFlow, parseFlowPosition};
+/** Leaves the whole onboarding: back to the screen that opened it, else closes the modal */
+function leaveOnboarding(backTo: Route | undefined) {
+    if (backTo) {
+        Navigation.goBack(backTo);
+        return;
+    }
+    Navigation.dismissModal();
+}
+
+export {findLatestRouteOfStep, getFlowRoute, getStepBelow, leaveOnboarding, openFlow, parseFlowPosition};
 export type {FlowNavigationState, FlowPosition};

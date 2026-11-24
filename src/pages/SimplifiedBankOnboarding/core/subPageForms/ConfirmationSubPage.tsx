@@ -36,13 +36,12 @@ type ConfirmationSubPageProps = SubPageElementProps & {
      * confirmation uses it to put the owner buffer into the list.
      */
     getDraftUpdate?: () => OnboardingDraft;
-    showOnfidoLinks?: boolean;
 
     /** Extra content under the rows */
     children?: React.ReactNode;
 };
 
-function ConfirmationSubPage({title, rows, request, getDraftUpdate, showOnfidoLinks = false, children, next}: ConfirmationSubPageProps) {
+function ConfirmationSubPage({title, rows, request, getDraftUpdate, children, next}: ConfirmationSubPageProps) {
     const {isEditing, openPage} = usePageNavigation();
     const {submit, isPending, errorMessage} = useSubPageSubmit({request});
 
@@ -67,7 +66,7 @@ function ConfirmationSubPage({title, rows, request, getDraftUpdate, showOnfidoLi
             onMove={ignorePageIndexMove}
             pageTitle={title}
             summaryItems={summaryItems}
-            showOnfidoLinks={showOnfidoLinks}
+            showOnfidoLinks={false}
             isLoading={isPending}
             error={errorMessage}
         >

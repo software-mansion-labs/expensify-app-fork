@@ -34,7 +34,8 @@ import {View} from 'react-native';
 import type {FlowStepPosition, FlowTarget, OnboardingFlowActions, OnboardingFlowState} from './flowContext';
 
 import {FlowStepPositionContext, getFlowBankAccount, OnboardingFlowActionsContext, OnboardingFlowStateContext} from './flowContext';
-import {getFlowRoute, parseFlowPosition} from './flowRoutes';
+import {getFlowFormID} from './flowData';
+import {getFlowRoute, leaveOnboarding, parseFlowPosition} from './flowRoutes';
 import PageLoadingIndicator from './PageLoadingIndicator';
 import {getAdjacentSteps, getStepCounter, readFlowSteps, resolveFlowStep} from './readFlowSteps';
 
@@ -157,7 +158,7 @@ function OnboardingFlow({target, params, resumeAt, children}: OnboardingFlowProp
     });
     const gateView = useAccountGate(target);
 
-    const formID = target.kind === 'enterSignerInfo' ? ONYXKEYS.FORMS.SIMPLIFIED_BANK_ONBOARDING_SIGNER_FORM : ONYXKEYS.FORMS.SIMPLIFIED_BANK_ONBOARDING_FORM;
+    const formID = getFlowFormID(target);
     const steps = readFlowSteps(children);
     const urlPosition = parseFlowPosition(target, params);
     const shownStep = resolveFlowStep(steps, urlPosition.step, resumeAt);
@@ -205,11 +206,7 @@ function OnboardingFlow({target, params, resumeAt, children}: OnboardingFlowProp
                 Navigation.goBack();
                 return;
             }
-            if (target.backTo) {
-                Navigation.goBack(target.backTo);
-                return;
-            }
-            Navigation.dismissModal();
+            leaveOnboarding(target.backTo);
         },
         openStep: (step: StepID, page?: PageID) => Navigation.navigate(getFlowRoute(target, {step, page})),
     };

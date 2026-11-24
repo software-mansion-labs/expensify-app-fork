@@ -1,7 +1,7 @@
 /**
- * The submit path of every block, for custom pages with their own FormProvider (the server-driven bank form, the email
- * page, the agreements). `submit` saves the values to the draft, then outside edit mode sends the request and moves on
- * after a success. In edit mode it returns to the confirmation and sends nothing.
+ * The submit path of every block, and of a custom page with its own form. `submit` saves the values to the draft, then
+ * outside edit mode sends the request and moves on after a success. In edit mode it returns to the confirmation and
+ * sends nothing.
  */
 import type {OnboardingDraft} from '@pages/SimplifiedBankOnboarding/contract/form';
 import {useOnboardingFlow} from '@pages/SimplifiedBankOnboarding/core/flow/flowContext';

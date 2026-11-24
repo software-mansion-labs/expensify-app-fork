@@ -3,7 +3,7 @@
  * the draft save on submit, the request of the page with its pending state and its error, and the move to the next page.
  */
 import FormProvider from '@components/Form/FormProvider';
-import type {FormInputErrors} from '@components/Form/types';
+import type {FormInputErrors, FormRef} from '@components/Form/types';
 import Text from '@components/Text';
 
 import useLocalize from '@hooks/useLocalize';
@@ -20,6 +20,9 @@ import type {PageTarget, SubPageElementProps} from '@pages/SimplifiedBankOnboard
 import CONST from '@src/CONST';
 import type ONYXKEYS from '@src/ONYXKEYS';
 
+import type {Ref} from 'react';
+import type {StyleProp, ViewStyle} from 'react-native';
+
 import React from 'react';
 
 import RequestErrorMessage from './RequestErrorMessage';
@@ -33,14 +36,12 @@ type SubPageFormErrors = FormInputErrors<typeof ONYXKEYS.FORMS.SIMPLIFIED_BANK_O
 
 type FormSubPageProps = SubPageElementProps & {
     title: string;
-    description?: string;
 
     /** The inputs of this page. They go to the draft on submit. */
     inputIDs: InputID[];
 
-    /** Errors by input ID. Every input in inputIDs is required unless `optionalInputIDs` names it. */
+    /** Errors by input ID. Every input in inputIDs is required, and gets the required error unless `validate` gave it another one. */
     validate?: (values: OnboardingDraft) => SubPageFormErrors;
-    optionalInputIDs?: InputID[];
 
     request?: OnboardingRequest;
 
@@ -50,7 +51,14 @@ type FormSubPageProps = SubPageElementProps & {
     /** Decides the next page from the submitted values. Default: `next` or the next page in order. */
     getNext?: (values: OnboardingDraft) => PageTarget;
     submitButtonText?: string;
+
+    /** For a page that cannot be submitted yet, for example while the options of its picker are not there */
+    isSubmitDisabled?: boolean;
+    submitButtonStyles?: StyleProp<ViewStyle>;
     shouldHideFixErrorsAlert?: boolean;
+
+    /** The form, for an input that resets a form error itself (the file input) */
+    ref?: Ref<FormRef>;
 
     /** SubPageInput elements and any other markup */
     children: React.ReactNode;
@@ -69,16 +77,17 @@ function pickInputValues(values: OnboardingDraft, inputIDs: InputID[]): Onboardi
 
 function FormSubPage({
     title,
-    description,
     inputIDs,
     validate,
-    optionalInputIDs = [],
     request,
     getDraftUpdate,
     getNext,
     next,
     submitButtonText,
+    isSubmitDisabled = false,
+    submitButtonStyles,
     shouldHideFixErrorsAlert = false,
+    ref,
     children,
 }: FormSubPageProps) {
     const {translate} = useLocalize();
@@ -90,7 +99,7 @@ function FormSubPage({
     const validatePage = (values: OnboardingDraft): SubPageFormErrors => {
         const errors: SubPageFormErrors = {...validate?.(values)};
         for (const inputID of inputIDs) {
-            if (!optionalInputIDs.includes(inputID) && !isRequiredFulfilled(values[inputID])) {
+            if (!errors[inputID] && !isRequiredFulfilled(values[inputID])) {
                 errors[inputID] = translate('common.error.fieldRequired');
             }
         }
@@ -103,11 +112,14 @@ function FormSubPage({
 
     return (
         <FormProvider
+            ref={ref}
             formID={formID}
             submitButtonText={submitButtonText ?? translate(isEditing ? 'common.confirm' : 'common.next')}
             validate={validatePage}
             onSubmit={submitPage}
             style={[styles.mh5, styles.flexGrow1]}
+            submitButtonStyles={submitButtonStyles}
+            isSubmitDisabled={isSubmitDisabled}
             enabledWhenOffline={!request}
             isLoading={isPending}
             shouldHideFixErrorsAlert={shouldHideFixErrorsAlert}
@@ -116,7 +128,6 @@ function FormSubPage({
             sentryLabel={CONST.SENTRY_LABEL.BANK_ONBOARDING_LAB.SUBMIT_STEP}
         >
             <Text style={styles.textHeadlineLineHeightXXL}>{title}</Text>
-            {!!description && <Text style={[styles.pv3, styles.textSupporting]}>{description}</Text>}
             {children}
         </FormProvider>
     );

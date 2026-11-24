@@ -3,6 +3,7 @@
  * inputs lock and show the saved, masked numbers, and Next goes on without sending anything (BC-12), because sending the
  * masked number again would overwrite the real one.
  */
+import Text from '@components/Text';
 import TextInput from '@components/TextInput';
 
 import useAutoFocusInput from '@hooks/useAutoFocusInput';
@@ -56,12 +57,12 @@ function ManualBankPage() {
     return (
         <FormSubPage
             title={translate('bankAccount.manuallyAdd')}
-            description={translate('bankAccount.checkHelpLine')}
             inputIDs={[INPUT_IDS.ROUTING_NUMBER, INPUT_IDS.ACCOUNT_NUMBER]}
             validate={validate}
             request={isLocked ? undefined : connectManuallyRequest}
             submitButtonText={translate('common.next')}
         >
+            <Text style={[styles.pv3, styles.textSupporting]}>{translate('bankAccount.checkHelpLine')}</Text>
             <SubPageInput
                 InputComponent={TextInput}
                 ref={inputCallbackRef}

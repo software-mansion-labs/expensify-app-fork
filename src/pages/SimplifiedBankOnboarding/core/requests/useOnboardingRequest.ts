@@ -1,34 +1,23 @@
 /**
  * Sends the requests of one definition for the bank account of the open flow, and reports their state.
  *
- * What it hides: the read of the saved data (account, drafts, workspace) at the moment of the send, the bank account
- * scope and the form of the flow, the default of the account error mirror, the guard against a second send while one is
- * pending (also within one tick), and a request that cannot be built, which counts as a failed attempt.
+ * What it hides: the read of the flow data at the moment of the send, the bank account scope of the flow, the default of
+ * the account error mirror, the guard against a second send while one is pending (also within one tick), and a request
+ * that cannot be built, which counts as a failed attempt.
  */
-import {getSetupCurrency} from '@pages/SimplifiedBankOnboarding/contract/currency';
-import type {EnterSignerInfoForm, OnboardingDraft, OnboardingFormID} from '@pages/SimplifiedBankOnboarding/contract/form';
-import type {OnboardingAccount, Workspaces} from '@pages/SimplifiedBankOnboarding/contract/onyx';
-import {getFormDraft} from '@pages/SimplifiedBankOnboarding/core/draft/draft';
 import type {FlowTarget} from '@pages/SimplifiedBankOnboarding/core/flow/flowContext';
-import {getFlowBankAccount, useOnboardingFlow} from '@pages/SimplifiedBankOnboarding/core/flow/flowContext';
+import {useOnboardingFlow} from '@pages/SimplifiedBankOnboarding/core/flow/flowContext';
+import type {FlowData} from '@pages/SimplifiedBankOnboarding/core/flow/flowData';
+import {buildFlowData} from '@pages/SimplifiedBankOnboarding/core/flow/flowData';
 
 import ONYXKEYS from '@src/ONYXKEYS';
-
-import type {OnyxEntry} from 'react-native-onyx';
 
 import Onyx from 'react-native-onyx';
 
 import type {RequestKey} from './runRequest';
-import type {OnboardingRequest, RequestName, RequestOutcome, SavedOnboardingData} from './types';
+import type {OnboardingRequest, RequestName, RequestOutcome} from './types';
 
 import {failUnsentRequest, getRequestKey, isRequestInFlight, sendTrackedRequest, useRequestKeyState} from './runRequest';
-
-type SavedDataSources = {
-    account: OnyxEntry<OnboardingAccount>;
-    mainDraft: OnyxEntry<OnboardingDraft>;
-    signerDraft: OnyxEntry<Partial<EnterSignerInfoForm>>;
-    workspaces: OnyxEntry<Workspaces>;
-};
 
 /**
  * `userAction`: a press of the user, guarded against a second send while one is pending.
@@ -38,18 +27,6 @@ type SendMode = 'userAction' | 'progressSave';
 
 /** The keys of the sends that have not settled yet. It covers the time before runRequest counts them, so a second press in the same tick finds them. */
 const keysBeingSent = new Set<RequestKey>();
-
-/** The data a request is built from, from the values of the Onyx keys */
-function getSavedOnboardingData(target: FlowTarget, formID: OnboardingFormID, {account, mainDraft, signerDraft, workspaces}: SavedDataSources): SavedOnboardingData {
-    const draft = getFormDraft(formID, mainDraft, signerDraft);
-    const workspace = target.policyID ? workspaces?.[target.policyID] : undefined;
-    return {
-        bankAccount: getFlowBankAccount(target, account?.achData),
-        account,
-        draft,
-        currency: getSetupCurrency(workspace, account?.achData, draft),
-    };
-}
 
 /** A write of the USD or NonUSD flow shows its failure also on the entry and the Payments page */
 function shouldMirrorErrorByDefault(target: FlowTarget, type: 'read' | 'write', mode: SendMode): boolean {
@@ -63,21 +40,21 @@ function useFlowRequestKey(name: RequestName | undefined): RequestKey | undefine
 }
 
 function useSendOnboardingRequest<TInput>(request: OnboardingRequest<TInput> | undefined, key: RequestKey | undefined, mode: SendMode): (input: TInput) => Promise<RequestOutcome> {
-    const {target, formID} = useOnboardingFlow();
+    const {target} = useOnboardingFlow();
 
-    async function readSavedData(): Promise<SavedOnboardingData> {
+    async function readFlowData(): Promise<FlowData> {
         const [account, mainDraft, signerDraft, workspaces] = await Promise.all([
             Onyx.get(ONYXKEYS.SIMPLIFIED_BANK_ONBOARDING_ACCOUNT),
             Onyx.get(ONYXKEYS.FORMS.SIMPLIFIED_BANK_ONBOARDING_FORM_DRAFT),
             Onyx.get(ONYXKEYS.FORMS.SIMPLIFIED_BANK_ONBOARDING_SIGNER_FORM_DRAFT),
             Onyx.get(ONYXKEYS.SIMPLIFIED_BANK_ONBOARDING_WORKSPACES),
         ]);
-        return getSavedOnboardingData(target, formID, {account, mainDraft, signerDraft, workspaces});
+        return buildFlowData(target, {account, mainDraft, signerDraft, workspace: target.policyID ? workspaces?.[target.policyID] : undefined});
     }
 
     async function buildAndSend(sentRequest: OnboardingRequest<TInput>, sentKey: RequestKey, input: TInput): Promise<RequestOutcome> {
         try {
-            const spec = sentRequest.build(await readSavedData(), input);
+            const spec = sentRequest.build(await readFlowData(), input);
             if (!spec) {
                 return await failUnsentRequest(sentKey, {});
             }
@@ -130,5 +107,4 @@ function useProgressSaveRequest(request: OnboardingRequest | undefined): () => P
 }
 
 export default useOnboardingRequest;
-export {getSavedOnboardingData, useProgressSaveRequest};
-export type {SavedDataSources};
+export {useProgressSaveRequest};

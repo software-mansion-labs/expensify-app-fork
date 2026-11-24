@@ -31,11 +31,12 @@ function DocumentsPage() {
     return (
         <FormSubPage
             title={translate('documentsStep.beforeYouGo')}
-            description={translate('documentsStep.verificationFailed')}
             inputIDs={requiredDocuments.map((document) => document.inputID)}
             request={kybDocumentsRequest}
             submitButtonText={translate('common.verify')}
+            submitButtonStyles={styles.mb0}
         >
+            <Text style={[styles.textSupporting, styles.mv5]}>{translate('documentsStep.verificationFailed')}</Text>
             {requiredDocuments.map((document, index) => (
                 <View key={document.inputID}>
                     <Text style={[styles.textNormalThemeText, styles.textLineHeightNormal, styles.textStrong, styles.mb3]}>{translate(document.title)}</Text>

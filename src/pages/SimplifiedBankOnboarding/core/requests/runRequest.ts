@@ -281,12 +281,6 @@ function useRequestKeyState(key: RequestKey | undefined): RequestKeyState {
     };
 }
 
-/** Reads the state of a request that runRequest sent, for code outside a flow */
-function useRequestState(name: RequestName, scope?: RequestScope): {isPending: boolean; errorMessage: string | undefined} {
-    const {isPending, errorMessage} = useRequestKeyState(getRequestKey(name, scope));
-    return {isPending, errorMessage};
-}
-
 /**
  * Clears the account error mirror, for the Back press of the step shell (BC-04). The page errors stay with their pages.
  * An account error that no request of a flow mirrored stays, for example the error of a failed bank account reset.
@@ -299,35 +293,14 @@ function clearAccountErrorMirror(): Promise<void> {
     return Onyx.merge(ONYXKEYS.SIMPLIFIED_BANK_ONBOARDING_ACCOUNT, {errors: null});
 }
 
-/** Clears one status, or every status when called without a name (lab reset, bank account reset) */
-function clearRequestState(name?: RequestName, scope?: RequestScope): Promise<void> {
-    if (!name) {
-        for (const [key, waiter] of [...waiters]) {
-            settleWaiter(key, waiter, SKIPPED);
-        }
-        mirroredRequestIDs.clear();
-        return Onyx.set(ONYXKEYS.RAM_ONLY_SIMPLIFIED_BANK_ONBOARDING_REQUESTS, null);
-    }
-
-    const key = getRequestKey(name, scope);
-    const waiter = waiters.get(key);
-    if (waiter) {
+/** Clears every status and settles the pending requests as skipped (lab reset, bank account reset) */
+function clearRequestState(): Promise<void> {
+    for (const [key, waiter] of [...waiters]) {
         settleWaiter(key, waiter, SKIPPED);
     }
-    mirroredRequestIDs.delete(key);
-    return Onyx.merge(ONYXKEYS.RAM_ONLY_SIMPLIFIED_BANK_ONBOARDING_REQUESTS, {[key]: null});
+    mirroredRequestIDs.clear();
+    return Onyx.set(ONYXKEYS.RAM_ONLY_SIMPLIFIED_BANK_ONBOARDING_REQUESTS, null);
 }
 
-export {
-    clearAccountErrorMirror,
-    clearRequestState,
-    failUnsentRequest,
-    getRequestKey,
-    isRequestInFlight,
-    retainRequestKey,
-    runRequest,
-    sendTrackedRequest,
-    useRequestKeyState,
-    useRequestState,
-};
+export {clearAccountErrorMirror, clearRequestState, failUnsentRequest, getRequestKey, isRequestInFlight, retainRequestKey, runRequest, sendTrackedRequest, useRequestKeyState};
 export type {RequestKey};
