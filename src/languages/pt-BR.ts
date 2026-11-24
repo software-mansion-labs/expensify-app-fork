@@ -1146,6 +1146,11 @@ const translations: TranslationDeepObject<typeof en> = {
             reportApproved: 'Relatório aprovado',
             reportPaid: 'Relatório pago',
             reportExported: 'Relatório exportado',
+            allDone: 'Tudo pronto!',
+            allReportsSubmitted: 'Você enviou todos os relatórios. Muito bem.',
+            allReportsApproved: 'Você aprovou todos os relatórios. Muito bem.',
+            allReportsPaid: 'Você pagou todos os relatórios. Muito bem.',
+            allReportsExported: 'Você exportou todos os relatórios. Muito bem.',
         },
         upcomingTravel: 'Próximas viagens',
         upcomingTravelSection: {

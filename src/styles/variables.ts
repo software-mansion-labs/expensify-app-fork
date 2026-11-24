@@ -177,6 +177,8 @@ export default {
     rhpFloatingCardBorderWidth: 1,
     // Screen inset shared by the top- and bottom-anchored growl containers so both stay in sync.
     growlNotificationInset: 20,
+    growlNotificationCelebrationSize: 220,
+    growlNotificationCelebrationAnimationSize: 112,
     receiptPaneRHPMaxWidth: 465,
     receiptPreviewMaxWidth: 440,
     receiptPreviewMaxHeight: 440,

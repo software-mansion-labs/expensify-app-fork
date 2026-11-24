@@ -10,6 +10,7 @@ import WideRHPOverlayWrapper from '@components/WideRHPOverlayWrapper';
 import useCurrentUserPersonalDetails from '@hooks/useCurrentUserPersonalDetails';
 import useDismissOnMoneyRequestReportRemoval from '@hooks/useDismissOnMoneyRequestReportRemoval';
 import useDocumentTitle from '@hooks/useDocumentTitle';
+import useHomeTodoReportTransition from '@hooks/useHomeTodoReportTransition';
 import useIsReportReadyToDisplay from '@hooks/useIsReportReadyToDisplay';
 import useNetwork from '@hooks/useNetwork';
 import useOnyx from '@hooks/useOnyx';
@@ -76,6 +77,7 @@ function SearchMoneyRequestReportPage({route}: SearchMoneyRequestPageProps) {
     const {isOffline} = useNetwork();
     const {isBetaEnabled} = usePermissions();
     const reportIDFromRoute = getNonEmptyStringOnyxID(route.params?.reportID);
+    useHomeTodoReportTransition(reportIDFromRoute);
     const {currentSearchResults: snapshot} = useSearchResultsContext();
 
     const [report] = useOnyx(`${ONYXKEYS.COLLECTION.REPORT}${reportIDFromRoute}`);

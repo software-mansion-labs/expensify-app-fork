@@ -5212,6 +5212,7 @@ const CONST = {
         SUCCESS: 'success',
         ERROR: 'error',
         WARNING: 'warning',
+        CELEBRATION: 'celebration',
         POSITION: {
             TOP: 'top',
             BOTTOM_RIGHT: 'bottomRight',
