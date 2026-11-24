@@ -1,0 +1,26 @@
+/**
+ * The page that the signer step opens on every way in, read from the saved signer data: the waiting page once the step
+ * invited the directors it had to invite, else the director question.
+ */
+import {requiresSecondDirector} from '@pages/SimplifiedBankOnboarding/contract/currency';
+import type {CorpayData} from '@pages/SimplifiedBankOnboarding/contract/onyx';
+import SBO_CONST from '@pages/SimplifiedBankOnboarding/contract/SBO_CONST';
+
+import type {OnyxEntry} from 'react-native-onyx';
+
+const PAGES = SBO_CONST.NON_USD.SIGNER_INFO_SUB_PAGES;
+
+type SignerStartPage = typeof PAGES.IS_DIRECTOR | typeof PAGES.HANG_TIGHT;
+
+function getSignerStartPage(corpay: OnyxEntry<CorpayData>, currency: string): SignerStartPage {
+    if (requiresSecondDirector(currency)) {
+        const hasInvitedDirector = corpay?.signerEmail !== undefined || corpay?.secondSignerEmail !== undefined;
+        return hasInvitedDirector ? PAGES.HANG_TIGHT : PAGES.IS_DIRECTOR;
+    }
+
+    // Once the server holds the name of the one director, nobody is left to wait for, even when an email was saved before.
+    const isWaitingForDirector = corpay?.signerEmail !== undefined && corpay.signerFullName === undefined;
+    return isWaitingForDirector ? PAGES.HANG_TIGHT : PAGES.IS_DIRECTOR;
+}
+
+export default getSignerStartPage;

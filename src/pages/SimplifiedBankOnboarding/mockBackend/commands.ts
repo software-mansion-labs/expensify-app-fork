@@ -2,7 +2,7 @@
  * The commands that the mock backend understands and the parameters of each one.
  * They stand in for `WRITE_COMMANDS`, `READ_COMMANDS` and the parameter types of the real API layer.
  */
-import type {SetupType, USDStep} from '@pages/SimplifiedBankOnboarding/types/onyx';
+import type {SetupType, USDStep} from '@pages/SimplifiedBankOnboarding/contract/onyx';
 
 const READ_COMMANDS = {
     OPEN_LANDING_PAGE: 'OpenLandingPage',

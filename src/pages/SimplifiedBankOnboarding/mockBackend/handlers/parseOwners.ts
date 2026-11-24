@@ -1,7 +1,7 @@
 /**
  * Parsers of the beneficial owners that the client sends as a JSON string. A malformed payload yields undefined.
  */
-import type {BeneficialOwner, GlobalBeneficialOwner} from '@pages/SimplifiedBankOnboarding/types/onyx';
+import type {BeneficialOwner, GlobalBeneficialOwner} from '@pages/SimplifiedBankOnboarding/contract/onyx';
 
 function isRecord(value: unknown): value is Record<string, unknown> {
     return typeof value === 'object' && value !== null;
