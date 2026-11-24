@@ -1,10 +1,13 @@
 /**
- * The rules of the signer step that depend on the answers: whether the user still has to give a name, which name the
- * director request sends, and which emails the step asks for. The answers are read draft first, so a changed owner
- * answer of the earlier step wins over the saved one (README scenario 6).
+ * The rules of the signer step: whether the saved data says that the step is done, and the rules that depend on the
+ * answers, which are whether the user still has to give a name, which name the director request sends, and which emails
+ * the step asks for. The answers are read draft first, so a changed owner answer of the earlier step wins over the
+ * saved one (README scenario 6).
  */
 import {requiresSecondDirector} from '@pages/SimplifiedBankOnboarding/contract/currency';
 import SBO_CONST from '@pages/SimplifiedBankOnboarding/contract/SBO_CONST';
+import {areSignersKnown, isVerifying} from '@pages/SimplifiedBankOnboarding/contract/setupStatus';
+import type {FlowData} from '@pages/SimplifiedBankOnboarding/core';
 import type {NonUSDAnswers} from '@pages/SimplifiedBankOnboarding/flows/nonUSD/nonUSDAnswers';
 
 /**
@@ -14,6 +17,15 @@ import type {NonUSDAnswers} from '@pages/SimplifiedBankOnboarding/flows/nonUSD/n
 type SignerEmailMode = 'two' | 'secondOnly' | 'one';
 
 type SignerAnswers = Pick<NonUSDAnswers, 'ownsMoreThan25Percent' | 'owners' | 'signerFullName'>;
+
+/** The step is done once every director is known and the agreements were not sent yet, or once the setup was sent */
+function isSignerStepComplete({account, currency}: FlowData): boolean {
+    const achData = account?.achData;
+    if (isVerifying(achData)) {
+        return true;
+    }
+    return areSignersKnown(achData?.corpay, currency) && achData?.corpay?.authorizedToBindClientToAgreement === undefined;
+}
 
 /** The full name of the user's own owner entry, or undefined when the user is not an owner or the entry has no name */
 function getOwnerNameOfUser({ownsMoreThan25Percent, owners}: SignerAnswers): string | undefined {
@@ -42,5 +54,5 @@ function getSignerEmailMode(isUserDirector: boolean | undefined, currency: strin
     return isUserDirector ? 'secondOnly' : 'two';
 }
 
-export {getSignerEmailMode, getSignerFullName, shouldAskForSignerName};
+export {getSignerEmailMode, getSignerFullName, isSignerStepComplete, shouldAskForSignerName};
 export type {SignerEmailMode};

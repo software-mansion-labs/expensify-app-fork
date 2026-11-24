@@ -10,8 +10,6 @@ import {EnterSignerInfoPage, NonUSDFlowPage, USDFlowPage} from '@pages/Simplifie
 import type {OnboardingAccount, Workspaces} from '@pages/SimplifiedBankOnboarding';
 import type {NonUSDStepID, StepID, USDStepID} from '@pages/SimplifiedBankOnboarding/contract/ids';
 import SBO_CONST from '@pages/SimplifiedBankOnboarding/contract/SBO_CONST';
-import {getFlowRoute} from '@pages/SimplifiedBankOnboarding/core';
-import type {FlowTarget} from '@pages/SimplifiedBankOnboarding/core';
 
 import ONYXKEYS from '@src/ONYXKEYS';
 import SCREENS from '@src/SCREENS';
@@ -61,8 +59,6 @@ jest.mock('@components/InteractiveStepWrapper', () => {
 
 const POLICY_ID = '1';
 const {CURRENCY, STATE, USD, NON_USD} = SBO_CONST;
-const USD_TARGET: FlowTarget = {kind: 'usd', policyID: POLICY_ID, backTo: undefined};
-const NON_USD_TARGET: FlowTarget = {kind: 'nonUSD', policyID: POLICY_ID, backTo: undefined};
 
 type USDFlowPageProps = PlatformStackScreenProps<BankOnboardingLabParamList, typeof SCREENS.SETTINGS.BANK_ONBOARDING_LAB.USD_SETUP>;
 type NonUSDFlowPageProps = PlatformStackScreenProps<BankOnboardingLabParamList, typeof SCREENS.SETTINGS.BANK_ONBOARDING_LAB.NON_USD_SETUP>;
@@ -119,8 +115,11 @@ function expectStep(wrapperID: string, title: string, counter: string) {
     expect(screen.getByText(`counter ${counter}`)).toBeOnTheScreen();
 }
 
-function expectReplacedWith(target: FlowTarget, step: StepID) {
-    expect(Navigation.navigate).toHaveBeenCalledWith(getFlowRoute(target, {step}), {forceReplace: true});
+/** The flow shows `step` on the route of another URL step and writes it into that route */
+function expectShownInPlace(step: StepID, wrapperID: string) {
+    expect(screen.getByText(`screen ${wrapperID}`)).toBeOnTheScreen();
+    expect(Navigation.setParams).toHaveBeenCalledWith({page: step, subPage: undefined, action: undefined}, 'current-route');
+    expect(Navigation.navigate).not.toHaveBeenCalled();
 }
 
 describe('flow pages', () => {
@@ -178,8 +177,8 @@ describe('flow pages', () => {
             // When the URL names the identity check
             await renderUSDFlow(USD.PAGE_NAMES.VERIFY_IDENTITY);
 
-            // Then the flow replaces it with the next step that is not skipped
-            expectReplacedWith(USD_TARGET, USD.PAGE_NAMES.COMPANY);
+            // Then the flow shows the next step that is not skipped
+            expectShownInPlace(USD.PAGE_NAMES.COMPANY, 'SimplifiedBankOnboardingBusinessInfo');
         });
 
         it('skips the document step when no document is required', async () => {
@@ -189,8 +188,8 @@ describe('flow pages', () => {
             // When the URL names the document step
             await renderUSDFlow(USD.PAGE_NAMES.KYB_DOCS);
 
-            // Then the flow replaces it with validation, the next step
-            expectReplacedWith(USD_TARGET, USD.PAGE_NAMES.VALIDATION);
+            // Then the flow shows validation, the next step
+            expectShownInPlace(USD.PAGE_NAMES.VALIDATION, 'SimplifiedBankOnboardingConnectBankAccount');
         });
 
         it('opens the step that the server stored when the URL names none', async () => {
@@ -201,7 +200,7 @@ describe('flow pages', () => {
             await renderUSDFlow();
 
             // Then it resumes at business info
-            expectReplacedWith(USD_TARGET, USD.PAGE_NAMES.COMPANY);
+            expectShownInPlace(USD.PAGE_NAMES.COMPANY, 'SimplifiedBankOnboardingBusinessInfo');
         });
     });
 
@@ -247,8 +246,8 @@ describe('flow pages', () => {
             // When the URL names docusign
             await renderNonUSDFlow(NON_USD.PAGE_NAMES.DOCUSIGN);
 
-            // Then the flow replaces it with finish, the next step
-            expectReplacedWith(NON_USD_TARGET, NON_USD.PAGE_NAMES.FINISH);
+            // Then the flow shows finish, the next step
+            expectShownInPlace(NON_USD.PAGE_NAMES.FINISH, 'SimplifiedBankOnboardingFinish');
         });
 
         it('opens the step that the saved data points to when the URL names none', async () => {
@@ -259,7 +258,7 @@ describe('flow pages', () => {
             await renderNonUSDFlow();
 
             // Then it resumes at business info
-            expectReplacedWith(NON_USD_TARGET, NON_USD.PAGE_NAMES.BUSINESS_INFO);
+            expectShownInPlace(NON_USD.PAGE_NAMES.BUSINESS_INFO, 'SimplifiedBankOnboardingBusinessInfo');
         });
     });
 

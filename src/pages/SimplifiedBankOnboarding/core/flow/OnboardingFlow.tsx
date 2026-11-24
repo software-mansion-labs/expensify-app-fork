@@ -2,8 +2,8 @@
  * Runs one flow on one screen: it owns the step order, the skip rules, the step counter, the form of the flow, the bank
  * account scope of the requests and the two exits, and renders the step that the URL names.
  *
- * What it hides: the account gate of the USD and NonUSD flows (BC-25), the parsing of the route params, the replace of a
- * missing, unknown or skipped step, and the contexts that the step shell and the blocks read.
+ * What it hides: the account gate of the USD and NonUSD flows (BC-25), the parsing of the route params, the step that a
+ * missing, unknown or skipped URL step opens, and the contexts that the step shell and the blocks read.
  */
 import FullPageOfflineBlockingView from '@components/BlockingViews/FullPageOfflineBlockingView';
 import FullScreenLoadingIndicator from '@components/FullscreenLoadingIndicator';
@@ -28,14 +28,15 @@ import ONYXKEYS from '@src/ONYXKEYS';
 
 import type {OnyxEntry} from 'react-native-onyx';
 
-import React, {useEffect, useRef, useState} from 'react';
+import {useRoute} from '@react-navigation/native';
+import React, {useEffect, useLayoutEffect, useRef, useState} from 'react';
 import {View} from 'react-native';
 
 import type {FlowStepPosition, FlowTarget, OnboardingFlowActions, OnboardingFlowState} from './flowContext';
 
 import {FlowStepPositionContext, getFlowBankAccount, OnboardingFlowActionsContext, OnboardingFlowStateContext} from './flowContext';
 import {getFlowFormID} from './flowData';
-import {getFlowRoute, leaveOnboarding, parseFlowPosition} from './flowRoutes';
+import {getFlowRoute, leaveOnboarding, parseFlowPosition, writeShownStep} from './flowRoutes';
 import PageLoadingIndicator from './PageLoadingIndicator';
 import {getAdjacentSteps, getStepCounter, readFlowSteps, resolveFlowStep} from './readFlowSteps';
 
@@ -45,10 +46,7 @@ type OnboardingFlowProps = {
     /** The route params as they are. The shell narrows them with isStepID and isPageID. */
     params: {page?: string; subPage?: string; action?: string} | undefined;
 
-    /** The step that opens when the URL names no step or an unknown one. Default: the first step that is not skipped. */
-    resumeAt?: StepID;
-
-    /** FlowStep elements in flow order. Fragments and arrays are flattened. Other children are ignored. */
+    /** FlowStep elements in flow order. Fragments and arrays are flattened. */
     children: React.ReactNode;
 };
 
@@ -76,9 +74,7 @@ function selectGateAccount(account: OnyxEntry<OnboardingAccount>): GateAccount {
  * never reads during a reset, and never without a policyID in the route.
  */
 function useAccountGate(target: FlowTarget): AccountGateView {
-    const [gateAccount] = useOnyx(ONYXKEYS.SIMPLIFIED_BANK_ONBOARDING_ACCOUNT, {
-        selector: selectGateAccount,
-    });
+    const [gateAccount] = useOnyx(ONYXKEYS.SIMPLIFIED_BANK_ONBOARDING_ACCOUNT, {selector: selectGateAccount});
     const {isOffline} = useNetwork();
     const [readStatus, setReadStatus] = useState<AccountReadStatus>('idle');
     const hasStartedReadRef = useRef(false);
@@ -146,30 +142,32 @@ function useAccountGate(target: FlowTarget): AccountGateView {
  * Runs one flow on one screen.
  *
  * - Account gate (BC-25), USD and NonUSD only, see useAccountGate.
- * - It renders the component of the step named in the URL. A missing or unknown step is replaced with `resumeAt`, a
- *   skipped step with the next step that is not skipped (forceReplace). In the one render before the replace lands it
- *   shows PageLoadingIndicator.
- * - It gives the step shell the previous and the next step that are not skipped, the counter and the parsed position.
+ * - It renders the component of the step named in the URL. A skipped step opens the next step that is not skipped. A
+ *   missing or unknown step opens the first step that is neither skipped nor complete. Such a step is shown in the same
+ *   render, and the URL is corrected in place, so the route and the screen under it stay as they are.
+ * - It gives the step shell the steps around the shown one, the counter and the parsed position.
  */
-function OnboardingFlow({target, params, resumeAt, children}: OnboardingFlowProps) {
+function OnboardingFlow({target, params, children}: OnboardingFlowProps) {
     const styles = useThemeStyles();
-    const [achData] = useOnyx(ONYXKEYS.SIMPLIFIED_BANK_ONBOARDING_ACCOUNT, {
-        selector: (account) => account?.achData,
-    });
+    const route = useRoute();
+    const [achData] = useOnyx(ONYXKEYS.SIMPLIFIED_BANK_ONBOARDING_ACCOUNT, {selector: (account) => account?.achData});
     const gateView = useAccountGate(target);
 
     const formID = getFlowFormID(target);
     const steps = readFlowSteps(children);
     const urlPosition = parseFlowPosition(target, params);
-    const shownStep = resolveFlowStep(steps, urlPosition.step, resumeAt);
-    const replacementRoute = gateView === 'flow' && shownStep && shownStep.id !== urlPosition.step ? getFlowRoute(target, {step: shownStep.id}) : undefined;
+    const shownStep = resolveFlowStep(steps, urlPosition.step);
+    const isURLStepShown = shownStep?.id === urlPosition.step;
+    const stepToWrite = gateView === 'flow' && shownStep && !isURLStepShown ? shownStep.id : undefined;
 
-    useEffect(() => {
-        if (!replacementRoute) {
+    // A layout effect, because it has to run before the effect of the step shell that writes the sub page of the shown
+    // step in the same commit. In the other order this write would drop that sub page.
+    useLayoutEffect(() => {
+        if (!stepToWrite) {
             return;
         }
-        Navigation.navigate(replacementRoute, {forceReplace: true});
-    }, [replacementRoute]);
+        writeShownStep(route.key, stepToWrite);
+    }, [stepToWrite, route.key]);
 
     if (gateView === 'loading') {
         return <FullScreenLoadingIndicator shouldUseGoBackButton />;
@@ -188,9 +186,6 @@ function OnboardingFlow({target, params, resumeAt, children}: OnboardingFlowProp
     }
     if (gateView === 'notFound' || !shownStep) {
         return <NotFoundPage />;
-    }
-    if (replacementRoute) {
-        return <PageLoadingIndicator />;
     }
 
     const flowState: OnboardingFlowState = {
@@ -216,8 +211,8 @@ function OnboardingFlow({target, params, resumeAt, children}: OnboardingFlowProp
         ...getAdjacentSteps(steps, shownStep.id),
         counterIndex: counter?.index,
         counterNames: counter?.names,
-        page: urlPosition.page,
-        isEditing: !!urlPosition.isEditing,
+        page: isURLStepShown ? urlPosition.page : undefined,
+        isEditing: isURLStepShown && !!urlPosition.isEditing,
     };
     const StepComponent = shownStep.component;
 

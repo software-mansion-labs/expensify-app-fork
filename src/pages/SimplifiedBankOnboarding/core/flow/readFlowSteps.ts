@@ -1,9 +1,9 @@
 /**
  * Reads the FlowStep children of OnboardingFlow and answers the questions about the step order: which step a URL
- * opens, the steps before and after one that are not skipped, and the counter of a step.
+ * opens, which step a flow resumes at, the steps around a step, and the counter of a step.
  *
- * What it hides: the flattening of fragments and arrays, the runtime check of the element props, the skip rules of the
- * order and the counter arithmetic.
+ * What it hides: the flattening of fragments and arrays, the runtime check of the element props, the skip and
+ * completion rules of the order and the counter arithmetic.
  */
 import {isStepID} from '@pages/SimplifiedBankOnboarding/contract/ids';
 import type {StepID} from '@pages/SimplifiedBankOnboarding/contract/ids';
@@ -20,6 +20,7 @@ type FlowStepEntry = {
     id: StepID;
     component: React.ComponentType;
     skip: boolean;
+    isComplete: boolean;
     counter: FlowStepCounter;
 };
 
@@ -54,41 +55,62 @@ function isFlowStepCounter(value: unknown): value is FlowStepCounter {
     return value === 'own' || value === 'shared' || value === 'none';
 }
 
-/** The FlowStep children in flow order. Other children and FlowStep elements with invalid props are ignored. */
+function readFlowStep(child: React.ReactElement<unknown>): FlowStepEntry | undefined {
+    const props = child.props;
+    if (child.type !== FlowStep || typeof props !== 'object' || props === null || !('id' in props) || !('component' in props)) {
+        return undefined;
+    }
+    const {id, component} = props;
+    const skip = 'skip' in props ? props.skip : undefined;
+    const isComplete = 'isComplete' in props ? props.isComplete : undefined;
+    const counter = 'counter' in props ? props.counter : undefined;
+    if (typeof id !== 'string' || !isStepID(id) || !isComponent(component)) {
+        return undefined;
+    }
+    return {id, component, skip: skip === true, isComplete: isComplete === true, counter: isFlowStepCounter(counter) ? counter : 'own'};
+}
+
+/**
+ * The FlowStep children in flow order. A child that is no valid FlowStep, and a last step that is skipped, are mistakes
+ * of the flow page. They throw in development. Otherwise the child is dropped and the skipped last step is kept.
+ */
 function readFlowSteps(children: React.ReactNode): FlowStepEntry[] {
-    return flattenElements(children).flatMap((child): FlowStepEntry[] => {
-        const props = child.props;
-        if (child.type !== FlowStep || typeof props !== 'object' || props === null || !('id' in props) || !('component' in props)) {
-            return [];
+    const steps = flattenElements(children).flatMap((child): FlowStepEntry[] => {
+        const step = readFlowStep(child);
+        if (!step && __DEV__) {
+            throw new Error('OnboardingFlow: every child has to be a FlowStep with a step ID and a component');
         }
-        const {id, component} = props;
-        const skip = 'skip' in props ? props.skip : undefined;
-        const counter = 'counter' in props ? props.counter : undefined;
-        if (typeof id !== 'string' || !isStepID(id) || !isComponent(component)) {
-            return [];
-        }
-        return [{id, component, skip: skip === true, counter: isFlowStepCounter(counter) ? counter : 'own'}];
+        return step ? [step] : [];
     });
+
+    if (__DEV__ && steps.at(-1)?.skip) {
+        throw new Error('OnboardingFlow: the last step cannot be skipped, because Next of the step before it would open no step');
+    }
+    return steps;
 }
 
 function findNextShownStep(steps: FlowStepEntry[], fromIndex: number): FlowStepEntry | undefined {
     return steps.slice(Math.max(fromIndex, 0)).find((step) => !step.skip);
 }
 
-/** The step that a URL step opens: itself, or its replacement when it is missing, unknown or skipped */
-function resolveFlowStep(steps: FlowStepEntry[], urlStep: StepID | undefined, resumeAt: StepID | undefined): FlowStepEntry | undefined {
-    const urlStepIndex = steps.findIndex((step) => step.id === urlStep);
-    const resumeIndex = steps.findIndex((step) => step.id === resumeAt);
-    const resumeStep = resumeIndex >= 0 ? findNextShownStep(steps, resumeIndex) : undefined;
-    const firstStep = findNextShownStep(steps, 0);
-
-    if (urlStepIndex >= 0) {
-        return findNextShownStep(steps, urlStepIndex) ?? resumeStep ?? firstStep;
-    }
-    return resumeStep ?? firstStep;
+/** The step that a flow opens without a step in the URL: the first one that is neither skipped nor complete, else the last one that is not skipped */
+function getResumeStep(steps: FlowStepEntry[]): FlowStepEntry | undefined {
+    const shownSteps = steps.filter((step) => !step.skip);
+    return shownSteps.find((step) => !step.isComplete) ?? shownSteps.at(-1);
 }
 
-/** The steps before and after `stepID` that are not skipped */
+/** The step that a URL step opens: itself, the next step that is not skipped when it is skipped, else the resume step */
+function resolveFlowStep(steps: FlowStepEntry[], urlStep: StepID | undefined): FlowStepEntry | undefined {
+    const urlStepIndex = steps.findIndex((step) => step.id === urlStep);
+    const stepOfURL = urlStepIndex >= 0 ? findNextShownStep(steps, urlStepIndex) : undefined;
+    return stepOfURL ?? getResumeStep(steps);
+}
+
+/**
+ * The steps around `stepID`. The previous one is the nearest step before it that is not skipped. The next one is the
+ * next step of the list, skipped or not: the answer of a request can change the skip rules after the step read them,
+ * so Next opens the next URL and the flow resolves a skipped step there, with the data of that moment.
+ */
 function getAdjacentSteps(steps: FlowStepEntry[], stepID: StepID): {previousStep: StepID | undefined; nextStep: StepID | undefined} {
     const stepIndex = steps.findIndex((step) => step.id === stepID);
     if (stepIndex < 0) {
@@ -98,7 +120,7 @@ function getAdjacentSteps(steps: FlowStepEntry[], stepID: StepID): {previousStep
         .slice(0, stepIndex)
         .reverse()
         .find((step) => !step.skip);
-    return {previousStep: previousStep?.id, nextStep: findNextShownStep(steps, stepIndex + 1)?.id};
+    return {previousStep: previousStep?.id, nextStep: steps.at(stepIndex + 1)?.id};
 }
 
 /** The counter of `stepID`, or undefined when the step shows none */

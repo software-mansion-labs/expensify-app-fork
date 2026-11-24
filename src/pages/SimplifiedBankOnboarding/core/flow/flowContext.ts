@@ -51,15 +51,17 @@ type OnboardingFlowActions = Omit<OnboardingFlowControls, keyof OnboardingFlowSt
 type FlowStepPosition = {
     step: StepID;
 
-    /** The steps before and after this one that are not skipped */
+    /** The nearest step before this one that is not skipped */
     previousStep: StepID | undefined;
+
+    /** The next step of the list. The flow resolves it when it opens, so it may be skipped now. */
     nextStep: StepID | undefined;
 
     /** The counter of the header, undefined when the step shows none */
     counterIndex: number | undefined;
     counterNames: string[] | undefined;
 
-    /** The sub page that the URL names, undefined when it names none or an unknown one */
+    /** The sub page that the URL names, undefined when it names none, an unknown one or one of another step */
     page: PageID | undefined;
     isEditing: boolean;
 };

@@ -49,6 +49,14 @@ function openFlow(target: FlowTarget, position?: FlowPosition, options?: {should
     Navigation.navigate(getFlowRoute(target, position), options?.shouldReplace ? {forceReplace: true} : undefined);
 }
 
+/**
+ * Writes the step that the flow shows into the route `routeKey`, for a URL that named no step, an unknown one or a
+ * skipped one. The sub page and the edit flag of the URL belonged to the other step, so they are dropped.
+ */
+function writeShownStep(routeKey: string, step: StepID) {
+    Navigation.setParams({page: step, subPage: undefined, action: undefined}, routeKey);
+}
+
 function getFlowScreenName(target: FlowTarget): string {
     switch (target.kind) {
         case 'usd':
@@ -114,5 +122,5 @@ function leaveOnboarding(backTo: Route | undefined) {
     Navigation.dismissModal();
 }
 
-export {findLatestRouteOfStep, getFlowRoute, getStepBelow, leaveOnboarding, openFlow, parseFlowPosition};
+export {findLatestRouteOfStep, getFlowRoute, getStepBelow, leaveOnboarding, openFlow, parseFlowPosition, writeShownStep};
 export type {FlowNavigationState, FlowPosition};

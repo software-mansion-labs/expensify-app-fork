@@ -8,12 +8,11 @@ import Navigation from '@libs/Navigation/Navigation';
 
 import {DEFAULT_ACCOUNT} from '@pages/SimplifiedBankOnboarding/contract/defaultAccount';
 import type {OnboardingDraft} from '@pages/SimplifiedBankOnboarding/contract/form';
-import type {StepID} from '@pages/SimplifiedBankOnboarding/contract/ids';
+import type {PageID, StepID} from '@pages/SimplifiedBankOnboarding/contract/ids';
 import type {OnboardingAccount} from '@pages/SimplifiedBankOnboarding/contract/onyx';
 import openOnboardingPage from '@pages/SimplifiedBankOnboarding/core/accountRead/openOnboardingPage';
 import {useFlowStepPosition} from '@pages/SimplifiedBankOnboarding/core/flow/flowContext';
 import type {FlowTarget} from '@pages/SimplifiedBankOnboarding/core/flow/flowContext';
-import {getFlowRoute} from '@pages/SimplifiedBankOnboarding/core/flow/flowRoutes';
 import FlowStep from '@pages/SimplifiedBankOnboarding/core/flow/FlowStep';
 import OnboardingFlow from '@pages/SimplifiedBankOnboarding/core/flow/OnboardingFlow';
 import type {RequestOutcome} from '@pages/SimplifiedBankOnboarding/core/requests/types';
@@ -21,6 +20,7 @@ import type {RequestOutcome} from '@pages/SimplifiedBankOnboarding/core/requests
 import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';
 
+import type * as NativeNavigation from '@react-navigation/native';
 import type ReactNative from 'react-native';
 
 import React from 'react';
@@ -33,6 +33,11 @@ jest.mock('@pages/SimplifiedBankOnboarding/core/accountRead/openOnboardingPage',
     __esModule: true,
     default: jest.fn(),
     getAccountLoadingData: jest.fn(() => ({})),
+}));
+
+jest.mock('@react-navigation/native', () => ({
+    ...jest.requireActual<typeof NativeNavigation>('@react-navigation/native'),
+    useRoute: () => ({key: 'flow-route', name: 'FlowScreen'}),
 }));
 
 jest.mock('@libs/Navigation/Navigation', () => ({
@@ -73,42 +78,61 @@ const ACCOUNT_OF_WORKSPACE: OnboardingAccount = {
     achData: {policyID: POLICY_ID, bankAccountID: 5},
 };
 
-/** Every test step shows its ID, so a test sees which step the flow renders */
+/** Every test step shows what the flow gives it, so a test sees which step renders and at which position */
 function ShownStep() {
-    const {step} = useFlowStepPosition();
-    return <Text>{`Step ${step}`}</Text>;
+    const {step, previousStep, nextStep, page, isEditing} = useFlowStepPosition();
+    return (
+        <>
+            <Text>{`Step ${step}`}</Text>
+            <Text>{`Page ${page ?? 'none'}, editing ${String(isEditing)}`}</Text>
+            <Text>{`Previous ${previousStep ?? 'none'}, next ${nextStep ?? 'none'}`}</Text>
+        </>
+    );
 }
 
 type FlowOptions = {
     target?: FlowTarget;
-    urlStep?: StepID;
-    resumeAt?: StepID;
+    urlStep?: string;
+    urlPage?: PageID;
+    isEditing?: boolean;
+    completeSteps?: StepID[];
     isBankAccountSkipped?: boolean;
 };
 
-async function renderFlow({target = USD_TARGET, urlStep, resumeAt, isBankAccountSkipped = false}: FlowOptions = {}) {
-    render(
+function getFlow({target = USD_TARGET, urlStep, urlPage, isEditing = false, completeSteps = [], isBankAccountSkipped = false}: FlowOptions = {}) {
+    return (
         <OnboardingFlow
             target={target}
-            params={{page: urlStep}}
-            resumeAt={resumeAt}
+            params={{page: urlStep, subPage: urlPage, action: isEditing ? 'edit' : undefined}}
         >
             <FlowStep
                 id="country"
                 component={ShownStep}
+                isComplete={completeSteps.includes('country')}
             />
             <FlowStep
                 id="bank-account"
                 component={ShownStep}
+                isComplete={completeSteps.includes('bank-account')}
                 skip={isBankAccountSkipped}
             />
             <FlowStep
                 id="personal-info"
                 component={ShownStep}
+                isComplete={completeSteps.includes('personal-info')}
             />
-        </OnboardingFlow>,
+        </OnboardingFlow>
     );
+}
+
+async function renderFlow(options?: FlowOptions) {
+    const view = render(getFlow(options));
     await waitForBatchedUpdatesWithAct();
+    return view;
+}
+
+function expectURLCorrectedTo(step: StepID) {
+    expect(Navigation.setParams).toHaveBeenCalledWith({page: step, subPage: undefined, action: undefined}, 'flow-route');
 }
 
 async function setAccount(account: OnboardingAccount) {
@@ -252,23 +276,87 @@ describe('OnboardingFlow', () => {
             expect(Navigation.navigate).not.toHaveBeenCalled();
         });
 
-        it('replaces a missing step with the resume step', async () => {
-            // Given a URL without a step and a server that names where the user stopped
-            // When the flow opens
-            await renderFlow({resumeAt: 'personal-info'});
+        it('keeps the sub page and the edit flag of a URL whose step is shown', async () => {
+            // Given the account of the workspace in Onyx
+            // When the URL names a step, a sub page and the edit mode
+            await renderFlow({urlStep: 'bank-account', urlPage: 'manual', isEditing: true});
 
-            // Then the route is replaced with the resume step and no step renders before the replace lands
-            expect(Navigation.navigate).toHaveBeenCalledWith(getFlowRoute(USD_TARGET, {step: 'personal-info'}), {forceReplace: true});
-            expect(screen.queryByText(/^Step /)).not.toBeOnTheScreen();
+            // Then the step gets both, and the flow writes nothing to the URL
+            expect(screen.getByText('Page manual, editing true')).toBeOnTheScreen();
+            expect(Navigation.setParams).not.toHaveBeenCalled();
         });
 
-        it('replaces a skipped step with the next step that is not skipped', async () => {
-            // Given a URL that names a step this account skips
+        it('shows the first step that is not complete for a URL without a step, in the same render', async () => {
+            // Given a URL without a step and a setup whose first two steps are complete
             // When the flow opens
-            await renderFlow({urlStep: 'bank-account', isBankAccountSkipped: true});
+            await renderFlow({completeSteps: ['country', 'bank-account']});
 
-            // Then the route is replaced with the next step, so Back never lands on the skipped one
-            expect(Navigation.navigate).toHaveBeenCalledWith(getFlowRoute(USD_TARGET, {step: 'personal-info'}), {forceReplace: true});
+            // Then the step renders at once and the URL is corrected in place, so no route is added or replaced
+            expect(screen.getByText('Step personal-info')).toBeOnTheScreen();
+            expectURLCorrectedTo('personal-info');
+            expect(Navigation.navigate).not.toHaveBeenCalled();
+        });
+
+        it('shows the first step of a new setup for a URL with an unknown step', async () => {
+            // Given a URL whose step is no step of any flow, and a setup with no complete step
+            // When the flow opens
+            await renderFlow({urlStep: 'no-such-step'});
+
+            // Then the unknown step counts as missing
+            expect(screen.getByText('Step country')).toBeOnTheScreen();
+            expectURLCorrectedTo('country');
+        });
+
+        it('shows the next step that is not skipped for a skipped step in the URL', async () => {
+            // Given a URL that names a step this account skips, with a sub page and the edit mode of that step
+            // When the flow opens
+            await renderFlow({urlStep: 'bank-account', urlPage: 'manual', isEditing: true, isBankAccountSkipped: true});
+
+            // Then the next step renders without the sub page and the edit mode, which belonged to the skipped step
+            expect(screen.getByText('Step personal-info')).toBeOnTheScreen();
+            expect(screen.getByText('Page none, editing false')).toBeOnTheScreen();
+            expectURLCorrectedTo('personal-info');
+            expect(Navigation.navigate).not.toHaveBeenCalled();
+        });
+
+        it('moves on in place when the shown step becomes skipped', async () => {
+            // Given a shown step
+            const {rerender} = await renderFlow({urlStep: 'bank-account'});
+            expect(screen.getByText('Step bank-account')).toBeOnTheScreen();
+
+            // When an answer of the server makes the flow skip that step
+            rerender(getFlow({urlStep: 'bank-account', isBankAccountSkipped: true}));
+            await waitForBatchedUpdatesWithAct();
+
+            // Then the next step takes its place on the same route
+            expect(screen.getByText('Step personal-info')).toBeOnTheScreen();
+            expectURLCorrectedTo('personal-info');
+        });
+
+        it('names the next step of the list for Next and the step before the skipped one for Back', async () => {
+            // Given a flow whose middle step is skipped
+            // When the first and the last step render
+            const {rerender} = await renderFlow({urlStep: 'country', isBankAccountSkipped: true});
+            const positionOfFirstStep = screen.getByText('Previous none, next bank-account');
+            rerender(getFlow({urlStep: 'personal-info', isBankAccountSkipped: true}));
+            await waitForBatchedUpdatesWithAct();
+
+            // Then Next of the first step opens the URL of the skipped step, which the flow resolves with the data of
+            // that moment, and Back of the last step passes over the skipped step
+            expect(positionOfFirstStep).toBeTruthy();
+            expect(screen.getByText('Previous country, next none')).toBeOnTheScreen();
+        });
+
+        it('does not correct the URL before the account gate opens', async () => {
+            // Given no account in Onyx and a read that has not answered yet
+            await Onyx.clear();
+            jest.mocked(openOnboardingPage).mockImplementation(() => new Promise<RequestOutcome>(() => {}));
+
+            // When the flow opens without a step
+            await renderFlow();
+
+            // Then the URL stays as it is, because the step to resume at is not known before the account is read
+            expect(Navigation.setParams).not.toHaveBeenCalled();
         });
     });
 });

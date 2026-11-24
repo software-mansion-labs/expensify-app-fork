@@ -11,7 +11,13 @@ type FlowStepProps = {
     /** A component with no props. It normally renders OnboardingStep. */
     component: React.ComponentType;
 
-    /** Next and previous pass over a skipped step, and its URL opens the next step that is not skipped. */
+    /**
+     * Whether the saved data says that the user finished the step. A flow that opens without a step in the URL opens
+     * the first step that is neither skipped nor complete. A complete step stays open to a URL that names it.
+     */
+    isComplete: boolean;
+
+    /** Back passes over a skipped step, and its URL opens the next step that is not skipped. */
     skip?: boolean;
 
     /**
