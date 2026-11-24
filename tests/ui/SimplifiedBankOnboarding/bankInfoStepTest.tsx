@@ -76,8 +76,7 @@ jest.mock('@components/InteractiveStepWrapper', () => {
 
 type NonUSDFlowPageProps = PlatformStackScreenProps<BankOnboardingLabParamList, typeof SCREENS.SETTINGS.BANK_ONBOARDING_LAB.NON_USD_SETUP>;
 
-// The flow page does not read navigation; this inert test double only satisfies the navigator-provided prop.
-// eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion
+// eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion -- the page never reads navigation, so an empty object stands in for the prop that the navigator gives
 const navigation = {} as NonUSDFlowPageProps['navigation'];
 
 const POLICY_ID = '1';

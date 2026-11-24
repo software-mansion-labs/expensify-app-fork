@@ -64,12 +64,11 @@ type USDFlowPageProps = PlatformStackScreenProps<BankOnboardingLabParamList, typ
 type NonUSDFlowPageProps = PlatformStackScreenProps<BankOnboardingLabParamList, typeof SCREENS.SETTINGS.BANK_ONBOARDING_LAB.NON_USD_SETUP>;
 type EnterSignerInfoPageProps = PlatformStackScreenProps<BankOnboardingLabParamList, typeof SCREENS.SETTINGS.BANK_ONBOARDING_LAB.ENTER_SIGNER_INFO>;
 
-// The flow pages do not read navigation; these inert test doubles only satisfy the navigator-provided prop.
-// eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion
+// eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion -- the page never reads navigation, so an empty object stands in for the prop that the navigator gives
 const usdNavigation = {} as USDFlowPageProps['navigation'];
-// eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion
+// eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion -- the page never reads navigation, so an empty object stands in for the prop that the navigator gives
 const nonUSDNavigation = {} as NonUSDFlowPageProps['navigation'];
-// eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion
+// eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion -- the page never reads navigation, so an empty object stands in for the prop that the navigator gives
 const enterSignerInfoNavigation = {} as EnterSignerInfoPageProps['navigation'];
 
 /** An account of the route's workspace, so the account gate of the flow shows the step without a read */

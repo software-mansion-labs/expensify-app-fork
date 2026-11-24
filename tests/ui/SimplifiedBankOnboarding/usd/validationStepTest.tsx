@@ -91,8 +91,7 @@ const BACK_TO: Route = ROUTES.SETTINGS_BANK_ONBOARDING_LAB;
 
 type USDFlowPageProps = PlatformStackScreenProps<BankOnboardingLabParamList, typeof SCREENS.SETTINGS.BANK_ONBOARDING_LAB.USD_SETUP>;
 
-// The flow page does not read navigation. This inert test double only satisfies the navigator-provided prop.
-// eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion
+// eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion -- the page never reads navigation, so an empty object stands in for the prop that the navigator gives
 const usdNavigation = {} as USDFlowPageProps['navigation'];
 
 /** An account of the route's workspace, so the account gate of the flow shows the step without a read */
@@ -147,7 +146,10 @@ describe('USD validation step', () => {
     describe('state chain', () => {
         it('shows the connected view for an open account, even after too many wrong amounts', async () => {
             // Given an open account that also counted too many wrong amounts, because the open state is checked first
-            await renderValidationStep(getAccount(STATE.OPEN, true));
+            const account = getAccount(STATE.OPEN, true);
+
+            // When the validation step opens
+            await renderValidationStep(account);
 
             // Then the connected view is shown under the title of a new bank account
             expectOnlyContent('content connected');
@@ -156,7 +158,10 @@ describe('USD validation step', () => {
 
         it('shows the block message for a pending account with too many wrong amounts', async () => {
             // Given a pending account that reached the limit of wrong amounts, which wins over the pending state
-            await renderValidationStep(getAccount(STATE.PENDING, true));
+            const account = getAccount(STATE.PENDING, true);
+
+            // When the validation step opens
+            await renderValidationStep(account);
 
             // Then the block message is shown, and the title still follows the pending state
             expectOnlyContent('content max attempts');
@@ -165,7 +170,10 @@ describe('USD validation step', () => {
 
         it('shows the deposit form for a pending account', async () => {
             // Given an account that waits for the test deposit amounts
-            await renderValidationStep(getAccount(STATE.PENDING));
+            const account = getAccount(STATE.PENDING);
+
+            // When the validation step opens
+            await renderValidationStep(account);
 
             // Then the deposit form is shown under the validation title
             expectOnlyContent('content deposits');
@@ -174,7 +182,10 @@ describe('USD validation step', () => {
 
         it('shows the review card for an account in review', async () => {
             // Given an account that the server reviews
-            await renderValidationStep(getAccount(STATE.VERIFYING));
+            const account = getAccount(STATE.VERIFYING);
+
+            // When the validation step opens
+            await renderValidationStep(account);
 
             // Then the review card is shown under the title of a new bank account
             expectOnlyContent('content review');
@@ -183,7 +194,10 @@ describe('USD validation step', () => {
 
         it('shows no content for an account in any other state', async () => {
             // Given an account whose setup is still running, which the step has nothing to show for
-            await renderValidationStep(getAccount(STATE.SETUP));
+            const account = getAccount(STATE.SETUP);
+
+            // When the validation step opens
+            await renderValidationStep(account);
 
             // Then no content view is shown
             expectOnlyContent(undefined);

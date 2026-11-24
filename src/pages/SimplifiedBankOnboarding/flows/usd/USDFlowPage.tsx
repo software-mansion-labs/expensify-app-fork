@@ -3,14 +3,19 @@
  * skipped once the server finished it. The document step has no number and appears only when the verification asks for
  * documents. A step is complete once the server stored a later one, so without a step in the URL the flow opens the
  * step that the server stored. The server step of the identity check is the one of personal info.
+ *
+ * Every rule of this flow reads only `achData`, so the page selects it and does not render again when the draft changes.
  */
+import useOnyx from '@hooks/useOnyx';
+
 import type BankOnboardingLabParamList from '@libs/Navigation/paramLists/BankOnboardingLabParamList';
 import type {PlatformStackScreenProps} from '@libs/Navigation/PlatformStackNavigation/types';
 
 import SBO_CONST from '@pages/SimplifiedBankOnboarding/contract/SBO_CONST';
-import {FlowStep, OnboardingFlow, useFlowDataOf} from '@pages/SimplifiedBankOnboarding/core';
+import {FlowStep, OnboardingFlow} from '@pages/SimplifiedBankOnboarding/core';
 import type {FlowTarget} from '@pages/SimplifiedBankOnboarding/core';
 
+import ONYXKEYS from '@src/ONYXKEYS';
 import type SCREENS from '@src/SCREENS';
 
 import React from 'react';
@@ -32,7 +37,7 @@ const {PAGE_NAMES, STEP} = SBO_CONST.USD;
 
 function USDFlowPage({route}: USDFlowPageProps) {
     const target: FlowTarget = {kind: 'usd', policyID: route.params?.policyID, backTo: route.params?.backTo};
-    const achData = useFlowDataOf(target).account?.achData;
+    const [achData] = useOnyx(ONYXKEYS.SIMPLIFIED_BANK_ONBOARDING_ACCOUNT, {selector: (account) => account?.achData});
 
     return (
         <OnboardingFlow
