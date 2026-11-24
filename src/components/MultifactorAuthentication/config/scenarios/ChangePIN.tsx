@@ -83,6 +83,8 @@ ChangePINOutcomeSuccessScreen.displayName = 'ChangePINOutcomeSuccessScreen';
 export default {
     allowedAuthenticationMethods: [CONST.MULTIFACTOR_AUTHENTICATION.TYPE.BIOMETRICS_HSM, CONST.MULTIFACTOR_AUTHENTICATION.TYPE.PASSKEYS],
     action: changePINForCard,
+    // Setting the PIN it already has again is harmless.
+    idempotent: true,
     callback: async () => {
         // ChangePINPage is in the RHP and the outcome screen renders in the sibling MFA modal navigator.
         // Pop it first so closing the modal returns to card details instead of the stale set-PIN screen.

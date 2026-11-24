@@ -70,9 +70,16 @@ const ServerFailureScreen = createScreenWithDefaults(
 export default {
     allowedAuthenticationMethods: [CONST.MULTIFACTOR_AUTHENTICATION.TYPE.BIOMETRICS_HSM, CONST.MULTIFACTOR_AUTHENTICATION.TYPE.PASSKEYS],
     action: setPersonalDetailsAndShipExpensifyCardsWithPIN,
+    // Not idempotent: ordering again could ship a second card, so the user checks the card page instead.
+    unconfirmedCopy: {
+        title: 'multifactorAuthentication.unconfirmed.cardOrderTitle',
+        subtitle: 'multifactorAuthentication.unconfirmed.cardOrderSubtitle',
+    },
 
-    callback: async (isSuccessful, _callbackInput, payload) => {
-        if (isSuccessful && isSetPINOrderCardPayload(payload)) {
+    callback: async (isSuccessful, callbackInput, payload) => {
+        // An unconfirmed order goes to the card page too, where the refreshed card shows whether it shipped.
+        const isUnconfirmed = callbackInput.reason === CONST.MULTIFACTOR_AUTHENTICATION.REASON.LOCAL_ERRORS.UNCONFIRMED;
+        if ((isSuccessful || isUnconfirmed) && isSetPINOrderCardPayload(payload)) {
             clearDraftValues(ONYXKEYS.FORMS.PERSONAL_DETAILS_FORM);
             Navigation.closeRHPFlow();
             Navigation.navigate(ROUTES.SETTINGS_WALLET_DOMAIN_CARD.getRoute(String(payload.cardID)));

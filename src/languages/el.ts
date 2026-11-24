@@ -670,6 +670,16 @@ const translations: TranslationDeepObject<typeof en> = {
             alreadyReviewedSubtitle:
                 'Έχετε ήδη ελέγξει αυτή τη συναλλαγή. Παρακαλούμε ελέγξτε το <transaction-history-link>ιστορικό συναλλαγών</transaction-history-link> σας ή επικοινωνήστε με το <concierge-link>Concierge</concierge-link> για να αναφέρετε τυχόν προβλήματα.',
         },
+        unconfirmed: {
+            retrying: 'Η σύνδεση χάθηκε. Νέα προσπάθεια…',
+            title: 'Δεν μπορέσαμε να επιβεβαιώσουμε ότι ολοκληρώθηκε',
+            retrySubtitle: 'Η σύνδεση διακόπηκε πριν λάβουμε απάντηση. Δοκιμάστε ξανά για να βεβαιωθείτε ότι ολοκληρώθηκε.',
+            checkSubtitle: 'Η σύνδεση διακόπηκε πριν λάβουμε απάντηση, οπότε μπορεί να έχει ήδη ολοκληρωθεί. Ελέγξτε πριν δοκιμάσετε ξανά.',
+            decisionTitle: 'Δεν μπορέσαμε να επιβεβαιώσουμε την απόφασή σας',
+            decisionSubtitle: 'Η σύνδεση διακόπηκε ενώ τη στέλναμε, οπότε μπορεί να έχει ήδη αποθηκευτεί. Δοκιμάστε ξανά για να το ελέγξετε.',
+            cardOrderTitle: 'Δεν μπορέσαμε να επιβεβαιώσουμε την παραγγελία της κάρτας σας',
+            cardOrderSubtitle: "Η σύνδεση διακόπηκε πριν λάβουμε απάντηση, οπότε η κάρτα σας μπορεί να είναι ήδη καθ' οδόν. Ελέγξτε την κάρτα σας στο Πορτοφόλι πριν παραγγείλετε ξανά.",
+        },
         unsupportedDevice: {
             unsupportedDevice: 'Μη υποστηριζόμενη συσκευή',
             pleaseDownloadMobileApp: `Αυτή η ενέργεια δεν υποστηρίζεται στη συσκευή σας. Παρακαλούμε κατεβάστε την εφαρμογή Expensify από το <a href="${CONST.APP_DOWNLOAD_LINKS.IOS}">App Store</a> ή το <a href="${CONST.APP_DOWNLOAD_LINKS.ANDROID}">Google Play Store</a> και δοκιμάστε ξανά.`,
