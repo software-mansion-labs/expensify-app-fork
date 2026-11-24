@@ -13,14 +13,15 @@ import type {
     ValidateDeviceInput,
 } from '@components/MultifactorAuthentication/machine/types';
 
-import {createLocalMFAError} from '@libs/MultifactorAuthentication/shared/MFAResult';
+import {createLocalMFAError, createMFAErrorFromApiResponse} from '@libs/MultifactorAuthentication/shared/MFAResult';
 import type {MFAResult} from '@libs/MultifactorAuthentication/shared/MFAResult';
+import * as NetworkState from '@libs/NetworkState';
 
 import {createScenarioActionRunner} from '@userActions/MultifactorAuthentication/processing';
 
 import CONST from '@src/CONST';
 
-import {createActorAtState, createFlowContext, sendAuthorizeDone, sendExecuteScenarioActionDone, sendFinalizeOutcomeDone} from 'tests/utils/mfa/flowActors';
+import {createActorAtState, createFlowContext, openAt, sendAuthorizeDone, sendExecuteScenarioActionDone, sendFinalizeOutcomeDone} from 'tests/utils/mfa/flowActors';
 import {
     MFA_TEST_AUTH_METHOD,
     MFA_TEST_FINALIZE_OUTCOME_SHOW_SCREEN,
@@ -30,12 +31,13 @@ import {
     MFA_TEST_SIGNED_CHALLENGE,
 } from 'tests/utils/mfa/flowFixtures';
 import waitForBatchedUpdates from 'tests/utils/waitForBatchedUpdates';
-import {createActor, fromPromise, waitFor} from 'xstate';
+import {createActor, fromPromise, matchesState, SimulatedClock, waitFor} from 'xstate';
 
 const MFA_STATE = CONST.MULTIFACTOR_AUTHENTICATION.MFA_STATE;
 const REASON = CONST.MULTIFACTOR_AUTHENTICATION.REASON;
 
 const SIGNING_CHALLENGE = {[MFA_STATE.OPEN]: {[MFA_STATE.FLOW]: {[MFA_STATE.PROMPT]: {[MFA_STATE.AUTHORIZING]: MFA_STATE.SIGNING_CHALLENGE}}}};
+const AWAITING_CHALLENGE_RETRY = {[MFA_STATE.OPEN]: {[MFA_STATE.FLOW]: {[MFA_STATE.PROMPT]: {[MFA_STATE.AUTHORIZING]: MFA_STATE.AWAITING_CHALLENGE_RETRY}}}};
 const EXECUTING_SCENARIO_ACTION = {[MFA_STATE.OPEN]: {[MFA_STATE.FLOW]: {[MFA_STATE.PROMPT]: {[MFA_STATE.AUTHORIZING]: MFA_STATE.EXECUTING_SCENARIO_ACTION}}}};
 
 // The graph-traversal suites generate their expectations from the machine, so a transition pointed at
@@ -147,6 +149,126 @@ describe('MFA authorization', () => {
             expect(result.context.error).toBeUndefined();
 
             actor.stop();
+        });
+
+        describe('lost challenge', () => {
+            const lostChallengeError = createMFAErrorFromApiResponse(0, REASON.LOCAL_ERRORS.NO_RESPONSE);
+            const authorizingAt = (step: string) => ({[MFA_STATE.PROMPT]: {[MFA_STATE.AUTHORIZING]: step}});
+            let refreshNetworkState: jest.SpyInstance;
+
+            beforeEach(() => {
+                refreshNetworkState = jest.spyOn(NetworkState, 'refresh').mockImplementation(() => {});
+            });
+
+            afterEach(() => {
+                refreshNetworkState.mockRestore();
+            });
+
+            it('requests the challenge once more after a short pause when its answer was lost', () => {
+                // Given the challenge request is running
+                const clock = new SimulatedClock();
+                const actor = createActorAtState(SIGNING_CHALLENGE, {}, clock);
+                actor.start();
+
+                // When its answer is lost
+                sendAuthorizeDone(actor, {success: false, error: lostChallengeError});
+
+                // Then the flow pauses and checks the network, so a dropped connection the app hasn't noticed yet can show up as offline
+                expect(actor.getSnapshot().matches(AWAITING_CHALLENGE_RETRY)).toBe(true);
+                expect(actor.getSnapshot().context.challengeRetries).toBe(1);
+                expect(actor.getSnapshot().context.error).toBeUndefined();
+                expect(refreshNetworkState).toHaveBeenCalledTimes(1);
+                clock.increment(CONST.MULTIFACTOR_AUTHENTICATION.RETRY_DELAY_MS - 1);
+                expect(actor.getSnapshot().matches(AWAITING_CHALLENGE_RETRY)).toBe(true);
+
+                // When the pause ends
+                clock.increment(1);
+
+                // Then the flow asks for a fresh challenge instead of failing, because an unused one just expires on the server
+                expect(actor.getSnapshot().matches(SIGNING_CHALLENGE)).toBe(true);
+
+                actor.stop();
+            });
+
+            it('requests no new challenge when the user confirms a cancel during the pause', () => {
+                // Given the flow pauses before requesting a lost challenge again. The pause is entered live, because `resolveState` doesn't start a state's timer.
+                const clock = new SimulatedClock();
+                const actor = createActorAtState(SIGNING_CHALLENGE, {}, clock);
+                actor.start();
+                sendAuthorizeDone(actor, {success: false, error: lostChallengeError});
+                expect(actor.getSnapshot().matches(AWAITING_CHALLENGE_RETRY)).toBe(true);
+
+                // When the user cancels and confirms
+                actor.send({type: 'REQUEST_CANCEL'});
+                actor.send({type: 'CONFIRM_CANCEL'});
+                expect(matchesState(openAt(MFA_STATE.CANCELLING), actor.getSnapshot().value)).toBe(true);
+
+                // Then the pause ending doesn't pull the flow back to the challenge request
+                clock.increment(CONST.MULTIFACTOR_AUTHENTICATION.RETRY_DELAY_MS);
+                expect(matchesState(openAt(MFA_STATE.CANCELLING), actor.getSnapshot().value)).toBe(true);
+
+                actor.stop();
+            });
+
+            it('holds the new challenge request behind the cancel dialog when the pause ends while it is open', () => {
+                // Given the flow pauses before requesting a lost challenge again, and the user opens the cancel dialog
+                const clock = new SimulatedClock();
+                const actor = createActorAtState(SIGNING_CHALLENGE, {}, clock);
+                actor.start();
+                sendAuthorizeDone(actor, {success: false, error: lostChallengeError});
+                actor.send({type: 'REQUEST_CANCEL'});
+                expect(matchesState(openAt(authorizingAt(MFA_STATE.AWAITING_CHALLENGE_RETRY), MFA_STATE.CANCEL_CONFIRM_VISIBLE), actor.getSnapshot().value)).toBe(true);
+
+                // When the pause ends with the dialog still open
+                clock.increment(CONST.MULTIFACTOR_AUTHENTICATION.RETRY_DELAY_MS);
+
+                // Then the request waits, so no passkey prompt shows over the dialog
+                expect(matchesState(openAt(authorizingAt(MFA_STATE.WAITING_TO_SIGN), MFA_STATE.CANCEL_CONFIRM_VISIBLE), actor.getSnapshot().value)).toBe(true);
+
+                // When the user dismisses the dialog
+                actor.send({type: 'DISMISS_CANCEL'});
+
+                // Then the fresh challenge is requested
+                expect(matchesState(openAt(authorizingAt(MFA_STATE.SIGNING_CHALLENGE)), actor.getSnapshot().value)).toBe(true);
+
+                actor.stop();
+            });
+
+            it('reaches the failure outcome when the retried challenge is lost too', () => {
+                // Given the flow already requested a lost challenge again
+                const actor = createActorAtState(SIGNING_CHALLENGE, {challengeRetries: 1});
+                actor.start();
+
+                // When that answer is lost as well
+                sendAuthorizeDone(actor, {success: false, error: lostChallengeError});
+                sendFinalizeOutcomeDone(actor, MFA_TEST_FINALIZE_OUTCOME_SHOW_SCREEN);
+
+                // Then the flow ends with the lost-answer error
+                const result = actor.getSnapshot();
+                expect(result.matches({[MFA_STATE.OPEN]: {[MFA_STATE.FLOW]: {[MFA_STATE.OUTCOME]: MFA_STATE.FAILURE}}})).toBe(true);
+                expect(result.context.error).toBe(lostChallengeError);
+
+                actor.stop();
+            });
+
+            it('reaches the failure outcome when the server answered the challenge request with an error', () => {
+                // Given the challenge request is running
+                const actor = createActorAtState(SIGNING_CHALLENGE);
+                const serverError = createMFAErrorFromApiResponse(500, REASON.SERVER_ERRORS.UNRECOGNIZED);
+                actor.start();
+
+                // When the server answers with an error
+                sendAuthorizeDone(actor, {success: false, error: serverError});
+                sendFinalizeOutcomeDone(actor, MFA_TEST_FINALIZE_OUTCOME_SHOW_SCREEN);
+
+                // Then nothing is retried, because an answer isn't lost
+                const result = actor.getSnapshot();
+                expect(result.matches({[MFA_STATE.OPEN]: {[MFA_STATE.FLOW]: {[MFA_STATE.OUTCOME]: MFA_STATE.FAILURE}}})).toBe(true);
+                expect(result.context.error).toBe(serverError);
+                expect(result.context.challengeRetries).toBe(0);
+
+                actor.stop();
+            });
         });
 
         it('reaches the failure outcome with an unhandled-exception error when the actor rejects', async () => {

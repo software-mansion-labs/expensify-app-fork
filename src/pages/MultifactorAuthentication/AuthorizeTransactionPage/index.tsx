@@ -1,5 +1,4 @@
 import ActivityIndicator from '@components/ActivityIndicator';
-import FullPageOfflineBlockingView from '@components/BlockingViews/FullPageOfflineBlockingView';
 import HeaderWithBackButton from '@components/HeaderWithBackButton';
 import {AuthorizeTransactionCancelConfirmModal} from '@components/MultifactorAuthentication/components/Modals';
 import ScenarioConfigs from '@components/MultifactorAuthentication/config/scenarios';
@@ -63,17 +62,21 @@ function MultifactorAuthenticationScenarioAuthorizeTransactionPage({route}: Mult
     const [isConfirmModalVisible, setConfirmModalVisibility] = useState(false);
     const allowNavigatingAwayRef = useRef(false);
 
+    // Offline, nothing is sent: leaving makes no decision and the review comes back once online.
+    const leaveWithoutDecision = useCallback(() => {
+        addBreadcrumb('Offline back-navigation (no deny sent)', {transactionID}, 'warning');
+        setConfirmModalVisibility(false);
+        allowNavigatingAwayRef.current = true;
+        Navigation.closeRHPFlow();
+    }, [transactionID]);
+
     const showConfirmModal = useCallback(() => {
-        // FullPageOfflineBlockingView doesn't wrap HeaderWithBackButton, so we handle navigation manually when offline.
-        // Offline mode isn't supported in MFA; navigate users away immediately without showing the confirmation modal.
         if (isOffline) {
-            addBreadcrumb('Offline back-navigation (no deny sent)', {transactionID}, 'warning');
-            allowNavigatingAwayRef.current = true;
-            Navigation.closeRHPFlow();
+            leaveWithoutDecision();
             return;
         }
         setConfirmModalVisibility(true);
-    }, [isOffline, transactionID]);
+    }, [isOffline, leaveWithoutDecision]);
 
     const hideConfirmModal = () => {
         setConfirmModalVisibility(false);
@@ -120,6 +123,11 @@ function MultifactorAuthenticationScenarioAuthorizeTransactionPage({route}: Mult
     };
 
     const onSilentlyDenyTransaction = () => {
+        // The modal hides offline, so this only catches a confirm that lands before it does.
+        if (isOffline) {
+            leaveWithoutDecision();
+            return;
+        }
         addBreadcrumb('Silent deny (user canceled flow)', {transactionID}, 'warning');
         fireAndForgetDenyTransaction({transactionID});
         setConfirmModalVisibility(false);
@@ -138,7 +146,14 @@ function MultifactorAuthenticationScenarioAuthorizeTransactionPage({route}: Mult
     }, [denyOutcomeScreen, transaction, isDenyingTransaction, transactionID]);
 
     if (denyOutcomeScreen) {
-        return <ScreenWrapper testID={MultifactorAuthenticationScenarioAuthorizeTransactionPage.displayName}>{denyOutcomeScreen}</ScreenWrapper>;
+        return (
+            <ScreenWrapper
+                testID={MultifactorAuthenticationScenarioAuthorizeTransactionPage.displayName}
+                shouldShowOfflineIndicator={false}
+            >
+                {denyOutcomeScreen}
+            </ScreenWrapper>
+        );
     }
 
     // This will briefly be true after the transaction deny call has succeeded and Onyx has removed the transaction
@@ -149,7 +164,10 @@ function MultifactorAuthenticationScenarioAuthorizeTransactionPage({route}: Mult
             addBreadcrumb('Transaction unavailable', {transactionID}, 'warning');
         }
         return (
-            <ScreenWrapper testID={MultifactorAuthenticationScenarioAuthorizeTransactionPage.displayName}>
+            <ScreenWrapper
+                testID={MultifactorAuthenticationScenarioAuthorizeTransactionPage.displayName}
+                shouldShowOfflineIndicator={false}
+            >
                 <HeaderWithBackButton
                     title={translate('multifactorAuthentication.reviewTransaction.reviewTransaction')}
                     onBackButtonPress={() => {
@@ -174,21 +192,22 @@ function MultifactorAuthenticationScenarioAuthorizeTransactionPage({route}: Mult
                 onBackButtonPress={showConfirmModal}
                 shouldShowBackButton
             />
-            <FullPageOfflineBlockingView>
-                <View style={[styles.flex1, styles.flexColumn, styles.justifyContentBetween]}>
-                    <MultifactorAuthenticationAuthorizeTransactionContent transaction={transaction} />
-                    <MultifactorAuthenticationAuthorizeTransactionActions
-                        isLoading={isDenyingTransaction}
-                        onAuthorize={onApproveTransaction}
-                        onDeny={onDenyTransaction}
-                    />
-                    <AuthorizeTransactionCancelConfirmModal
-                        isVisible={isConfirmModalVisible}
-                        onConfirm={onSilentlyDenyTransaction}
-                        onCancel={hideConfirmModal}
-                    />
-                </View>
-            </FullPageOfflineBlockingView>
+            {/* Offline, the transaction stays readable and the offline indicator explains the disabled decision. */}
+            <View style={[styles.flex1, styles.flexColumn, styles.justifyContentBetween]}>
+                <MultifactorAuthenticationAuthorizeTransactionContent transaction={transaction} />
+                <MultifactorAuthenticationAuthorizeTransactionActions
+                    isLoading={isDenyingTransaction}
+                    isDisabled={isOffline}
+                    onAuthorize={onApproveTransaction}
+                    onDeny={onDenyTransaction}
+                />
+                <AuthorizeTransactionCancelConfirmModal
+                    // It promises a deny, which can't be sent offline.
+                    isVisible={isConfirmModalVisible && !isOffline}
+                    onConfirm={onSilentlyDenyTransaction}
+                    onCancel={hideConfirmModal}
+                />
+            </View>
         </ScreenWrapper>
     );
 }

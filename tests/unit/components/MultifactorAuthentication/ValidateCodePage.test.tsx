@@ -1,5 +1,9 @@
 import {act, fireEvent, screen, within} from '@testing-library/react-native';
 
+import * as ResponsiveLayout from '@hooks/useResponsiveLayout';
+
+import {setForceOffline} from '@libs/NetworkState';
+
 import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';
 
@@ -35,11 +39,13 @@ describe('MultifactorAuthenticationValidateCodePage', () => {
         await waitForBatchedUpdatesWithAct();
     });
 
-    afterEach(() => {
+    afterEach(async () => {
+        await act(async () => setForceOffline(false));
+        jest.restoreAllMocks();
         jest.clearAllMocks();
     });
 
-    it('puts the submit button in a loading state while the registration challenge request is pending', async () => {
+    async function openValidateCodePage() {
         const {executeScenario} = renderMfaUi();
         await waitForBatchedUpdatesWithAct();
 
@@ -55,6 +61,10 @@ describe('MultifactorAuthenticationValidateCodePage', () => {
         await waitForBatchedUpdatesWithAct();
         await act(async () => loadRegistrationStateControl.resolve({hasServerCredentials: false, hasLocalCredentials: false, hasEverAcceptedSoftPrompt: false}));
         await waitForBatchedUpdatesWithAct();
+    }
+
+    it('puts the submit button in a loading state while the registration challenge request is pending', async () => {
+        await openValidateCodePage();
 
         const submitButton = screen.getByTestId(TEST_ID.VALIDATE_CODE_SUBMIT_BUTTON);
         const submitButtonText = within(submitButton).getByText(translateLocal('common.verify'));
@@ -68,5 +78,30 @@ describe('MultifactorAuthenticationValidateCodePage', () => {
 
         expect(submitButton).toBeDisabled();
         expect(submitButtonText).not.toBeVisible();
+    });
+
+    it('says the device is offline once, with the indicator while the form is usable and the offline view once a code is held', async () => {
+        // Given the form on a narrow layout, where the screen shows its own offline indicator
+        jest.spyOn(ResponsiveLayout, 'default').mockReturnValue({...ResponsiveLayout.default(), shouldUseNarrowLayout: true, isSmallScreenWidth: true});
+        await openValidateCodePage();
+
+        // When the device goes offline
+        await act(async () => setForceOffline(true));
+        await waitForBatchedUpdatesWithAct();
+
+        // Then the form stays usable and the indicator says why resending is off
+        expect(screen.getByTestId(TEST_ID.VALIDATE_CODE_INPUT)).toBeOnTheScreen();
+        expect(screen.queryByText(translateLocal('common.thisFeatureRequiresInternet'))).not.toBeOnTheScreen();
+        expect(screen.getAllByText(translateLocal('common.youAppearToBeOffline'))).toHaveLength(1);
+
+        // When a code is submitted
+        fireEvent.changeText(screen.getByTestId(TEST_ID.VALIDATE_CODE_INPUT), MFA_TEST_VALIDATE_CODE);
+        await waitForBatchedUpdatesWithAct();
+        fireEvent.press(screen.getByTestId(TEST_ID.VALIDATE_CODE_SUBMIT_BUTTON));
+        await waitForBatchedUpdatesWithAct();
+
+        // Then the offline view takes over and the indicator doesn't repeat it
+        expect(screen.getByText(translateLocal('common.thisFeatureRequiresInternet'))).toBeOnTheScreen();
+        expect(screen.getAllByText(translateLocal('common.youAppearToBeOffline'))).toHaveLength(1);
     });
 });

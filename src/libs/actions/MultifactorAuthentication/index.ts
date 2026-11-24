@@ -86,6 +86,17 @@ async function registerAuthenticationKey({keyInfo}: MultifactorAuthenticationSce
     }
 }
 
+/**
+ * Parses an MFA response. `makeRequestWithSideEffects` doesn't reject when a request fails: the API middlewares
+ * resolve it with an empty response, so one without a `jsonCode` is reported as `NO_RESPONSE`.
+ */
+function parseMFAResponse(response: {jsonCode?: string | number; message?: string} | void, responseMap: Parameters<typeof parseHttpResponse>[1]): ReturnType<typeof parseHttpResponse> {
+    if (response?.jsonCode === undefined) {
+        return {httpStatusCode: 0, reason: CONST.MULTIFACTOR_AUTHENTICATION.REASON.LOCAL_ERRORS.NO_RESPONSE, message: undefined};
+    }
+    return parseHttpResponse(response.jsonCode, responseMap, response.message);
+}
+
 type RegistrationChallengeResponse = {
     httpStatusCode: number;
     reason: MultifactorAuthenticationReason | undefined;
@@ -170,8 +181,8 @@ async function requestAuthorizationChallenge(): Promise<AuthenticationChallengeR
             },
             {},
         );
-        const {jsonCode, challenge, publicKeys, message} = response ?? {};
-        const parsedResponse = parseHttpResponse(jsonCode, CONST.MULTIFACTOR_AUTHENTICATION.API_RESPONSE_MAP.REQUEST_AUTHENTICATION_CHALLENGE, message);
+        const {challenge, publicKeys} = response ?? {};
+        const parsedResponse = parseMFAResponse(response, CONST.MULTIFACTOR_AUTHENTICATION.API_RESPONSE_MAP.REQUEST_AUTHENTICATION_CHALLENGE);
 
         if (challenge && !isAuthenticationChallenge(challenge)) {
             Log.hmmm('[MFA] Received non-authentication challenge from authorization endpoint');

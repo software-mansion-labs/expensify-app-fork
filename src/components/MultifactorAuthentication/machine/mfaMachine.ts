@@ -7,6 +7,7 @@ import type {MFAError, MFAResult} from '@libs/MultifactorAuthentication/shared/M
 import {createMFAErrorFromApiResponse, createUnhandledExceptionMFAError, getMFAFailureError} from '@libs/MultifactorAuthentication/shared/MFAResult';
 import type {MultifactorAuthenticationReason} from '@libs/MultifactorAuthentication/shared/types';
 import Navigation from '@libs/Navigation/Navigation';
+import {refresh as refreshNetworkState} from '@libs/NetworkState';
 
 import {clearLocalMFAPublicKeyList, markHasAcceptedSoftPrompt} from '@userActions/MultifactorAuthentication';
 import {requestValidateCodeAction} from '@userActions/User';
@@ -148,6 +149,7 @@ const DEFAULT_CONTEXT: MfaContext = {
     scenarioActionResult: undefined,
     recoveryAttempts: 0,
     recoveredFrom: undefined,
+    challengeRetries: 0,
 };
 
 /**
@@ -165,6 +167,8 @@ const MFAMachine = setup({
     types: {
         context: {} as MfaContext,
         events: {} as MfaEvent,
+        // Marks the steps that hold their request until the device is back online, so the screens show the offline view.
+        tags: {} as 'waitingForNetwork',
     },
     /* eslint-enable @typescript-eslint/no-unsafe-type-assertion */
     actors: createActors(),
@@ -186,6 +190,11 @@ const MFAMachine = setup({
         // A failure that a fresh key registration can fix restarts registration until the flow runs out of attempts.
         canRecover: ({context}, {result, reasons}: {result: MFAResult; reasons: ReadonlySet<MultifactorAuthenticationReason>}) =>
             !result.success && reasons.has(result.error.reason) && context.recoveryAttempts < CONST.MULTIFACTOR_AUTHENTICATION.MAX_RECOVERY_ATTEMPTS,
+        // An unused challenge just expires on the server, so a lost one is requested again until the flow runs out of retries.
+        canRetryChallenge: ({context}, {result}: {result: MFAResult}) =>
+            !result.success &&
+            result.error.reason === CONST.MULTIFACTOR_AUTHENTICATION.REASON.LOCAL_ERRORS.NO_RESPONSE &&
+            context.challengeRetries < CONST.MULTIFACTOR_AUTHENTICATION.MAX_CHALLENGE_RETRIES,
     },
     actions: {
         // Seeds the flow's context from the INIT event. A named action's event is typed as the full
@@ -255,6 +264,12 @@ const MFAMachine = setup({
             recoveryAttempts: context.recoveryAttempts + 1,
             recoveredFrom: context.recoveredFrom ?? {reason: error.reason, step},
         })),
+        countChallengeRetry: assign({challengeRetries: ({context}) => context.challengeRetries + 1}),
+        // Starts a reachability check now instead of at the next periodic one, so a dead connection can show up as offline before the retry.
+        refreshNetworkState: () => refreshNetworkState(),
+        addChallengeRetryBreadcrumb: ({context}) => {
+            addMFABreadcrumb('Authorization challenge lost, requesting it again', {scenario: context.scenarioName}, 'warning');
+        },
         // Without these a flow waiting for the network looks the same as a stuck one in Sentry.
         addNetworkOfflineBreadcrumb: ({context}) => {
             addMFABreadcrumb('Network offline', {scenario: context.scenarioName}, 'warning');
@@ -278,6 +293,7 @@ const MFAMachine = setup({
         // How long a confirmed cancel (`cancelling`, `cancellingInFlight`) waits for its requests, since back and
         // Escape can't leave either state.
         cancelTimeout: CONST.MULTIFACTOR_AUTHENTICATION.CANCEL_TIMEOUT_MS,
+        retryDelay: CONST.MULTIFACTOR_AUTHENTICATION.RETRY_DELAY_MS,
     },
 }).createMachine({
     id: 'mfa',
@@ -371,6 +387,8 @@ const MFAMachine = setup({
                         [MFA_STATE.VALIDATE_CODE]: {
                             id: MFA_STATE.VALIDATE_CODE,
                             entry: 'navigateToValidateCode',
+                            // A cancel can leave while a code entered offline is still held.
+                            exit: 'clearValidateCode',
                             initial: MFA_STATE.AWAITING_VALIDATE_CODE,
                             states: {
                                 // Waits for the emailed code. A resend is accepted only here, so one fired
@@ -380,9 +398,7 @@ const MFAMachine = setup({
                                     entry: assign({validateCodePresentationPhase: MFA_STATE.AWAITING_VALIDATE_CODE}),
                                     initial: MFA_STATE.AWAITING_INPUT,
                                     on: {
-                                        // The screen hides the form offline, so this guard only covers a submit that lands before
-                                        // the offline re-render. The code isn't kept for later because it may expire meanwhile.
-                                        VALIDATE_CODE_ENTERED: {guard: not(stateIn(OFFLINE_TARGET)), target: MFA_STATE.REQUESTING_REGISTRATION_CHALLENGE, actions: 'submitValidateCode'},
+                                        VALIDATE_CODE_ENTERED: {target: MFA_STATE.READY_TO_REQUEST_REGISTRATION_CHALLENGE, actions: 'submitValidateCode'},
                                         RESEND_VALIDATE_CODE: {target: `.${MFA_STATE.AWAITING_INPUT}`, actions: 'requestValidateCode'},
                                     },
                                     states: {
@@ -397,6 +413,13 @@ const MFAMachine = setup({
                                             },
                                         },
                                     },
+                                },
+                                // Holds a code entered offline and sends it once back online. An expired code is rejected like a wrong one, so the user can resend.
+                                [MFA_STATE.READY_TO_REQUEST_REGISTRATION_CHALLENGE]: {
+                                    // The form counts as submitting already, so it stays locked if it shows while the code is held.
+                                    entry: assign({validateCodePresentationPhase: MFA_STATE.REQUESTING_REGISTRATION_CHALLENGE}),
+                                    tags: ['waitingForNetwork'],
+                                    always: {guard: not(stateIn(OFFLINE_TARGET)), target: MFA_STATE.REQUESTING_REGISTRATION_CHALLENGE},
                                 },
                                 [MFA_STATE.REQUESTING_REGISTRATION_CHALLENGE]: {
                                     entry: assign({validateCodePresentationPhase: MFA_STATE.REQUESTING_REGISTRATION_CHALLENGE}),
@@ -464,6 +487,7 @@ const MFAMachine = setup({
                                         // this passes straight through. It is a separate state because `invoke` only starts on entry,
                                         // and opening the dialog stops the ceremony by leaving `creatingKey`.
                                         [MFA_STATE.WAITING_TO_CREATE]: {
+                                            tags: ['waitingForNetwork'],
                                             always: {guard: CAN_START_CEREMONY, target: MFA_STATE.CREATING_KEY},
                                         },
                                         [MFA_STATE.CREATING_KEY]: {
@@ -501,6 +525,7 @@ const MFAMachine = setup({
                                         // needs a new validate code). The dialog doesn't hold it, because registration runs behind the
                                         // dialog anyway.
                                         [MFA_STATE.READY_TO_REGISTER]: {
+                                            tags: ['waitingForNetwork'],
                                             always: {guard: not(stateIn(OFFLINE_TARGET)), target: MFA_STATE.REGISTERING_KEY},
                                         },
                                         // A registration request can't be taken back once sent, so opening the dialog doesn't stop
@@ -538,8 +563,16 @@ const MFAMachine = setup({
                                     exit: assign({signedChallenge: undefined}),
                                     initial: MFA_STATE.WAITING_TO_SIGN,
                                     states: {
+                                        // A lost challenge waits a moment before `waitingToSign` asks for a fresh one, so a dropped
+                                        // connection that the app hasn't noticed yet holds the retry offline instead of losing it too.
+                                        [MFA_STATE.AWAITING_CHALLENGE_RETRY]: {
+                                            tags: ['waitingForNetwork'],
+                                            entry: 'refreshNetworkState',
+                                            after: {retryDelay: MFA_STATE.WAITING_TO_SIGN},
+                                        },
                                         // Same hold as `waitingToCreate`: the ceremony runs only while no cancel dialog is up and while online.
                                         [MFA_STATE.WAITING_TO_SIGN]: {
+                                            tags: ['waitingForNetwork'],
                                             always: {guard: CAN_START_CEREMONY, target: MFA_STATE.SIGNING_CHALLENGE},
                                         },
                                         [MFA_STATE.SIGNING_CHALLENGE]: {
@@ -561,6 +594,11 @@ const MFAMachine = setup({
                                                 onDone: [
                                                     getRecoveryTransition(MFA_STATE.SIGNING_CHALLENGE, 'keyUnknownToServer'),
                                                     getRecoveryTransition(MFA_STATE.SIGNING_CHALLENGE, 'localKeyUnusable'),
+                                                    {
+                                                        guard: {type: 'canRetryChallenge', params: ({event}) => ({result: event.output})},
+                                                        target: MFA_STATE.AWAITING_CHALLENGE_RETRY,
+                                                        actions: ['countChallengeRetry', 'addChallengeRetryBreadcrumb'],
+                                                    },
                                                     {
                                                         guard: ({event}) => !event.output.success,
                                                         target: OUTCOME_TARGET,

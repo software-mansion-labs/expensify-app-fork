@@ -1,6 +1,7 @@
 import checkDeviceEligibility from '@components/MultifactorAuthentication/biometrics/checkDeviceEligibility';
 import AuthorizeTransaction from '@components/MultifactorAuthentication/config/scenarios/AuthorizeTransaction';
 
+import useNetwork from '@hooks/useNetwork';
 import useOnyx from '@hooks/useOnyx';
 import useRootNavigationState from '@hooks/useRootNavigationState';
 
@@ -57,6 +58,9 @@ function getFirstSortedTransactionPending3DSReview(transactions: TransactionPend
 function useNavigateTo3DSAuthorizationChallenge() {
     const [locallyProcessed3DSTransactionReviews, locallyProcessedReviewsResult] = useOnyx(ONYXKEYS.LOCALLY_PROCESSED_3DS_TRANSACTION_REVIEWS);
     const [transactionsPending3DSReview] = useOnyx(ONYXKEYS.TRANSACTIONS_PENDING_3DS_REVIEW);
+    // The pending check below can't run offline. Coming back online runs the effect again, so a review the user
+    // left offline without deciding comes back.
+    const {isOffline} = useNetwork();
 
     // It's important not to whisk the user away from a challenge they're still working on. We add the challenge
     // to locallyProcessed3DSTransactionReviews and clear it from the queue as soon as the Authorize call completes,
@@ -105,6 +109,11 @@ function useNavigateTo3DSAuthorizationChallenge() {
     useEffect(() => {
         // transactionPending3DSReview is undefined when there are no pending transactions
         if (!transactionPending3DSReview?.transactionID) {
+            return;
+        }
+
+        if (isOffline) {
+            addBreadcrumb('Skipped - offline', {transactionID: transactionPending3DSReview.transactionID});
             return;
         }
 
@@ -174,7 +183,7 @@ function useNavigateTo3DSAuthorizationChallenge() {
         return () => {
             cancel = true;
         };
-    }, [transactionPending3DSReview?.transactionID, isCurrentlyActingOn3DSChallenge]);
+    }, [transactionPending3DSReview?.transactionID, isCurrentlyActingOn3DSChallenge, isOffline]);
 }
 
 export default useNavigateTo3DSAuthorizationChallenge;
