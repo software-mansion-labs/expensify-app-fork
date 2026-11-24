@@ -3,7 +3,6 @@ import type {MultifactorAuthenticationScenarioParameters} from '@components/Mult
 import {makeRequestWithSideEffects} from '@libs/API';
 import type {DenyTransactionParams, RevokeMultifactorAuthenticationCredentialsParams} from '@libs/API/parameters';
 import {SIDE_EFFECT_REQUEST_COMMANDS} from '@libs/API/types';
-import HttpsError from '@libs/Errors/HttpsError';
 import Log from '@libs/Log';
 import type {AuthenticationChallenge, RegistrationChallenge} from '@libs/MultifactorAuthentication/shared/challengeTypes';
 import {isAuthenticationChallenge, isRegistrationChallenge, parseHttpResponse} from '@libs/MultifactorAuthentication/shared/helpers';
@@ -87,27 +86,15 @@ async function registerAuthenticationKey({keyInfo}: MultifactorAuthenticationSce
     }
 }
 
-// What `fetch` rejects with when the connection drops: Chromium and Firefox, Safari, and React Native's fetch.
-const CONNECTION_LOST_MESSAGES = new Set<string>([
-    CONST.ERROR.FAILED_TO_FETCH,
-    CONST.ERROR.IOS_LOAD_FAILED,
-    CONST.ERROR.NETWORK_REQUEST_FAILED,
-    CONST.ERROR.IOS_NETWORK_CONNECTION_LOST,
-    CONST.ERROR.IOS_NETWORK_CONNECTION_LOST_RUSSIAN,
-    CONST.ERROR.IOS_NETWORK_CONNECTION_LOST_SWEDISH,
-    CONST.ERROR.IOS_NETWORK_CONNECTION_LOST_SPANISH,
-]);
-
 /**
- * Whether a request failed without an answer, so the app can't tell whether the server got it. A socket error
- * counts too: Web-Expensify gave up waiting for Auth, which may still run the command. An HTTP error status is
- * an answer, so it doesn't count.
+ * Parses an MFA response. `makeRequestWithSideEffects` doesn't reject when a request fails: the API middlewares
+ * resolve it with an empty response, so one without a `jsonCode` is reported as `NO_RESPONSE`.
  */
-function isNoResponseError(error: unknown): boolean {
-    if (error instanceof HttpsError && error.title === CONST.ERROR_TITLE.SOCKET) {
-        return true;
+function parseMFAResponse(response: {jsonCode?: string | number; message?: string} | void, responseMap: Parameters<typeof parseHttpResponse>[1]): ReturnType<typeof parseHttpResponse> {
+    if (response?.jsonCode === undefined) {
+        return {httpStatusCode: 0, reason: CONST.MULTIFACTOR_AUTHENTICATION.REASON.LOCAL_ERRORS.NO_RESPONSE, message: undefined};
     }
-    return error instanceof Error && CONNECTION_LOST_MESSAGES.has(error.message);
+    return parseHttpResponse(response.jsonCode, responseMap, response.message);
 }
 
 type RegistrationChallengeResponse = {
@@ -194,8 +181,8 @@ async function requestAuthorizationChallenge(): Promise<AuthenticationChallengeR
             },
             {},
         );
-        const {jsonCode, challenge, publicKeys, message} = response ?? {};
-        const parsedResponse = parseHttpResponse(jsonCode, CONST.MULTIFACTOR_AUTHENTICATION.API_RESPONSE_MAP.REQUEST_AUTHENTICATION_CHALLENGE, message);
+        const {challenge, publicKeys} = response ?? {};
+        const parsedResponse = parseMFAResponse(response, CONST.MULTIFACTOR_AUTHENTICATION.API_RESPONSE_MAP.REQUEST_AUTHENTICATION_CHALLENGE);
 
         if (challenge && !isAuthenticationChallenge(challenge)) {
             Log.hmmm('[MFA] Received non-authentication challenge from authorization endpoint');
@@ -215,11 +202,8 @@ async function requestAuthorizationChallenge(): Promise<AuthenticationChallengeR
         };
     } catch (error) {
         Log.hmmm('[MFA] Failed to request an authorization challenge', {error});
-        const parsedResponse = parseHttpResponse(undefined, CONST.MULTIFACTOR_AUTHENTICATION.API_RESPONSE_MAP.REQUEST_AUTHENTICATION_CHALLENGE, undefined);
         return {
-            ...parsedResponse,
-            // Lets the machine tell a lost answer from one the server sent.
-            reason: isNoResponseError(error) ? CONST.MULTIFACTOR_AUTHENTICATION.REASON.LOCAL_ERRORS.NO_RESPONSE : parsedResponse.reason,
+            ...parseHttpResponse(undefined, CONST.MULTIFACTOR_AUTHENTICATION.API_RESPONSE_MAP.REQUEST_AUTHENTICATION_CHALLENGE, undefined),
             challenge: undefined,
             publicKeys: undefined,
         };

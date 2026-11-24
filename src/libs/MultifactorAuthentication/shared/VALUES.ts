@@ -48,7 +48,11 @@ const REASON = {
         CANCELED: 'Local: Flow canceled by user',
         /** No HTTP status code present — typically a network failure, JSON parse error, or unhandled exception in an action function. */
         UNHANDLED_API_RESPONSE: 'Local: Missing HTTP status in API response',
-        /** The request got no answer (the connection dropped, or Web-Expensify timed out waiting for Auth), so the server may or may not have it. */
+        /**
+         * No `jsonCode` reached the action. The API middlewares swallow every failed request the same way, so this covers a dropped
+         * connection, Web-Expensify timing out waiting for Auth, any non-OK HTTP status and a body that can't be parsed. The server
+         * may or may not have run the command.
+         */
         NO_RESPONSE: 'Local: No response from the server',
         /** Updating the local passkey credential list failed before backend registration. */
         LOCAL_CREDENTIAL_UPDATE_FAILED: 'Local: Failed to update passkey credentials',
@@ -206,12 +210,16 @@ const CREDENTIAL_FAILURES_REQUIRING_LOCAL_DELETION = new Set<ReasonValue>([
 /** How many times one flow may go back to re-registration after a recoverable credential failure. */
 const MAX_RECOVERY_ATTEMPTS = 1;
 
+/** How many times one flow may request the authorization challenge again after its answer was lost. */
+const MAX_CHALLENGE_RETRIES = 1;
+
 /** Known errors that should rarely happen and may indicate a bug or unexpected state. Logged at 'error' level. Any reason not in either set is treated as UNCLASSIFIED (e.g. missing reason). */
 const ANOMALOUS_FAILURES = new Set<ReasonValue>([
     REASON.CLIENT_ERRORS.REGISTRATION_REQUIRED,
     REASON.CLIENT_ERRORS.UNRECOGNIZED,
     REASON.SERVER_ERRORS.UNRECOGNIZED,
     REASON.LOCAL_ERRORS.UNHANDLED_API_RESPONSE,
+    REASON.LOCAL_ERRORS.NO_RESPONSE,
     REASON.LOCAL_ERRORS.UNHANDLED_EXCEPTION,
     REASON.LOCAL_ERRORS.UNRECOGNIZED,
     REASON.LOCAL_ERRORS.SIGNATURE_MISSING,
@@ -324,6 +332,7 @@ const SHARED_VALUES = {
     ANOMALOUS_FAILURES,
     CREDENTIAL_FAILURES_REQUIRING_LOCAL_DELETION,
     MAX_RECOVERY_ATTEMPTS,
+    MAX_CHALLENGE_RETRIES,
 
     /**
      * Specifically meaningful values for `multifactorAuthenticationPublicKeyIDs` in the `account` Onyx key.

@@ -123,14 +123,6 @@ function getRecoveryTransition(step: RecoverableStep, cause: keyof typeof RECOVE
     } as const;
 }
 
-/** Reads the error off a step's result. */
-function getFailureParams({event}: {event: {output: MFAResult}}): {error: MFAError | undefined} {
-    return {error: event.output.success ? undefined : event.output.error};
-}
-
-// How many times one flow may request the authorization challenge again after its answer was lost.
-const MAX_CHALLENGE_RETRIES = 1;
-
 // Which prompt variant the screen renders is a device property, resolved once per platform.
 const PROMPT_TYPE = CONST.MULTIFACTOR_AUTHENTICATION.PROMPT_TYPE_MAP[deviceVerificationType];
 
@@ -199,8 +191,10 @@ const MFAMachine = setup({
         canRecover: ({context}, {result, reasons}: {result: MFAResult; reasons: ReadonlySet<MultifactorAuthenticationReason>}) =>
             !result.success && reasons.has(result.error.reason) && context.recoveryAttempts < CONST.MULTIFACTOR_AUTHENTICATION.MAX_RECOVERY_ATTEMPTS,
         // An unused challenge just expires on the server, so a lost one is requested again until the flow runs out of retries.
-        canRetryChallenge: ({context}, {error}: {error: MFAError | undefined}) =>
-            error?.reason === CONST.MULTIFACTOR_AUTHENTICATION.REASON.LOCAL_ERRORS.NO_RESPONSE && context.challengeRetries < MAX_CHALLENGE_RETRIES,
+        canRetryChallenge: ({context}, {result}: {result: MFAResult}) =>
+            !result.success &&
+            result.error.reason === CONST.MULTIFACTOR_AUTHENTICATION.REASON.LOCAL_ERRORS.NO_RESPONSE &&
+            context.challengeRetries < CONST.MULTIFACTOR_AUTHENTICATION.MAX_CHALLENGE_RETRIES,
     },
     actions: {
         // Seeds the flow's context from the INIT event. A named action's event is typed as the full
@@ -420,8 +414,7 @@ const MFAMachine = setup({
                                         },
                                     },
                                 },
-                                // Holds a code entered offline and sends it once back online. If it expired meanwhile, the
-                                // backend rejects it like any wrong code and the user can resend one.
+                                // Holds a code entered offline and sends it once back online. An expired code is rejected like a wrong one, so the user can resend.
                                 [MFA_STATE.READY_TO_REQUEST_REGISTRATION_CHALLENGE]: {
                                     // The form counts as submitting already, so it stays locked if it shows while the code is held.
                                     entry: assign({validateCodePresentationPhase: MFA_STATE.REQUESTING_REGISTRATION_CHALLENGE}),
@@ -602,7 +595,7 @@ const MFAMachine = setup({
                                                     getRecoveryTransition(MFA_STATE.SIGNING_CHALLENGE, 'keyUnknownToServer'),
                                                     getRecoveryTransition(MFA_STATE.SIGNING_CHALLENGE, 'localKeyUnusable'),
                                                     {
-                                                        guard: {type: 'canRetryChallenge', params: getFailureParams},
+                                                        guard: {type: 'canRetryChallenge', params: ({event}) => ({result: event.output})},
                                                         target: MFA_STATE.AWAITING_CHALLENGE_RETRY,
                                                         actions: ['countChallengeRetry', 'addChallengeRetryBreadcrumb'],
                                                     },

@@ -112,13 +112,13 @@ function useNavigateTo3DSAuthorizationChallenge() {
             return;
         }
 
-        Log.info('[useNavigateTo3DSAuthorizationChallenge] Effect triggered for transaction', undefined, {transactionID: transactionPending3DSReview.transactionID});
-        addBreadcrumb('Transaction detected in queue', {transactionID: transactionPending3DSReview.transactionID});
-
         if (isOffline) {
             addBreadcrumb('Skipped - offline', {transactionID: transactionPending3DSReview.transactionID});
             return;
         }
+
+        Log.info('[useNavigateTo3DSAuthorizationChallenge] Effect triggered for transaction', undefined, {transactionID: transactionPending3DSReview.transactionID});
+        addBreadcrumb('Transaction detected in queue', {transactionID: transactionPending3DSReview.transactionID});
 
         if (isCurrentlyActingOn3DSChallenge) {
             Log.info('[useNavigateTo3DSAuthorizationChallenge] Ignoring navigation - user is still acting on a challenge', undefined, {

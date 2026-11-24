@@ -7,6 +7,8 @@ import useThemeStyles from '@hooks/useThemeStyles';
 
 import variables from '@styles/variables';
 
+import CONST from '@src/CONST';
+
 import React from 'react';
 import {View} from 'react-native';
 
@@ -37,6 +39,7 @@ function MultifactorAuthenticationAuthorizeTransactionActions({onAuthorize, onDe
                         style={styles.flex1}
                         onPress={onDeny}
                         isDisabled={isDisabled}
+                        sentryLabel={CONST.SENTRY_LABEL.MULTIFACTOR_AUTHENTICATION.AUTHORIZE_TRANSACTION_DENY}
                         text={translate('multifactorAuthentication.reviewTransaction.deny')}
                     />
                     <Button
@@ -45,6 +48,7 @@ function MultifactorAuthenticationAuthorizeTransactionActions({onAuthorize, onDe
                         style={styles.flex1}
                         onPress={onAuthorize}
                         isDisabled={isDisabled}
+                        sentryLabel={CONST.SENTRY_LABEL.MULTIFACTOR_AUTHENTICATION.AUTHORIZE_TRANSACTION_APPROVE}
                         text={translate('multifactorAuthentication.reviewTransaction.approve')}
                     />
                 </>

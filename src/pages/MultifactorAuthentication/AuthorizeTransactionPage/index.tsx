@@ -62,16 +62,21 @@ function MultifactorAuthenticationScenarioAuthorizeTransactionPage({route}: Mult
     const [isConfirmModalVisible, setConfirmModalVisibility] = useState(false);
     const allowNavigatingAwayRef = useRef(false);
 
+    // Offline, nothing is sent: leaving makes no decision and the review comes back once online.
+    const leaveWithoutDecision = useCallback(() => {
+        addBreadcrumb('Offline back-navigation (no deny sent)', {transactionID}, 'warning');
+        setConfirmModalVisibility(false);
+        allowNavigatingAwayRef.current = true;
+        Navigation.closeRHPFlow();
+    }, [transactionID]);
+
     const showConfirmModal = useCallback(() => {
-        // Offline, nothing is sent: back leaves without a decision and the review comes back once online.
         if (isOffline) {
-            addBreadcrumb('Offline back-navigation (no deny sent)', {transactionID}, 'warning');
-            allowNavigatingAwayRef.current = true;
-            Navigation.closeRHPFlow();
+            leaveWithoutDecision();
             return;
         }
         setConfirmModalVisibility(true);
-    }, [isOffline, transactionID]);
+    }, [isOffline, leaveWithoutDecision]);
 
     const hideConfirmModal = () => {
         setConfirmModalVisibility(false);
@@ -118,6 +123,11 @@ function MultifactorAuthenticationScenarioAuthorizeTransactionPage({route}: Mult
     };
 
     const onSilentlyDenyTransaction = () => {
+        // The modal hides offline, so this only catches a confirm that lands before it does.
+        if (isOffline) {
+            leaveWithoutDecision();
+            return;
+        }
         addBreadcrumb('Silent deny (user canceled flow)', {transactionID}, 'warning');
         fireAndForgetDenyTransaction({transactionID});
         setConfirmModalVisibility(false);
@@ -192,7 +202,8 @@ function MultifactorAuthenticationScenarioAuthorizeTransactionPage({route}: Mult
                     onDeny={onDenyTransaction}
                 />
                 <AuthorizeTransactionCancelConfirmModal
-                    isVisible={isConfirmModalVisible}
+                    // It promises a deny, which can't be sent offline.
+                    isVisible={isConfirmModalVisible && !isOffline}
                     onConfirm={onSilentlyDenyTransaction}
                     onCancel={hideConfirmModal}
                 />

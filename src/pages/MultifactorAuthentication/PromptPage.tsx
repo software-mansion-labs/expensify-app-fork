@@ -83,7 +83,8 @@ function MultifactorAuthenticationPromptPage({route}: MultifactorAuthenticationP
     return (
         <ScreenWrapper
             testID={MultifactorAuthenticationPromptPage.displayName}
-            shouldShowOfflineIndicator={false}
+            // The offline view already says the device is offline.
+            shouldShowOfflineIndicator={!isWaitingForNetwork}
             focusTrapSettings={{
                 // Turn the trap off while the cancel confirmation modal is up so it can't swallow
                 // the modal's clicks, and back on when it closes. See https://github.com/Expensify/App/issues/93193

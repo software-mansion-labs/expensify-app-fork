@@ -103,7 +103,8 @@ type MfaContext = {
 
     /** The failure the flow's first recovery started from, carried for the outcome telemetry. */
     recoveredFrom: RecoveredFrom | undefined;
-    /** How many times this flow requested the authorization challenge again after its answer was lost. Once it reaches the limit, a lost one ends the flow instead. */
+
+    /** How many times the authorization challenge was requested again after its answer was lost. */
     challengeRetries: number;
 };
 

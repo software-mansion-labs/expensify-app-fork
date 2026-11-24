@@ -9260,6 +9260,10 @@ const CONST = {
         MFA_OVERLAY: {
             BACKDROP: 'MfaOverlay-Backdrop',
         },
+        MULTIFACTOR_AUTHENTICATION: {
+            AUTHORIZE_TRANSACTION_DENY: 'MultifactorAuthentication-AuthorizeTransactionDeny',
+            AUTHORIZE_TRANSACTION_APPROVE: 'MultifactorAuthentication-AuthorizeTransactionApprove',
+        },
         AGENTS: {
             TABLE_ROW: 'Agents-TableRow',
             CHAT: 'Agents-Chat',
