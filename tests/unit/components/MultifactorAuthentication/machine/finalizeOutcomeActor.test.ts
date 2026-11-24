@@ -50,6 +50,9 @@ function buildInput(overrides: Partial<FinalizeOutcomeInput> = {}): FinalizeOutc
         isCancelConfirmed: false,
         recoveryAttempts: 0,
         recoveredFrom: undefined,
+        challengeRetries: 0,
+        resendReasons: [],
+        userRetries: 0,
         ...overrides,
     };
 }
@@ -127,19 +130,22 @@ describe('finalizeOutcome actor', () => {
     });
 
     it('captures the end-of-flow registration snapshot and reports telemetry exactly once', async () => {
-        // Given a flow that registered a key, recovered once and then ended in a cancel
+        // Given a flow that registered a key, recovered, retried and then ended in a cancel
         const input = buildInput({
             error: createLocalMFAError(REASON.LOCAL_ERRORS.CANCELED, 'user canceled'),
             isRegistrationComplete: true,
             softPromptApproved: true,
             recoveryAttempts: 1,
             recoveredFrom: RECOVERED_FROM,
+            challengeRetries: 1,
+            resendReasons: [CONST.MULTIFACTOR_AUTHENTICATION.RESEND_REASON.NO_RESPONSE, CONST.MULTIFACTOR_AUTHENTICATION.RESEND_REASON.TIMEOUT],
+            userRetries: 1,
         });
 
         // When the outcome is finalized
         await runFinalizeOutcomeActor(input);
 
-        // Then the end state is read once and the telemetry gets the whole flow, recovery included
+        // Then the end state is read once and the telemetry gets the whole flow, recovery and retries included
         expect(mockCaptureRegistrationState).toHaveBeenCalledWith(ACCOUNT_ID, undefined);
         expect(trackMFAFlowOutcomeMock).toHaveBeenCalledTimes(1);
         expect(trackMFAFlowOutcomeMock).toHaveBeenCalledWith(
@@ -151,6 +157,9 @@ describe('finalizeOutcome actor', () => {
                 softPromptApproved: true,
                 recoveryAttempts: 1,
                 recoveredFrom: RECOVERED_FROM,
+                challengeRetries: 1,
+                resendReasons: [CONST.MULTIFACTOR_AUTHENTICATION.RESEND_REASON.NO_RESPONSE, CONST.MULTIFACTOR_AUTHENTICATION.RESEND_REASON.TIMEOUT],
+                userRetries: 1,
                 startState: START_STATE,
                 endState: END_STATE,
             }),
