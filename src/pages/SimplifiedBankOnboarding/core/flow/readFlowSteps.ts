@@ -18,7 +18,9 @@ import FlowStep from './FlowStep';
 
 type FlowStepEntry = {
     id: StepID;
-    component: React.ComponentType;
+
+    /** The FlowStep element as written, which OnboardingFlow renders when the step is shown */
+    element: React.ReactElement<unknown>;
     skip: boolean;
     isComplete: boolean;
     counter: FlowStepCounter;
@@ -47,27 +49,23 @@ function flattenElements(children: unknown): Array<React.ReactElement<unknown>> 
     return [children];
 }
 
-function isComponent(value: unknown): value is React.ComponentType {
-    return typeof value === 'function' || (typeof value === 'object' && value !== null && '$$typeof' in value);
-}
-
 function isFlowStepCounter(value: unknown): value is FlowStepCounter {
     return value === 'own' || value === 'shared' || value === 'none';
 }
 
 function readFlowStep(child: React.ReactElement<unknown>): FlowStepEntry | undefined {
     const props = child.props;
-    if (child.type !== FlowStep || typeof props !== 'object' || props === null || !('id' in props) || !('component' in props)) {
+    if (child.type !== FlowStep || typeof props !== 'object' || props === null || !('id' in props)) {
         return undefined;
     }
-    const {id, component} = props;
+    const {id} = props;
     const skip = 'skip' in props ? props.skip : undefined;
     const isComplete = 'isComplete' in props ? props.isComplete : undefined;
     const counter = 'counter' in props ? props.counter : undefined;
-    if (typeof id !== 'string' || !isStepID(id) || !isComponent(component)) {
+    if (typeof id !== 'string' || !isStepID(id)) {
         return undefined;
     }
-    return {id, component, skip: skip === true, isComplete: isComplete === true, counter: isFlowStepCounter(counter) ? counter : 'own'};
+    return {id, element: child, skip: skip === true, isComplete: isComplete === true, counter: isFlowStepCounter(counter) ? counter : 'own'};
 }
 
 /**
@@ -78,7 +76,7 @@ function readFlowSteps(children: React.ReactNode): FlowStepEntry[] {
     const steps = flattenElements(children).flatMap((child): FlowStepEntry[] => {
         const step = readFlowStep(child);
         if (!step && __DEV__) {
-            throw new Error('OnboardingFlow: every child has to be a FlowStep with a step ID and a component');
+            throw new Error('OnboardingFlow: every child has to be a FlowStep with a step ID');
         }
         return step ? [step] : [];
     });

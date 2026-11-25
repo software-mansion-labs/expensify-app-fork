@@ -23,7 +23,7 @@ import ONYXKEYS from '@src/ONYXKEYS';
 import type * as NativeNavigation from '@react-navigation/native';
 import type ReactNative from 'react-native';
 
-import React from 'react';
+import React, {useState} from 'react';
 import Onyx from 'react-native-onyx';
 
 import getOnyxValue from '../../utils/getOnyxValue';
@@ -81,9 +81,11 @@ const ACCOUNT_OF_WORKSPACE: OnboardingAccount = {
 /** Every test step shows what the flow gives it, so a test sees which step renders and at which position */
 function ShownStep() {
     const {step, previousStep, nextStep, page, isEditing} = useFlowStepPosition();
+    const [mountedStep] = useState(step);
     return (
         <>
             <Text>{`Step ${step}`}</Text>
+            <Text>{`Mounted at ${mountedStep}`}</Text>
             <Text>{`Page ${page ?? 'none'}, editing ${String(isEditing)}`}</Text>
             <Text>{`Previous ${previousStep ?? 'none'}, next ${nextStep ?? 'none'}`}</Text>
         </>
@@ -107,20 +109,23 @@ function getFlow({target = USD_TARGET, urlStep, urlPage, isEditing = false, comp
         >
             <FlowStep
                 id="country"
-                component={ShownStep}
                 isComplete={completeSteps.includes('country')}
-            />
+            >
+                <ShownStep />
+            </FlowStep>
             <FlowStep
                 id="bank-account"
-                component={ShownStep}
                 isComplete={completeSteps.includes('bank-account')}
                 skip={isBankAccountSkipped}
-            />
+            >
+                <ShownStep />
+            </FlowStep>
             <FlowStep
                 id="personal-info"
-                component={ShownStep}
                 isComplete={completeSteps.includes('personal-info')}
-            />
+            >
+                <ShownStep />
+            </FlowStep>
         </OnboardingFlow>
     );
 }
@@ -274,6 +279,19 @@ describe('OnboardingFlow', () => {
             // Then that step renders and the route stays as it is
             expect(screen.getByText('Step bank-account')).toBeOnTheScreen();
             expect(Navigation.navigate).not.toHaveBeenCalled();
+        });
+
+        it('mounts a new step when the URL opens another step that renders the same component', async () => {
+            // Given a shown step whose component is also the component of the next step
+            const {rerender} = await renderFlow({urlStep: 'country'});
+            expect(screen.getByText('Mounted at country')).toBeOnTheScreen();
+
+            // When the URL opens the next step
+            rerender(getFlow({urlStep: 'bank-account'}));
+            await waitForBatchedUpdatesWithAct();
+
+            // Then the next step starts with its own state, because the state of a step must not leak into the next one
+            expect(screen.getByText('Mounted at bank-account')).toBeOnTheScreen();
         });
 
         it('keeps the sub page and the edit flag of a URL whose step is shown', async () => {

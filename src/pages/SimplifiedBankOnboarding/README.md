@@ -109,7 +109,7 @@ A flow page lists its steps. A step lists its sub pages. Both lists are JSX chil
 
 | Wrapper | Role |
 | --- | --- |
-| `OnboardingFlow` + `FlowStep` | The flow screen. Steps in flow order, each with its `isComplete` rule, an optional `skip` rule and the step `counter` (`own`, `shared`, `none`). Without a step in the URL the flow opens the first step that is neither skipped nor complete. The shell also holds the account gate (BC-25), and it corrects a URL that names no step, an unknown step or a skipped step in place, without a new history entry |
+| `OnboardingFlow` + `FlowStep` | The flow screen. Steps in flow order, each a `FlowStep` around the step component with its `isComplete` rule, an optional `skip` rule and the step `counter` (`own`, `shared`, `none`). Without a step in the URL the flow opens the first step that is neither skipped nor complete. The shell also holds the account gate (BC-25), and it corrects a URL that names no step, an unknown step or a skipped step in place, without a new history entry |
 | `OnboardingStep` | The step shell: header with the counter, the sub page in the URL, the start page (`startAt`, else the first rendered page after Next, else the first page that is not `isAnswered`), edit mode, `saveAfterEachPage`, history-aware Back (BC-14), `onBackFromStart`. A URL that names a page which the step does not render opens the start page |
 | `SubPage` | A named page with custom markup. `back` and `next` take a page, `NEXT_STEP` or `PREVIOUS_STEP` |
 | `FormSubPage` | The general block: a sub page with a form of the flow. Props: `title`, `inputIDs` (all required), `validate`, `request`, `getDraftUpdate`, `next` or `getNext`, `submitButtonText`, `isSubmitDisabled`, `submitButtonStyles`, `shouldHideFixErrorsAlert`, `ref`. It saves the draft, sends the `request`, shows its error and pending state, and moves on. Without a `name` it is the only page of its step |
@@ -184,9 +184,10 @@ The flow page adds it with:
 ```tsx
 <FlowStep
     id={PAGE_NAMES.REQUESTOR}
-    component={PersonalInfoStep}
     isComplete={isPastServerStep(achData, STEP.REQUESTOR)}
-/>
+>
+    <PersonalInfoStep />
+</FlowStep>
 ```
 
 A step with one form is `<OnboardingStep>` around one `FormSubPage` without a name (the country pages, both agreement
@@ -262,7 +263,7 @@ variants of the baseline.
 
 | Pattern | Real flow | This module |
 | --- | --- | --- |
-| Static `pages` array, URL `:page/:subPage/:action`, rules that skip pages | `R/USD/USDVerifiedBankAccountFlowPage.tsx` | `<FlowStep id component isComplete skip counter>` children of `OnboardingFlow` in `flows/usd/USDFlowPage.tsx`, `flows/nonUSD/NonUSDFlowPage.tsx`. The URL is **kept** |
+| Static `pages` array, URL `:page/:subPage/:action`, rules that skip pages | `R/USD/USDVerifiedBankAccountFlowPage.tsx` | `<FlowStep id isComplete skip counter>` children of `OnboardingFlow` in `flows/usd/USDFlowPage.tsx`, `flows/nonUSD/NonUSDFlowPage.tsx`. The URL is **kept** |
 | Three vocabularies for one position: step constant, page name, numeric index | `CONST.BANK_ACCOUNT.STEP`, `PAGE_NAMES`, `startStepIndex` | Step names only, and each step names its own sub pages in `<step>Pages.ts`. The counter comes from the `FlowStep` order (BC-23) |
 | `goBack` as a switch on `currentStep` | `R/ReimbursementAccountPage.tsx` | **Kept** for the entry loader only: `entry/entryNavigation.ts`. Steps use the shell's Back |
 | `useSubPage` with `action=edit`, `startFrom` and `onPageChange` | `src/hooks/useSubPage` | `OnboardingStep` and `core/step/readSubPages.ts`. `@hooks/useSubPage` is no longer used by the lab |

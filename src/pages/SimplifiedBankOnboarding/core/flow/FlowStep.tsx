@@ -4,12 +4,12 @@ import type React from 'react';
 
 type FlowStepCounter = 'own' | 'shared' | 'none';
 
-/* eslint-disable react/no-unused-prop-types -- OnboardingFlow reads these props from the element, the marker never renders them */
+/* eslint-disable react/no-unused-prop-types -- OnboardingFlow reads these props from the element to order the steps, FlowStep renders only its children */
 type FlowStepProps = {
     id: StepID;
 
-    /** A component with no props. It normally renders OnboardingStep. */
-    component: React.ComponentType;
+    /** The content of the step, normally a component that renders OnboardingStep */
+    children: React.ReactNode;
 
     /**
      * Whether the saved data says that the user finished the step. A flow that opens without a step in the URL opens
@@ -30,10 +30,12 @@ type FlowStepProps = {
 };
 /* eslint-enable react/no-unused-prop-types */
 
-/** Marks one step in the children of OnboardingFlow. It renders nothing by itself: OnboardingFlow reads its props. */
-// eslint-disable-next-line @typescript-eslint/no-unused-vars -- OnboardingFlow reads the props from the element, the marker itself never uses them
-function FlowStep(props: FlowStepProps): null {
-    return null;
+/**
+ * One step in the children of OnboardingFlow. OnboardingFlow reads the props of every step to order them and renders
+ * only the step that the URL names, so the component itself renders only its children.
+ */
+function FlowStep({children}: FlowStepProps) {
+    return children;
 }
 
 export default FlowStep;

@@ -47,46 +47,54 @@ function NonUSDFlowPage({route}: NonUSDFlowPageProps) {
         >
             <FlowStep
                 id={PAGE_NAMES.COUNTRY}
-                component={CountryStep}
                 isComplete={isCountryComplete(data)}
-            />
+            >
+                <CountryStep />
+            </FlowStep>
             <FlowStep
                 id={PAGE_NAMES.BANK_INFO}
-                component={BankInfoStep}
                 isComplete={isGlobalAccountCreated(achData)}
-            />
+            >
+                <BankInfoStep />
+            </FlowStep>
             <FlowStep
                 id={PAGE_NAMES.BUSINESS_INFO}
-                component={BusinessInfoStep}
                 isComplete={isBusinessInfoComplete(data)}
-            />
+            >
+                <BusinessInfoStep />
+            </FlowStep>
             <FlowStep
                 id={PAGE_NAMES.BENEFICIAL_OWNER_INFO}
-                component={BeneficialOwnersStep}
                 isComplete={areOwnersComplete(data)}
-            />
+            >
+                <BeneficialOwnersStep />
+            </FlowStep>
             <FlowStep
                 id={PAGE_NAMES.SIGNER_INFO}
-                component={SignerStep}
                 isComplete={isSignerStepComplete(data)}
-            />
+            >
+                <SignerStep />
+            </FlowStep>
             <FlowStep
                 id={PAGE_NAMES.AGREEMENTS}
-                component={AgreementsStep}
                 isComplete={areAgreementsComplete(data)}
-            />
+            >
+                <AgreementsStep />
+            </FlowStep>
             <FlowStep
                 id={PAGE_NAMES.DOCUSIGN}
-                component={DocusignStep}
                 isComplete={isVerifying(achData)}
                 skip={!requiresDocusignStep(data.currency)}
-            />
+            >
+                <DocusignStep />
+            </FlowStep>
             <FlowStep
                 id={PAGE_NAMES.FINISH}
-                component={FinishStep}
                 isComplete={false}
                 counter="none"
-            />
+            >
+                <FinishStep />
+            </FlowStep>
         </OnboardingFlow>
     );
 }

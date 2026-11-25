@@ -142,8 +142,8 @@ function useAccountGate(target: FlowTarget): AccountGateView {
  * Runs one flow on one screen.
  *
  * - Account gate (BC-25), USD and NonUSD only, see useAccountGate.
- * - It renders the component of the step named in the URL. A skipped step opens the next step that is not skipped. A
- *   missing or unknown step opens the first step that is neither skipped nor complete. Such a step is shown in the same
+ * - It renders the FlowStep named in the URL. A skipped step opens the next step that is not skipped. A missing or
+ *   unknown step opens the first step that is neither skipped nor complete. Such a step is shown in the same
  *   render, and the URL is corrected in place, so the route and the screen under it stay as they are.
  * - It gives the step shell the steps around the shown one, the counter and the parsed position.
  */
@@ -214,14 +214,13 @@ function OnboardingFlow({target, params, children}: OnboardingFlowProps) {
         page: isURLStepShown ? urlPosition.page : undefined,
         isEditing: isURLStepShown && !!urlPosition.isEditing,
     };
-    const StepComponent = shownStep.component;
-
     return (
         <OnboardingFlowStateContext.Provider value={flowState}>
             <OnboardingFlowActionsContext.Provider value={flowActions}>
                 <FlowStepPositionContext.Provider value={stepPosition}>
                     <View style={[styles.flex1, styles.appBG]}>
-                        <StepComponent />
+                        {/* Two steps can render the same component, so the key mounts a new step instead of keeping the state of the one before */}
+                        <React.Fragment key={shownStep.id}>{shownStep.element}</React.Fragment>
                     </View>
                 </FlowStepPositionContext.Provider>
             </OnboardingFlowActionsContext.Provider>

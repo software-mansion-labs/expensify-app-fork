@@ -46,53 +46,62 @@ function USDFlowPage({route}: USDFlowPageProps) {
         >
             <FlowStep
                 id={PAGE_NAMES.COUNTRY}
-                component={CountryStep}
                 isComplete={isPastServerStep(achData, STEP.COUNTRY)}
-            />
+            >
+                <CountryStep />
+            </FlowStep>
             <FlowStep
                 id={PAGE_NAMES.BANK_ACCOUNT}
-                component={BankAccountStep}
                 isComplete={isPastServerStep(achData, STEP.BANK_ACCOUNT)}
-            />
+            >
+                <BankAccountStep />
+            </FlowStep>
             <FlowStep
                 id={PAGE_NAMES.REQUESTOR}
-                component={PersonalInfoStep}
                 isComplete={isPastServerStep(achData, STEP.REQUESTOR)}
-            />
+            >
+                <PersonalInfoStep />
+            </FlowStep>
             <FlowStep
                 id={PAGE_NAMES.VERIFY_IDENTITY}
-                component={VerifyIdentityStep}
                 isComplete={isPastServerStep(achData, STEP.REQUESTOR)}
                 skip={!!achData?.isOnfidoSetupComplete}
                 counter="shared"
-            />
+            >
+                <VerifyIdentityStep />
+            </FlowStep>
             <FlowStep
                 id={PAGE_NAMES.COMPANY}
-                component={BusinessInfoStep}
                 isComplete={isPastServerStep(achData, STEP.COMPANY)}
-            />
+            >
+                <BusinessInfoStep />
+            </FlowStep>
             <FlowStep
                 id={PAGE_NAMES.BENEFICIAL_OWNERS}
-                component={BeneficialOwnersStep}
                 isComplete={isPastServerStep(achData, STEP.BENEFICIAL_OWNERS)}
-            />
+            >
+                <BeneficialOwnersStep />
+            </FlowStep>
             <FlowStep
                 id={PAGE_NAMES.ACH_CONTRACT}
-                component={CompleteVerificationStep}
                 isComplete={isPastServerStep(achData, STEP.ACH_CONTRACT)}
-            />
+            >
+                <CompleteVerificationStep />
+            </FlowStep>
             <FlowStep
                 id={PAGE_NAMES.KYB_DOCS}
-                component={KYBDocumentsStep}
                 isComplete={isPastServerStep(achData, STEP.KYB_DOCS)}
                 skip={!achData?.requiredKYBDocuments?.length}
                 counter="none"
-            />
+            >
+                <KYBDocumentsStep />
+            </FlowStep>
             <FlowStep
                 id={PAGE_NAMES.VALIDATION}
-                component={ValidationStep}
                 isComplete={false}
-            />
+            >
+                <ValidationStep />
+            </FlowStep>
         </OnboardingFlow>
     );
 }

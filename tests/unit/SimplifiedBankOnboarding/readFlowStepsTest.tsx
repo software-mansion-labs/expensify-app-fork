@@ -17,11 +17,12 @@ function buildSteps(steps: TestStep[]) {
             <FlowStep
                 key={id}
                 id={id}
-                component={StepContent}
                 isComplete={isComplete}
                 skip={skip}
                 counter={counter}
-            />
+            >
+                <StepContent />
+            </FlowStep>
         )),
     );
 }
@@ -34,27 +35,31 @@ describe('readFlowSteps', () => {
             <>
                 <FlowStep
                     id="country"
-                    component={StepContent}
                     isComplete={false}
-                />
+                >
+                    <StepContent />
+                </FlowStep>
                 {isBusinessStepShown && (
                     <FlowStep
                         id="business-info"
-                        component={StepContent}
                         isComplete={false}
-                    />
+                    >
+                        <StepContent />
+                    </FlowStep>
                 )}
                 <>
                     <FlowStep
                         id="bank-account"
-                        component={StepContent}
                         isComplete={false}
-                    />
+                    >
+                        <StepContent />
+                    </FlowStep>
                     <FlowStep
                         id="personal-info"
-                        component={StepContent}
                         isComplete={false}
-                    />
+                    >
+                        <StepContent />
+                    </FlowStep>
                 </>
             </>,
         );
@@ -72,9 +77,10 @@ describe('readFlowSteps', () => {
             <>
                 <FlowStep
                     id="country"
-                    component={StepContent}
                     isComplete={false}
-                />
+                >
+                    <StepContent />
+                </FlowStep>
                 <StepContent />
             </>
         );

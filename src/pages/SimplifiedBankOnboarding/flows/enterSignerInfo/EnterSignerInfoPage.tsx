@@ -31,10 +31,11 @@ function EnterSignerInfoPage({route}: EnterSignerInfoPageProps) {
         >
             <FlowStep
                 id={ENTER_SIGNER_INFO_STEP_ID}
-                component={InvitedSignerStep}
                 isComplete={false}
                 counter="none"
-            />
+            >
+                <InvitedSignerStep />
+            </FlowStep>
         </OnboardingFlow>
     );
 }
