@@ -6,7 +6,7 @@
 import {getSetupCurrency, isNonUSDCurrency, isSupportedCurrency} from '@pages/SimplifiedBankOnboarding/contract/currency';
 import {DEFAULT_ACCOUNT} from '@pages/SimplifiedBankOnboarding/contract/defaultAccount';
 import type {OnboardingDraft} from '@pages/SimplifiedBankOnboarding/contract/form';
-import type {OnboardingAccount, USDStep, Workspaces} from '@pages/SimplifiedBankOnboarding/contract/onyx';
+import type {ACHData, OnboardingAccount, USDStep, Workspaces} from '@pages/SimplifiedBankOnboarding/contract/onyx';
 import SBO_CONST from '@pages/SimplifiedBankOnboarding/contract/SBO_CONST';
 import {belongsToPolicy, hasInProgressSetup, isConnected, isPendingValidation} from '@pages/SimplifiedBankOnboarding/contract/setupStatus';
 
@@ -52,6 +52,14 @@ function getEntryStep(account: OnyxEntry<OnboardingAccount>, draft: OnyxEntry<On
     const achData = account?.achData;
     const hasConfirmedUSDCurrency = (draft?.country ?? '') !== '' || (achData?.accountNumber ?? '') !== '';
     return hasConfirmedUSDCurrency ? (achData?.currentStep ?? STEP.COUNTRY) : STEP.COUNTRY;
+}
+
+/**
+ * The data describes a connected account that the page shows. The account key is shared by every workspace, so a
+ * connected account of another workspace does not count. A page without a workspace ID takes the data as it is.
+ */
+function isConnectedAccountOfPage(achData: OnyxEntry<ACHData>, isNonUSD: boolean, policyID: string | undefined): boolean {
+    return isConnected(achData, isNonUSD) && (!policyID || belongsToPolicy(achData, policyID));
 }
 
 /** The rows of the entry wait while the account has a pending action, and stay off while an error can still be dismissed */
@@ -109,7 +117,7 @@ function getEntryState({policyID, bankAccountID, account, workspaces, draft, isO
     }
 
     // The instance that replaces the bank account shows the setup options, although the shared data still describes the connected account.
-    if (!isChangingBankAccount && isConnected(achData, isNonUSD) && !isAccountOfOtherWorkspace) {
+    if (!isChangingBankAccount && isConnectedAccountOfPage(achData, isNonUSD, policyID)) {
         return {kind: 'connected', isNonUSD};
     }
 
@@ -122,5 +130,5 @@ function getEntryState({policyID, bankAccountID, account, workspaces, draft, isO
 }
 
 export default getEntryState;
-export {areAccountActionsDisabled, getEntryStep};
+export {areAccountActionsDisabled, getEntryStep, isConnectedAccountOfPage};
 export type {EntryState, EntryStateInput};

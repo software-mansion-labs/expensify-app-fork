@@ -1,6 +1,6 @@
 import type {ACHData, OnboardingAccount, Workspaces} from '@pages/SimplifiedBankOnboarding/contract/onyx';
 import SBO_CONST from '@pages/SimplifiedBankOnboarding/contract/SBO_CONST';
-import getEntryState, {areAccountActionsDisabled, getEntryStep} from '@pages/SimplifiedBankOnboarding/entry/getEntryState';
+import getEntryState, {areAccountActionsDisabled, getEntryStep, isConnectedAccountOfPage} from '@pages/SimplifiedBankOnboarding/entry/getEntryState';
 import type {EntryStateInput} from '@pages/SimplifiedBankOnboarding/entry/getEntryState';
 
 const USD_POLICY_ID = '1';
@@ -378,6 +378,20 @@ describe('getEntryStep', () => {
                 undefined,
             ),
         ).toBe(SBO_CONST.USD.STEP.REQUESTOR);
+    });
+});
+
+describe('isConnectedAccountOfPage', () => {
+    it('counts only a connected account of the workspace of the page', () => {
+        // Given a connected USD account of the USD workspace, still on the device when another workspace opens
+        const achData = CONNECTED_USD_ACH_DATA;
+
+        // When the rule is checked for its own workspace, another workspace and a page without a workspace ID
+        // Then the other workspace does not count it, so the entry never takes its later change for an abandoned bank account change
+        expect(isConnectedAccountOfPage(achData, false, USD_POLICY_ID)).toBe(true);
+        expect(isConnectedAccountOfPage(achData, false, MEMBER_POLICY_ID)).toBe(false);
+        expect(isConnectedAccountOfPage(achData, false, undefined)).toBe(true);
+        expect(isConnectedAccountOfPage(IN_PROGRESS_USD_ACH_DATA, false, USD_POLICY_ID)).toBe(false);
     });
 });
 

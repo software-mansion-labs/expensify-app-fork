@@ -14,7 +14,7 @@ import useNetwork from '@hooks/useNetwork';
 import useOnyx from '@hooks/useOnyx';
 
 import {getSetupCurrency, isNonUSDCurrency} from '@pages/SimplifiedBankOnboarding/contract/currency';
-import {belongsToPolicy, hasInProgressSetup, isConnected} from '@pages/SimplifiedBankOnboarding/contract/setupStatus';
+import {belongsToPolicy, hasInProgressSetup} from '@pages/SimplifiedBankOnboarding/contract/setupStatus';
 import {clearDraft, openOnboardingPage} from '@pages/SimplifiedBankOnboarding/core';
 import type {OpenOnboardingPageParams, RequestOutcome} from '@pages/SimplifiedBankOnboarding/core';
 
@@ -24,7 +24,7 @@ import ONYXKEYS from '@src/ONYXKEYS';
 import {useIsFocused} from '@react-navigation/native';
 import {useEffect, useEffectEvent, useRef, useState} from 'react';
 
-import {getEntryStep} from './getEntryState';
+import {getEntryStep, isConnectedAccountOfPage} from './getEntryState';
 import {clearOnboardingAccount, startAccountLoading} from './requests/resetBankAccount';
 
 type EntryAccountReadInput = {
@@ -95,7 +95,9 @@ function useEntryAccountRead({policyID, bankAccountID, isChangingBankAccount}: E
     const workspace = policyID ? workspaces?.[policyID] : undefined;
     const isNonUSD = isNonUSDCurrency(getSetupCurrency(workspace, achData, draft));
     const isAccountOfThisWorkspace = !!account && belongsToPolicy(achData, policyID);
-    const isShowingConnectedAccount = isConnected(achData, isNonUSD);
+    // Not the kind of the entry state: every read shows the loader over the connected view, and the read after an
+    // abandoned change would take that loader for a lost account.
+    const isShowingConnectedAccount = isConnectedAccountOfPage(achData, isNonUSD, policyID);
     const hasSetupInProgress = hasInProgressSetup(achData, isNonUSD, policyID);
 
     // A reset empties the account until its answer arrives, and reads the account itself when it fails. A read of this
