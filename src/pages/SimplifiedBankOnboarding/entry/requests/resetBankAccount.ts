@@ -10,7 +10,7 @@
  */
 import {getMicroSecondOnyxErrorWithTranslationKey} from '@libs/ErrorUtils';
 
-import {DEFAULT_ACCOUNT} from '@pages/SimplifiedBankOnboarding/contract/defaultAccount';
+import {DEFAULT_ACCOUNT, getNewAccountForPolicy} from '@pages/SimplifiedBankOnboarding/contract/defaultAccount';
 import type {Workspace} from '@pages/SimplifiedBankOnboarding/contract/onyx';
 import {clearRequestState, openOnboardingPage, runRequest} from '@pages/SimplifiedBankOnboarding/core';
 import type {RequestOnyxKey} from '@pages/SimplifiedBankOnboarding/core';
@@ -83,10 +83,7 @@ function getResetDataForOnyx(policyID: string | undefined, achAccount: Workspace
             {
                 onyxMethod: Onyx.METHOD.SET,
                 key: ONYXKEYS.SIMPLIFIED_BANK_ONBOARDING_ACCOUNT,
-                value: {
-                    ...DEFAULT_ACCOUNT,
-                    achData: {...DEFAULT_ACCOUNT.achData, policyID},
-                },
+                value: policyID ? getNewAccountForPolicy(policyID) : DEFAULT_ACCOUNT,
             },
             {
                 onyxMethod: Onyx.METHOD.SET,
