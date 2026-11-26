@@ -3,20 +3,17 @@
  * them and a later step can send a file that an earlier step collected. An upload error shows on the input.
  */
 import InputWrapper from '@components/Form/InputWrapper';
-import type {FormRef} from '@components/Form/types';
 import UploadFile from '@components/UploadFile';
 
 import useLocalize from '@hooks/useLocalize';
 
 import type {FileInputID, OnboardingDraft} from '@pages/SimplifiedBankOnboarding/contract/form';
-import {useOnboardingFlow} from '@pages/SimplifiedBankOnboarding/core';
+import {useOnboardingFlow, useResetFieldError} from '@pages/SimplifiedBankOnboarding/core';
 
 import {clearErrorFields, clearErrors, setErrorFields} from '@userActions/FormActions';
 
 import CONST from '@src/CONST';
 import type {FileObject} from '@src/types/utils/Attachment';
-
-import type {RefObject} from 'react';
 
 import React, {useState} from 'react';
 
@@ -27,14 +24,12 @@ type DraftFileInputProps = {
     defaultFiles: FileObject[];
     fileLimit: number;
     maxFileSize?: number;
-
-    /** The form that holds the input. When given, an upload error replaces the validation errors of the form. */
-    formRef?: RefObject<FormRef | null>;
 };
 
-function DraftFileInput({inputID, defaultFiles, fileLimit, maxFileSize, formRef}: DraftFileInputProps) {
+function DraftFileInput({inputID, defaultFiles, fileLimit, maxFileSize}: DraftFileInputProps) {
     const {translate} = useLocalize();
     const {formID, saveDraft} = useOnboardingFlow();
+    const resetFieldError = useResetFieldError();
     const [files, setFiles] = useState(defaultFiles);
 
     const saveFiles = (newFiles: FileObject[]) => {
@@ -49,10 +44,8 @@ function DraftFileInput({inputID, defaultFiles, fileLimit, maxFileSize, formRef}
             clearErrorFields(formID);
             return;
         }
-        if (formRef) {
-            formRef.current?.resetFormFieldError(inputID);
-            clearErrors(formID);
-        }
+        resetFieldError(inputID);
+        clearErrors(formID);
         setErrorFields(formID, {[inputID]: {onUpload: error}});
     };
 

@@ -28,7 +28,7 @@ export {default as SubPage} from './step/SubPage';
 export {default as ConfirmationSubPage} from './subPageForms/ConfirmationSubPage';
 export type {ConfirmationRow} from './subPageForms/ConfirmationSubPage';
 export {default as DateOfBirthSubPage} from './subPageForms/DateOfBirthSubPage';
-export {default as FormSubPage} from './subPageForms/FormSubPage';
+export {default as FormSubPage, useResetFieldError} from './subPageForms/FormSubPage';
 export type {SubPageFormErrors} from './subPageForms/FormSubPage';
 export {default as FullNameSubPage} from './subPageForms/FullNameSubPage';
 export {default as RequestErrorMessage} from './subPageForms/RequestErrorMessage';

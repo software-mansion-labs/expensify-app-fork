@@ -4,7 +4,6 @@
  * draft, and the docusign step sends everything.
  */
 import CheckboxWithLabel from '@components/CheckboxWithLabel';
-import type {FormRef} from '@components/Form/types';
 import Text from '@components/Text';
 
 import useLocalize from '@hooks/useLocalize';
@@ -21,7 +20,7 @@ import DraftFileInput from '@pages/SimplifiedBankOnboarding/flows/shared/files/D
 import CONST from '@src/CONST';
 import type {TranslationPaths} from '@src/languages/types';
 
-import React, {useRef} from 'react';
+import React from 'react';
 
 import finishOnboardingRequest from './finishOnboardingRequest';
 import getAgreementsAnswers from './getAgreementsAnswers';
@@ -50,7 +49,6 @@ function AgreementsStep() {
     const styles = useThemeStyles();
     const data = useFlowData();
     const answers = getAgreementsAnswers(data);
-    const formRef = useRef<FormRef | null>(null);
 
     const isDocusignStepRequired = requiresDocusignStep(data.currency);
 
@@ -70,7 +68,6 @@ function AgreementsStep() {
             wrapperID="SimplifiedBankOnboardingAgreements"
         >
             <FormSubPage
-                ref={formRef}
                 title={translate('agreementsStep.pleaseConfirm')}
                 inputIDs={[...AGREEMENT_ERRORS.map(({inputID}) => inputID), ...(isDocusignStepRequired ? [INPUT_IDS.BANK_STATEMENT] : [])]}
                 validate={validateAgreements}
@@ -109,7 +106,6 @@ function AgreementsStep() {
                             defaultFiles={answers.bankStatement}
                             fileLimit={SBO_CONST.NON_USD.DOCUMENT_FILE_LIMIT}
                             maxFileSize={CONST.CORPAY_DOCUMENT.MAX_FILE_SIZE}
-                            formRef={formRef}
                         />
                         <Text style={[styles.mutedTextLabel, styles.mt3]}>{translate('agreementsStep.bankStatementDescription')}</Text>
                     </>

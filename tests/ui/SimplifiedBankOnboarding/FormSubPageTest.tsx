@@ -1,6 +1,5 @@
 import {fireEvent, render, screen} from '@testing-library/react-native';
 
-import type {FormRef} from '@components/Form/types';
 import type InteractiveStepWrapperModule from '@components/InteractiveStepWrapper';
 import OnyxListItemProvider from '@components/OnyxListItemProvider';
 import TextInput from '@components/TextInput';
@@ -16,7 +15,7 @@ import type {FlowStepPosition, FlowTarget, OnboardingFlowActions, OnboardingFlow
 import {getFlowRoute} from '@pages/SimplifiedBankOnboarding/core/flow/flowRoutes';
 import type {FlowNavigationState} from '@pages/SimplifiedBankOnboarding/core/flow/flowRoutes';
 import OnboardingStep from '@pages/SimplifiedBankOnboarding/core/step/OnboardingStep';
-import FormSubPage from '@pages/SimplifiedBankOnboarding/core/subPageForms/FormSubPage';
+import FormSubPage, {useResetFieldError} from '@pages/SimplifiedBankOnboarding/core/subPageForms/FormSubPage';
 import type {SubPageFormErrors} from '@pages/SimplifiedBankOnboarding/core/subPageForms/FormSubPage';
 import SubPageInput from '@pages/SimplifiedBankOnboarding/core/subPageForms/SubPageInput';
 
@@ -24,11 +23,11 @@ import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';
 
 import type * as NativeNavigation from '@react-navigation/native';
-import type {RefObject} from 'react';
 import type ReactNative from 'react-native';
 
 import {NavigationContainer} from '@react-navigation/native';
 import React from 'react';
+import {Button} from 'react-native';
 import Onyx from 'react-native-onyx';
 
 import getOnyxValue from '../../utils/getOnyxValue';
@@ -103,10 +102,21 @@ function validateCompany(values: OnboardingDraft): SubPageFormErrors {
 type CompanyPageProps = {
     isSubmitDisabled?: boolean;
     optionalInputIDs?: InputID[];
-    formRef?: RefObject<FormRef | null>;
+    children?: React.ReactNode;
 };
 
-async function renderCompanyPage({isSubmitDisabled, optionalInputIDs, formRef}: CompanyPageProps = {}) {
+/** Stands in for an input that sets its own error, like the file input after a failed upload */
+function ResetCompanyNameErrorButton() {
+    const resetFieldError = useResetFieldError();
+    return (
+        <Button
+            title="Reset company name error"
+            onPress={() => resetFieldError(INPUT_IDS.COMPANY_NAME)}
+        />
+    );
+}
+
+async function renderCompanyPage({isSubmitDisabled, optionalInputIDs, children}: CompanyPageProps = {}) {
     render(
         <OnyxListItemProvider>
             <NavigationContainer>
@@ -118,7 +128,6 @@ async function renderCompanyPage({isSubmitDisabled, optionalInputIDs, formRef}: 
                                 wrapperID="FormSubPageTest"
                             >
                                 <FormSubPage
-                                    ref={formRef}
                                     title="Company details"
                                     inputIDs={[INPUT_IDS.COMPANY_NAME, INPUT_IDS.COMPANY_TAX_ID]}
                                     optionalInputIDs={optionalInputIDs}
@@ -137,6 +146,7 @@ async function renderCompanyPage({isSubmitDisabled, optionalInputIDs, formRef}: 
                                         label="Tax ID"
                                         accessibilityLabel="Tax ID"
                                     />
+                                    {children}
                                 </FormSubPage>
                             </OnboardingStep>
                         </FlowStepPositionContext.Provider>
@@ -221,14 +231,18 @@ describe('FormSubPage', () => {
         expect(Navigation.navigate).not.toHaveBeenCalled();
     });
 
-    it('gives the form to the page that asks for it', async () => {
-        // Given a page that needs the form to reset an error itself, like the file input does
-        const formRef: RefObject<FormRef | null> = {current: null};
+    it('lets an input inside the page remove its own validation error', async () => {
+        // Given a page with an input that sets its own error, submitted empty so the company name shows a validation error
+        await renderCompanyPage({children: <ResetCompanyNameErrorButton />});
+        await pressNext();
+        expect(screen.getByText(CUSTOM_REQUIRED_MESSAGE)).toBeOnTheScreen();
 
-        // When the page renders
-        await renderCompanyPage({formRef});
+        // When the input removes the validation error of the company name, as the file input does before it shows an upload error
+        fireEvent.press(screen.getByText('Reset company name error'));
+        await waitForBatchedUpdatesWithAct();
 
-        // Then the ref holds the form of the block
-        expect(formRef.current?.resetFormFieldError).toBeInstanceOf(Function);
+        // Then the validation error is gone, so it cannot hide the error of the input, and the other input keeps its error
+        expect(screen.queryByText(CUSTOM_REQUIRED_MESSAGE)).not.toBeOnTheScreen();
+        expect(screen.getByText('common.error.fieldRequired')).toBeOnTheScreen();
     });
 });

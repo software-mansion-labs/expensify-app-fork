@@ -2,7 +2,6 @@
  * The docusign step of the NonUSD flow, only for a currency that needs the signed authorization form. It ends the
  * setup with the agreement answers, the bank statement of the agreements step and this form.
  */
-import type {FormRef} from '@components/Form/types';
 import Text from '@components/Text';
 
 import useLocalize from '@hooks/useLocalize';
@@ -17,13 +16,12 @@ import DraftFileInput from '@pages/SimplifiedBankOnboarding/flows/shared/files/D
 
 import CONST from '@src/CONST';
 
-import React, {useRef} from 'react';
+import React from 'react';
 
 function DocusignStep() {
     const {translate} = useLocalize();
     const styles = useThemeStyles();
     const {achAuthorizationForm} = getAgreementsAnswers(useFlowData());
-    const formRef = useRef<FormRef | null>(null);
 
     return (
         <OnboardingStep
@@ -31,7 +29,6 @@ function DocusignStep() {
             wrapperID="SimplifiedBankOnboardingDocusign"
         >
             <FormSubPage
-                ref={formRef}
                 title={translate('docusignStep.pleaseCompleteTheBusinessAccount')}
                 inputIDs={[INPUT_IDS.ACH_AUTHORIZATION_FORM]}
                 request={finishOnboardingRequest}
@@ -44,7 +41,6 @@ function DocusignStep() {
                     defaultFiles={achAuthorizationForm}
                     fileLimit={SBO_CONST.NON_USD.DOCUMENT_FILE_LIMIT}
                     maxFileSize={CONST.CORPAY_DOCUMENT.MAX_FILE_SIZE}
-                    formRef={formRef}
                 />
             </FormSubPage>
         </OnboardingStep>
