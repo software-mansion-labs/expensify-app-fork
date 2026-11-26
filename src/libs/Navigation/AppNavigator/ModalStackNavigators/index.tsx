@@ -58,6 +58,8 @@ import type {
     WorkspacesDomainModalNavigatorParamList,
 } from '@navigation/types';
 
+import type * as BankOnboardingLab from '@pages/SimplifiedBankOnboarding';
+
 import type {Screen} from '@src/SCREENS';
 import SCREENS from '@src/SCREENS';
 import ObjectUtils from '@src/types/utils/ObjectUtils';
@@ -72,10 +74,8 @@ import useModalStackScreenOptions from './useModalStackScreenOptions';
 
 const loadAttachmentModalScreen = () => require<ReactComponentModule>('../../../../pages/media/AttachmentModalScreen').default;
 
-type BankOnboardingLabScreen = 'OnboardingEntryPage' | 'USDFlowPage' | 'NonUSDFlowPage' | 'VerifyAccountPage' | 'EnterSignerInfoPage' | 'WorkspacePaymentsPage';
-
 /** The bank onboarding lab exposes its screens through one index, so the app does not depend on its folder layout */
-const loadBankOnboardingLab = () => require<Record<BankOnboardingLabScreen, React.ComponentType>>('../../../../pages/SimplifiedBankOnboarding');
+const loadBankOnboardingLab = () => require<Record<keyof typeof BankOnboardingLab, React.ComponentType>>('../../../../pages/SimplifiedBankOnboarding');
 
 type Screens = Partial<Record<Screen, () => React.ComponentType>>;
 
