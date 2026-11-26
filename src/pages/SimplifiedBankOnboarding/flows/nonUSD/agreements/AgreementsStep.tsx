@@ -10,8 +10,6 @@ import Text from '@components/Text';
 import useLocalize from '@hooks/useLocalize';
 import useThemeStyles from '@hooks/useThemeStyles';
 
-import {isRequiredFulfilled} from '@libs/ValidationUtils';
-
 import {requiresDocusignStep} from '@pages/SimplifiedBankOnboarding/contract/currency';
 import INPUT_IDS from '@pages/SimplifiedBankOnboarding/contract/form';
 import type {BooleanInputID, OnboardingDraft} from '@pages/SimplifiedBankOnboarding/contract/form';
@@ -63,9 +61,6 @@ function AgreementsStep() {
                 errors[inputID] = translate(errorPath);
             }
         }
-        if (isDocusignStepRequired && !isRequiredFulfilled(values.bankStatement)) {
-            errors[INPUT_IDS.BANK_STATEMENT] = translate('common.error.fieldRequired');
-        }
         return errors;
     };
 
@@ -77,7 +72,7 @@ function AgreementsStep() {
             <FormSubPage
                 ref={formRef}
                 title={translate('agreementsStep.pleaseConfirm')}
-                inputIDs={AGREEMENT_ERRORS.map(({inputID}) => inputID)}
+                inputIDs={[...AGREEMENT_ERRORS.map(({inputID}) => inputID), ...(isDocusignStepRequired ? [INPUT_IDS.BANK_STATEMENT] : [])]}
                 validate={validateAgreements}
                 request={isDocusignStepRequired ? undefined : finishOnboardingRequest}
                 submitButtonText={translate(isDocusignStepRequired ? 'common.confirm' : 'agreementsStep.accept')}

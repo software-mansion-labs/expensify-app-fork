@@ -112,7 +112,7 @@ A flow page lists its steps. A step lists its sub pages. Both lists are JSX chil
 | `OnboardingFlow` + `FlowStep` | The flow screen. Steps in flow order, each a `FlowStep` around the step component with its `isComplete` rule, an optional `skip` rule and the step `counter` (`own`, `shared`, `none`). Without a step in the URL the flow opens the first step that is neither skipped nor complete. The shell also holds the account gate (BC-25), and it corrects a URL that names no step, an unknown step or a skipped step in place, without a new history entry |
 | `OnboardingStep` | The step shell: header with the counter, the sub page in the URL, the start page (`startAt`, else the first rendered page after Next, else the first page that is not `isAnswered`), edit mode (Next and Back return to the page that opened it, which the URL names), `saveAfterEachPage`, history-aware Back (BC-14), `onBackFromStart`. A URL that names a page which the step does not render opens the start page |
 | `SubPage` | A named page with custom markup. `back` and `next` take a page, `NEXT_STEP` or `PREVIOUS_STEP` |
-| `FormSubPage` | The general block: a sub page with a form of the flow. Props: `title`, `inputIDs` (all required), `validate`, `request`, `getDraftUpdate`, `next` or `getNext`, `submitButtonText`, `isSubmitDisabled`, `submitButtonStyles`, `shouldHideFixErrorsAlert`, `ref`. It saves the draft, sends the `request`, shows its error and pending state, and moves on. Without a `name` it is the only page of its step |
+| `FormSubPage` | The general block: a sub page with a form of the flow. Props: `title`, `inputIDs` (required unless listed in `optionalInputIDs`), `validate`, `request`, `getDraftUpdate`, `next` or `getNext`, `submitButtonText`, `isSubmitDisabled`, `submitButtonStyles`, `shouldHideFixErrorsAlert`, `ref`. It saves the draft, sends the `request`, shows its error and pending state, and moves on. Without a `name` it is the only page of its step |
 | `SingleFieldSubPage`, `FullNameSubPage`, `DateOfBirthSubPage`, `YesNoSubPage`, `ConfirmationSubPage` | Blocks for the common pages, with the same submit behaviour as `FormSubPage` |
 | `SubPageInput` | `InputWrapper` that saves the draft on change outside edit mode |
 | `useFlowData`, `useFlowDataOf` | The data of a flow in one shape, `FlowData = {bankAccount, account, draft, currency}`. A step calls `useFlowData()`. The NonUSD flow page, which renders above `OnboardingFlow` and tests its rules on the whole data, calls `useFlowDataOf(target)`. The USD flow page needs only `achData`, so it selects it from the account key |
@@ -194,8 +194,9 @@ A step with one form is `<OnboardingStep>` around one `FormSubPage` without a na
 steps, Docusign).
 
 Custom pages (Plaid, the identity check, the test deposits, the waiting page, the server-driven bank form, the director
-email page, the owner lists and the invited director) render their own markup inside `SubPage` or `OnboardingStep`, and
-use `useOnboardingRequest`, `useSubPageSubmit` and `usePageNavigation` for everything else.
+email page, the owner lists and the invited director) render their own markup inside `SubPage` or `OnboardingStep`. They
+use `FormSubPage` for a form that maps to one block, and `useOnboardingRequest`, `useSubPageSubmit` and
+`usePageNavigation` for everything else.
 
 ## Request layer
 
@@ -510,8 +511,5 @@ Known and left as it is:
 
 A few places still differ from the one way, on purpose:
 
-- `flows/nonUSD/bankInfo/ServerDrivenFields.tsx` and `flows/usd/bankAccount/PlaidBankPage.tsx` use their own
-  `FormProvider` with `useSubPageSubmit`. The first builds its inputs and its validation from fields that the server
-  sends, so it has no fixed `inputIDs`. The second submits a choice of the fake Plaid widget, not inputs.
-- The director email page and the test deposits also keep their own `FormProvider`, because their forms do not map to
-  one block.
+- The director email page and the test deposits keep their own `FormProvider`, because their forms do not map to one
+  block.

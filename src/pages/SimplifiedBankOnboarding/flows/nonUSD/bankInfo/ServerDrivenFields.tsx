@@ -3,18 +3,15 @@
  * text input for the others, and the rules of each input. Both input pages of the bank step render it.
  */
 import ActivityIndicator from '@components/ActivityIndicator';
-import FormProvider from '@components/Form/FormProvider';
 import PushRowWithModal from '@components/PushRowWithModal';
-import Text from '@components/Text';
 import TextInput from '@components/TextInput';
 
-import useLocalize from '@hooks/useLocalize';
 import useThemeStyles from '@hooks/useThemeStyles';
 
 import type {OnboardingDraft} from '@pages/SimplifiedBankOnboarding/contract/form';
 import type {BankFormField} from '@pages/SimplifiedBankOnboarding/contract/onyx';
 import type {SubPageFormErrors} from '@pages/SimplifiedBankOnboarding/core';
-import {SubPageInput, useOnboardingFlow, usePageNavigation, useSubPageSubmit, useFlowData} from '@pages/SimplifiedBankOnboarding/core';
+import {FormSubPage, SubPageInput, useFlowData} from '@pages/SimplifiedBankOnboarding/core';
 
 import CONST from '@src/CONST';
 
@@ -37,24 +34,14 @@ function getPicklistOptions(field: BankFormField): Record<string, string> {
 }
 
 function ServerDrivenFields({title, fields, isLoading}: ServerDrivenFieldsProps) {
-    const {translate} = useLocalize();
     const styles = useThemeStyles();
-    const {formID} = useOnboardingFlow();
-    const {isEditing} = usePageNavigation();
     const {bankFieldValues} = getBankInfoAnswers(useFlowData());
-    const {submit} = useSubPageSubmit({});
 
-    const validateFields = (values: OnboardingDraft): SubPageFormErrors => {
+    const validateRules = (values: OnboardingDraft): SubPageFormErrors => {
         const errors: SubPageFormErrors = {};
         for (const field of fields) {
             const value = values[field.id];
-            if (!value) {
-                if (field.isRequired) {
-                    errors[field.id] = translate('common.error.fieldRequired');
-                }
-                continue;
-            }
-            const ruleError = getBankFieldRuleError(field, value);
+            const ruleError = value ? getBankFieldRuleError(field, value) : undefined;
             if (ruleError) {
                 errors[field.id] = ruleError;
             }
@@ -62,19 +49,11 @@ function ServerDrivenFields({title, fields, isLoading}: ServerDrivenFieldsProps)
         return errors;
     };
 
-    const submitFields = (values: OnboardingDraft) => {
-        const draftUpdate: OnboardingDraft = {};
-        for (const field of fields) {
-            draftUpdate[field.id] = values[field.id];
-        }
-        submit(draftUpdate);
-    };
-
     const inputs = fields.map((field) => {
         if (field.valueSet) {
             return (
                 <View
-                    style={[styles.mb6, styles.mhn5]}
+                    style={[styles.mt6, styles.mhn5]}
                     key={field.id}
                 >
                     <SubPageInput
@@ -91,7 +70,7 @@ function ServerDrivenFields({title, fields, isLoading}: ServerDrivenFieldsProps)
         }
         return (
             <View
-                style={styles.mb6}
+                style={styles.mt6}
                 key={field.id}
             >
                 <SubPageInput
@@ -108,16 +87,13 @@ function ServerDrivenFields({title, fields, isLoading}: ServerDrivenFieldsProps)
     });
 
     return (
-        <FormProvider
-            formID={formID}
-            submitButtonText={translate(isEditing ? 'common.confirm' : 'common.next')}
-            onSubmit={submitFields}
-            validate={validateFields}
-            style={[styles.mh5, styles.flexGrow1]}
+        <FormSubPage
+            title={title}
+            inputIDs={fields.map((field) => field.id)}
+            optionalInputIDs={fields.filter((field) => !field.isRequired).map((field) => field.id)}
+            validate={validateRules}
             isSubmitDisabled={fields.length === 0}
-            enabledWhenOffline
         >
-            <Text style={[styles.textHeadlineLineHeightXXL, styles.mb6]}>{title}</Text>
             {isLoading ? (
                 <View style={[styles.flexGrow4, styles.alignItemsCenter]}>
                     <ActivityIndicator
@@ -128,7 +104,7 @@ function ServerDrivenFields({title, fields, isLoading}: ServerDrivenFieldsProps)
             ) : (
                 inputs
             )}
-        </FormProvider>
+        </FormSubPage>
     );
 }
 

@@ -40,7 +40,13 @@ type FormSubPageProps = SubPageElementProps & {
     /** The inputs of this page. They go to the draft on submit. */
     inputIDs: InputID[];
 
-    /** Errors by input ID. Every input in inputIDs is required, and gets the required error unless `validate` gave it another one. */
+    /** Inputs of `inputIDs` that may stay empty */
+    optionalInputIDs?: InputID[];
+
+    /**
+     * Errors by input ID. Every input in inputIDs that is not optional is required, and gets the required error unless
+     * `validate` gave it another one.
+     */
     validate?: (values: OnboardingDraft) => SubPageFormErrors;
 
     request?: OnboardingRequest;
@@ -78,6 +84,7 @@ function pickInputValues(values: OnboardingDraft, inputIDs: InputID[]): Onboardi
 function FormSubPage({
     title,
     inputIDs,
+    optionalInputIDs = [],
     validate,
     request,
     getDraftUpdate,
@@ -99,7 +106,7 @@ function FormSubPage({
     const validatePage = (values: OnboardingDraft): SubPageFormErrors => {
         const errors: SubPageFormErrors = {...validate?.(values)};
         for (const inputID of inputIDs) {
-            if (!errors[inputID] && !isRequiredFulfilled(values[inputID])) {
+            if (!errors[inputID] && !optionalInputIDs.includes(inputID) && !isRequiredFulfilled(values[inputID])) {
                 errors[inputID] = translate('common.error.fieldRequired');
             }
         }

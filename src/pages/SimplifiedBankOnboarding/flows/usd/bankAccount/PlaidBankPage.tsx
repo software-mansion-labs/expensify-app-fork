@@ -5,7 +5,6 @@
  * data when it closes.
  */
 import Button from '@components/Button';
-import FormProvider from '@components/Form/FormProvider';
 import RadioButtons from '@components/RadioButtons';
 import Text from '@components/Text';
 
@@ -13,7 +12,7 @@ import useLocalize from '@hooks/useLocalize';
 import useOnyx from '@hooks/useOnyx';
 import useThemeStyles from '@hooks/useThemeStyles';
 
-import {PageLoadingIndicator, RequestErrorMessage, useOnboardingFlow, useOnboardingRequest, useReadOnOpen, useSubPageSubmit, useFlowData} from '@pages/SimplifiedBankOnboarding/core';
+import {FormSubPage, PageLoadingIndicator, useOnboardingFlow, useOnboardingRequest, useReadOnOpen, useFlowData} from '@pages/SimplifiedBankOnboarding/core';
 
 import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';
@@ -28,12 +27,11 @@ import {plaidAccountSelectorRead, plaidLoginRead} from './plaidRequests';
 function PlaidBankPage() {
     const {translate} = useLocalize();
     const styles = useThemeStyles();
-    const {formID, saveDraft} = useOnboardingFlow();
+    const {saveDraft} = useOnboardingFlow();
     const {plaidAccountID} = getBankAccountAnswers(useFlowData());
     const [plaidData] = useOnyx(ONYXKEYS.SIMPLIFIED_BANK_ONBOARDING_PLAID_DATA);
     const [plaidLinkToken] = useOnyx(ONYXKEYS.RAM_ONLY_SIMPLIFIED_BANK_ONBOARDING_PLAID_LINK_TOKEN);
     const accountSelector = useOnboardingRequest(plaidAccountSelectorRead);
-    const {submit, isPending, errorMessage} = useSubPageSubmit({request: connectWithPlaidRequest});
     const loginRead = useReadOnOpen(plaidLoginRead);
 
     const plaidBankAccounts = plaidData?.bankAccounts ?? [];
@@ -67,31 +65,26 @@ function PlaidBankPage() {
     }
 
     return (
-        <FormProvider
-            formID={formID}
-            onSubmit={() => submit({plaidAccountID})}
-            submitButtonText={translate('common.next')}
-            style={styles.flexGrow1}
-            submitButtonStyles={styles.mh5}
+        <FormSubPage
+            title={translate('bankAccount.chooseAnAccount')}
+            inputIDs={[]}
+            request={connectWithPlaidRequest}
+            getDraftUpdate={() => ({plaidAccountID})}
             isSubmitDisabled={!plaidAccountID}
-            isLoading={isPending}
             shouldHideFixErrorsAlert
-            footerContent={
-                <View style={styles.mh5}>
-                    <RequestErrorMessage message={errorMessage} />
-                </View>
-            }
-            shouldRenderFooterAboveSubmit
-            sentryLabel={CONST.SENTRY_LABEL.BANK_ONBOARDING_LAB.SUBMIT_STEP}
         >
-            <Text style={[styles.mh5, styles.mb3, styles.textHeadlineLineHeightXXL]}>{translate('bankAccount.chooseAnAccount')}</Text>
-            <Text style={[styles.mh5, styles.mb6, styles.textSupporting]}>{translate('bankAccount.plaidBodyCopy')}</Text>
-            <RadioButtons
-                items={plaidBankAccounts.map((bankAccount) => ({value: bankAccount.plaidAccountID, label: `${bankAccount.bankName} ${bankAccount.mask}`}))}
-                defaultCheckedValue={plaidAccountID}
-                onSelect={pickAccount}
-            />
-        </FormProvider>
+            <Text style={[styles.mt3, styles.mb6, styles.textSupporting]}>{translate('bankAccount.plaidBodyCopy')}</Text>
+            <View style={styles.mhn5}>
+                <RadioButtons
+                    items={plaidBankAccounts.map((bankAccount) => ({
+                        value: bankAccount.plaidAccountID,
+                        label: `${bankAccount.bankName} ${bankAccount.mask}`,
+                    }))}
+                    defaultCheckedValue={plaidAccountID}
+                    onSelect={pickAccount}
+                />
+            </View>
+        </FormSubPage>
     );
 }
 

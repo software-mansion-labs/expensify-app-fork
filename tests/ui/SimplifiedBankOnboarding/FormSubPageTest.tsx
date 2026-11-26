@@ -8,7 +8,7 @@ import TextInput from '@components/TextInput';
 import Navigation from '@libs/Navigation/Navigation';
 
 import INPUT_IDS from '@pages/SimplifiedBankOnboarding/contract/form';
-import type {OnboardingDraft} from '@pages/SimplifiedBankOnboarding/contract/form';
+import type {InputID, OnboardingDraft} from '@pages/SimplifiedBankOnboarding/contract/form';
 import SBO_CONST from '@pages/SimplifiedBankOnboarding/contract/SBO_CONST';
 import {saveFormDraft} from '@pages/SimplifiedBankOnboarding/core/draft/draft';
 import {FlowStepPositionContext, OnboardingFlowActionsContext, OnboardingFlowStateContext} from '@pages/SimplifiedBankOnboarding/core/flow/flowContext';
@@ -102,10 +102,11 @@ function validateCompany(values: OnboardingDraft): SubPageFormErrors {
 
 type CompanyPageProps = {
     isSubmitDisabled?: boolean;
+    optionalInputIDs?: InputID[];
     formRef?: RefObject<FormRef | null>;
 };
 
-async function renderCompanyPage({isSubmitDisabled, formRef}: CompanyPageProps = {}) {
+async function renderCompanyPage({isSubmitDisabled, optionalInputIDs, formRef}: CompanyPageProps = {}) {
     render(
         <OnyxListItemProvider>
             <NavigationContainer>
@@ -120,6 +121,7 @@ async function renderCompanyPage({isSubmitDisabled, formRef}: CompanyPageProps =
                                     ref={formRef}
                                     title="Company details"
                                     inputIDs={[INPUT_IDS.COMPANY_NAME, INPUT_IDS.COMPANY_TAX_ID]}
+                                    optionalInputIDs={optionalInputIDs}
                                     validate={validateCompany}
                                     isSubmitDisabled={isSubmitDisabled}
                                 >
@@ -188,6 +190,20 @@ describe('FormSubPage', () => {
         // Then the answers are in the draft and the step ends, because the page has no request and is the only page
         const draft = await getOnyxValue(ONYXKEYS.FORMS.SIMPLIFIED_BANK_ONBOARDING_FORM_DRAFT);
         expect(draft?.companyName).toBe('Acme');
+        expect(Navigation.navigate).toHaveBeenCalledWith(getFlowRoute(TARGET, {step: PAGE_NAMES.BENEFICIAL_OWNERS}));
+    });
+
+    it('moves on with an optional input left empty', async () => {
+        // Given a page whose tax ID is optional, like an optional bank input that the server describes
+        await renderCompanyPage({optionalInputIDs: [INPUT_IDS.COMPANY_TAX_ID]});
+        fireEvent.changeText(screen.getByLabelText('Company name'), 'Acme');
+        await waitForBatchedUpdatesWithAct();
+
+        // When the user submits without a tax ID
+        await pressNext();
+
+        // Then no input shows the required message and the step ends
+        expect(screen.queryByText('common.error.fieldRequired')).not.toBeOnTheScreen();
         expect(Navigation.navigate).toHaveBeenCalledWith(getFlowRoute(TARGET, {step: PAGE_NAMES.BENEFICIAL_OWNERS}));
     });
 
