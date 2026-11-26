@@ -1,7 +1,6 @@
 /**
- * The one loader of the onboarding pages. The flow shows it for the one render before it replaces a missing, unknown or
- * skipped step, and a step or page shows it while the data it renders is not there yet. The header of the step stays
- * above it, so Back still leaves the page.
+ * The one loader of the onboarding pages. A step or page shows it while the data it renders is not there yet. The
+ * header of the step stays above it, so Back still leaves the page.
  */
 import ActivityIndicator from '@components/ActivityIndicator';
 
