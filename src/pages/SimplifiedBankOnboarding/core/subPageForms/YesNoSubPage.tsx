@@ -1,12 +1,13 @@
 /**
  * The block of a yes or no question. It wraps the shared YesNoStep with the form of the flow, saves the answer with the
- * values that come with it, sends the request for the answers that need it, and moves to the page of the answer.
+ * values that come with it, sends the request for the answers that end the step, and moves to the page of the answer.
  */
 import YesNoStep from '@components/SubStepForms/YesNoStep';
 
 import type {BooleanInputID, OnboardingDraft} from '@pages/SimplifiedBankOnboarding/contract/form';
 import {useOnboardingFlow} from '@pages/SimplifiedBankOnboarding/core/flow/flowContext';
 import type {OnboardingRequest} from '@pages/SimplifiedBankOnboarding/core/requests/types';
+import {NEXT_STEP} from '@pages/SimplifiedBankOnboarding/core/step/readSubPages';
 import type {PageTarget, SubPageElementProps} from '@pages/SimplifiedBankOnboarding/core/step/readSubPages';
 
 import React from 'react';
@@ -28,20 +29,17 @@ type YesNoSubPageProps = SubPageElementProps & {
     /** Values saved to the draft together with the answer (for example the owner list without the user) */
     getDraftUpdate?: (answer: boolean) => OnboardingDraft;
 
-    /** Sent before moving on, for the answers where `shouldSend(answer)` is true (default: every answer) */
+    /** Sent before the step ends, for the answers whose `getNext` or `next` is NEXT_STEP */
     request?: OnboardingRequest;
-    shouldSend?: (answer: boolean) => boolean;
 };
 
-function YesNoSubPage({inputID, title, description, defaultValue, getNext, getDraftUpdate, request, shouldSend, next}: YesNoSubPageProps) {
+function YesNoSubPage({inputID, title, description, defaultValue, getNext, getDraftUpdate, request, next}: YesNoSubPageProps) {
     const {formID} = useOnboardingFlow();
-    const submitWithRequest = useSubPageSubmit({request});
-    const submitWithoutRequest = useSubPageSubmit({});
+    const {submit, isPending, errorMessage} = useSubPageSubmit({request});
 
     const submitAnswer = (answer: boolean) => {
-        const shouldSendRequest = !!request && (shouldSend?.(answer) ?? true);
-        const {submit} = shouldSendRequest ? submitWithRequest : submitWithoutRequest;
-        submit({...(inputID ? {[inputID]: answer} : {}), ...getDraftUpdate?.(answer)}, getNext?.(answer) ?? next);
+        const target = getNext?.(answer) ?? next;
+        submit({...(inputID ? {[inputID]: answer} : {}), ...getDraftUpdate?.(answer)}, target, {shouldSend: target === NEXT_STEP});
     };
 
     return (
@@ -52,9 +50,9 @@ function YesNoSubPage({inputID, title, description, defaultValue, getNext, getDr
             onSelectedValue={submitAnswer}
             formID={formID}
             enabledWhenOffline={!request}
-            isLoading={submitWithRequest.isPending}
+            isLoading={isPending}
         >
-            <RequestErrorMessage message={submitWithRequest.errorMessage} />
+            <RequestErrorMessage message={errorMessage} />
         </YesNoStep>
     );
 }

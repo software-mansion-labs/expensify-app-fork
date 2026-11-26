@@ -73,7 +73,6 @@ function BeneficialOwnersStep() {
                 getDraftUpdate={getAnyoneElseDraftUpdate}
                 getNext={getAnyoneElseNext}
                 request={globalOwnersRequest}
-                shouldSend={(hasOthers) => !hasOthers && !isUserOwner}
             />
             <YesNoSubPage
                 name={PAGES.ARE_THERE_MORE_BENEFICIAL_OWNERS}

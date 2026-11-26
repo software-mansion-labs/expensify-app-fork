@@ -1,7 +1,7 @@
 /**
  * The submit path of every block, and of a custom page with its own form. `submit` saves the values to the draft, then
- * outside edit mode sends the request and moves on after a success. In edit mode it returns to the confirmation and
- * sends nothing.
+ * outside edit mode sends the request and moves on after a success. In edit mode, or with `shouldSend: false`, it sends
+ * nothing and moves on after the save.
  */
 import type {OnboardingDraft} from '@pages/SimplifiedBankOnboarding/contract/form';
 import {useOnboardingFlow} from '@pages/SimplifiedBankOnboarding/core/flow/flowContext';
@@ -12,8 +12,13 @@ import type {PageTarget} from '@pages/SimplifiedBankOnboarding/core/step/readSub
 
 const SUCCEEDED: RequestOutcome = {status: 'succeeded'};
 
+type SubmitOptions = {
+    /** False saves and moves on without the request (default: true) */
+    shouldSend?: boolean;
+};
+
 function useSubPageSubmit({request}: {request?: OnboardingRequest}): {
-    submit: (draftValues: OnboardingDraft, next?: PageTarget) => void;
+    submit: (draftValues: OnboardingDraft, next?: PageTarget, options?: SubmitOptions) => void;
     isPending: boolean;
     errorMessage: string | undefined;
 } {
@@ -21,9 +26,9 @@ function useSubPageSubmit({request}: {request?: OnboardingRequest}): {
     const {isEditing, goNextAfter} = usePageNavigation();
     const {send, isPending, errorMessage} = useOnboardingRequest(request);
 
-    function submit(draftValues: OnboardingDraft, next?: PageTarget) {
+    function submit(draftValues: OnboardingDraft, next?: PageTarget, {shouldSend = true}: SubmitOptions = {}) {
         const saved = saveDraft(draftValues);
-        if (isEditing || !request) {
+        if (isEditing || !request || !shouldSend) {
             goNextAfter(
                 saved.then(() => SUCCEEDED),
                 next,

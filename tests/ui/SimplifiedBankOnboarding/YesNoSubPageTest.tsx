@@ -54,12 +54,11 @@ type RenderedQuestion = {
 
 type QuestionOptions = {
     request?: OnboardingRequest;
-    shouldSend?: (answer: boolean) => boolean;
     isEditing?: boolean;
     isAnswerSaved?: boolean;
 };
 
-async function renderQuestion({request, shouldSend, isEditing = false, isAnswerSaved = true}: QuestionOptions = {}): Promise<RenderedQuestion> {
+async function renderQuestion({request, isEditing = false, isAnswerSaved = true}: QuestionOptions = {}): Promise<RenderedQuestion> {
     const saveDraft = jest.fn<Promise<void>, [OnboardingDraft]>(() => Promise.resolve());
     let navigatedPage: Promise<NavigatedPage> = Promise.reject(new Error('The page did not move'));
     navigatedPage.catch(() => {});
@@ -95,7 +94,6 @@ async function renderQuestion({request, shouldSend, isEditing = false, isAnswerS
                                     getNext={(answer) => (answer ? 'legal-name' : NEXT_STEP)}
                                     getDraftUpdate={(answer) => (answer ? {} : {usdOwners: []})}
                                     request={request}
-                                    shouldSend={shouldSend}
                                 />
                             </PageNavigationActionsContext.Provider>
                         </PageNavigationStateContext.Provider>
@@ -163,9 +161,9 @@ describe('YesNoSubPage', () => {
         await expect(getNavigatedPage()).resolves.toEqual({outcome: {status: 'succeeded'}, target: NEXT_STEP});
     });
 
-    it('sends the request only for the answers that need it', async () => {
-        // Given a question whose request is sent only for "No"
-        const {getNavigatedPage} = await renderQuestion({request: OWNERS_REQUEST, shouldSend: (value) => !value});
+    it('sends no request for an answer that stays in the step', async () => {
+        // Given a question with a request, whose "Yes" leads to another page of the step
+        const {getNavigatedPage} = await renderQuestion({request: OWNERS_REQUEST});
 
         // When the user answers "Yes"
         await chooseAnswer('common.yes');
@@ -175,9 +173,9 @@ describe('YesNoSubPage', () => {
         expect(write).not.toHaveBeenCalled();
     });
 
-    it('sends the request before it moves on for an answer that needs it', async () => {
-        // Given a question whose request is sent only for "No"
-        const {getNavigatedPage} = await renderQuestion({request: OWNERS_REQUEST, shouldSend: (value) => !value});
+    it('sends the request before the step ends for an answer that ends it', async () => {
+        // Given a question with a request, whose "No" ends the step
+        const {getNavigatedPage} = await renderQuestion({request: OWNERS_REQUEST});
 
         // When the user answers "No"
         await chooseAnswer('common.no');

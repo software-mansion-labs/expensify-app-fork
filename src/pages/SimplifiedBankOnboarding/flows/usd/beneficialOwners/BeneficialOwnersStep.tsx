@@ -101,7 +101,6 @@ function BeneficialOwnersStep() {
                 getDraftUpdate={(hasOthers) => (hasOthers && loop.canAddMore ? loop.getStartUpdate() : {})}
                 getNext={getAnyoneElseNext}
                 request={usdOwnersRequest}
-                shouldSend={(hasOthers) => !hasOthers && !isUserOwner}
             />
             <YesNoSubPage
                 name={PAGES.ARE_THERE_MORE_UBOS}
