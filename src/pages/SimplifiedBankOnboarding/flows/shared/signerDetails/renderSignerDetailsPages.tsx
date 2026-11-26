@@ -3,6 +3,8 @@
  * job title page and the confirmation that sends the director request. The result is an array of sub page elements, so
  * a step spreads it among its own children and keeps one list of pages.
  */
+import type {LocalizedTranslate} from '@components/LocaleContextProvider';
+
 import {isValidLegalName} from '@libs/ValidationUtils';
 
 import {SIGNER_INPUT_IDS} from '@pages/SimplifiedBankOnboarding/contract/form';
@@ -39,13 +41,11 @@ type SignerDetailsPagesOptions = {
     firstPageBack?: PageID;
 };
 
-type Translate = (path: TranslationPaths) => string;
-
 function validateLegalName(name: string): TranslationPaths | undefined {
     return isValidLegalName(name) ? undefined : 'bankAccount.error.fullName';
 }
 
-function renderSignerDetailsPages(translate: Translate, {askForName, values, request, next, firstPageBack}: SignerDetailsPagesOptions): React.ReactElement[] {
+function renderSignerDetailsPages(translate: LocalizedTranslate, {askForName, values, request, next, firstPageBack}: SignerDetailsPagesOptions): React.ReactElement[] {
     const nameRow: ConfirmationRow = {label: translate('signerInfoStep.legalName'), value: values.signerFullName, page: PAGES.NAME};
     const jobTitleRow: ConfirmationRow = {label: translate('signerInfoStep.jobTitle'), value: values.signerJobTitle, page: PAGES.JOB_TITLE};
 
