@@ -28,15 +28,14 @@ import ONYXKEYS from '@src/ONYXKEYS';
 
 import type {OnyxEntry} from 'react-native-onyx';
 
-import {useRoute} from '@react-navigation/native';
-import React, {useEffect, useLayoutEffect, useRef, useState} from 'react';
+import React, {useEffect, useRef, useState} from 'react';
 import {View} from 'react-native';
 
 import type {FlowStepPosition, FlowTarget, OnboardingFlowActions, OnboardingFlowState} from './flowContext';
 
 import {FlowStepPositionContext, getFlowBankAccount, OnboardingFlowActionsContext, OnboardingFlowStateContext} from './flowContext';
 import {getFlowFormID} from './flowData';
-import {getFlowRoute, leaveOnboarding, parseFlowPosition, writeShownStep} from './flowRoutes';
+import {getFlowRoute, leaveOnboarding, parseFlowPosition} from './flowRoutes';
 import PageLoadingIndicator from './PageLoadingIndicator';
 import {getAdjacentSteps, getStepCounter, readFlowSteps, resolveFlowStep} from './readFlowSteps';
 
@@ -144,12 +143,11 @@ function useAccountGate(target: FlowTarget): AccountGateView {
  * - Account gate (BC-25), USD and NonUSD only, see useAccountGate.
  * - It renders the FlowStep named in the URL. A skipped step opens the next step that is not skipped. A missing or
  *   unknown step opens the first step that is neither skipped nor complete. Such a step is shown in the same
- *   render, and the URL is corrected in place, so the route and the screen under it stay as they are.
+ *   render, and its step shell corrects the URL in place, so the route and the screen under it stay as they are.
  * - It gives the step shell the steps around the shown one, the counter and the parsed position.
  */
 function OnboardingFlow({target, params, children}: OnboardingFlowProps) {
     const styles = useThemeStyles();
-    const route = useRoute();
     const [achData] = useOnyx(ONYXKEYS.SIMPLIFIED_BANK_ONBOARDING_ACCOUNT, {selector: (account) => account?.achData});
     const gateView = useAccountGate(target);
 
@@ -158,16 +156,6 @@ function OnboardingFlow({target, params, children}: OnboardingFlowProps) {
     const urlPosition = parseFlowPosition(target, params);
     const shownStep = resolveFlowStep(steps, urlPosition.step);
     const isURLStepShown = shownStep?.id === urlPosition.step;
-    const stepToWrite = gateView === 'flow' && shownStep && !isURLStepShown ? shownStep.id : undefined;
-
-    // A layout effect, because it has to run before the effect of the step shell that writes the sub page of the shown
-    // step in the same commit. In the other order this write would drop that sub page.
-    useLayoutEffect(() => {
-        if (!stepToWrite) {
-            return;
-        }
-        writeShownStep(route.key, stepToWrite);
-    }, [stepToWrite, route.key]);
 
     if (gateView === 'loading') {
         return <FullScreenLoadingIndicator shouldUseGoBackButton />;
@@ -214,6 +202,7 @@ function OnboardingFlow({target, params, children}: OnboardingFlowProps) {
         page: isURLStepShown ? urlPosition.page : undefined,
         isEditing: isURLStepShown && !!urlPosition.isEditing,
         editReturnPage: isURLStepShown ? urlPosition.editReturnPage : undefined,
+        stepToWrite: isURLStepShown ? undefined : shownStep.id,
     };
     return (
         <OnboardingFlowStateContext.Provider value={flowState}>

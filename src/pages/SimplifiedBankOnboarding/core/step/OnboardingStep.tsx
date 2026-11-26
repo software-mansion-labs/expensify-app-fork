@@ -3,9 +3,9 @@
  * switching between sub pages by the URL.
  *
  * What it hides: the start page rule ("arrived by Next" from the navigation state, `startAt`, `isAnswered`), the URL
- * write of the resolved page without a loader frame, Next and Back between pages and steps, history-aware Back to the
- * previous step, edit mode and its return to the page that opened it, the clearing of the account error mirror on Back,
- * the progress save and the screen guard.
+ * write of the resolved step and page in one write without a loader frame, Next and Back between pages and steps,
+ * history-aware Back to the previous step, edit mode and its return to the page that opened it, the clearing of the
+ * account error mirror on Back, the progress save and the screen guard.
  */
 import InteractiveStepWrapper from '@components/InteractiveStepWrapper';
 
@@ -16,7 +16,7 @@ import Navigation from '@libs/Navigation/Navigation';
 import type {PageID} from '@pages/SimplifiedBankOnboarding/contract/ids';
 import type {OnboardingAccount} from '@pages/SimplifiedBankOnboarding/contract/onyx';
 import {useFlowStepPosition, useOnboardingFlow} from '@pages/SimplifiedBankOnboarding/core/flow/flowContext';
-import {findLatestRouteOfStep, getFlowRoute, getStepBelow} from '@pages/SimplifiedBankOnboarding/core/flow/flowRoutes';
+import {findLatestRouteOfStep, getFlowRoute, getStepBelow, writeShownPosition} from '@pages/SimplifiedBankOnboarding/core/flow/flowRoutes';
 import useScreenGuard from '@pages/SimplifiedBankOnboarding/core/flow/useScreenGuard';
 import {clearAccountErrorMirror} from '@pages/SimplifiedBankOnboarding/core/requests/runRequest';
 import type {OnboardingRequest, RequestOutcome} from '@pages/SimplifiedBankOnboarding/core/requests/types';
@@ -73,7 +73,7 @@ function hasAccountErrors(account: OnyxEntry<OnboardingAccount>): boolean {
 
 function OnboardingStep({title, wrapperID, children, startAt, saveAfterEachPage, onBackFromStart, shouldEnableMaxHeight, shouldEnablePickerAvoiding}: OnboardingStepProps) {
     const {target, returnToEntry} = useOnboardingFlow();
-    const {step, previousStep, nextStep, counterIndex, counterNames, page: urlPage, isEditing: isEditingInURL, editReturnPage} = useFlowStepPosition();
+    const {step, previousStep, nextStep, counterIndex, counterNames, page: urlPage, isEditing: isEditingInURL, editReturnPage, stepToWrite} = useFlowStepPosition();
     const route = useRoute();
     const navigation = useNavigation();
     const stepBelow = useNavigationState((state) => getStepBelow(state, route.key, target));
@@ -88,11 +88,11 @@ function OnboardingStep({title, wrapperID, children, startAt, saveAfterEachPage,
     const navigateAfterOutcome = useScreenGuard(`${step}/${currentPage?.name ?? ''}/${isEditing ? 'edit' : ''}`);
 
     useEffect(() => {
-        if (!pageToWrite) {
+        if (!stepToWrite && !pageToWrite) {
             return;
         }
-        Navigation.setParams({subPage: pageToWrite}, route.key);
-    }, [pageToWrite, route.key]);
+        writeShownPosition(route.key, {step: stepToWrite, page: pageToWrite});
+    }, [stepToWrite, pageToWrite, route.key]);
 
     function openNextStep() {
         if (!nextStep) {

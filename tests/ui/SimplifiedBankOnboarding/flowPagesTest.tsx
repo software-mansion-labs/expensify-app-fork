@@ -114,10 +114,11 @@ function expectStep(wrapperID: string, title: string, counter: string) {
     expect(screen.getByText(`counter ${counter}`)).toBeOnTheScreen();
 }
 
-/** The flow shows `step` on the route of another URL step and writes it into that route */
+/** The flow shows `step` on the route of another URL step, and the step shell writes it with its start page in one write */
 function expectShownInPlace(step: StepID, wrapperID: string) {
     expect(screen.getByText(`screen ${wrapperID}`)).toBeOnTheScreen();
-    expect(Navigation.setParams).toHaveBeenCalledWith({page: step, subPage: undefined, action: undefined}, 'current-route');
+    expect(Navigation.setParams).toHaveBeenCalledTimes(1);
+    expect(Navigation.setParams).toHaveBeenCalledWith(expect.objectContaining({page: step, action: undefined, returnTo: undefined}), 'current-route');
     expect(Navigation.navigate).not.toHaveBeenCalled();
 }
 

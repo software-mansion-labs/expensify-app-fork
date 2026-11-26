@@ -99,6 +99,7 @@ type RenderOptions = {
     nextStep?: StepID;
     answered?: PageID[];
     startAt?: PageID;
+    stepToWrite?: StepID;
 };
 
 const flowActions: OnboardingFlowActions = {
@@ -123,9 +124,22 @@ function setNavigationStack(below: Array<ReturnType<typeof createRoute>>) {
 
 function buildPersonalInfoStep(options: RenderOptions = {}) {
     // A spread, not parameter defaults, so a test can pass `undefined` for the first or the last step
-    const {page, isEditing = false, editReturnPage, previousStep, nextStep, answered = [], startAt}: RenderOptions = {previousStep: 'bank-account', nextStep: 'business-info', ...options};
+    const {
+        page,
+        isEditing = false,
+        editReturnPage,
+        previousStep,
+        nextStep,
+        answered = [],
+        startAt,
+        stepToWrite,
+    }: RenderOptions = {
+        previousStep: 'bank-account',
+        nextStep: 'business-info',
+        ...options,
+    };
     const flowState: OnboardingFlowState = {target: TARGET, bankAccount: {policyID: POLICY_ID, bankAccountID: 0}, formID: ONYXKEYS.FORMS.SIMPLIFIED_BANK_ONBOARDING_FORM};
-    const position: FlowStepPosition = {step: 'personal-info', previousStep, nextStep, counterIndex: 1, counterNames: ['1', '2', '3'], page, isEditing, editReturnPage};
+    const position: FlowStepPosition = {step: 'personal-info', previousStep, nextStep, counterIndex: 1, counterNames: ['1', '2', '3'], page, isEditing, editReturnPage, stepToWrite};
 
     return (
         <OnboardingFlowStateContext.Provider value={flowState}>
@@ -246,6 +260,18 @@ describe('OnboardingStep', () => {
             // Then the start rule picks the page and writes it over the unknown one
             expect(screen.getByText('Confirmation page')).toBeOnTheScreen();
             expect(Navigation.setParams).toHaveBeenCalledWith({subPage: 'confirmation'}, ROUTE_KEY);
+        });
+
+        it('writes the step and its start page in one write when the URL named another step', async () => {
+            // Given a flow that shows this step for a URL that named no step, an unknown one or a skipped one
+            // When the step opens
+            await renderPersonalInfoStep({stepToWrite: 'personal-info', answered: ['full-name']});
+
+            // Then one write puts the step and the start page into the URL and drops the edit mode of the other step,
+            // so no second write can overwrite the first one
+            expect(screen.getByText('SSN page')).toBeOnTheScreen();
+            expect(Navigation.setParams).toHaveBeenCalledTimes(1);
+            expect(Navigation.setParams).toHaveBeenCalledWith({page: 'personal-info', subPage: 'ssn', action: undefined, returnTo: undefined}, ROUTE_KEY);
         });
 
         it('does not write the URL when it already names a rendered page', async () => {

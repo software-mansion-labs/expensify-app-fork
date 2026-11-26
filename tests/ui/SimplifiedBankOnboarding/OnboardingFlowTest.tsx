@@ -80,7 +80,7 @@ const ACCOUNT_OF_WORKSPACE: OnboardingAccount = {
 
 /** Every test step shows what the flow gives it, so a test sees which step renders and at which position */
 function ShownStep() {
-    const {step, previousStep, nextStep, page, isEditing, editReturnPage} = useFlowStepPosition();
+    const {step, previousStep, nextStep, page, isEditing, editReturnPage, stepToWrite} = useFlowStepPosition();
     const [mountedStep] = useState(step);
     return (
         <>
@@ -88,6 +88,7 @@ function ShownStep() {
             <Text>{`Mounted at ${mountedStep}`}</Text>
             <Text>{`Page ${page ?? 'none'}, editing ${String(isEditing)}, returning to ${editReturnPage ?? 'none'}`}</Text>
             <Text>{`Previous ${previousStep ?? 'none'}, next ${nextStep ?? 'none'}`}</Text>
+            <Text>{`Step to write ${stepToWrite ?? 'none'}`}</Text>
         </>
     );
 }
@@ -137,8 +138,9 @@ async function renderFlow(options?: FlowOptions) {
     return view;
 }
 
+/** The flow writes nothing itself. It hands the step to the step shell, which writes it with its start page in one write. */
 function expectURLCorrectedTo(step: StepID) {
-    expect(Navigation.setParams).toHaveBeenCalledWith({page: step, subPage: undefined, action: undefined, returnTo: undefined}, 'flow-route');
+    expect(screen.getByText(`Step to write ${step}`)).toBeOnTheScreen();
 }
 
 async function setAccount(account: OnboardingAccount) {
@@ -300,8 +302,9 @@ describe('OnboardingFlow', () => {
             // When the URL names a step, a sub page, the edit mode and the page that opened it
             await renderFlow({urlStep: 'bank-account', urlPage: 'manual', isEditing: true, editReturnPage: 'plaid'});
 
-            // Then the step gets all of them, and the flow writes nothing to the URL
+            // Then the step gets all of them, and nothing is written to the URL
             expect(screen.getByText('Page manual, editing true, returning to plaid')).toBeOnTheScreen();
+            expect(screen.getByText('Step to write none')).toBeOnTheScreen();
             expect(Navigation.setParams).not.toHaveBeenCalled();
         });
 

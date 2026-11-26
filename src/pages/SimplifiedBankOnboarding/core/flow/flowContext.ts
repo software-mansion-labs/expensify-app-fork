@@ -67,6 +67,12 @@ type FlowStepPosition = {
 
     /** The page that opened edit mode, which Next and Back of the edited page return to */
     editReturnPage?: PageID;
+
+    /**
+     * This step, when the URL names no step, an unknown one or a skipped one. The step shell writes it into the URL in
+     * the same write as its start page.
+     */
+    stepToWrite?: StepID;
 };
 
 const OnboardingFlowStateContext = createContext<OnboardingFlowState | undefined>(undefined);
