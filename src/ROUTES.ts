@@ -2722,27 +2722,12 @@ const ROUTES = {
     },
     SETTINGS_BANK_ONBOARDING_LAB_ENTER_SIGNER_INFO: {
         route: 'settings/bank-onboarding-lab/enter-director-info/:subPage?/:action?',
-        getRoute: ({
-            policyID,
-            bankAccountID,
-            isCompleted,
-            subPage,
-            action,
-            returnTo,
-        }: {
-            policyID?: string;
-            bankAccountID?: number;
-            isCompleted?: boolean;
-            subPage?: string;
-            action?: 'edit';
-            returnTo?: string;
-        }) => {
+        getRoute: ({policyID, bankAccountID, subPage, action, returnTo}: {policyID?: string; bankAccountID?: number; subPage?: string; action?: 'edit'; returnTo?: string}) => {
             const subPagePart = subPage ? `/${subPage}` : '';
             const actionPart = action ? `/${action}` : '';
             return getUrlWithParams(`settings/bank-onboarding-lab/enter-director-info${subPagePart}${actionPart}`, {
                 policyID,
                 bankAccountID,
-                isCompleted: isCompleted ? 'true' : undefined,
                 returnTo,
             });
         },

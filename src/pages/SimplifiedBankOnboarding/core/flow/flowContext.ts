@@ -18,7 +18,7 @@ import {createContext, useContext} from 'react';
 /** Which flow runs and for which bank account. Every route the flow builds keeps these values. */
 type FlowTarget =
     | {kind: 'usd' | 'nonUSD'; policyID: string | undefined; backTo: Route | undefined}
-    | {kind: 'enterSignerInfo'; policyID: string | undefined; bankAccountID: number | undefined; isCompleted: boolean};
+    | {kind: 'enterSignerInfo'; policyID: string | undefined; bankAccountID: number | undefined};
 
 type OnboardingFlowControls = {
     target: FlowTarget;

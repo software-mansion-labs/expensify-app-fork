@@ -25,7 +25,6 @@ function EnterSignerInfoPage({route}: EnterSignerInfoPageProps) {
                 kind: 'enterSignerInfo',
                 policyID: route.params?.policyID,
                 bankAccountID: bankAccountIDParam ? Number(bankAccountIDParam) : undefined,
-                isCompleted: route.params?.isCompleted === 'true',
             }}
             params={route.params}
         >
@@ -34,7 +33,7 @@ function EnterSignerInfoPage({route}: EnterSignerInfoPageProps) {
                 isComplete={false}
                 counter="none"
             >
-                <InvitedSignerStep />
+                <InvitedSignerStep isCompleted={route.params?.isCompleted === 'true'} />
             </FlowStep>
         </OnboardingFlow>
     );

@@ -2,9 +2,9 @@
  * The routes of the flows and the reading of flow routes. A position (step, sub page, edit flag) maps to the route of
  * its flow and back, so no other module knows the three route shapes, their params or the screen names.
  *
- * What it hides: the `page`, `subPage`, `action=edit` and `returnTo` params, `policyID`, `backTo`, `bankAccountID` and
- * `isCompleted`, the one step of the invited director (its route has no step param), and the search of flow routes in
- * a navigation state.
+ * What it hides: the `page`, `subPage`, `action=edit` and `returnTo` params, `policyID`, `backTo` and `bankAccountID`,
+ * the one step of the invited director (its route has no step param), and the search of flow routes in a navigation
+ * state.
  */
 import Navigation from '@libs/Navigation/Navigation';
 
@@ -48,7 +48,6 @@ function getFlowRoute(target: FlowTarget, position: FlowPosition = {}): Route {
             return ROUTES.SETTINGS_BANK_ONBOARDING_LAB_ENTER_SIGNER_INFO.getRoute({
                 policyID: target.policyID,
                 bankAccountID: target.bankAccountID,
-                isCompleted: target.isCompleted,
                 subPage: position.page,
                 action,
                 returnTo,

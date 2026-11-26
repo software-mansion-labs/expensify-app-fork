@@ -37,7 +37,7 @@ function HangTightPage({currency}: HangTightPageProps) {
     const canContinue = areSignersKnown(corpay, currency);
 
     const openDirectorForm = () => {
-        openFlow({kind: 'enterSignerInfo', policyID: target.policyID, bankAccountID: bankAccount.bankAccountID, isCompleted: false});
+        openFlow({kind: 'enterSignerInfo', policyID: target.policyID, bankAccountID: bankAccount.bankAccountID});
     };
 
     const sendReminder = () => {

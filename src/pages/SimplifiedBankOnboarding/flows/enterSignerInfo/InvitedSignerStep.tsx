@@ -19,13 +19,16 @@ import {View} from 'react-native';
 import getInvitedSignerAnswers from './invitedSignerAnswers';
 import invitedSignerDetailsRequest from './invitedSignerDetailsRequest';
 
-function InvitedSignerStep() {
+type InvitedSignerStepProps = {
+    /** The link says that the form was already filled in */
+    isCompleted: boolean;
+};
+
+function InvitedSignerStep({isCompleted}: InvitedSignerStepProps) {
     const {translate} = useLocalize();
     const styles = useThemeStyles();
-    const {target, leaveFlow} = useOnboardingFlow();
+    const {leaveFlow} = useOnboardingFlow();
     const answers = getInvitedSignerAnswers(useFlowData());
-
-    const isCompleted = target.kind === 'enterSignerInfo' && target.isCompleted;
 
     return (
         <OnboardingStep
