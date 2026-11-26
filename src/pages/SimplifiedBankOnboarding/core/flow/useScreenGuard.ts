@@ -17,20 +17,15 @@ import {useEffect, useRef} from 'react';
  */
 function useScreenGuard(positionKey: string): (outcome: Promise<RequestOutcome | void>, navigate: () => void) => void {
     const isFocused = useIsFocused();
-    const latestScreenRef = useRef({positionKey, isFocused});
-    const isMountedRef = useRef(false);
+    const latestScreenRef = useRef<{positionKey: string; isFocused: boolean} | undefined>(undefined);
     const isWaitingRef = useRef(false);
 
     useEffect(() => {
         latestScreenRef.current = {positionKey, isFocused};
-    }, [positionKey, isFocused]);
-
-    useEffect(() => {
-        isMountedRef.current = true;
         return () => {
-            isMountedRef.current = false;
+            latestScreenRef.current = undefined;
         };
-    }, []);
+    }, [positionKey, isFocused]);
 
     function navigateAfter(outcome: Promise<RequestOutcome | void>, navigate: () => void) {
         if (isWaitingRef.current) {
@@ -42,7 +37,7 @@ function useScreenGuard(positionKey: string): (outcome: Promise<RequestOutcome |
         outcome
             .then((result) => {
                 const latestScreen = latestScreenRef.current;
-                if ((result && result.status !== 'succeeded') || !isMountedRef.current || !latestScreen.isFocused || latestScreen.positionKey !== startPositionKey) {
+                if ((result && result.status !== 'succeeded') || !latestScreen?.isFocused || latestScreen.positionKey !== startPositionKey) {
                     return;
                 }
                 navigate();
