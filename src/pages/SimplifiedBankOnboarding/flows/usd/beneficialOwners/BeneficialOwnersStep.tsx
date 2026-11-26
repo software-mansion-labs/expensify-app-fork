@@ -98,8 +98,8 @@ function BeneficialOwnersStep() {
                 title={translate('beneficialOwnerInfoStep.areThereMoreIndividualsWhoOwn25percent', companyName)}
                 description={description}
                 defaultValue={false}
-                getDraftUpdate={(hasMore) => (hasMore ? loop.getStartUpdate() : {})}
-                getNext={(hasMore) => (hasMore ? PAGES.LEGAL_NAME : PAGES.UBOS_LIST)}
+                getDraftUpdate={(hasMore) => (hasMore && loop.canAddMore ? loop.getStartUpdate() : {})}
+                getNext={(hasMore) => (hasMore && loop.canAddMore ? PAGES.LEGAL_NAME : PAGES.UBOS_LIST)}
             />
             <SubPage
                 name={PAGES.UBOS_LIST}

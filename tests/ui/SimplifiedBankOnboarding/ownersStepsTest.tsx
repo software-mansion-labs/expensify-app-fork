@@ -375,6 +375,23 @@ describe('owner steps', () => {
             expect(Navigation.navigate).toHaveBeenCalledWith(getUSDRoute(USD_PAGES.LEGAL_NAME));
         });
 
+        it('opens the list when there are more but no place is free', async () => {
+            // Given a user who owns 25% next to two other owners, reached "are there more" again through the browser history
+            await setUp({
+                ownsMoreThan25Percent: true,
+                hasOtherBeneficialOwners: true,
+                usdOwners: [ADA, ALAN],
+            });
+            await renderStep(USD_STEP, USD_PAGES.ARE_THERE_MORE_UBOS);
+
+            // When the user says more people own 25%
+            await answer('common.yes');
+
+            // Then no owner starts, because the confirmation could not add one, and the list opens
+            expect(saveDraft).toHaveBeenCalledWith({});
+            expect(Navigation.navigate).toHaveBeenCalledWith(getUSDRoute(USD_PAGES.UBOS_LIST));
+        });
+
         it('adds a new owner and asks for more while a place is free', async () => {
             // Given a new owner in the buffer next to one listed owner
             await setUp({
