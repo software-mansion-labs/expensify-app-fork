@@ -20,7 +20,8 @@ import type {OnyxFormValuesMapping} from '@src/ONYXKEYS';
 import React from 'react';
 import {View} from 'react-native';
 
-type FullNameStepProps<TFormID extends keyof OnyxFormValuesMapping> = SubPageProps &
+type FullNameStepProps<TFormID extends keyof OnyxFormValuesMapping> = Partial<SubPageProps> &
+    Pick<SubPageProps, 'isEditing'> &
     ForwardedFSClassProps & {
         formID: TFormID;
         formTitle: string;

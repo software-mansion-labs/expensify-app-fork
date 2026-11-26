@@ -119,7 +119,8 @@ type SummaryGroup = {
     rows: SummaryGroupRow[];
 };
 
-type ConfirmationStepProps = SubPageProps &
+type ConfirmationStepProps = Partial<SubPageProps> &
+    Pick<SubPageProps, 'onNext'> &
     ForwardedFSClassProps & {
         pageTitle: string;
 
@@ -263,7 +264,12 @@ function ConfirmationStep({
     return (
         <ScrollView
             style={styles.flex1}
-            contentContainerStyle={[styles.flexGrow1, shouldApplySafeAreaPaddingBottom && {paddingBottom: safeAreaInsetPaddingBottom + styles.pb5.paddingBottom}]}
+            contentContainerStyle={[
+                styles.flexGrow1,
+                shouldApplySafeAreaPaddingBottom && {
+                    paddingBottom: safeAreaInsetPaddingBottom + styles.pb5.paddingBottom,
+                },
+            ]}
         >
             <Text
                 style={[styles.textHeadlineLineHeightXXL, styles.ph5, styles.mb3]}

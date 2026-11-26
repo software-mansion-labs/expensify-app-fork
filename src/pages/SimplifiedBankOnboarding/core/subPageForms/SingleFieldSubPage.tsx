@@ -21,7 +21,6 @@ import React from 'react';
 
 import type {SubPageFormErrors} from './FormSubPage';
 
-import ignorePageIndexMove from './ignorePageIndexMove';
 import useSubPageSubmit from './useSubPageSubmit';
 
 type SingleFieldSubPageProps = SubPageElementProps & {
@@ -46,7 +45,7 @@ type SingleFieldSubPageProps = SubPageElementProps & {
 function SingleFieldSubPage({inputID, title, label, defaultValue, validate, inputMode, maxLength, placeholder, hint, isLocked = false, next}: SingleFieldSubPageProps) {
     const {translate} = useLocalize();
     const {formID} = useOnboardingFlow();
-    const {isEditing, goNext} = usePageNavigation();
+    const {isEditing} = usePageNavigation();
     const {submit} = useSubPageSubmit({});
 
     const validateField = (values: OnboardingDraft): SubPageFormErrors => {
@@ -61,8 +60,6 @@ function SingleFieldSubPage({inputID, title, label, defaultValue, validate, inpu
     return (
         <SingleFieldStep
             isEditing={isEditing}
-            onNext={() => goNext()}
-            onMove={ignorePageIndexMove}
             formID={formID}
             formTitle={title}
             formDisclaimer={hint}

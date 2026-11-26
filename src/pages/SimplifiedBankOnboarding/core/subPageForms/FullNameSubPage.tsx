@@ -11,7 +11,6 @@ import type {SubPageElementProps} from '@pages/SimplifiedBankOnboarding/core/ste
 
 import React from 'react';
 
-import ignorePageIndexMove from './ignorePageIndexMove';
 import useSubPageSubmit from './useSubPageSubmit';
 
 type FullNameSubPageProps = SubPageElementProps & {
@@ -24,18 +23,24 @@ type FullNameSubPageProps = SubPageElementProps & {
 
 function FullNameSubPage({firstNameInputID, lastNameInputID, title, subtitle, defaultValues, next}: FullNameSubPageProps) {
     const {formID} = useOnboardingFlow();
-    const {isEditing, goNext} = usePageNavigation();
+    const {isEditing} = usePageNavigation();
     const {submit} = useSubPageSubmit({});
 
     return (
         <FullNameStep
             isEditing={isEditing}
-            onNext={() => goNext()}
-            onMove={ignorePageIndexMove}
             formID={formID}
             formTitle={title}
             formSubtitle={subtitle}
-            onSubmit={(values: OnboardingDraft) => submit({[firstNameInputID]: values[firstNameInputID], [lastNameInputID]: values[lastNameInputID]}, next)}
+            onSubmit={(values: OnboardingDraft) =>
+                submit(
+                    {
+                        [firstNameInputID]: values[firstNameInputID],
+                        [lastNameInputID]: values[lastNameInputID],
+                    },
+                    next,
+                )
+            }
             stepFields={[]}
             firstNameInputID={firstNameInputID}
             lastNameInputID={lastNameInputID}

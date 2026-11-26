@@ -13,7 +13,6 @@ import ONYXKEYS from '@src/ONYXKEYS';
 
 import React from 'react';
 
-import ignorePageIndexMove from './ignorePageIndexMove';
 import useSubPageSubmit from './useSubPageSubmit';
 
 type DateOfBirthSubPageProps = SubPageElementProps & {
@@ -24,7 +23,7 @@ type DateOfBirthSubPageProps = SubPageElementProps & {
 
 function DateOfBirthSubPage({inputID, title, defaultValue, next}: DateOfBirthSubPageProps) {
     const {formID} = useOnboardingFlow();
-    const {isEditing, goNext} = usePageNavigation();
+    const {isEditing} = usePageNavigation();
     const {submit} = useSubPageSubmit({});
 
     if (formID !== ONYXKEYS.FORMS.SIMPLIFIED_BANK_ONBOARDING_FORM) {
@@ -34,8 +33,6 @@ function DateOfBirthSubPage({inputID, title, defaultValue, next}: DateOfBirthSub
     return (
         <DateOfBirthStep
             isEditing={isEditing}
-            onNext={() => goNext()}
-            onMove={ignorePageIndexMove}
             formID={formID}
             formTitle={title}
             onSubmit={(values: OnboardingDraft) => submit({[inputID]: values[inputID]}, next)}

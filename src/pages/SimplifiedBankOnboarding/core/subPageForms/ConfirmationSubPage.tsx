@@ -12,7 +12,6 @@ import type {SubPageElementProps} from '@pages/SimplifiedBankOnboarding/core/ste
 
 import React from 'react';
 
-import ignorePageIndexMove from './ignorePageIndexMove';
 import useSubPageSubmit from './useSubPageSubmit';
 
 type ConfirmationRow = {
@@ -41,7 +40,7 @@ type ConfirmationSubPageProps = SubPageElementProps & {
 };
 
 function ConfirmationSubPage({title, rows, request, getDraftUpdate, children, next}: ConfirmationSubPageProps) {
-    const {isEditing, openPage} = usePageNavigation();
+    const {openPage} = usePageNavigation();
     const {submit, isPending, errorMessage} = useSubPageSubmit({request});
 
     const summaryItems = rows.map(({label, value, page}) => ({
@@ -60,9 +59,7 @@ function ConfirmationSubPage({title, rows, request, getDraftUpdate, children, ne
 
     return (
         <ConfirmationStep
-            isEditing={isEditing}
             onNext={() => submit(getDraftUpdate?.() ?? {}, next)}
-            onMove={ignorePageIndexMove}
             pageTitle={title}
             summaryItems={summaryItems}
             showOnfidoLinks={false}
