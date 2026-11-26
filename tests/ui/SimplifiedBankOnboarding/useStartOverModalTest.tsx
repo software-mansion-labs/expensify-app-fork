@@ -30,7 +30,8 @@ jest.mock('@components/Modal/Global/ModalContext', () => {
     return createMockModalContextModule();
 });
 
-jest.mock('@hooks/useLocalize', () => jest.fn(() => ({translate: (key: string) => key})));
+const mockTranslate = jest.fn((key: string) => key);
+jest.mock('@hooks/useLocalize', () => jest.fn(() => ({translate: mockTranslate})));
 
 jest.mock('@libs/Navigation/Navigation', () => ({
     navigate: jest.fn(),
@@ -136,6 +137,28 @@ describe('useStartOverModal', () => {
         // Then the modal names the disconnection instead of the lost progress
         expect(getShowConfirmModalOption('confirmText')).toBe('workspace.bankAccount.yesDisconnectMyBankAccount');
         expect(typeof getShowConfirmModalOption('prompt')).not.toBe('string');
+    });
+
+    it('names a connected NonUSD account by the ending of its IBAN', async () => {
+        // Given a connected NonUSD account, which keeps its number in the Corpay data instead of the USD account number
+        const {result} = await renderStartOverModal(
+            {
+                achData: {
+                    policyID: POLICY_ID,
+                    bankAccountID: BANK_ACCOUNT_ID,
+                    state: SBO_CONST.STATE.OPEN,
+                    bankName: 'Euro Bank',
+                    corpay: {iban: 'DE89370400440532013000'},
+                },
+            },
+            {isNonUSD: true},
+        );
+
+        // When the user opens the modal
+        act(() => result.current.openStartOverModal());
+
+        // Then the prompt names the bank with the last digits of the IBAN, so the user knows which account they disconnect
+        expect(mockTranslate).toHaveBeenCalledWith('workspace.bankAccount.disconnectYourBankAccount', 'Euro Bank 3000');
     });
 
     it('does nothing when the user cancels', async () => {

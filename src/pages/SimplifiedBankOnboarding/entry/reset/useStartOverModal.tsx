@@ -18,7 +18,7 @@ import useThemeStyles from '@hooks/useThemeStyles';
 import type {Workspaces} from '@pages/SimplifiedBankOnboarding/contract/onyx';
 import SBO_CONST from '@pages/SimplifiedBankOnboarding/contract/SBO_CONST';
 import {getBankAccountParams} from '@pages/SimplifiedBankOnboarding/core';
-import {ACCOUNT_ENDING_LENGTH} from '@pages/SimplifiedBankOnboarding/entry/accountEnding';
+import getAccountEnding from '@pages/SimplifiedBankOnboarding/entry/accountEnding';
 import {leaveEntryAfterReset, openFirstFlowStep} from '@pages/SimplifiedBankOnboarding/entry/entryNavigation';
 import {resetBankAccount} from '@pages/SimplifiedBankOnboarding/entry/requests/resetBankAccount';
 
@@ -74,7 +74,7 @@ function useStartOverModal({isNonUSD, backTo}: StartOverModalOptions): {
         isModalOpenRef.current = true;
 
         const isConnectedAccount = achData?.state === SBO_CONST.STATE.OPEN;
-        const bankShortName = `${achData?.bankName ?? ''} ${(achData?.accountNumber ?? '').slice(-ACCOUNT_ENDING_LENGTH)}`;
+        const bankShortName = `${achData?.bankName ?? ''} ${getAccountEnding(achData)}`;
         showConfirmModal({
             title: translate('workspace.bankAccount.areYouSure'),
             confirmText: isConnectedAccount ? translate('workspace.bankAccount.yesDisconnectMyBankAccount') : translate('workspace.bankAccount.yesStartOver'),

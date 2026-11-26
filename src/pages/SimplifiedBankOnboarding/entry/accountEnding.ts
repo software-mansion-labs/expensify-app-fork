@@ -12,4 +12,3 @@ function getAccountEnding(achData: OnyxEntry<ACHData>): string {
 }
 
 export default getAccountEnding;
-export {ACCOUNT_ENDING_LENGTH};
