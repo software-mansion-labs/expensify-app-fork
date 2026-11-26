@@ -8,6 +8,7 @@ import type {ReadCommandParams} from '@pages/SimplifiedBankOnboarding/mockBacken
 import {BUSINESS_TYPES, getBankFormFields, PLAID_BANK_ACCOUNTS} from '@pages/SimplifiedBankOnboarding/mockBackend/serverCatalog';
 import type {CommandHandler} from '@pages/SimplifiedBankOnboarding/mockBackend/types';
 
+import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';
 
 import {buildClientACHData, buildFailureResponse, buildMergeUpdate, buildSetUpdate, buildSuccessResponse, findBankAccount} from './buildResponse';
@@ -15,7 +16,6 @@ import {buildClientACHData, buildFailureResponse, buildMergeUpdate, buildSetUpda
 type ReadHandlers = {[TCommand in keyof ReadCommandParams]: CommandHandler<ReadCommandParams[TCommand]>};
 
 const {STEP} = SBO_CONST.USD;
-const NO_BANK_ACCOUNT_ID = 0;
 const USD_STEP_ORDER: USDStep[] = [STEP.COUNTRY, STEP.BANK_ACCOUNT, STEP.REQUESTOR, STEP.COMPANY, STEP.BENEFICIAL_OWNERS, STEP.ACH_CONTRACT, STEP.KYB_DOCS, STEP.VALIDATION, STEP.ENABLE];
 
 /** The client may ask for an earlier step than the one the server stores, never for a later one */
@@ -33,7 +33,7 @@ const readHandlers: ReadHandlers = {
             buildMergeUpdate(ONYXKEYS.SIMPLIFIED_BANK_ONBOARDING_USER, {validated: database.user.validated}),
         ]),
 
-    [READ_COMMANDS.OPEN_ONBOARDING_PAGE]: ({policyID, bankAccountID = NO_BANK_ACCOUNT_ID, stepToOpen, subStep}, database) => {
+    [READ_COMMANDS.OPEN_ONBOARDING_PAGE]: ({policyID, bankAccountID = CONST.DEFAULT_NUMBER_ID, stepToOpen, subStep}, database) => {
         // A page that was opened by the bank account ID learns its workspace from the row of that account.
         const workspaceID = policyID ?? findBankAccount(database, {policyID, bankAccountID})?.policyID;
         if (!workspaceID || !database.workspaces[workspaceID]) {

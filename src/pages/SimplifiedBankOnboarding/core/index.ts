@@ -15,7 +15,7 @@ export {getFlowRoute, leaveOnboarding, openFlow} from './flow/flowRoutes';
 export {default as OnboardingFlow} from './flow/OnboardingFlow';
 export {default as PageLoadingIndicator} from './flow/PageLoadingIndicator';
 export {default as useScreenGuard} from './flow/useScreenGuard';
-export {getBankAccountParams, NO_BANK_ACCOUNT_ID} from './requests/bankAccountParams';
+export {default as getBankAccountParams} from './requests/bankAccountParams';
 export {clearRequestState, runRequest} from './requests/runRequest';
 export type {OnboardingRequest, RequestOnyxKey, RequestOutcome, RequestSpec} from './requests/types';
 export {default as useOnboardingRequest} from './requests/useOnboardingRequest';

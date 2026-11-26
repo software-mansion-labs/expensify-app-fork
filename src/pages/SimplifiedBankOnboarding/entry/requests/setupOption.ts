@@ -7,8 +7,9 @@ import {getNewAccountForPolicy} from '@pages/SimplifiedBankOnboarding/contract/d
 import INPUT_IDS from '@pages/SimplifiedBankOnboarding/contract/form';
 import type {SetupType} from '@pages/SimplifiedBankOnboarding/contract/onyx';
 import SBO_CONST from '@pages/SimplifiedBankOnboarding/contract/SBO_CONST';
-import {NO_BANK_ACCOUNT_ID, saveDraft} from '@pages/SimplifiedBankOnboarding/core';
+import {saveDraft} from '@pages/SimplifiedBankOnboarding/core';
 
+import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';
 
 import Onyx from 'react-native-onyx';
@@ -55,7 +56,7 @@ async function removeExistingBankAccountDetails({policyID, currency, isChangingB
         [INPUT_IDS.PLAID_ACCOUNT_ID]: '',
     });
     await Onyx.merge(ONYXKEYS.SIMPLIFIED_BANK_ONBOARDING_ACCOUNT, {
-        achData: {bankAccountID: NO_BANK_ACCOUNT_ID},
+        achData: {bankAccountID: CONST.DEFAULT_NUMBER_ID},
     });
 }
 

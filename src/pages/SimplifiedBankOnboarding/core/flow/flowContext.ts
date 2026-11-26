@@ -6,9 +6,10 @@
 import type {OnboardingDraft, OnboardingFormID} from '@pages/SimplifiedBankOnboarding/contract/form';
 import type {PageID, StepID} from '@pages/SimplifiedBankOnboarding/contract/ids';
 import type {ACHData} from '@pages/SimplifiedBankOnboarding/contract/onyx';
-import {getBankAccountParams, NO_BANK_ACCOUNT_ID} from '@pages/SimplifiedBankOnboarding/core/requests/bankAccountParams';
+import getBankAccountParams from '@pages/SimplifiedBankOnboarding/core/requests/bankAccountParams';
 import type {BankAccountParams} from '@pages/SimplifiedBankOnboarding/mockBackend/commands';
 
+import CONST from '@src/CONST';
 import type {Route} from '@src/ROUTES';
 
 import type {OnyxEntry} from 'react-native-onyx';
@@ -104,7 +105,7 @@ function useFlowStepPosition(): FlowStepPosition {
  */
 function getFlowBankAccount(target: FlowTarget, achData: OnyxEntry<ACHData>): BankAccountParams {
     if (target.kind === 'enterSignerInfo') {
-        return {policyID: target.policyID, bankAccountID: target.bankAccountID ?? NO_BANK_ACCOUNT_ID};
+        return {policyID: target.policyID, bankAccountID: target.bankAccountID ?? CONST.DEFAULT_NUMBER_ID};
     }
     return getBankAccountParams(target.policyID, achData);
 }
