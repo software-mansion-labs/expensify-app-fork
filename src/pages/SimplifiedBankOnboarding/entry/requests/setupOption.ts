@@ -75,5 +75,5 @@ async function prepareSetupOption(options: SetupOptionOptions): Promise<void> {
     await saveDraft({setupType: options.setupType});
 }
 
-export {clearPlaid, prepareNewBankAccountSetup, prepareSetupOption, setSetupOptionPressed};
+export {prepareSetupOption, setSetupOptionPressed};
 export type {SetupOptionOptions};
