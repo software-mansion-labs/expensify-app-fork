@@ -38,7 +38,7 @@ type SetupOptionsProps = {
     /** Shown under the header title */
     workspaceName: string | undefined;
     isNonUSD: boolean;
-    currency: string;
+    currency: string | undefined;
 
     /** A setup is in progress, which swaps the setup options for continue, change and start over */
     canContinue: boolean;

@@ -70,7 +70,7 @@ function areCompanyDetailsLocked(achData: OnyxEntry<ACHData>): boolean {
 }
 
 /** Every director that the currency needs has given their name */
-function areSignersKnown(corpay: OnyxEntry<CorpayData>, currency: string): boolean {
+function areSignersKnown(corpay: OnyxEntry<CorpayData>, currency: string | undefined): boolean {
     if (!corpay?.signerFullName) {
         return false;
     }

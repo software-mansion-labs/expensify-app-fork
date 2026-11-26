@@ -20,7 +20,7 @@ import {View} from 'react-native';
 
 import getCountryAnswers from './getCountryAnswers';
 
-function getCountryOptions(currency: string, translate: LocalizedTranslate): Record<string, string> {
+function getCountryOptions(currency: string | undefined, translate: LocalizedTranslate): Record<string, string> {
     if (currency === SBO_CONST.CURRENCY.EUR) {
         return Object.fromEntries(SBO_CONST.EUR_COUNTRIES.map((country) => [country, translate(`allCountries.${country}`)]));
     }

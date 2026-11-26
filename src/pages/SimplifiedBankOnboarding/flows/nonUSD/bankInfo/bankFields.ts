@@ -13,7 +13,7 @@ type SplitBankFields = {
 };
 
 /** Every workspace shares the bank fields key, so it may hold the inputs of another country or currency */
-function areBankFieldsLoaded(bankFields: OnyxEntry<BankFields>, country: string, currency: string): boolean {
+function areBankFieldsLoaded(bankFields: OnyxEntry<BankFields>, country: string, currency: string | undefined): boolean {
     return !!country && bankFields?.bankCountry === country && bankFields.bankCurrency === currency && bankFields.formFields !== undefined;
 }
 

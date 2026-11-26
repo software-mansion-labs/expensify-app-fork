@@ -47,7 +47,7 @@ function VerifyAccountPage({route}: VerifyAccountPageProps) {
     const policyID = route.params?.policyID;
     const backTo = route.params?.backTo;
     const workspace = policyID ? workspaces?.[policyID] : undefined;
-    const isNonUSD = isNonUSDCurrency(workspace?.outputCurrency ?? '');
+    const isNonUSD = isNonUSDCurrency(workspace?.outputCurrency);
     const isUserValidated = !!user?.validated;
     const isCodeEmpty = validateCode.trim() === '';
 

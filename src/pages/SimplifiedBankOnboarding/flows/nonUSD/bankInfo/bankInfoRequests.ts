@@ -5,18 +5,19 @@ import {READ_COMMANDS, WRITE_COMMANDS} from '@pages/SimplifiedBankOnboarding/moc
 
 import getBankInfoAnswers from './getBankInfoAnswers';
 
-/** The inputs of the country and currency of the account. Without a country there is nothing to ask for. */
+/** The inputs of the country and currency of the account. Without a country or a currency there is nothing to ask for. */
 const bankFieldsRead: OnboardingRequest = {
     name: 'nonUSD.bankInfo.readFields',
     build: (data) => {
         const {country} = getCountryAnswers(data);
-        if (!country) {
+        const {currency} = data;
+        if (!country || currency === undefined) {
             return undefined;
         }
         return {
             type: 'read',
             command: READ_COMMANDS.GET_BANK_ACCOUNT_FIELDS,
-            params: {countryISO: country, currency: data.currency},
+            params: {countryISO: country, currency},
         };
     },
 };
@@ -30,7 +31,8 @@ function getCreateBankAccountRequest(fieldIDs: BankFieldID[]): OnboardingRequest
         name: 'nonUSD.bankInfo.createAccount',
         build: (data) => {
             const {policyID} = data.bankAccount;
-            if (!policyID) {
+            const {currency} = data;
+            if (!policyID || currency === undefined) {
                 return undefined;
             }
             const {country} = getCountryAnswers(data);
@@ -41,7 +43,7 @@ function getCreateBankAccountRequest(fieldIDs: BankFieldID[]): OnboardingRequest
                 params: {
                     policyID,
                     country,
-                    currency: data.currency,
+                    currency,
                     fields: Object.fromEntries(fieldIDs.map((fieldID) => [fieldID, bankFieldValues[fieldID]])),
                 },
             };

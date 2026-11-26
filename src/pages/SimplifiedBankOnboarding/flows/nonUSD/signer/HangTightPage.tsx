@@ -23,7 +23,7 @@ import {View} from 'react-native';
 import {signerReminderRequest} from './signerRequests';
 
 type HangTightPageProps = {
-    currency: string;
+    currency: string | undefined;
 };
 
 function HangTightPage({currency}: HangTightPageProps) {

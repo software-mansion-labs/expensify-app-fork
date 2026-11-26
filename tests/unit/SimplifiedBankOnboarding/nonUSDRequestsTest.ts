@@ -79,6 +79,20 @@ describe('nonUSD requests', () => {
         expect(spec).toBeUndefined();
     });
 
+    it('builds no account request while the currency is unknown', () => {
+        // Given German answers, but no workspace, account or draft that names the currency
+        const saved = getSavedData({
+            currency: undefined,
+            draft: {country: SBO_CONST.COUNTRY.DE, iban: VALID_IBAN},
+        });
+
+        // When the account request is built
+        const spec = getCreateBankAccountRequest(GERMAN_FIELD_IDS).build(saved);
+
+        // Then nothing is built, so the server never gets an account without a currency
+        expect(spec).toBeUndefined();
+    });
+
     it('ends a setup without a docusign step with the agreements only', () => {
         // Given a EUR setup with every agreement checked and a file left in the draft
         const saved = getSavedData({

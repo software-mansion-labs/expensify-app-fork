@@ -26,7 +26,7 @@ type SetupOptionPressInput = {
     policyID: string | undefined;
     backTo: Route | undefined;
     isNonUSD: boolean;
-    currency: string;
+    currency: string | undefined;
 
     /** The instance that collects a new bank account while the old one stays connected */
     isChangingBankAccount: boolean;

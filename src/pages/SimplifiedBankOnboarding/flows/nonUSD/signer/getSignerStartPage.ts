@@ -11,7 +11,7 @@ import PAGES from './signerPages';
 
 type SignerStartPage = typeof PAGES.IS_DIRECTOR | typeof PAGES.HANG_TIGHT;
 
-function getSignerStartPage(corpay: OnyxEntry<CorpayData>, currency: string): SignerStartPage {
+function getSignerStartPage(corpay: OnyxEntry<CorpayData>, currency: string | undefined): SignerStartPage {
     if (requiresSecondDirector(currency)) {
         const hasInvitedDirector = corpay?.signerEmail !== undefined || corpay?.secondSignerEmail !== undefined;
         return hasInvitedDirector ? PAGES.HANG_TIGHT : PAGES.IS_DIRECTOR;

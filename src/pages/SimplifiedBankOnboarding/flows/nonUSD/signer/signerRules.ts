@@ -48,7 +48,7 @@ function getSignerFullName(data: FlowData): string {
     return getOwnerNameOfUser(data) ?? getSignerAnswers(data).signerFullName;
 }
 
-function getSignerEmailMode(isUserDirector: boolean | undefined, currency: string): SignerEmailMode {
+function getSignerEmailMode(isUserDirector: boolean | undefined, currency: string | undefined): SignerEmailMode {
     if (!requiresSecondDirector(currency)) {
         return 'one';
     }

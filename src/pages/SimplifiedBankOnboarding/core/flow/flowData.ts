@@ -29,7 +29,7 @@ type FlowData = {
 
     /** The draft of the form of the flow: the main form, or the invited director form */
     draft: OnboardingDraft;
-    currency: string;
+    currency: string | undefined;
 };
 
 /** The values of the Onyx keys that the data of a flow is built from */

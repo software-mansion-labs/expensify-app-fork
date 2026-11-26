@@ -27,7 +27,7 @@ type EntryState =
     | {
           kind: 'options';
           isNonUSD: boolean;
-          currency: string;
+          currency: string | undefined;
           canContinue: boolean;
       };
 
@@ -104,7 +104,7 @@ function getEntryState({policyID, bankAccountID, account, workspaces, draft, isO
     if (account?.throttledDate) {
         return {kind: 'throttled'};
     }
-    if (!!currency && !isSupportedCurrency(currency)) {
+    if (currency !== undefined && !isSupportedCurrency(currency)) {
         return {kind: 'unsupportedCurrency'};
     }
 

@@ -18,7 +18,7 @@ type SetupOptionOptions = {
     setupType: SetupType;
     policyID: string | undefined;
     isNonUSD: boolean;
-    currency: string;
+    currency: string | undefined;
 
     /** The instance that collects a new bank account while the old one stays connected */
     isChangingBankAccount: boolean;
@@ -45,7 +45,7 @@ async function clearPlaid(): Promise<void> {
 
 /** A new setup must not be prefilled with the bank account that it replaces */
 async function removeExistingBankAccountDetails({policyID, currency, isChangingBankAccount}: SetupOptionOptions): Promise<void> {
-    if (isChangingBankAccount && !!policyID && !!currency) {
+    if (isChangingBankAccount && !!policyID && currency !== undefined) {
         await prepareNewBankAccountSetup(policyID, currency);
         return;
     }
