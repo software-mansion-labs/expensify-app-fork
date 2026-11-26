@@ -9,7 +9,7 @@ import {getIsOffline} from '@libs/NetworkState';
 import {useOnboardingFlow} from '@pages/SimplifiedBankOnboarding/core/flow/flowContext';
 import {useFlowData} from '@pages/SimplifiedBankOnboarding/core/flow/flowData';
 
-import {useEffect, useEffectEvent} from 'react';
+import {useEffect, useEffectEvent, useRef} from 'react';
 
 import type {OnboardingRequest} from './types';
 
@@ -17,19 +17,23 @@ import {failUnsentRequest, getRequestKey, sendTrackedRequest, useRequestKeyState
 
 /**
  * Sends the read on mount while `isEnabled` is true, when `isEnabled` turns true, and again after each reconnect until
- * it succeeds. It is never sent while offline. Works only inside OnboardingFlow.
+ * it succeeds. It is never sent while offline, and a read skipped offline is sent after the reconnect even when the key
+ * still holds a success of an earlier read, because that read could have used other params. Works only inside
+ * OnboardingFlow.
  */
 function useReadOnOpen(request: OnboardingRequest, {isEnabled = true}: {isEnabled?: boolean} = {}): {isPending: boolean; hasFailed: boolean} {
     const {bankAccount} = useOnboardingFlow();
     const data = useFlowData();
     const key = getRequestKey(request.name, bankAccount);
     const {status} = useRequestKeyState(key);
-    const shouldReadAfterReconnect = isEnabled && status !== 'succeeded' && status !== 'pending';
+    const hasSkippedReadRef = useRef(false);
 
     function read() {
         if (getIsOffline()) {
+            hasSkippedReadRef.current = true;
             return;
         }
+        hasSkippedReadRef.current = false;
         const spec = request.build(data);
         if (!spec) {
             failUnsentRequest(key, {});
@@ -48,7 +52,8 @@ function useReadOnOpen(request: OnboardingRequest, {isEnabled = true}: {isEnable
 
     useNetwork({
         onReconnect: () => {
-            if (!shouldReadAfterReconnect) {
+            const hasReadSucceeded = status === 'succeeded' && !hasSkippedReadRef.current;
+            if (!isEnabled || status === 'pending' || hasReadSucceeded) {
                 return;
             }
             read();
