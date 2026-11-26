@@ -17,7 +17,7 @@ import Onyx from 'react-native-onyx';
 import type {RequestKey} from './runRequest';
 import type {OnboardingRequest, RequestName, RequestOutcome} from './types';
 
-import {failUnsentRequest, getRequestKey, isRequestInFlight, sendTrackedRequest, useRequestKeyState} from './runRequest';
+import {failUnsentRequest, getRequestKey, sendTrackedRequest, useRequestKeyState} from './runRequest';
 
 /**
  * `userAction`: a press of the user, guarded against a second send while one is pending.
@@ -25,7 +25,7 @@ import {failUnsentRequest, getRequestKey, isRequestInFlight, sendTrackedRequest,
  */
 type SendMode = 'userAction' | 'progressSave';
 
-/** The keys of the sends that have not settled yet. It covers the time before runRequest counts them, so a second press in the same tick finds them. */
+/** The keys of the user action sends that have not settled yet. A key is added at the press, so a second press in the same tick finds it. */
 const keysBeingSent = new Set<RequestKey>();
 
 /** A write of the USD or NonUSD flow shows its failure also on the entry and the Payments page */
@@ -71,7 +71,7 @@ function useSendOnboardingRequest<TInput>(request: OnboardingRequest<TInput> | u
             return Promise.resolve({status: 'skipped'});
         }
         if (mode === 'userAction') {
-            if (isRequestInFlight(key) || keysBeingSent.has(key)) {
+            if (keysBeingSent.has(key)) {
                 return Promise.resolve({status: 'skipped'});
             }
             keysBeingSent.add(key);

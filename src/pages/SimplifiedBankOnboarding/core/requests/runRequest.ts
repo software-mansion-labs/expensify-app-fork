@@ -11,7 +11,7 @@
  * - offline reads (not sent, nothing written) and offline writes (queued by the mock API, and their Promise with them)
  * - the account error mirror (`account.errors`) and its lifetime: it uses the error key of the attempt, and it is cleared
  *   with the page error when the last user of the request key unmounts, or as soon as a failure arrives with no user
- * - the count of requests in flight per key (the guard against a second press) and of mounted users per key
+ * - the count of mounted users per key
  */
 import useOnyx from '@hooks/useOnyx';
 
@@ -56,7 +56,6 @@ const SKIPPED: RequestOutcome = {status: 'skipped'};
 
 /** The attempt that each key waits for. A newer attempt with the same key settles the older one as skipped. */
 const waiters = new Map<RequestKey, Waiter>();
-const inFlightCounts = new Map<RequestKey, number>();
 const mountedUserCounts = new Map<RequestKey, number>();
 
 /** The attempts whose status entry Onyx already held, so a removed entry can be told from one not written yet */
@@ -229,7 +228,6 @@ function startAttempt(key: RequestKey, options: AttemptOptions): {waiter: Waiter
         resolve: resolveOutcome,
     };
     waiters.set(key, waiter);
-    inFlightCounts.set(key, (inFlightCounts.get(key) ?? 0) + 1);
     if (waiter.shouldShowErrorOutsideFlow) {
         mirroredRequestIDs.set(key, waiter.requestID);
     }
@@ -237,7 +235,6 @@ function startAttempt(key: RequestKey, options: AttemptOptions): {waiter: Waiter
     return {
         waiter,
         outcome: outcome.then((result) => {
-            inFlightCounts.set(key, Math.max((inFlightCounts.get(key) ?? 1) - 1, 0));
             if (result.status === 'failed') {
                 clearUnusedFailure(key);
             }
@@ -261,10 +258,6 @@ function failUnsentRequest(key: RequestKey, options: AttemptOptions): Promise<Re
     const {waiter, outcome} = startAttempt(key, options);
     Onyx.update([...buildFailureUpdates(key, waiter.requestID, waiter.errors, waiter.shouldShowErrorOutsideFlow), buildStatusUpdate(key, {requestID: waiter.requestID, hasResponse: true})]);
     return outcome;
-}
-
-function isRequestInFlight(key: RequestKey): boolean {
-    return (inFlightCounts.get(key) ?? 0) > 0;
 }
 
 /** Counts a mounted user of a key. The returned function releases it, and the last release clears a failure of the key. */
@@ -335,5 +328,5 @@ function clearRequestState(): Promise<void> {
     return Onyx.set(ONYXKEYS.RAM_ONLY_SIMPLIFIED_BANK_ONBOARDING_REQUESTS, null);
 }
 
-export {clearAccountErrorMirror, clearRequestState, failUnsentRequest, getRequestKey, isRequestInFlight, retainRequestKey, runRequest, sendTrackedRequest, useRequestKeyState};
+export {clearAccountErrorMirror, clearRequestState, failUnsentRequest, getRequestKey, retainRequestKey, runRequest, sendTrackedRequest, useRequestKeyState};
 export type {RequestKey};

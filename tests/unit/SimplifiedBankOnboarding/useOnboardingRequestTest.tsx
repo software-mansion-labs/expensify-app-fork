@@ -150,6 +150,26 @@ describe('useOnboardingRequest', () => {
         expect(result.current.isPending).toBe(true);
     });
 
+    it('sends nothing on a later press while the first request still waits for its answer', async () => {
+        // Given a first press whose request went out and has no answer yet
+        answerWrites('none');
+        const {result} = renderRequest(CONFIRM_REQUEST);
+        await act(async () => {
+            result.current.send();
+            await waitForBatchedUpdates();
+        });
+
+        // When the user presses again
+        let secondOutcome: RequestOutcome | undefined;
+        await act(async () => {
+            secondOutcome = await result.current.send();
+        });
+
+        // Then the second press sends nothing, because the first request is still pending
+        expect(secondOutcome).toEqual({status: 'skipped'});
+        expect(write).toHaveBeenCalledTimes(1);
+    });
+
     it('sends the progress save of every page, also while an earlier one is pending', async () => {
         // Given a progress save that has no answer yet
         answerWrites('none');
