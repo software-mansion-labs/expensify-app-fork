@@ -44,7 +44,7 @@ function getFlowRoute(target: FlowTarget, position: FlowPosition = {}): Route {
                 returnTo,
                 backTo: target.backTo,
             });
-        default:
+        case 'enterSignerInfo':
             return ROUTES.SETTINGS_BANK_ONBOARDING_LAB_ENTER_SIGNER_INFO.getRoute({
                 policyID: target.policyID,
                 bankAccountID: target.bankAccountID,
@@ -53,6 +53,7 @@ function getFlowRoute(target: FlowTarget, position: FlowPosition = {}): Route {
                 action,
                 returnTo,
             });
+        // no default
     }
 }
 
@@ -80,8 +81,9 @@ function getFlowScreenName(target: FlowTarget): string {
             return SCREENS.SETTINGS.BANK_ONBOARDING_LAB.USD_SETUP;
         case 'nonUSD':
             return SCREENS.SETTINGS.BANK_ONBOARDING_LAB.NON_USD_SETUP;
-        default:
+        case 'enterSignerInfo':
             return SCREENS.SETTINGS.BANK_ONBOARDING_LAB.ENTER_SIGNER_INFO;
+        // no default
     }
 }
 
