@@ -63,18 +63,11 @@ function getReadParams(policyID: string | undefined, bankAccountID: number | und
 
 /**
  * The status of the latest read that the page started. The reads of the page can overlap (focus, reconnect), so the
- * answer of an older read never replaces the status of a newer one, and no answer sets the status of a page that is gone.
+ * answer of an older read never replaces the status of a newer one.
  */
 function useLatestReadStatus(): {status: ReadStatus | undefined; trackRead: (read: Promise<RequestOutcome>) => void} {
     const [status, setStatus] = useState<ReadStatus>();
     const latestReadIDRef = useRef(0);
-
-    useEffect(
-        () => () => {
-            latestReadIDRef.current += 1;
-        },
-        [],
-    );
 
     function trackRead(read: Promise<RequestOutcome>) {
         latestReadIDRef.current += 1;
