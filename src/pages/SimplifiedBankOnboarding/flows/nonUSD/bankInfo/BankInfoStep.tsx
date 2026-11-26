@@ -45,41 +45,39 @@ function BankInfoStep() {
             title={translate('bankAccount.bankInfo')}
             wrapperID="SimplifiedBankOnboardingBankInfo"
         >
-            <SubPage
-                name={PAGES.BANK_ACCOUNT_DETAILS}
-                isAnswered={isLoaded && areBankFieldsAnswered(bankAccountFields, bankFieldValues)}
-            >
-                <ServerDrivenFields
-                    title={translate('bankInfoStep.whatAreYour')}
-                    fields={bankAccountFields}
-                    isLoading={!isLoaded}
-                />
-            </SubPage>
-            <SubPage
-                name={PAGES.ACCOUNT_HOLDER_DETAILS}
-                isAnswered={isLoaded && areBankFieldsAnswered(accountHolderFields, bankFieldValues)}
-            >
-                <ServerDrivenFields
-                    title={translate('addPersonalBankAccount.accountHolderInformationStepHeader')}
-                    fields={accountHolderFields}
-                    isLoading={!isLoaded}
-                />
-            </SubPage>
             {isLoaded ? (
-                <ConfirmationSubPage
-                    name={PAGES.CONFIRMATION}
-                    title={translate('bankInfoStep.letsDoubleCheck')}
-                    request={getCreateBankAccountRequest(formFields.map((field) => field.id))}
-                    rows={formFields.map((field) => ({
-                        label: field.label,
-                        value: getBankFieldDisplayValue(field, bankFieldValues[field.id]),
-                        page: isAccountHolderField(field) ? PAGES.ACCOUNT_HOLDER_DETAILS : PAGES.BANK_ACCOUNT_DETAILS,
-                    }))}
-                />
+                <>
+                    <SubPage
+                        name={PAGES.BANK_ACCOUNT_DETAILS}
+                        isAnswered={areBankFieldsAnswered(bankAccountFields, bankFieldValues)}
+                    >
+                        <ServerDrivenFields
+                            title={translate('bankInfoStep.whatAreYour')}
+                            fields={bankAccountFields}
+                        />
+                    </SubPage>
+                    <SubPage
+                        name={PAGES.ACCOUNT_HOLDER_DETAILS}
+                        isAnswered={areBankFieldsAnswered(accountHolderFields, bankFieldValues)}
+                    >
+                        <ServerDrivenFields
+                            title={translate('addPersonalBankAccount.accountHolderInformationStepHeader')}
+                            fields={accountHolderFields}
+                        />
+                    </SubPage>
+                    <ConfirmationSubPage
+                        name={PAGES.CONFIRMATION}
+                        title={translate('bankInfoStep.letsDoubleCheck')}
+                        request={getCreateBankAccountRequest(formFields.map((field) => field.id))}
+                        rows={formFields.map((field) => ({
+                            label: field.label,
+                            value: getBankFieldDisplayValue(field, bankFieldValues[field.id]),
+                            page: isAccountHolderField(field) ? PAGES.ACCOUNT_HOLDER_DETAILS : PAGES.BANK_ACCOUNT_DETAILS,
+                        }))}
+                    />
+                </>
             ) : (
-                <SubPage name={PAGES.CONFIRMATION}>
-                    <PageLoadingIndicator />
-                </SubPage>
+                <PageLoadingIndicator />
             )}
         </OnboardingStep>
     );

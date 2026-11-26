@@ -2,7 +2,6 @@
  * A form page built from the bank inputs that the server described: a picklist for an input with a set of values, a
  * text input for the others, and the rules of each input. Both input pages of the bank step render it.
  */
-import ActivityIndicator from '@components/ActivityIndicator';
 import PushRowWithModal from '@components/PushRowWithModal';
 import TextInput from '@components/TextInput';
 
@@ -23,17 +22,14 @@ import getBankInfoAnswers from './getBankInfoAnswers';
 
 type ServerDrivenFieldsProps = {
     title: string;
-
-    /** The inputs of this page. The list is empty until the server described them. */
     fields: BankFormField[];
-    isLoading: boolean;
 };
 
 function getPicklistOptions(field: BankFormField): Record<string, string> {
     return Object.fromEntries((field.valueSet ?? []).map((option) => [option.id, option.text]));
 }
 
-function ServerDrivenFields({title, fields, isLoading}: ServerDrivenFieldsProps) {
+function ServerDrivenFields({title, fields}: ServerDrivenFieldsProps) {
     const styles = useThemeStyles();
     const {bankFieldValues} = getBankInfoAnswers(useFlowData());
 
@@ -92,18 +88,8 @@ function ServerDrivenFields({title, fields, isLoading}: ServerDrivenFieldsProps)
             inputIDs={fields.map((field) => field.id)}
             optionalInputIDs={fields.filter((field) => !field.isRequired).map((field) => field.id)}
             validate={validateRules}
-            isSubmitDisabled={fields.length === 0}
         >
-            {isLoading ? (
-                <View style={[styles.flexGrow4, styles.alignItemsCenter]}>
-                    <ActivityIndicator
-                        size={CONST.ACTIVITY_INDICATOR_SIZE.LARGE}
-                        style={styles.flexGrow1}
-                    />
-                </View>
-            ) : (
-                inputs
-            )}
+            {inputs}
         </FormSubPage>
     );
 }

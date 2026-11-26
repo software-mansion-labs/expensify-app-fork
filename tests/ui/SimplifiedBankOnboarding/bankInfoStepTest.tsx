@@ -236,6 +236,25 @@ describe('BankInfoStep', () => {
         expect(Navigation.setParams).toHaveBeenCalledWith({subPage: PAGES.ACCOUNT_HOLDER_DETAILS}, 'current-route');
     });
 
+    it('resumes on the first unanswered page once the inputs of its country arrive', async () => {
+        // Given a valid IBAN and a key that still holds the inputs of France, left there by another workspace
+        await setUpAccount({
+            bankFields: {
+                bankCountry: SBO_CONST.COUNTRY.FR,
+                bankCurrency: SBO_CONST.CURRENCY.EUR,
+                formFields: getBankFormFields(SBO_CONST.COUNTRY.FR),
+            },
+            draft: {iban: VALID_IBAN},
+        });
+
+        // When the step opens without a page, as on a resume, and the German inputs arrive
+        await renderBankInfoStep();
+
+        // Then the holder page opens, because no page is written to the URL before the answers can be judged
+        expect(Navigation.setParams).toHaveBeenCalledWith({subPage: PAGES.ACCOUNT_HOLDER_DETAILS}, 'current-route');
+        expect(Navigation.setParams).not.toHaveBeenCalledWith({subPage: PAGES.BANK_ACCOUNT_DETAILS}, 'current-route');
+    });
+
     it('resumes on the bank page when a bank input breaks a rule of the server', async () => {
         // Given an IBAN that does not match the German rule
         await setUpAccount({
