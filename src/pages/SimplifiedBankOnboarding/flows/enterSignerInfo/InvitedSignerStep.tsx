@@ -8,7 +8,7 @@ import Text from '@components/Text';
 import useLocalize from '@hooks/useLocalize';
 import useThemeStyles from '@hooks/useThemeStyles';
 
-import {NEXT_STEP, OnboardingStep, useOnboardingFlow} from '@pages/SimplifiedBankOnboarding/core';
+import {NEXT_STEP, OnboardingStep, useFlowData, useOnboardingFlow} from '@pages/SimplifiedBankOnboarding/core';
 import renderSignerDetailsPages from '@pages/SimplifiedBankOnboarding/flows/shared/signerDetails/renderSignerDetailsPages';
 
 import CONST from '@src/CONST';
@@ -16,14 +16,14 @@ import CONST from '@src/CONST';
 import React from 'react';
 import {View} from 'react-native';
 
-import {useInvitedSignerAnswers} from './invitedSignerAnswers';
+import getInvitedSignerAnswers from './invitedSignerAnswers';
 import invitedSignerDetailsRequest from './invitedSignerDetailsRequest';
 
 function InvitedSignerStep() {
     const {translate} = useLocalize();
     const styles = useThemeStyles();
     const {target, leaveFlow} = useOnboardingFlow();
-    const answers = useInvitedSignerAnswers();
+    const answers = getInvitedSignerAnswers(useFlowData());
 
     const isCompleted = target.kind === 'enterSignerInfo' && target.isCompleted;
 

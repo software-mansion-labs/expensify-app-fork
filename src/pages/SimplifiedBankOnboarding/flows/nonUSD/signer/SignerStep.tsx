@@ -4,7 +4,6 @@
  * waiting page once the server holds the invitations it needs.
  */
 import useLocalize from '@hooks/useLocalize';
-import useOnyx from '@hooks/useOnyx';
 
 import {requiresSecondDirector} from '@pages/SimplifiedBankOnboarding/contract/currency';
 import INPUT_IDS from '@pages/SimplifiedBankOnboarding/contract/form';
@@ -12,8 +11,6 @@ import {NEXT_STEP, OnboardingStep, PREVIOUS_STEP, SubPage, YesNoSubPage, useFlow
 import type {PageTarget} from '@pages/SimplifiedBankOnboarding/core';
 import getBusinessInfoAnswers from '@pages/SimplifiedBankOnboarding/flows/nonUSD/businessInfo/getBusinessInfoAnswers';
 import renderSignerDetailsPages from '@pages/SimplifiedBankOnboarding/flows/shared/signerDetails/renderSignerDetailsPages';
-
-import ONYXKEYS from '@src/ONYXKEYS';
 
 import React from 'react';
 
@@ -31,7 +28,6 @@ function SignerStep() {
     const {currency} = data;
     const answers = getSignerAnswers(data);
     const {companyName} = getBusinessInfoAnswers(data);
-    const [corpay] = useOnyx(ONYXKEYS.SIMPLIFIED_BANK_ONBOARDING_ACCOUNT, {selector: (account) => account?.achData?.corpay});
 
     const askForName = shouldAskForSignerName(data);
 
@@ -46,7 +42,7 @@ function SignerStep() {
         <OnboardingStep
             title={translate('signerInfoStep.signerInfo')}
             wrapperID="SimplifiedBankOnboardingSignerInfo"
-            startAt={getSignerStartPage(corpay, currency)}
+            startAt={getSignerStartPage(data.account?.achData?.corpay, currency)}
         >
             <YesNoSubPage
                 name={PAGES.IS_DIRECTOR}

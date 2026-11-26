@@ -99,9 +99,9 @@ contract  <-  mockBackend  <-  core  <-  { entry, flows }  <-  lab  <-  index.ts
 - A step folder never imports `Navigation` or `ROUTES`. Steps name pages, `core/flow/flowRoutes.ts` builds routes.
 - A step folder imports another step folder only when that step comes earlier in the flow (Docusign reads the answers of
   the agreements step). Nothing imports a later step.
-- Steps do not read the form draft with `useOnyx`. They get it from `useFlowData()` of the core. The exceptions are the
-  owner loop, which reads the owner list and its buffer, and the invited director flow, which has its own form
-  (`invitedSignerAnswers.ts`). The entry reads the draft for the setup type, the currency and its cleanup.
+- Steps do not read the form draft or the account with `useOnyx`. They get both from `useFlowData()` of the core, which
+  also picks the form of the invited director flow. The entry reads the draft for the setup type, the currency and its
+  cleanup.
 
 ## Wrappers and how a step declares itself
 
@@ -304,7 +304,7 @@ variants of the baseline.
 
 | Pattern | Real flow | This module |
 | --- | --- | --- |
-| Owner loop limited by a count, owners under flat draft keys `beneficialOwner_<id>_<field>` | `R/USD/BeneficialOwnerInfo/*` | Owners are a list in the draft (`usdOwners`) plus a buffer: `flows/shared/owners/useOwnerLoop.ts` (BC-09) |
+| Owner loop limited by a count, owners under flat draft keys `beneficialOwner_<id>_<field>` | `R/USD/BeneficialOwnerInfo/*` | Owners are a list in the draft (`usdOwners`) plus a buffer: `flows/shared/owners/ownerLoop.ts` (BC-09) |
 | Owner loop limited by the ownership sum | `R/NonUSD/BeneficialOwnerInfo/*` | The same loop with `globalOwners`, limits in `flows/shared/owners/ownerLimits.ts` |
 | A step container that renders question pages itself and hands the rest to a nested `useSubPage` | both owner steps | One `OnboardingStep` with the questions, the list and `renderOwnerDetailsPages` as children |
 | Branch on "are you a director", with an email request and a waiting page | `R/NonUSD/SignerInfo/*` | `flows/nonUSD/signer/SignerStep.tsx` with `getNext`, `back` and `PREVIOUS_STEP` |

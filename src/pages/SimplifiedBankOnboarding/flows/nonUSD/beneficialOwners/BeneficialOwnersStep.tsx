@@ -11,9 +11,9 @@ import {NEXT_STEP, OnboardingStep, SubPage, YesNoSubPage, useFlowData} from '@pa
 import type {PageTarget} from '@pages/SimplifiedBankOnboarding/core';
 import getBusinessInfoAnswers from '@pages/SimplifiedBankOnboarding/flows/nonUSD/businessInfo/getBusinessInfoAnswers';
 import {CURRENT_USER_OWNER_ID} from '@pages/SimplifiedBankOnboarding/flows/shared/owners/ownerList';
+import getOwnerLoop from '@pages/SimplifiedBankOnboarding/flows/shared/owners/ownerLoop';
 import OwnersListPage from '@pages/SimplifiedBankOnboarding/flows/shared/owners/OwnersListPage';
 import {getOwnerFullName} from '@pages/SimplifiedBankOnboarding/flows/shared/owners/serverOwners';
-import useOwnerLoop from '@pages/SimplifiedBankOnboarding/flows/shared/owners/useOwnerLoop';
 
 import React from 'react';
 
@@ -27,7 +27,7 @@ function BeneficialOwnersStep() {
     const data = useFlowData();
     const answers = getOwnersAnswers(data);
     const {companyName} = getBusinessInfoAnswers(data);
-    const loop = useOwnerLoop({kind: 'global', owners: answers.owners});
+    const loop = getOwnerLoop({kind: 'global', owners: answers.owners}, data.draft);
 
     const isUserOwner = answers.ownsMoreThan25Percent ?? false;
     const areOwnersKnown = loop.owners.length > 0;

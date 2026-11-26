@@ -9,10 +9,12 @@ import ONYXKEYS from '@src/ONYXKEYS';
 
 import Onyx from 'react-native-onyx';
 
+import getInvitedSignerAnswers from './invitedSignerAnswers';
+
 const invitedSignerDetailsRequest: OnboardingRequest = {
     name: 'enterSignerInfo.signer.saveDetails',
-    build: ({bankAccount, draft}) => ({
-        ...buildDirectorRequest(bankAccount, {signerFullName: draft.signerFullName ?? '', signerJobTitle: draft.signerJobTitle ?? ''}),
+    build: (data) => ({
+        ...buildDirectorRequest(data.bankAccount, getInvitedSignerAnswers(data)),
         onyxData: {
             successData: [{onyxMethod: Onyx.METHOD.SET, key: ONYXKEYS.FORMS.SIMPLIFIED_BANK_ONBOARDING_SIGNER_FORM_DRAFT, value: null}],
         },

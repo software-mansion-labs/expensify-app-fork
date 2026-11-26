@@ -1,17 +1,13 @@
 /**
  * The owner loop of one kind, kept in the draft of the main form: a list (`usdOwners` or `globalOwners`) and a buffer of
  * the owner being edited (`ownerBeingModifiedID` and the `owner*` inputs). The step reads its list from its answers and
- * gives it to the hook, so the rule "owners saved on the server are the list until the draft has its own list" stays in
- * the answers of each flow.
+ * gives it with the draft of its flow data, so the rule "owners saved on the server are the list until the draft has its
+ * own list" stays in the answers of each flow.
  *
  * The update builders return a draft update and save nothing, so the blocks (YesNoSubPage, ConfirmationSubPage) save
- * them in their one submit path, before the request and before moving on. The hook never navigates.
+ * them in their one submit path, before the request and before moving on. The loop never navigates.
  */
-import useOnyx from '@hooks/useOnyx';
-
 import type {GlobalOwnerDraft, OnboardingDraft, USDOwnerDraft} from '@pages/SimplifiedBankOnboarding/contract/form';
-
-import ONYXKEYS from '@src/ONYXKEYS';
 
 import type {OwnerBuffer, OwnerBufferMapping} from './ownerBuffer';
 import type {Owner} from './ownerList';
@@ -162,12 +158,11 @@ function getOwnerLoopRules(input: USDOwnerLoopInput | GlobalOwnerLoopInput): Own
     };
 }
 
-function useOwnerLoop(input: USDOwnerLoopInput): OwnerLoop<USDOwnerDraft>;
-function useOwnerLoop(input: GlobalOwnerLoopInput): OwnerLoop<GlobalOwnerDraft>;
-function useOwnerLoop(input: USDOwnerLoopInput | GlobalOwnerLoopInput): OwnerLoop<USDOwnerDraft> | OwnerLoop<GlobalOwnerDraft> {
-    const [draft] = useOnyx(ONYXKEYS.FORMS.SIMPLIFIED_BANK_ONBOARDING_FORM_DRAFT);
+function getOwnerLoop(input: USDOwnerLoopInput, draft: OnboardingDraft): OwnerLoop<USDOwnerDraft>;
+function getOwnerLoop(input: GlobalOwnerLoopInput, draft: OnboardingDraft): OwnerLoop<GlobalOwnerDraft>;
+function getOwnerLoop(input: USDOwnerLoopInput | GlobalOwnerLoopInput, draft: OnboardingDraft): OwnerLoop<USDOwnerDraft> | OwnerLoop<GlobalOwnerDraft> {
     const state: OwnerLoopState = {
-        ownerBeingModifiedID: draft?.ownerBeingModifiedID ?? undefined,
+        ownerBeingModifiedID: draft.ownerBeingModifiedID ?? undefined,
         buffer: readOwnerBuffer(draft),
     };
 
@@ -177,6 +172,5 @@ function useOwnerLoop(input: USDOwnerLoopInput | GlobalOwnerLoopInput): OwnerLoo
     return buildOwnerLoop(getOwnerLoopRules(input), state);
 }
 
-export default useOwnerLoop;
-export {buildOwnerLoop, getOwnerLoopRules};
-export type {GlobalOwnerLoopInput, OwnerLoop, OwnerLoopState, USDOwnerLoopInput};
+export default getOwnerLoop;
+export type {GlobalOwnerLoopInput, OwnerLoop, USDOwnerLoopInput};

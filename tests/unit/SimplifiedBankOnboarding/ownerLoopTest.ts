@@ -1,11 +1,10 @@
-import type {GlobalOwnerDraft, USDOwnerDraft} from '@pages/SimplifiedBankOnboarding/contract/form';
+import type {GlobalOwnerDraft, OnboardingDraft, USDOwnerDraft} from '@pages/SimplifiedBankOnboarding/contract/form';
 import {EMPTY_OWNER_BUFFER, GLOBAL_OWNER_BUFFER, readOwnerBuffer, USD_OWNER_BUFFER} from '@pages/SimplifiedBankOnboarding/flows/shared/owners/ownerBuffer';
 import {canAddMoreGlobalOwners, canAddMoreUSDOwners, getOwnershipSum, isValidGlobalOwnerShare} from '@pages/SimplifiedBankOnboarding/flows/shared/owners/ownerLimits';
 import {CURRENT_USER_OWNER_ID} from '@pages/SimplifiedBankOnboarding/flows/shared/owners/ownerList';
+import getOwnerLoop from '@pages/SimplifiedBankOnboarding/flows/shared/owners/ownerLoop';
 import {getGlobalOwnersParams, getUSDOwnersParams} from '@pages/SimplifiedBankOnboarding/flows/shared/owners/ownerParams';
 import {getGlobalOwnersFromServer, getOwnerFullName, getUSDOwnersFromServer, splitFullName} from '@pages/SimplifiedBankOnboarding/flows/shared/owners/serverOwners';
-import {buildOwnerLoop, getOwnerLoopRules} from '@pages/SimplifiedBankOnboarding/flows/shared/owners/useOwnerLoop';
-import type {OwnerLoopState} from '@pages/SimplifiedBankOnboarding/flows/shared/owners/useOwnerLoop';
 
 /** A new owner gets a random ID, so the tests only check that there is one */
 const ANY_NEW_OWNER_ID: unknown = expect.any(String);
@@ -38,17 +37,12 @@ function createGlobalOwner(id: string, ownershipPercentage: string): GlobalOwner
     };
 }
 
-const NO_OWNER: OwnerLoopState = {
-    ownerBeingModifiedID: undefined,
-    buffer: EMPTY_OWNER_BUFFER,
-};
-
-function buildUSDLoop(owners: USDOwnerDraft[], isUserOwner: boolean, state: OwnerLoopState = NO_OWNER) {
-    return buildOwnerLoop(getOwnerLoopRules({kind: 'usd', owners, isUserOwner}), state);
+function buildUSDLoop(owners: USDOwnerDraft[], isUserOwner: boolean, draft: OnboardingDraft = {}) {
+    return getOwnerLoop({kind: 'usd', owners, isUserOwner}, draft);
 }
 
-function buildGlobalLoop(owners: GlobalOwnerDraft[], state: OwnerLoopState = NO_OWNER) {
-    return buildOwnerLoop(getOwnerLoopRules({kind: 'global', owners}), state);
+function buildGlobalLoop(owners: GlobalOwnerDraft[], draft: OnboardingDraft = {}) {
+    return getOwnerLoop({kind: 'global', owners}, draft);
 }
 
 describe('owner limits', () => {
@@ -135,7 +129,7 @@ describe('update builders', () => {
         // Given a loop whose buffer still holds the last owner
         const loop = buildUSDLoop([ADA], false, {
             ownerBeingModifiedID: ADA.id,
-            buffer: USD_OWNER_BUFFER.getBuffer(ADA),
+            ...USD_OWNER_BUFFER.getBuffer(ADA),
         });
 
         // When a new owner starts
@@ -166,7 +160,7 @@ describe('update builders', () => {
         // Given a new owner in the buffer next to one listed owner
         const loop = buildUSDLoop([ADA], false, {
             ownerBeingModifiedID: ALAN.id,
-            buffer: USD_OWNER_BUFFER.getBuffer(ALAN),
+            ...USD_OWNER_BUFFER.getBuffer(ALAN),
         });
 
         // When the owner is committed
@@ -180,7 +174,8 @@ describe('update builders', () => {
         // Given the first of two owners, edited from the list
         const loop = buildUSDLoop([ADA, ALAN], false, {
             ownerBeingModifiedID: ADA.id,
-            buffer: {...USD_OWNER_BUFFER.getBuffer(ADA), ownerLastName: 'Byron'},
+            ...USD_OWNER_BUFFER.getBuffer(ADA),
+            ownerLastName: 'Byron',
         });
 
         // When the owner is committed
@@ -195,7 +190,7 @@ describe('update builders', () => {
         // Given two listed owners next to a user who owns 25%, and a new owner in the buffer
         const loop = buildUSDLoop([ADA, ALAN], true, {
             ownerBeingModifiedID: GRACE.id,
-            buffer: USD_OWNER_BUFFER.getBuffer(GRACE),
+            ...USD_OWNER_BUFFER.getBuffer(GRACE),
         });
 
         // When the owner is committed
@@ -209,7 +204,7 @@ describe('update builders', () => {
         const newOwner = createGlobalOwner('b', '20');
         const loop = buildGlobalLoop(owners, {
             ownerBeingModifiedID: newOwner.id,
-            buffer: GLOBAL_OWNER_BUFFER.getBuffer(newOwner),
+            ...GLOBAL_OWNER_BUFFER.getBuffer(newOwner),
         });
 
         // When the owner is committed
@@ -266,7 +261,7 @@ describe('update builders', () => {
         const typedBuffer = {...EMPTY_OWNER_BUFFER, ownerFirstName: 'Typed'};
         const loop = buildGlobalLoop([], {
             ownerBeingModifiedID: CURRENT_USER_OWNER_ID,
-            buffer: typedBuffer,
+            ...typedBuffer,
         });
 
         // When the user goes back and says again that they own 25%

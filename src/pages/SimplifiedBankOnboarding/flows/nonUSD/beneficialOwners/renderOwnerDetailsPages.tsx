@@ -10,8 +10,8 @@ import type {GlobalOwnerDraft} from '@pages/SimplifiedBankOnboarding/contract/fo
 import {ConfirmationSubPage, FullNameSubPage, PageLoadingIndicator, SingleFieldSubPage, SubPage} from '@pages/SimplifiedBankOnboarding/core';
 import {canAddMoreGlobalOwners, isValidGlobalOwnerShare} from '@pages/SimplifiedBankOnboarding/flows/shared/owners/ownerLimits';
 import {CURRENT_USER_OWNER_ID} from '@pages/SimplifiedBankOnboarding/flows/shared/owners/ownerList';
+import type {OwnerLoop} from '@pages/SimplifiedBankOnboarding/flows/shared/owners/ownerLoop';
 import {getOwnerFullName} from '@pages/SimplifiedBankOnboarding/flows/shared/owners/serverOwners';
-import type {OwnerLoop} from '@pages/SimplifiedBankOnboarding/flows/shared/owners/useOwnerLoop';
 
 import CONST from '@src/CONST';
 

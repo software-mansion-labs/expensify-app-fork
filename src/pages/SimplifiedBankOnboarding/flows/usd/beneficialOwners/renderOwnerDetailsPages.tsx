@@ -8,8 +8,8 @@ import INPUT_IDS from '@pages/SimplifiedBankOnboarding/contract/form';
 import type {USDOwnerDraft} from '@pages/SimplifiedBankOnboarding/contract/form';
 import {ConfirmationSubPage, DateOfBirthSubPage, FullNameSubPage, PageLoadingIndicator, SubPage} from '@pages/SimplifiedBankOnboarding/core';
 import {canAddMoreUSDOwners} from '@pages/SimplifiedBankOnboarding/flows/shared/owners/ownerLimits';
+import type {OwnerLoop} from '@pages/SimplifiedBankOnboarding/flows/shared/owners/ownerLoop';
 import {getOwnerFullName} from '@pages/SimplifiedBankOnboarding/flows/shared/owners/serverOwners';
-import type {OwnerLoop} from '@pages/SimplifiedBankOnboarding/flows/shared/owners/useOwnerLoop';
 
 import React from 'react';
 

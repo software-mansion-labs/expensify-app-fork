@@ -15,6 +15,9 @@ type OwnersAnswers = {
 
     /** The owners other than the user */
     owners: USDOwnerDraft[];
+
+    /** True once the server saved the owners step */
+    hasSavedOwners: boolean;
 };
 
 function getOwnersAnswers({draft, account}: FlowData): OwnersAnswers {
@@ -27,6 +30,7 @@ function getOwnersAnswers({draft, account}: FlowData): OwnersAnswers {
         // The server has no answer of its own for this question: the saved owners step answered yes when it saved owners
         hasOtherBeneficialOwners: draft.hasOtherBeneficialOwners ?? (hasSavedOwners ? (achData?.beneficialOwners?.length ?? 0) > 0 : undefined),
         owners: draft.usdOwners ?? getUSDOwnersFromServer(achData),
+        hasSavedOwners,
     };
 }
 

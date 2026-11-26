@@ -8,7 +8,6 @@ import TextInput from '@components/TextInput';
 
 import useAutoFocusInput from '@hooks/useAutoFocusInput';
 import useLocalize from '@hooks/useLocalize';
-import useOnyx from '@hooks/useOnyx';
 import useThemeStyles from '@hooks/useThemeStyles';
 
 import INPUT_IDS from '@pages/SimplifiedBankOnboarding/contract/form';
@@ -18,7 +17,6 @@ import {FormSubPage, SubPageInput, useFlowData} from '@pages/SimplifiedBankOnboa
 import type {SubPageFormErrors} from '@pages/SimplifiedBankOnboarding/core';
 
 import CONST from '@src/CONST';
-import ONYXKEYS from '@src/ONYXKEYS';
 
 import React from 'react';
 
@@ -35,11 +33,9 @@ function ManualBankPage() {
     const {translate} = useLocalize();
     const styles = useThemeStyles();
     const {inputCallbackRef} = useAutoFocusInput();
-    const answers = getBankAccountAnswers(useFlowData());
-
-    // A locked input takes its value from the answers, because the form of a screen that stayed mounted under the next
-    // step still holds the typed numbers.
-    const [isLocked = false] = useOnyx(ONYXKEYS.SIMPLIFIED_BANK_ONBOARDING_ACCOUNT, {selector: (account) => hasBankAccount(account?.achData)});
+    const data = useFlowData();
+    const answers = getBankAccountAnswers(data);
+    const isLocked = hasBankAccount(data.account?.achData);
 
     const validate = (values: OnboardingDraft): SubPageFormErrors => {
         const errors: SubPageFormErrors = {};
@@ -71,6 +67,8 @@ function ManualBankPage() {
                 aria-label={translate('bankAccount.routingNumber')}
                 role={CONST.ROLE.PRESENTATION}
                 defaultValue={answers.routingNumber}
+                // A locked input takes its value from the answers, because the form of a screen that stayed mounted under
+                // the next step still holds the typed numbers
                 value={isLocked ? answers.routingNumber : undefined}
                 inputMode={CONST.INPUT_MODE.NUMERIC}
                 disabled={isLocked}

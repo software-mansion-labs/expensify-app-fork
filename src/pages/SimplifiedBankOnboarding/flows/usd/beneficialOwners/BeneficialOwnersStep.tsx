@@ -5,19 +5,16 @@
  * are known, else the second question once the step was saved, else the first question.
  */
 import useLocalize from '@hooks/useLocalize';
-import useOnyx from '@hooks/useOnyx';
 
 import INPUT_IDS from '@pages/SimplifiedBankOnboarding/contract/form';
 import {NEXT_STEP, OnboardingStep, SubPage, YesNoSubPage, useFlowData} from '@pages/SimplifiedBankOnboarding/core';
 import type {PageTarget} from '@pages/SimplifiedBankOnboarding/core';
+import getOwnerLoop from '@pages/SimplifiedBankOnboarding/flows/shared/owners/ownerLoop';
 import type {OwnerRow} from '@pages/SimplifiedBankOnboarding/flows/shared/owners/OwnersListPage';
 import OwnersListPage from '@pages/SimplifiedBankOnboarding/flows/shared/owners/OwnersListPage';
 import {getOwnerFullName} from '@pages/SimplifiedBankOnboarding/flows/shared/owners/serverOwners';
-import useOwnerLoop from '@pages/SimplifiedBankOnboarding/flows/shared/owners/useOwnerLoop';
 import getBusinessInfoAnswers from '@pages/SimplifiedBankOnboarding/flows/usd/businessInfo/getBusinessInfoAnswers';
 import getPersonalInfoAnswers from '@pages/SimplifiedBankOnboarding/flows/usd/personalInfo/getPersonalInfoAnswers';
-
-import ONYXKEYS from '@src/ONYXKEYS';
 
 import React from 'react';
 
@@ -36,14 +33,7 @@ function BeneficialOwnersStep() {
     const user = getPersonalInfoAnswers(data);
     const {companyName} = getBusinessInfoAnswers(data);
     const isUserOwner = answers.ownsMoreThan25Percent ?? false;
-    const loop = useOwnerLoop({
-        kind: 'usd',
-        owners: answers.owners,
-        isUserOwner,
-    });
-    const [hasSavedStep = false] = useOnyx(ONYXKEYS.SIMPLIFIED_BANK_ONBOARDING_ACCOUNT, {
-        selector: (account) => account?.achData?.ownsMoreThan25Percent !== undefined,
-    });
+    const loop = getOwnerLoop({kind: 'usd', owners: answers.owners, isUserOwner}, data.draft);
 
     const hasOtherOwners = answers.hasOtherBeneficialOwners ?? false;
     const areOwnersKnown = isUserOwner || (hasOtherOwners && loop.owners.length > 0);
@@ -83,7 +73,7 @@ function BeneficialOwnersStep() {
         >
             <YesNoSubPage
                 name={PAGES.IS_USER_UBO}
-                isAnswered={areOwnersKnown || hasSavedStep}
+                isAnswered={areOwnersKnown || answers.hasSavedOwners}
                 inputID={INPUT_IDS.OWNS_MORE_THAN_25_PERCENT}
                 title={translate('beneficialOwnerInfoStep.doYouOwn25percent', companyName)}
                 description={description}

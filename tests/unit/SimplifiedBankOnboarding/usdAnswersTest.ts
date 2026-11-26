@@ -44,7 +44,7 @@ describe('the answers of the USD steps', () => {
         // Then text is empty, checkboxes are unchecked, the yes or no questions have no answer yet and no document is asked for
         expect(getBankAccountAnswers(data)).toEqual({setupType: undefined, routingNumber: '', accountNumber: '', plaidAccountID: undefined});
         expect(getAgreementsAnswers(data).acceptTermsAndConditions).toBe(false);
-        expect(getOwnersAnswers(data)).toEqual({ownsMoreThan25Percent: undefined, hasOtherBeneficialOwners: undefined, owners: []});
+        expect(getOwnersAnswers(data)).toEqual({ownsMoreThan25Percent: undefined, hasOtherBeneficialOwners: undefined, owners: [], hasSavedOwners: false});
         expect(getKYBDocumentsAnswers(data)).toEqual([]);
     });
 
@@ -81,8 +81,9 @@ describe('the answers of the USD steps', () => {
         // When the answers are read
         const answers = getOwnersAnswers(getTestFlowData({account}));
 
-        // Then the question has the answer no, so the owners step can resume past it
+        // Then the question has the answer no and the step counts as saved, so the owners step can resume past it
         expect(answers.hasOtherBeneficialOwners).toBe(false);
+        expect(answers.hasSavedOwners).toBe(true);
     });
 
     it('takes the owner list of the draft over the saved owners', () => {

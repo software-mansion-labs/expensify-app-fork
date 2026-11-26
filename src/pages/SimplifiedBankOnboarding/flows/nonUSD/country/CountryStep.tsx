@@ -8,15 +8,12 @@ import MenuItemField from '@components/MenuItem/presets/MenuItemField';
 import PushRowWithModal from '@components/PushRowWithModal';
 
 import useLocalize from '@hooks/useLocalize';
-import useOnyx from '@hooks/useOnyx';
 import useThemeStyles from '@hooks/useThemeStyles';
 
 import INPUT_IDS from '@pages/SimplifiedBankOnboarding/contract/form';
 import SBO_CONST from '@pages/SimplifiedBankOnboarding/contract/SBO_CONST';
 import {isGlobalAccountCreated} from '@pages/SimplifiedBankOnboarding/contract/setupStatus';
 import {FormSubPage, OnboardingStep, useFlowData} from '@pages/SimplifiedBankOnboarding/core';
-
-import ONYXKEYS from '@src/ONYXKEYS';
 
 import React from 'react';
 import {View} from 'react-native';
@@ -39,7 +36,7 @@ function CountryStep() {
     const data = useFlowData();
     const {currency} = data;
     const {country} = getCountryAnswers(data);
-    const [isAccountCreated] = useOnyx(ONYXKEYS.SIMPLIFIED_BANK_ONBOARDING_ACCOUNT, {selector: (account) => isGlobalAccountCreated(account?.achData)});
+    const isAccountCreated = isGlobalAccountCreated(data.account?.achData);
 
     const countryOptions = getCountryOptions(currency, translate);
 
