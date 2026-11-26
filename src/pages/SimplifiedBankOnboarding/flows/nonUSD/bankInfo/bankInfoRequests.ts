@@ -3,10 +3,6 @@ import type {OnboardingRequest} from '@pages/SimplifiedBankOnboarding/core';
 import getCountryAnswers from '@pages/SimplifiedBankOnboarding/flows/nonUSD/country/getCountryAnswers';
 import {READ_COMMANDS, WRITE_COMMANDS} from '@pages/SimplifiedBankOnboarding/mockBackend/commands';
 
-import ONYXKEYS from '@src/ONYXKEYS';
-
-import Onyx from 'react-native-onyx';
-
 import getBankInfoAnswers from './getBankInfoAnswers';
 
 /** The inputs of the country and currency of the account. Without a country there is nothing to ask for. */
@@ -21,29 +17,6 @@ const bankFieldsRead: OnboardingRequest = {
             type: 'read',
             command: READ_COMMANDS.GET_BANK_ACCOUNT_FIELDS,
             params: {countryISO: country, currency: data.currency},
-            onyxData: {
-                optimisticData: [
-                    {
-                        onyxMethod: Onyx.METHOD.MERGE,
-                        key: ONYXKEYS.SIMPLIFIED_BANK_ONBOARDING_BANK_FIELDS,
-                        value: {isLoading: true},
-                    },
-                ],
-                successData: [
-                    {
-                        onyxMethod: Onyx.METHOD.MERGE,
-                        key: ONYXKEYS.SIMPLIFIED_BANK_ONBOARDING_BANK_FIELDS,
-                        value: {isLoading: false, isSuccess: true},
-                    },
-                ],
-                failureData: [
-                    {
-                        onyxMethod: Onyx.METHOD.MERGE,
-                        key: ONYXKEYS.SIMPLIFIED_BANK_ONBOARDING_BANK_FIELDS,
-                        value: {isLoading: false, isSuccess: false},
-                    },
-                ],
-            },
         };
     },
 };

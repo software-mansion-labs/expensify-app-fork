@@ -10,6 +10,7 @@ import useThemeStyles from '@hooks/useThemeStyles';
 
 import {isValidCompanyName} from '@libs/ValidationUtils';
 
+import NotFoundPage from '@pages/ErrorPage/NotFoundPage';
 import INPUT_IDS from '@pages/SimplifiedBankOnboarding/contract/form';
 import {
     ConfirmationSubPage,
@@ -38,10 +39,14 @@ function BusinessInfoStep() {
     const styles = useThemeStyles();
     const {companyName, businessType} = getBusinessInfoAnswers(useFlowData());
     const [picklists] = useOnyx(ONYXKEYS.SIMPLIFIED_BANK_ONBOARDING_PICKLISTS);
-    useReadOnOpen(picklistsRead);
+    const {isPending, hasFailed} = useReadOnOpen(picklistsRead);
 
     const businessTypes = picklists?.picklists?.businessType ?? [];
     const businessTypeName = businessTypes.find((option) => option.id === businessType)?.name ?? businessType;
+
+    if (hasFailed) {
+        return <NotFoundPage />;
+    }
 
     return (
         <OnboardingStep
@@ -58,7 +63,7 @@ function BusinessInfoStep() {
                 validate={(value) => (isValidCompanyName(value) ? undefined : 'bankAccount.error.companyName')}
                 defaultValue={companyName}
             />
-            {picklists?.isLoading ? (
+            {isPending || !picklists?.picklists ? (
                 <SubPage
                     name={PAGES.BUSINESS_TYPE}
                     isAnswered={!!businessType}

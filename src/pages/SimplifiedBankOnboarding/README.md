@@ -323,7 +323,7 @@ section 8).
 | ID | Change |
 | --- | --- |
 | BC-01 | The form keys get their own strings. Forms no longer show `account.isLoading` and `account.errors` by accident, and a failed request no longer blocks the next submit. Drafts saved before the change are lost once |
-| BC-02 | Flow requests stop writing `account.isLoading`, `isSuccess`, the `isSaving...` style flags and `draftStep`. Their status lives in the RAM key `simplifiedBankOnboardingRequests`. Reads still write `account.isLoading` |
+| BC-02 | Flow requests stop writing `account.isLoading`, `isSuccess`, the `isSaving...` style flags and `draftStep`. Their status lives in the RAM key `simplifiedBankOnboardingRequests`. The Plaid, picklists and bank fields reads no longer write `isLoading`, `isSuccess` or `errors` into their data keys. The account read still writes `account.isLoading` |
 | BC-03 | A page moves on after a request only when it succeeded and the screen still shows that page. A second press while pending sends nothing |
 | BC-04 | A request error belongs to the page that sent it. The `account.errors` mirror lives exactly as long as that page error |
 | BC-05 | The identity check waits for `VerifyIdentity`. On failure the user stays and sees the error |
@@ -353,6 +353,7 @@ section 8).
 | BC-29 | An offline read is skipped before it reaches the mock API, so the request log shows no "dropped" row for it |
 | BC-30 | Entry: a failed account read shows the not found view to a user who is not an admin of the workspace (an admin keeps the loader). The pending validation redirect does nothing while another screen covers the entry. Back on the "Change bank account" instance returns to the entry with the connected account |
 | BC-31 | The route of the invited director form is `settings/bank-onboarding-lab/enter-director-info`. The old path ended with `enter-signer-info`, which the app's own dynamic route captured, so the lab form never opened |
+| BC-32 | A failed picklists read shows the not found page in the NonUSD business step, like a failed bank fields read in the bank step. Before, the business type page showed an empty picker |
 
 Kept on purpose: the client SSN rule that refuses `0000`, the tax ID transform, the live draft save while typing,
 `OPTION_PRESSED`, the verify page Back that ignores `backTo`, `NotFoundPage` on a failed bank fields read, and the AUD

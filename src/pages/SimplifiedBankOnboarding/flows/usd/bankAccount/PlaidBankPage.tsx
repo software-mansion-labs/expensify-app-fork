@@ -13,8 +13,6 @@ import useLocalize from '@hooks/useLocalize';
 import useOnyx from '@hooks/useOnyx';
 import useThemeStyles from '@hooks/useThemeStyles';
 
-import {getLatestErrorMessage} from '@libs/ErrorUtils';
-
 import {PageLoadingIndicator, RequestErrorMessage, useOnboardingFlow, useOnboardingRequest, useReadOnOpen, useSubPageSubmit, useFlowData} from '@pages/SimplifiedBankOnboarding/core';
 
 import CONST from '@src/CONST';
@@ -36,10 +34,10 @@ function PlaidBankPage() {
     const [plaidLinkToken] = useOnyx(ONYXKEYS.RAM_ONLY_SIMPLIFIED_BANK_ONBOARDING_PLAID_LINK_TOKEN);
     const accountSelector = useOnboardingRequest(plaidAccountSelectorRead);
     const {submit, isPending, errorMessage} = useSubPageSubmit({request: connectWithPlaidRequest});
-    useReadOnOpen(plaidLoginRead);
+    const loginRead = useReadOnOpen(plaidLoginRead);
 
     const plaidBankAccounts = plaidData?.bankAccounts ?? [];
-    const plaidErrorMessage = getLatestErrorMessage(plaidData);
+    const plaidErrorMessage = loginRead.hasFailed ? translate('common.genericErrorMessage') : accountSelector.errorMessage;
 
     const logInToBank = () => {
         accountSelector.send();
@@ -53,7 +51,7 @@ function PlaidBankPage() {
         if (plaidErrorMessage) {
             return <Text style={[styles.formError, styles.mh5]}>{plaidErrorMessage}</Text>;
         }
-        if (!plaidLinkToken || plaidData?.isLoading) {
+        if (!plaidLinkToken || accountSelector.isPending) {
             return <PageLoadingIndicator />;
         }
         return (

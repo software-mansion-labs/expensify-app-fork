@@ -170,8 +170,6 @@ type PlaidBankAccount = {
 };
 
 type PlaidData = {
-    isLoading?: boolean;
-    errors?: OnyxCommon.Errors | null;
     bankAccounts?: PlaidBankAccount[];
 };
 
@@ -198,8 +196,6 @@ type BankFormField = {
 };
 
 type BankFields = {
-    isLoading?: boolean;
-    isSuccess?: boolean;
     bankCountry?: string;
     bankCurrency?: string;
     formFields?: BankFormField[];
@@ -222,7 +218,6 @@ type RequestState = {
 type OnboardingRequests = Record<string, RequestState>;
 
 type OnboardingPicklists = {
-    isLoading?: boolean;
     picklists?: {
         businessType?: Array<{id: string; name: string}>;
     };
