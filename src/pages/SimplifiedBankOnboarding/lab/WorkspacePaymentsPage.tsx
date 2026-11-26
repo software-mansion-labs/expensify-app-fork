@@ -20,8 +20,8 @@ import Navigation from '@libs/Navigation/Navigation';
 import type BankOnboardingLabParamList from '@libs/Navigation/paramLists/BankOnboardingLabParamList';
 import type {PlatformStackScreenProps} from '@libs/Navigation/PlatformStackNavigation/types';
 
+import {isNonUSDCurrency} from '@pages/SimplifiedBankOnboarding/contract/currency';
 import type {Workspaces} from '@pages/SimplifiedBankOnboarding/contract/onyx';
-import SBO_CONST from '@pages/SimplifiedBankOnboarding/contract/SBO_CONST';
 import {hasInProgressSetup} from '@pages/SimplifiedBankOnboarding/contract/setupStatus';
 
 import CONST from '@src/CONST';
@@ -63,7 +63,7 @@ function WorkspacePaymentsPage({route}: WorkspacePaymentsPageProps) {
         );
     }
 
-    const isNonUSDWorkspace = workspace.outputCurrency !== SBO_CONST.CURRENCY.USD;
+    const isNonUSDWorkspace = isNonUSDCurrency(workspace.outputCurrency);
 
     // The account key only describes this workspace when the flow was opened for it last, which this page cannot tell from the summary.
     const hasSetupInProgress = hasInProgressSetup(account?.achData, isNonUSDWorkspace, policyID);
