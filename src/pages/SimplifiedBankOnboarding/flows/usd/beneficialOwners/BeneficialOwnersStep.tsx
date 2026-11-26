@@ -9,7 +9,7 @@ import useLocalize from '@hooks/useLocalize';
 import INPUT_IDS from '@pages/SimplifiedBankOnboarding/contract/form';
 import {NEXT_STEP, OnboardingStep, SubPage, YesNoSubPage, useFlowData} from '@pages/SimplifiedBankOnboarding/core';
 import type {PageTarget} from '@pages/SimplifiedBankOnboarding/core';
-import getOwnerLoop from '@pages/SimplifiedBankOnboarding/flows/shared/owners/ownerLoop';
+import getOwnerLoop, {getUSDOwnerLoopRules} from '@pages/SimplifiedBankOnboarding/flows/shared/owners/ownerLoop';
 import type {OwnerRow} from '@pages/SimplifiedBankOnboarding/flows/shared/owners/OwnersListPage';
 import OwnersListPage from '@pages/SimplifiedBankOnboarding/flows/shared/owners/OwnersListPage';
 import {getOwnerFullName} from '@pages/SimplifiedBankOnboarding/flows/shared/owners/serverOwners';
@@ -33,7 +33,7 @@ function BeneficialOwnersStep() {
     const user = getPersonalInfoAnswers(data);
     const {companyName} = getBusinessInfoAnswers(data);
     const isUserOwner = answers.ownsMoreThan25Percent ?? false;
-    const loop = getOwnerLoop({kind: 'usd', owners: answers.owners, isUserOwner}, data.draft);
+    const loop = getOwnerLoop(getUSDOwnerLoopRules(answers.owners, isUserOwner), data.draft);
 
     const hasOtherOwners = answers.hasOtherBeneficialOwners ?? false;
     const areOwnersKnown = isUserOwner || (hasOtherOwners && loop.owners.length > 0);

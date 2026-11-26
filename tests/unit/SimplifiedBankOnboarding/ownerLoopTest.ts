@@ -2,7 +2,7 @@ import type {GlobalOwnerDraft, OnboardingDraft, USDOwnerDraft} from '@pages/Simp
 import {EMPTY_OWNER_BUFFER, GLOBAL_OWNER_BUFFER, readOwnerBuffer, USD_OWNER_BUFFER} from '@pages/SimplifiedBankOnboarding/flows/shared/owners/ownerBuffer';
 import {canAddMoreGlobalOwners, canAddMoreUSDOwners, getOwnershipSum, isValidGlobalOwnerShare} from '@pages/SimplifiedBankOnboarding/flows/shared/owners/ownerLimits';
 import {CURRENT_USER_OWNER_ID} from '@pages/SimplifiedBankOnboarding/flows/shared/owners/ownerList';
-import getOwnerLoop from '@pages/SimplifiedBankOnboarding/flows/shared/owners/ownerLoop';
+import getOwnerLoop, {getGlobalOwnerLoopRules, getUSDOwnerLoopRules} from '@pages/SimplifiedBankOnboarding/flows/shared/owners/ownerLoop';
 import {getGlobalOwnersParams, getUSDOwnersParams} from '@pages/SimplifiedBankOnboarding/flows/shared/owners/ownerParams';
 import {getGlobalOwnersFromServer, getOwnerFullName, getUSDOwnersFromServer, splitFullName} from '@pages/SimplifiedBankOnboarding/flows/shared/owners/serverOwners';
 
@@ -38,11 +38,11 @@ function createGlobalOwner(id: string, ownershipPercentage: string): GlobalOwner
 }
 
 function buildUSDLoop(owners: USDOwnerDraft[], isUserOwner: boolean, draft: OnboardingDraft = {}) {
-    return getOwnerLoop({kind: 'usd', owners, isUserOwner}, draft);
+    return getOwnerLoop(getUSDOwnerLoopRules(owners, isUserOwner), draft);
 }
 
 function buildGlobalLoop(owners: GlobalOwnerDraft[], draft: OnboardingDraft = {}) {
-    return getOwnerLoop({kind: 'global', owners}, draft);
+    return getOwnerLoop(getGlobalOwnerLoopRules(owners), draft);
 }
 
 describe('owner limits', () => {

@@ -58,24 +58,6 @@ type OwnerLoop<TOwner extends Owner> = {
     getRemoveOtherOwnersUpdate: () => OnboardingDraft;
 };
 
-type USDOwnerLoopInput = {
-    kind: 'usd';
-
-    /** The owners other than the user */
-    owners: USDOwnerDraft[];
-    isUserOwner: boolean;
-};
-
-type GlobalOwnerLoopInput = {
-    kind: 'global';
-    owners: GlobalOwnerDraft[];
-};
-
-type OwnerLoopState = {
-    ownerBeingModifiedID: string | undefined;
-    buffer: OwnerBuffer;
-};
-
 type OwnerLoopRules<TOwner extends Owner> = {
     owners: TOwner[];
     canAddMore: boolean;
@@ -86,10 +68,10 @@ type OwnerLoopRules<TOwner extends Owner> = {
     mapping: OwnerBufferMapping<TOwner>;
 };
 
-function buildOwnerLoop<TOwner extends Owner>(
-    {owners, canAddMore, canCommitNewOwner, maxOwnersNextToUser, mapping}: OwnerLoopRules<TOwner>,
-    {ownerBeingModifiedID, buffer}: OwnerLoopState,
-): OwnerLoop<TOwner> {
+function getOwnerLoop<TOwner extends Owner>({owners, canAddMore, canCommitNewOwner, maxOwnersNextToUser, mapping}: OwnerLoopRules<TOwner>, draft: OnboardingDraft): OwnerLoop<TOwner> {
+    const ownerBeingModifiedID = draft.ownerBeingModifiedID ?? undefined;
+    const buffer = readOwnerBuffer(draft);
+
     const isEditingListedOwner = !!findOwner(owners, ownerBeingModifiedID);
     const committedOwner = ownerBeingModifiedID ? mapping.getOwner(ownerBeingModifiedID, buffer) : undefined;
     const ownersAfterCommit = committedOwner && (isEditingListedOwner || canCommitNewOwner) ? commitOwner(owners, committedOwner) : owners;
@@ -136,41 +118,28 @@ function buildOwnerLoop<TOwner extends Owner>(
     };
 }
 
-function getOwnerLoopRules(input: USDOwnerLoopInput): OwnerLoopRules<USDOwnerDraft>;
-function getOwnerLoopRules(input: GlobalOwnerLoopInput): OwnerLoopRules<GlobalOwnerDraft>;
-function getOwnerLoopRules(input: USDOwnerLoopInput | GlobalOwnerLoopInput): OwnerLoopRules<USDOwnerDraft> | OwnerLoopRules<GlobalOwnerDraft> {
-    if (input.kind === 'usd') {
-        const canAddMore = canAddMoreUSDOwners(input.owners, input.isUserOwner);
-        return {
-            owners: input.owners,
-            canAddMore,
-            canCommitNewOwner: canAddMore,
-            maxOwnersNextToUser: MAX_USD_OWNERS_NEXT_TO_USER,
-            mapping: USD_OWNER_BUFFER,
-        };
-    }
+/** The USD list holds the owners other than the user, who is listed by the personal info step */
+function getUSDOwnerLoopRules(owners: USDOwnerDraft[], isUserOwner: boolean): OwnerLoopRules<USDOwnerDraft> {
+    const canAddMore = canAddMoreUSDOwners(owners, isUserOwner);
     return {
-        owners: input.owners,
-        canAddMore: canAddMoreGlobalOwners(input.owners),
+        owners,
+        canAddMore,
+        canCommitNewOwner: canAddMore,
+        maxOwnersNextToUser: MAX_USD_OWNERS_NEXT_TO_USER,
+        mapping: USD_OWNER_BUFFER,
+    };
+}
+
+function getGlobalOwnerLoopRules(owners: GlobalOwnerDraft[]): OwnerLoopRules<GlobalOwnerDraft> {
+    return {
+        owners,
+        canAddMore: canAddMoreGlobalOwners(owners),
         canCommitNewOwner: true,
         maxOwnersNextToUser: MAX_GLOBAL_OWNERS_NEXT_TO_USER,
         mapping: GLOBAL_OWNER_BUFFER,
     };
 }
 
-function getOwnerLoop(input: USDOwnerLoopInput, draft: OnboardingDraft): OwnerLoop<USDOwnerDraft>;
-function getOwnerLoop(input: GlobalOwnerLoopInput, draft: OnboardingDraft): OwnerLoop<GlobalOwnerDraft>;
-function getOwnerLoop(input: USDOwnerLoopInput | GlobalOwnerLoopInput, draft: OnboardingDraft): OwnerLoop<USDOwnerDraft> | OwnerLoop<GlobalOwnerDraft> {
-    const state: OwnerLoopState = {
-        ownerBeingModifiedID: draft.ownerBeingModifiedID ?? undefined,
-        buffer: readOwnerBuffer(draft),
-    };
-
-    if (input.kind === 'usd') {
-        return buildOwnerLoop(getOwnerLoopRules(input), state);
-    }
-    return buildOwnerLoop(getOwnerLoopRules(input), state);
-}
-
 export default getOwnerLoop;
-export type {GlobalOwnerLoopInput, OwnerLoop, USDOwnerLoopInput};
+export {getGlobalOwnerLoopRules, getUSDOwnerLoopRules};
+export type {OwnerLoop};
