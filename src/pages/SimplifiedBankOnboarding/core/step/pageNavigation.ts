@@ -19,10 +19,10 @@ type PageNavigation = {
     goNext: (target?: PageTarget) => void;
 
     /**
-     * Waits for `outcome`. When it succeeded and the screen still shows this page, calls goNext(target).
-     * A second call while one waits is ignored.
+     * Waits for `outcome`. When it succeeded and the screen still shows this page, calls goNext(target). A save that
+     * resolves with nothing counts as a success. A second call while one waits is ignored.
      */
-    goNextAfter: (outcome: Promise<RequestOutcome>, target?: PageTarget) => void;
+    goNextAfter: (outcome: Promise<RequestOutcome | void>, target?: PageTarget) => void;
 
     /** Back by the rules of OnboardingStep */
     goBack: () => void;

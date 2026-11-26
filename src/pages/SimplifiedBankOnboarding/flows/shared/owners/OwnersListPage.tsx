@@ -18,7 +18,7 @@ import useThemeStyles from '@hooks/useThemeStyles';
 import type {OnboardingDraft} from '@pages/SimplifiedBankOnboarding/contract/form';
 import type {PageID} from '@pages/SimplifiedBankOnboarding/contract/ids';
 import {RequestErrorMessage, useOnboardingFlow, useOnboardingRequest, usePageNavigation} from '@pages/SimplifiedBankOnboarding/core';
-import type {OnboardingRequest, RequestOutcome} from '@pages/SimplifiedBankOnboarding/core';
+import type {OnboardingRequest} from '@pages/SimplifiedBankOnboarding/core';
 
 import CONST from '@src/CONST';
 
@@ -45,8 +45,6 @@ type OwnersListPageProps = {
     getEditUpdate: (id: string) => OnboardingDraft;
 };
 
-const SAVED: RequestOutcome = {status: 'succeeded'};
-
 function OwnersListPage({rows, request, detailsStartPage, getEditUpdate}: OwnersListPageProps) {
     const {translate} = useLocalize();
     const styles = useThemeStyles();
@@ -55,10 +53,7 @@ function OwnersListPage({rows, request, detailsStartPage, getEditUpdate}: Owners
     const {send, isPending, errorMessage} = useOnboardingRequest(request);
 
     const openOwnerDetails = (id: string) => {
-        goNextAfter(
-            saveDraft(getEditUpdate(id)).then(() => SAVED),
-            detailsStartPage,
-        );
+        goNextAfter(saveDraft(getEditUpdate(id)), detailsStartPage);
     };
 
     const sendOwners = () => {

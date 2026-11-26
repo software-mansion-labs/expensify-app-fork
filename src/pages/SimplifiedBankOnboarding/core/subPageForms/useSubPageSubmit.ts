@@ -5,12 +5,10 @@
  */
 import type {OnboardingDraft} from '@pages/SimplifiedBankOnboarding/contract/form';
 import {useOnboardingFlow} from '@pages/SimplifiedBankOnboarding/core/flow/flowContext';
-import type {OnboardingRequest, RequestOutcome} from '@pages/SimplifiedBankOnboarding/core/requests/types';
+import type {OnboardingRequest} from '@pages/SimplifiedBankOnboarding/core/requests/types';
 import useOnboardingRequest from '@pages/SimplifiedBankOnboarding/core/requests/useOnboardingRequest';
 import {usePageNavigation} from '@pages/SimplifiedBankOnboarding/core/step/pageNavigation';
 import type {PageTarget} from '@pages/SimplifiedBankOnboarding/core/step/readSubPages';
-
-const SUCCEEDED: RequestOutcome = {status: 'succeeded'};
 
 type SubmitOptions = {
     /** False saves and moves on without the request (default: true) */
@@ -29,10 +27,7 @@ function useSubPageSubmit({request}: {request?: OnboardingRequest}): {
     function submit(draftValues: OnboardingDraft, next?: PageTarget, {shouldSend = true}: SubmitOptions = {}) {
         const saved = saveDraft(draftValues);
         if (isEditing || !request || !shouldSend) {
-            goNextAfter(
-                saved.then(() => SUCCEEDED),
-                next,
-            );
+            goNextAfter(saved, next);
             return;
         }
         goNextAfter(

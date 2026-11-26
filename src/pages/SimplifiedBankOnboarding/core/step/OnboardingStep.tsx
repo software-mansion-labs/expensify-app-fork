@@ -136,7 +136,7 @@ function OnboardingStep({title, wrapperID, children, startAt, saveAfterEachPage,
         Navigation.navigate(getFlowRoute(target, {step, page: destination.name}));
     }
 
-    function goNextAfter(outcome: Promise<RequestOutcome>, pageTarget?: PageTarget) {
+    function goNextAfter(outcome: Promise<RequestOutcome | void>, pageTarget?: PageTarget) {
         navigateAfterOutcome(outcome, () => goNext(pageTarget));
     }
 

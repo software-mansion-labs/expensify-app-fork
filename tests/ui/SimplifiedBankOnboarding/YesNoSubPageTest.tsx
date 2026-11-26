@@ -45,7 +45,7 @@ const OWNERS_REQUEST: OnboardingRequest = {
     }),
 };
 
-type NavigatedPage = {outcome: RequestOutcome; target: PageTarget | undefined};
+type NavigatedPage = {outcome: RequestOutcome | void; target: PageTarget | undefined};
 
 type RenderedQuestion = {
     saveDraft: jest.Mock<Promise<void>, [OnboardingDraft]>;
@@ -145,7 +145,7 @@ describe('YesNoSubPage', () => {
 
         // Then the answer and the values that come with it reach the draft, and the step ends because "No" leads there
         expect(saveDraft).toHaveBeenCalledWith({ownsMoreThan25Percent: false, usdOwners: []});
-        await expect(getNavigatedPage()).resolves.toEqual({outcome: {status: 'succeeded'}, target: NEXT_STEP});
+        await expect(getNavigatedPage()).resolves.toEqual({outcome: undefined, target: NEXT_STEP});
         expect(write).not.toHaveBeenCalled();
     });
 
@@ -158,7 +158,7 @@ describe('YesNoSubPage', () => {
 
         // Then only the values that come with the answer reach the draft, so no earlier answer is overwritten
         expect(saveDraft).toHaveBeenCalledWith({usdOwners: []});
-        await expect(getNavigatedPage()).resolves.toEqual({outcome: {status: 'succeeded'}, target: NEXT_STEP});
+        await expect(getNavigatedPage()).resolves.toEqual({outcome: undefined, target: NEXT_STEP});
     });
 
     it('sends no request for an answer that stays in the step', async () => {
@@ -169,7 +169,7 @@ describe('YesNoSubPage', () => {
         await chooseAnswer('common.yes');
 
         // Then nothing is sent and the page of "Yes" opens, because the owners are sent after the user lists them
-        await expect(getNavigatedPage()).resolves.toEqual({outcome: {status: 'succeeded'}, target: 'legal-name'});
+        await expect(getNavigatedPage()).resolves.toEqual({outcome: undefined, target: 'legal-name'});
         expect(write).not.toHaveBeenCalled();
     });
 
@@ -194,7 +194,7 @@ describe('YesNoSubPage', () => {
 
         // Then only the draft changes, because the confirmation sends the step
         expect(saveDraft).toHaveBeenCalledWith({ownsMoreThan25Percent: true});
-        await expect(getNavigatedPage()).resolves.toMatchObject({outcome: {status: 'succeeded'}});
+        await expect(getNavigatedPage()).resolves.toMatchObject({outcome: undefined});
         expect(write).not.toHaveBeenCalled();
     });
 });
