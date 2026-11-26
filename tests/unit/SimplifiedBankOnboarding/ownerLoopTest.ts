@@ -64,14 +64,13 @@ describe('owner limits', () => {
         expect(canAddMoreGlobalOwners([createGlobalOwner('a', '50'), createGlobalOwner('b', '26')])).toBe(false);
     });
 
-    it('sums the shares without the owner being edited and counts a share that is not a number as 0', () => {
+    it('sums the shares and counts a share that is not a number as 0', () => {
         // Given a list with an empty share
         const owners = [createGlobalOwner('a', '40'), createGlobalOwner('b', ''), createGlobalOwner('c', '30')];
 
-        // When the sum is taken with and without one owner
-        // Then the empty share adds nothing, and the edited owner is left out because its new share replaces the old one
+        // When the sum is taken
+        // Then the empty share adds nothing, because the user has not typed it yet
         expect(getOwnershipSum(owners)).toBe(70);
-        expect(getOwnershipSum(owners, 'a')).toBe(30);
     });
 
     it('accepts a share from 25 to 100 that keeps the total at 100 or below', () => {

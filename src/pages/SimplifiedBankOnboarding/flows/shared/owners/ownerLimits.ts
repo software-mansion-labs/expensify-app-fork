@@ -22,9 +22,8 @@ function getOwnershipPercentage(owner: GlobalOwnerDraft): number {
     return Number(owner.ownershipPercentage) || 0;
 }
 
-/** `excludedOwnerID` is the owner being edited, whose new share replaces the one in the list */
-function getOwnershipSum(owners: GlobalOwnerDraft[], excludedOwnerID?: string): number {
-    return owners.filter((owner) => owner.id !== excludedOwnerID).reduce((sum, owner) => sum + getOwnershipPercentage(owner), 0);
+function getOwnershipSum(owners: GlobalOwnerDraft[]): number {
+    return owners.reduce((sum, owner) => sum + getOwnershipPercentage(owner), 0);
 }
 
 function canAddMoreGlobalOwners(owners: GlobalOwnerDraft[]): boolean {
