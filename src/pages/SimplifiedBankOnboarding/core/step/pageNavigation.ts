@@ -27,7 +27,7 @@ type PageNavigation = {
     /** Back by the rules of OnboardingStep */
     goBack: () => void;
 
-    /** Opens a page of this step. `isEditing` makes Next and Back return to the confirmation. */
+    /** Opens a page of this step. `isEditing` makes Next and Back of that page return to the page that opened it. */
     openPage: (name: PageID, options?: {isEditing?: boolean}) => void;
 };
 

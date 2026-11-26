@@ -64,6 +64,9 @@ type FlowStepPosition = {
     /** The sub page that the URL names, undefined when it names none, an unknown one or one of another step */
     page: PageID | undefined;
     isEditing: boolean;
+
+    /** The page that opened edit mode, which Next and Back of the edited page return to */
+    editReturnPage?: PageID;
 };
 
 const OnboardingFlowStateContext = createContext<OnboardingFlowState | undefined>(undefined);

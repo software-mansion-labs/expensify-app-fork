@@ -2,7 +2,7 @@
  * The routes of the flows and the reading of flow routes. A position (step, sub page, edit flag) maps to the route of
  * its flow and back, so no other module knows the three route shapes, their params or the screen names.
  *
- * What it hides: the `page`, `subPage` and `action=edit` params, `policyID`, `backTo`, `bankAccountID` and
+ * What it hides: the `page`, `subPage`, `action=edit` and `returnTo` params, `policyID`, `backTo`, `bankAccountID` and
  * `isCompleted`, the one step of the invited director (its route has no step param), and the search of flow routes in
  * a navigation state.
  */
@@ -17,8 +17,11 @@ import SCREENS from '@src/SCREENS';
 
 import type {FlowTarget} from './flowContext';
 
-/** A position as the routes know it. The edit flag is the `action=edit` param. */
-type FlowPosition = {step?: StepID; page?: PageID; isEditing?: boolean};
+/**
+ * A position as the routes know it. The edit flag is the `action=edit` param, and `editReturnPage`, the page that
+ * opened edit mode, is the `returnTo` param.
+ */
+type FlowPosition = {step?: StepID; page?: PageID; isEditing?: boolean; editReturnPage?: PageID};
 
 /** The part of a navigation state that the reads need, so a test can pass a plain object */
 type FlowNavigationState = {routes: ReadonlyArray<{key: string; name: string; params?: unknown}>};
@@ -28,11 +31,19 @@ const EDIT_ACTION = 'edit';
 /** The route of a flow position. Steps never call this. The entry, the lab buttons and the shells do. */
 function getFlowRoute(target: FlowTarget, position: FlowPosition = {}): Route {
     const action = position.isEditing ? EDIT_ACTION : undefined;
+    const returnTo = position.isEditing ? position.editReturnPage : undefined;
     switch (target.kind) {
         case 'usd':
-            return ROUTES.SETTINGS_BANK_ONBOARDING_LAB_USD_SETUP.getRoute({policyID: target.policyID, page: position.step, subPage: position.page, action, backTo: target.backTo});
+            return ROUTES.SETTINGS_BANK_ONBOARDING_LAB_USD_SETUP.getRoute({policyID: target.policyID, page: position.step, subPage: position.page, action, returnTo, backTo: target.backTo});
         case 'nonUSD':
-            return ROUTES.SETTINGS_BANK_ONBOARDING_LAB_NON_USD_SETUP.getRoute({policyID: target.policyID, page: position.step, subPage: position.page, action, backTo: target.backTo});
+            return ROUTES.SETTINGS_BANK_ONBOARDING_LAB_NON_USD_SETUP.getRoute({
+                policyID: target.policyID,
+                page: position.step,
+                subPage: position.page,
+                action,
+                returnTo,
+                backTo: target.backTo,
+            });
         default:
             return ROUTES.SETTINGS_BANK_ONBOARDING_LAB_ENTER_SIGNER_INFO.getRoute({
                 policyID: target.policyID,
@@ -40,6 +51,7 @@ function getFlowRoute(target: FlowTarget, position: FlowPosition = {}): Route {
                 isCompleted: target.isCompleted,
                 subPage: position.page,
                 action,
+                returnTo,
             });
     }
 }
@@ -51,10 +63,10 @@ function openFlow(target: FlowTarget, position?: FlowPosition, options?: {should
 
 /**
  * Writes the step that the flow shows into the route `routeKey`, for a URL that named no step, an unknown one or a
- * skipped one. The sub page and the edit flag of the URL belonged to the other step, so they are dropped.
+ * skipped one. The sub page and the edit mode of the URL belonged to the other step, so they are dropped.
  */
 function writeShownStep(routeKey: string, step: StepID) {
-    Navigation.setParams({page: step, subPage: undefined, action: undefined}, routeKey);
+    Navigation.setParams({page: step, subPage: undefined, action: undefined, returnTo: undefined}, routeKey);
 }
 
 function getFlowScreenName(target: FlowTarget): string {
@@ -80,6 +92,7 @@ function parseFlowPosition(target: FlowTarget, params: unknown): FlowPosition {
         step: isStepID(step) ? step : undefined,
         page: readStringParam(params, 'subPage'),
         isEditing: readStringParam(params, 'action') === EDIT_ACTION,
+        editReturnPage: readStringParam(params, 'returnTo'),
     };
 }
 

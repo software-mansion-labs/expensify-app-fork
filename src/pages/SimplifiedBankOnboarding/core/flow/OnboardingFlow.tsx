@@ -44,7 +44,7 @@ type OnboardingFlowProps = {
     target: FlowTarget;
 
     /** The route params as they are. The shell narrows the step with isStepID, and the step that renders checks the page. */
-    params: {page?: string; subPage?: string; action?: string} | undefined;
+    params: {page?: string; subPage?: string; action?: string; returnTo?: string} | undefined;
 
     /** FlowStep elements in flow order. Fragments and arrays are flattened. */
     children: React.ReactNode;
@@ -213,6 +213,7 @@ function OnboardingFlow({target, params, children}: OnboardingFlowProps) {
         counterNames: counter?.names,
         page: isURLStepShown ? urlPosition.page : undefined,
         isEditing: isURLStepShown && !!urlPosition.isEditing,
+        editReturnPage: isURLStepShown ? urlPosition.editReturnPage : undefined,
     };
     return (
         <OnboardingFlowStateContext.Provider value={flowState}>

@@ -1,9 +1,8 @@
 /**
- * Reads the sub page children of OnboardingStep and answers the questions about the page order: the start page, the
- * pages that Next and Back open, and the confirmation that edit mode returns to.
+ * Reads the sub page children of OnboardingStep and answers the questions about the page order: the start page and the
+ * pages that Next and Back open.
  *
- * What it hides: the flattening of fragments and arrays, the runtime check of the element props, the start page rule
- * and the registry of the components that edit mode returns to.
+ * What it hides: the flattening of fragments and arrays, the runtime check of the element props and the start page rule.
  */
 import type {PageID} from '@pages/SimplifiedBankOnboarding/contract/ids';
 import {flattenElements} from '@pages/SimplifiedBankOnboarding/core/flow/readFlowSteps';
@@ -43,7 +42,6 @@ type SubPageEntry = {
     isAnswered: boolean;
     back: BackTarget | undefined;
     next: PageTarget | undefined;
-    isEditReturnTarget: boolean;
     element: React.ReactElement<unknown>;
 };
 
@@ -63,13 +61,6 @@ type StartPageInput = {
     /** The user came by Next from the previous step */
     hasArrivedByNext: boolean;
 };
-
-const editReturnTargets = new WeakSet<WeakKey>();
-
-/** Marks a sub page component as the page that edit mode returns to (ConfirmationSubPage) */
-function markAsEditReturnTarget(component: React.ComponentType<never>) {
-    editReturnTargets.add(component);
-}
 
 function isPageTarget(value: unknown): value is PageTarget {
     return value === NEXT_STEP || typeof value === 'string';
@@ -92,11 +83,6 @@ function readSubPageProps(element: React.ReactElement<unknown>): SubPageElementP
     };
 }
 
-function isEditReturnTarget(element: React.ReactElement<unknown>): boolean {
-    const {type} = element;
-    return (typeof type === 'object' || typeof type === 'function') && editReturnTargets.has(type);
-}
-
 /**
  * The sub pages of a step. When no child has a name, the step is a single page step and its children are its content.
  * A child without a name among named ones is a mistake of the step, so it throws in development and is dropped otherwise.
@@ -114,7 +100,7 @@ function readSubPages(children: React.ReactNode): SubPagePlan {
             }
             return [];
         }
-        return [{name: props.name, isAnswered: !!props.isAnswered, back: props.back, next: props.next, isEditReturnTarget: isEditReturnTarget(element), element}];
+        return [{name: props.name, isAnswered: !!props.isAnswered, back: props.back, next: props.next, element}];
     });
     return {pages, content: children};
 }
@@ -161,11 +147,5 @@ function getPreviousPage(pages: SubPageEntry[], current: SubPageEntry): SubPageE
     return currentIndex > 0 ? pages.at(currentIndex - 1) : undefined;
 }
 
-/** The confirmation that edit mode of `current` returns to: the first one after it, else the last page */
-function getEditReturnPage(pages: SubPageEntry[], current: SubPageEntry): SubPageEntry | undefined {
-    const currentIndex = pages.indexOf(current);
-    return pages.slice(currentIndex + 1).find((page) => page.isEditReturnTarget) ?? pages.at(-1);
-}
-
-export {getEditReturnPage, getNextPage, getPreviousPage, getStartPage, markAsEditReturnTarget, NEXT_STEP, PREVIOUS_STEP, readSubPages};
+export {getNextPage, getPreviousPage, getStartPage, NEXT_STEP, PREVIOUS_STEP, readSubPages};
 export type {BackTarget, PageTarget, SubPageElementProps, SubPageEntry, SubPagePlan};

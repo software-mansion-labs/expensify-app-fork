@@ -69,9 +69,9 @@ jest.mock('@components/InteractiveStepWrapper', () => {
 
 type TestPageProps = SubPageElementProps & {label: string};
 
-/** A sub page with its label and a Next button, so a test sees which page is shown and can move on */
+/** A sub page with its label, a Next button and an edit button for the name page, so a test can move on or edit */
 function TestPage({label}: TestPageProps) {
-    const {goNext} = usePageNavigation();
+    const {goNext, openPage} = usePageNavigation();
     return (
         <>
             <Text>{label}</Text>
@@ -81,6 +81,12 @@ function TestPage({label}: TestPageProps) {
                 sentryLabel={CONST.SENTRY_LABEL.BANK_ONBOARDING_LAB.SUBMIT_STEP}
                 onPress={() => goNext()}
             />
+            <PressableWithoutFeedback
+                accessibilityRole="button"
+                accessibilityLabel="Edit name"
+                sentryLabel={CONST.SENTRY_LABEL.BANK_ONBOARDING_LAB.OPEN_SUMMARY_ITEM}
+                onPress={() => openPage('full-name', {isEditing: true})}
+            />
         </>
     );
 }
@@ -88,6 +94,7 @@ function TestPage({label}: TestPageProps) {
 type RenderOptions = {
     page?: PageID;
     isEditing?: boolean;
+    editReturnPage?: PageID;
     previousStep?: StepID;
     nextStep?: StepID;
     answered?: PageID[];
@@ -101,8 +108,8 @@ const flowActions: OnboardingFlowActions = {
     openStep: jest.fn(),
 };
 
-function getStepRoute(step: StepID, page?: PageID, isEditing?: boolean) {
-    return getFlowRoute(TARGET, {step, page, isEditing});
+function getStepRoute(step: StepID, page?: PageID, isEditing?: boolean, editReturnPage?: PageID) {
+    return getFlowRoute(TARGET, {step, page, isEditing, editReturnPage});
 }
 
 function createRoute(key: string, step: StepID, page?: PageID) {
@@ -116,9 +123,9 @@ function setNavigationStack(below: Array<ReturnType<typeof createRoute>>) {
 
 function buildPersonalInfoStep(options: RenderOptions = {}) {
     // A spread, not parameter defaults, so a test can pass `undefined` for the first or the last step
-    const {page, isEditing = false, previousStep, nextStep, answered = [], startAt}: RenderOptions = {previousStep: 'bank-account', nextStep: 'business-info', ...options};
+    const {page, isEditing = false, editReturnPage, previousStep, nextStep, answered = [], startAt}: RenderOptions = {previousStep: 'bank-account', nextStep: 'business-info', ...options};
     const flowState: OnboardingFlowState = {target: TARGET, bankAccount: {policyID: POLICY_ID, bankAccountID: 0}, formID: ONYXKEYS.FORMS.SIMPLIFIED_BANK_ONBOARDING_FORM};
-    const position: FlowStepPosition = {step: 'personal-info', previousStep, nextStep, counterIndex: 1, counterNames: ['1', '2', '3'], page, isEditing};
+    const position: FlowStepPosition = {step: 'personal-info', previousStep, nextStep, counterIndex: 1, counterNames: ['1', '2', '3'], page, isEditing, editReturnPage};
 
     return (
         <OnboardingFlowStateContext.Provider value={flowState}>
@@ -351,27 +358,38 @@ describe('OnboardingStep', () => {
     });
 
     describe('edit mode', () => {
-        it('returns to the confirmation on Next with history', async () => {
-            // Given the user opened a page from the confirmation, which lies below in the history
-            setNavigationStack([createRoute('confirmation-route', 'personal-info', 'confirmation')]);
-            await renderPersonalInfoStep({page: 'full-name', isEditing: true});
+        it('names the page that opened edit mode in the URL of the edited page', async () => {
+            // Given the confirmation page
+            await renderPersonalInfoStep({page: 'confirmation'});
+
+            // When the user opens the name page in edit mode from it
+            fireEvent.press(screen.getByLabelText('Edit name'));
+
+            // Then the URL of the name page names the confirmation, so the edit returns there even after a reload
+            expect(Navigation.navigate).toHaveBeenCalledWith(getStepRoute('personal-info', 'full-name', true, 'confirmation'));
+        });
+
+        it('returns on Next to the page that opened edit mode, even when it is not the last page', async () => {
+            // Given the name page in edit mode, opened from the SSN page that the URL names
+            setNavigationStack([createRoute('ssn-route', 'personal-info', 'ssn')]);
+            await renderPersonalInfoStep({page: 'full-name', isEditing: true, editReturnPage: 'ssn'});
 
             // When the user presses Next
             pressNext();
 
-            // Then the confirmation opens again by going back to it
-            expect(Navigation.goBack).toHaveBeenCalledWith(getStepRoute('personal-info', 'confirmation'));
+            // Then the SSN page opens again by going back to it, because the URL names the page where the edit started
+            expect(Navigation.goBack).toHaveBeenCalledWith(getStepRoute('personal-info', 'ssn'));
             expect(Navigation.navigate).not.toHaveBeenCalled();
         });
 
-        it('returns to the confirmation on Back without history', async () => {
-            // Given an edit page that opened by a deep link, with no confirmation in the history
+        it('returns to the last page on Back when the URL names no page that opened edit mode', async () => {
+            // Given an edit page whose URL was typed by hand without the page that opened it
             await renderPersonalInfoStep({page: 'ssn', isEditing: true});
 
             // When the user presses Back
             pressBack();
 
-            // Then Back also returns to the confirmation instead of the previous page
+            // Then Back returns to the last page, the confirmation, instead of the previous page
             expect(Navigation.goBack).toHaveBeenCalledWith(getStepRoute('personal-info', 'confirmation'));
         });
     });

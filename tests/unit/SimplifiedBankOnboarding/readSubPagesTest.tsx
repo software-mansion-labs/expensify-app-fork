@@ -1,23 +1,9 @@
 import type {PageID} from '@pages/SimplifiedBankOnboarding/contract/ids';
-import {
-    getEditReturnPage,
-    getNextPage,
-    getPreviousPage,
-    getStartPage,
-    markAsEditReturnTarget,
-    NEXT_STEP,
-    PREVIOUS_STEP,
-    readSubPages,
-} from '@pages/SimplifiedBankOnboarding/core/step/readSubPages';
-import type {SubPageElementProps, SubPageEntry} from '@pages/SimplifiedBankOnboarding/core/step/readSubPages';
+import {getNextPage, getPreviousPage, getStartPage, NEXT_STEP, PREVIOUS_STEP, readSubPages} from '@pages/SimplifiedBankOnboarding/core/step/readSubPages';
+import type {SubPageEntry} from '@pages/SimplifiedBankOnboarding/core/step/readSubPages';
 import SubPage from '@pages/SimplifiedBankOnboarding/core/step/SubPage';
 
 import React from 'react';
-
-function TestConfirmation(props: SubPageElementProps) {
-    return props.name ?? null;
-}
-markAsEditReturnTarget(TestConfirmation);
 
 function findPage(pages: SubPageEntry[], name: PageID): SubPageEntry {
     const page = pages.find((entry) => entry.name === name);
@@ -50,10 +36,12 @@ function readPersonalInfoPages(answered: PageID[] = []) {
         >
             SSN
         </SubPage>,
-        <TestConfirmation
+        <SubPage
             key="confirmation"
             name="confirmation"
-        />,
+        >
+            Confirmation
+        </SubPage>,
     ]).pages;
 }
 
@@ -137,36 +125,6 @@ describe('readSubPages', () => {
         expect(urlPage?.name).toBe('date-of-birth');
         expect(startAtPage?.name).toBe('ssn');
         expect(lastPage?.name).toBe('confirmation');
-    });
-
-    it('returns from edit mode to the confirmation after the page', () => {
-        // Given a step with a confirmation in the middle and one more page after it
-        const {pages} = readSubPages([
-            <SubPage
-                key="full-name"
-                name="full-name"
-            >
-                Name
-            </SubPage>,
-            <TestConfirmation
-                key="confirmation"
-                name="confirmation"
-            />,
-            <SubPage
-                key="ssn"
-                name="ssn"
-            >
-                SSN
-            </SubPage>,
-        ]);
-
-        // When pages are edited before and after the confirmation
-        const returnFromName = getEditReturnPage(pages, findPage(pages, 'full-name'));
-        const returnFromSSN = getEditReturnPage(pages, findPage(pages, 'ssn'));
-
-        // Then edit mode returns to the confirmation that follows the page, and to the last page when none follows
-        expect(returnFromName?.name).toBe('confirmation');
-        expect(returnFromSSN?.name).toBe('ssn');
     });
 
     it('treats children without names as the content of a single page step', () => {

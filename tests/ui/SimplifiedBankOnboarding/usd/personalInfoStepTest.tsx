@@ -147,8 +147,8 @@ function expectPersonalInfoSent(confirm: boolean) {
     expect(write).toHaveBeenCalledWith(WRITE_COMMANDS.UPDATE_PERSONAL_INFORMATION, {policyID: POLICY_ID, bankAccountID: BANK_ACCOUNT_ID, ...FULL_DRAFT, confirm}, expect.anything());
 }
 
-function getPageRoute(page: PageID, isEditing?: boolean) {
-    return getFlowRoute(TARGET, {step: PAGE_NAMES.REQUESTOR, page, isEditing});
+function getPageRoute(page: PageID, editReturnPage?: PageID) {
+    return getFlowRoute(TARGET, {step: PAGE_NAMES.REQUESTOR, page, isEditing: !!editReturnPage, editReturnPage});
 }
 
 describe('USD PersonalInfoStep', () => {
@@ -272,8 +272,8 @@ describe('USD PersonalInfoStep', () => {
             fireEvent.press(screen.getByText('personalInfoStep.last4SSN'), {nativeEvent: {}});
             await waitForBatchedUpdatesWithAct();
 
-            // Then the SSN page opens in edit mode, so its submit returns to the confirmation
-            expect(Navigation.navigate).toHaveBeenCalledWith(getPageRoute(PAGES.SSN, true));
+            // Then the SSN page opens in edit mode with the confirmation as its return page, so its submit returns there
+            expect(Navigation.navigate).toHaveBeenCalledWith(getPageRoute(PAGES.SSN, PAGES.CONFIRMATION));
         });
     });
 

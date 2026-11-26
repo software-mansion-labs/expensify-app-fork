@@ -4,8 +4,8 @@
  *
  * What it hides: the start page rule ("arrived by Next" from the navigation state, `startAt`, `isAnswered`), the URL
  * write of the resolved page without a loader frame, Next and Back between pages and steps, history-aware Back to the
- * previous step, edit mode and its return to the confirmation, the clearing of the account error mirror on Back, the
- * progress save and the screen guard.
+ * previous step, edit mode and its return to the page that opened it, the clearing of the account error mirror on Back,
+ * the progress save and the screen guard.
  */
 import InteractiveStepWrapper from '@components/InteractiveStepWrapper';
 
@@ -30,10 +30,10 @@ import {useNavigation, useNavigationState, useRoute} from '@react-navigation/nat
 import React, {Fragment, useEffect} from 'react';
 
 import type {PageNavigationActions, PageNavigationState} from './pageNavigation';
-import type {PageTarget, SubPageEntry} from './readSubPages';
+import type {PageTarget} from './readSubPages';
 
 import {PageNavigationActionsContext, PageNavigationStateContext} from './pageNavigation';
-import {getEditReturnPage, getNextPage, getPreviousPage, getStartPage, NEXT_STEP, readSubPages} from './readSubPages';
+import {getNextPage, getPreviousPage, getStartPage, NEXT_STEP, readSubPages} from './readSubPages';
 
 type OnboardingStepProps = {
     title: string;
@@ -73,7 +73,7 @@ function hasAccountErrors(account: OnyxEntry<OnboardingAccount>): boolean {
 
 function OnboardingStep({title, wrapperID, children, startAt, saveAfterEachPage, onBackFromStart, shouldEnableMaxHeight, shouldEnablePickerAvoiding}: OnboardingStepProps) {
     const {target, returnToEntry} = useOnboardingFlow();
-    const {step, previousStep, nextStep, counterIndex, counterNames, page: urlPage, isEditing: isEditingInURL} = useFlowStepPosition();
+    const {step, previousStep, nextStep, counterIndex, counterNames, page: urlPage, isEditing: isEditingInURL, editReturnPage} = useFlowStepPosition();
     const route = useRoute();
     const navigation = useNavigation();
     const stepBelow = useNavigationState((state) => getStepBelow(state, route.key, target));
@@ -102,8 +102,9 @@ function OnboardingStep({title, wrapperID, children, startAt, saveAfterEachPage,
         Navigation.navigate(getFlowRoute(target, {step: nextStep}));
     }
 
-    function returnToConfirmation(page: SubPageEntry) {
-        Navigation.goBack(getFlowRoute(target, {step, page: getEditReturnPage(pages, page)?.name}));
+    /** Back to the page that opened edit mode, or to the last page when the URL names none */
+    function returnFromEditing() {
+        Navigation.goBack(getFlowRoute(target, {step, page: editReturnPage ?? pages.at(-1)?.name}));
     }
 
     function goBackToPreviousStep() {
@@ -121,7 +122,7 @@ function OnboardingStep({title, wrapperID, children, startAt, saveAfterEachPage,
             return;
         }
         if (isEditing) {
-            returnToConfirmation(currentPage);
+            returnFromEditing();
             return;
         }
         const destination = getNextPage(pages, currentPage, pageTarget);
@@ -143,8 +144,8 @@ function OnboardingStep({title, wrapperID, children, startAt, saveAfterEachPage,
         if (doesAccountHoldErrors) {
             clearAccountErrorMirror();
         }
-        if (currentPage && isEditing) {
-            returnToConfirmation(currentPage);
+        if (isEditing) {
+            returnFromEditing();
             return;
         }
         const previousPage = currentPage ? getPreviousPage(pages, currentPage) : undefined;
@@ -160,7 +161,7 @@ function OnboardingStep({title, wrapperID, children, startAt, saveAfterEachPage,
     };
 
     function openPage(name: PageID, options?: {isEditing?: boolean}) {
-        Navigation.navigate(getFlowRoute(target, {step, page: name, isEditing: options?.isEditing}));
+        Navigation.navigate(getFlowRoute(target, {step, page: name, isEditing: options?.isEditing, editReturnPage: currentPage?.name}));
     }
 
     const navigationState: PageNavigationState = {page: currentPage?.name, isEditing};

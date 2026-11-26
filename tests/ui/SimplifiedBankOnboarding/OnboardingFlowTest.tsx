@@ -80,13 +80,13 @@ const ACCOUNT_OF_WORKSPACE: OnboardingAccount = {
 
 /** Every test step shows what the flow gives it, so a test sees which step renders and at which position */
 function ShownStep() {
-    const {step, previousStep, nextStep, page, isEditing} = useFlowStepPosition();
+    const {step, previousStep, nextStep, page, isEditing, editReturnPage} = useFlowStepPosition();
     const [mountedStep] = useState(step);
     return (
         <>
             <Text>{`Step ${step}`}</Text>
             <Text>{`Mounted at ${mountedStep}`}</Text>
-            <Text>{`Page ${page ?? 'none'}, editing ${String(isEditing)}`}</Text>
+            <Text>{`Page ${page ?? 'none'}, editing ${String(isEditing)}, returning to ${editReturnPage ?? 'none'}`}</Text>
             <Text>{`Previous ${previousStep ?? 'none'}, next ${nextStep ?? 'none'}`}</Text>
         </>
     );
@@ -97,15 +97,16 @@ type FlowOptions = {
     urlStep?: string;
     urlPage?: PageID;
     isEditing?: boolean;
+    editReturnPage?: PageID;
     completeSteps?: StepID[];
     isBankAccountSkipped?: boolean;
 };
 
-function getFlow({target = USD_TARGET, urlStep, urlPage, isEditing = false, completeSteps = [], isBankAccountSkipped = false}: FlowOptions = {}) {
+function getFlow({target = USD_TARGET, urlStep, urlPage, isEditing = false, editReturnPage, completeSteps = [], isBankAccountSkipped = false}: FlowOptions = {}) {
     return (
         <OnboardingFlow
             target={target}
-            params={{page: urlStep, subPage: urlPage, action: isEditing ? 'edit' : undefined}}
+            params={{page: urlStep, subPage: urlPage, action: isEditing ? 'edit' : undefined, returnTo: editReturnPage}}
         >
             <FlowStep
                 id="country"
@@ -137,7 +138,7 @@ async function renderFlow(options?: FlowOptions) {
 }
 
 function expectURLCorrectedTo(step: StepID) {
-    expect(Navigation.setParams).toHaveBeenCalledWith({page: step, subPage: undefined, action: undefined}, 'flow-route');
+    expect(Navigation.setParams).toHaveBeenCalledWith({page: step, subPage: undefined, action: undefined, returnTo: undefined}, 'flow-route');
 }
 
 async function setAccount(account: OnboardingAccount) {
@@ -294,13 +295,13 @@ describe('OnboardingFlow', () => {
             expect(screen.getByText('Mounted at bank-account')).toBeOnTheScreen();
         });
 
-        it('keeps the sub page and the edit flag of a URL whose step is shown', async () => {
+        it('keeps the sub page and the edit mode of a URL whose step is shown', async () => {
             // Given the account of the workspace in Onyx
-            // When the URL names a step, a sub page and the edit mode
-            await renderFlow({urlStep: 'bank-account', urlPage: 'manual', isEditing: true});
+            // When the URL names a step, a sub page, the edit mode and the page that opened it
+            await renderFlow({urlStep: 'bank-account', urlPage: 'manual', isEditing: true, editReturnPage: 'plaid'});
 
-            // Then the step gets both, and the flow writes nothing to the URL
-            expect(screen.getByText('Page manual, editing true')).toBeOnTheScreen();
+            // Then the step gets all of them, and the flow writes nothing to the URL
+            expect(screen.getByText('Page manual, editing true, returning to plaid')).toBeOnTheScreen();
             expect(Navigation.setParams).not.toHaveBeenCalled();
         });
 
@@ -328,11 +329,11 @@ describe('OnboardingFlow', () => {
         it('shows the next step that is not skipped for a skipped step in the URL', async () => {
             // Given a URL that names a step this account skips, with a sub page and the edit mode of that step
             // When the flow opens
-            await renderFlow({urlStep: 'bank-account', urlPage: 'manual', isEditing: true, isBankAccountSkipped: true});
+            await renderFlow({urlStep: 'bank-account', urlPage: 'manual', isEditing: true, editReturnPage: 'plaid', isBankAccountSkipped: true});
 
             // Then the next step renders without the sub page and the edit mode, which belonged to the skipped step
             expect(screen.getByText('Step personal-info')).toBeOnTheScreen();
-            expect(screen.getByText('Page none, editing false')).toBeOnTheScreen();
+            expect(screen.getByText('Page none, editing false, returning to none')).toBeOnTheScreen();
             expectURLCorrectedTo('personal-info');
             expect(Navigation.navigate).not.toHaveBeenCalled();
         });

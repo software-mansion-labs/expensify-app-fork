@@ -8,7 +8,6 @@ import type {OnboardingDraft} from '@pages/SimplifiedBankOnboarding/contract/for
 import type {PageID} from '@pages/SimplifiedBankOnboarding/contract/ids';
 import type {OnboardingRequest} from '@pages/SimplifiedBankOnboarding/core/requests/types';
 import {usePageNavigation} from '@pages/SimplifiedBankOnboarding/core/step/pageNavigation';
-import {markAsEditReturnTarget} from '@pages/SimplifiedBankOnboarding/core/step/readSubPages';
 import type {SubPageElementProps} from '@pages/SimplifiedBankOnboarding/core/step/readSubPages';
 
 import React from 'react';
@@ -74,8 +73,6 @@ function ConfirmationSubPage({title, rows, request, getDraftUpdate, children, ne
         </ConfirmationStep>
     );
 }
-
-markAsEditReturnTarget(ConfirmationSubPage);
 
 export default ConfirmationSubPage;
 export type {ConfirmationRow, ConfirmationSubPageProps};
