@@ -2,7 +2,6 @@
  * The one write of the USD business info step, sent by its confirmation. The tax ID loses every separator before it is
  * sent, as in the real flow.
  */
-import SBO_CONST from '@pages/SimplifiedBankOnboarding/contract/SBO_CONST';
 import type {OnboardingRequest} from '@pages/SimplifiedBankOnboarding/core';
 import getUSDWriteOptions from '@pages/SimplifiedBankOnboarding/flows/usd/usdWriteOptions';
 import {WRITE_COMMANDS} from '@pages/SimplifiedBankOnboarding/mockBackend/commands';
@@ -24,7 +23,7 @@ const businessInfoRequest: OnboardingRequest = {
                 companyTaxID: answers.companyTaxID.replaceAll(CONST.REGEX.NON_NUMERIC, ''),
                 incorporationType: answers.incorporationType,
             },
-            ...getUSDWriteOptions(SBO_CONST.USD.STEP.COMPANY),
+            ...getUSDWriteOptions(),
         };
     },
 };

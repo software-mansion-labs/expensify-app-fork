@@ -2,7 +2,6 @@
  * The writes of the USD personal info step. Both send all four answers: the silent save after each input page with
  * `confirm: false`, and the confirmation with `confirm: true`, which asks the server to move on.
  */
-import SBO_CONST from '@pages/SimplifiedBankOnboarding/contract/SBO_CONST';
 import type {OnboardingRequest, RequestSpec, FlowData} from '@pages/SimplifiedBankOnboarding/core';
 import getUSDWriteOptions from '@pages/SimplifiedBankOnboarding/flows/usd/usdWriteOptions';
 import {WRITE_COMMANDS} from '@pages/SimplifiedBankOnboarding/mockBackend/commands';
@@ -14,7 +13,7 @@ function buildPersonalInfo(data: FlowData, confirm: boolean): RequestSpec {
         type: 'write',
         command: WRITE_COMMANDS.UPDATE_PERSONAL_INFORMATION,
         params: {...data.bankAccount, ...getPersonalInfoAnswers(data), confirm},
-        ...getUSDWriteOptions(SBO_CONST.USD.STEP.REQUESTOR),
+        ...getUSDWriteOptions({shouldKeepOnfidoToken: true}),
     };
 }
 

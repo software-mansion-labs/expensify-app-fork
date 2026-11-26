@@ -4,7 +4,6 @@
  * server created the bank account, the typed numbers leave the draft, so the bank step shows the masked numbers that
  * the server keeps.
  */
-import SBO_CONST from '@pages/SimplifiedBankOnboarding/contract/SBO_CONST';
 import type {OnboardingRequest, RequestSpec} from '@pages/SimplifiedBankOnboarding/core';
 import getUSDWriteOptions from '@pages/SimplifiedBankOnboarding/flows/usd/usdWriteOptions';
 import {WRITE_COMMANDS} from '@pages/SimplifiedBankOnboarding/mockBackend/commands';
@@ -16,7 +15,7 @@ import Onyx from 'react-native-onyx';
 import getBankAccountAnswers from './getBankAccountAnswers';
 
 function getBankAccountWriteOptions(): Pick<RequestSpec, 'onyxData' | 'errorKey'> {
-    const writeOptions = getUSDWriteOptions(SBO_CONST.USD.STEP.BANK_ACCOUNT);
+    const writeOptions = getUSDWriteOptions();
 
     return {
         ...writeOptions,
