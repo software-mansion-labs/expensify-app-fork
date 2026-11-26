@@ -354,10 +354,8 @@ describe('owner steps', () => {
             // When the user says nobody more owns 25%
             await answer('common.no');
 
-            // Then the list opens and the second question keeps its "yes" (USD-76)
-            expect(saveDraft).toHaveBeenCalledWith({
-                hasOtherBeneficialOwners: true,
-            });
+            // Then the list opens and nothing is saved, so the second question keeps its "yes" (USD-76)
+            expect(saveDraft).toHaveBeenCalledWith({});
             expect(Navigation.navigate).toHaveBeenCalledWith(getUSDRoute(USD_PAGES.UBOS_LIST));
         });
 
@@ -371,7 +369,6 @@ describe('owner steps', () => {
 
             // Then a new owner starts on its name page (USD-76)
             expect(saveDraft).toHaveBeenCalledWith({
-                hasOtherBeneficialOwners: true,
                 ownerBeingModifiedID: ANY_NEW_OWNER_ID,
                 ...EMPTY_OWNER_BUFFER,
             });
@@ -655,7 +652,6 @@ describe('owner steps', () => {
 
             // Then a new owner starts on its name page (non-USD map row 54)
             expect(saveDraft).toHaveBeenCalledWith({
-                anyIndividualOwn25PercentOrMore: true,
                 ownerBeingModifiedID: ANY_NEW_OWNER_ID,
                 ...EMPTY_OWNER_BUFFER,
             });
@@ -673,10 +669,8 @@ describe('owner steps', () => {
             // When the user says nobody more owns 25%
             await answer('common.no');
 
-            // Then the list opens and the second question keeps its "yes" (non-USD map row 54)
-            expect(saveDraft).toHaveBeenCalledWith({
-                anyIndividualOwn25PercentOrMore: true,
-            });
+            // Then the list opens and nothing is saved, so the second question keeps its "yes" (non-USD map row 54)
+            expect(saveDraft).toHaveBeenCalledWith({});
             expect(Navigation.navigate).toHaveBeenCalledWith(getNonUSDRoute(NON_USD_PAGES.BENEFICIAL_OWNERS_LIST));
         });
 

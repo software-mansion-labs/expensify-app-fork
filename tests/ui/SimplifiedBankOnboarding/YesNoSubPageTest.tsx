@@ -56,9 +56,10 @@ type QuestionOptions = {
     request?: OnboardingRequest;
     shouldSend?: (answer: boolean) => boolean;
     isEditing?: boolean;
+    isAnswerSaved?: boolean;
 };
 
-async function renderQuestion({request, shouldSend, isEditing = false}: QuestionOptions = {}): Promise<RenderedQuestion> {
+async function renderQuestion({request, shouldSend, isEditing = false, isAnswerSaved = true}: QuestionOptions = {}): Promise<RenderedQuestion> {
     const saveDraft = jest.fn<Promise<void>, [OnboardingDraft]>(() => Promise.resolve());
     let navigatedPage: Promise<NavigatedPage> = Promise.reject(new Error('The page did not move'));
     navigatedPage.catch(() => {});
@@ -88,7 +89,7 @@ async function renderQuestion({request, shouldSend, isEditing = false}: Question
                             <PageNavigationActionsContext.Provider value={pageActions}>
                                 <YesNoSubPage
                                     name="is-user-ubo"
-                                    inputID="ownsMoreThan25Percent"
+                                    inputID={isAnswerSaved ? 'ownsMoreThan25Percent' : undefined}
                                     title={QUESTION}
                                     defaultValue={false}
                                     getNext={(answer) => (answer ? 'legal-name' : NEXT_STEP)}
@@ -148,6 +149,18 @@ describe('YesNoSubPage', () => {
         expect(saveDraft).toHaveBeenCalledWith({ownsMoreThan25Percent: false, usdOwners: []});
         await expect(getNavigatedPage()).resolves.toEqual({outcome: {status: 'succeeded'}, target: NEXT_STEP});
         expect(write).not.toHaveBeenCalled();
+    });
+
+    it('saves only the values that come with the answer when the question has no input', async () => {
+        // Given a question with no input, like "are there more owners", whose answer has no place in the draft
+        const {saveDraft, getNavigatedPage} = await renderQuestion({isAnswerSaved: false});
+
+        // When the user answers "No"
+        await chooseAnswer('common.no');
+
+        // Then only the values that come with the answer reach the draft, so no earlier answer is overwritten
+        expect(saveDraft).toHaveBeenCalledWith({usdOwners: []});
+        await expect(getNavigatedPage()).resolves.toEqual({outcome: {status: 'succeeded'}, target: NEXT_STEP});
     });
 
     it('sends the request only for the answers that need it', async () => {

@@ -106,15 +106,10 @@ function BeneficialOwnersStep() {
             <YesNoSubPage
                 name={PAGES.ARE_THERE_MORE_UBOS}
                 isAnswered={areOwnersKnown}
-                inputID={INPUT_IDS.HAS_OTHER_BENEFICIAL_OWNERS}
                 title={translate('beneficialOwnerInfoStep.areThereMoreIndividualsWhoOwn25percent', companyName)}
                 description={description}
                 defaultValue={false}
-                // This question comes only after another owner joined the list, so its "no" must not undo the "yes" of the second question
-                getDraftUpdate={(hasMore) => ({
-                    [INPUT_IDS.HAS_OTHER_BENEFICIAL_OWNERS]: true,
-                    ...(hasMore ? loop.getStartUpdate() : {}),
-                })}
+                getDraftUpdate={(hasMore) => (hasMore ? loop.getStartUpdate() : {})}
                 getNext={(hasMore) => (hasMore ? PAGES.LEGAL_NAME : PAGES.UBOS_LIST)}
             />
             <SubPage

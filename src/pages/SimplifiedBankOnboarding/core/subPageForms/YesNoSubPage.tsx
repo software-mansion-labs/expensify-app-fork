@@ -15,7 +15,9 @@ import RequestErrorMessage from './RequestErrorMessage';
 import useSubPageSubmit from './useSubPageSubmit';
 
 type YesNoSubPageProps = SubPageElementProps & {
-    inputID: BooleanInputID;
+    /** Where the answer is saved. Left out for a question whose answer only decides where to go */
+    inputID?: BooleanInputID;
+
     title: string;
     description?: string;
     defaultValue: boolean;
@@ -39,7 +41,7 @@ function YesNoSubPage({inputID, title, description, defaultValue, getNext, getDr
     const submitAnswer = (answer: boolean) => {
         const shouldSendRequest = !!request && (shouldSend?.(answer) ?? true);
         const {submit} = shouldSendRequest ? submitWithRequest : submitWithoutRequest;
-        submit({[inputID]: answer, ...getDraftUpdate?.(answer)}, getNext?.(answer) ?? next);
+        submit({...(inputID ? {[inputID]: answer} : {}), ...getDraftUpdate?.(answer)}, getNext?.(answer) ?? next);
     };
 
     return (
