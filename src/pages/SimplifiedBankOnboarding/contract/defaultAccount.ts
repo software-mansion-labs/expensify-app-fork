@@ -13,7 +13,6 @@ const DEFAULT_ACCOUNT: OnboardingAccount = {
     errors: null,
     errorFields: null,
     maxAttemptsReached: false,
-    shouldShowResetModal: false,
 };
 
 /** The account of a new setup for a workspace, before the server knows about it */
