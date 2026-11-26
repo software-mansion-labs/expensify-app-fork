@@ -5,7 +5,7 @@
  *
  * What it hides:
  * - the request key `name:policy-<id>` or `name:bankAccount-<id>` (a request of a bank account never shows on another one)
- * - the requestID of each attempt, so the answer of an older attempt never settles a newer one
+ * - the requestID of each attempt, so the answer of an older attempt never settles a newer one or replaces its status
  * - the four status updates (optimistic pending, success, failure, finally `hasResponse`) added to the data of the caller
  * - the bridge from Onyx data to a Promise, and an answer that applied neither success nor failure data (settled as failed)
  * - offline reads (not sent, nothing written) and offline writes (queued by the mock API, and their Promise with them)
@@ -79,28 +79,45 @@ function getRequestKey(name: RequestName, scope?: RequestScope): RequestKey {
 }
 
 function buildStatusUpdate(key: RequestKey, value: Partial<RequestState> | null): OnyxUpdate<typeof ONYXKEYS.RAM_ONLY_SIMPLIFIED_BANK_ONBOARDING_REQUESTS> {
-    return {onyxMethod: Onyx.METHOD.MERGE, key: ONYXKEYS.RAM_ONLY_SIMPLIFIED_BANK_ONBOARDING_REQUESTS, value: {[key]: value}};
+    return {
+        onyxMethod: Onyx.METHOD.MERGE,
+        key: ONYXKEYS.RAM_ONLY_SIMPLIFIED_BANK_ONBOARDING_REQUESTS,
+        value: {[key]: value},
+    };
 }
 
 function buildAccountErrorsUpdate(errors: Errors | null): OnyxUpdate<typeof ONYXKEYS.SIMPLIFIED_BANK_ONBOARDING_ACCOUNT> {
-    return {onyxMethod: Onyx.METHOD.MERGE, key: ONYXKEYS.SIMPLIFIED_BANK_ONBOARDING_ACCOUNT, value: {errors}};
+    return {
+        onyxMethod: Onyx.METHOD.MERGE,
+        key: ONYXKEYS.SIMPLIFIED_BANK_ONBOARDING_ACCOUNT,
+        value: {errors},
+    };
 }
 
 function buildFailureUpdates(key: RequestKey, requestID: string, errors: Errors, shouldShowErrorOutsideFlow: boolean): Array<OnyxUpdate<RequestOnyxKey>> {
-    const statusUpdate = buildStatusUpdate(key, {requestID, status: 'failed', errors});
+    const statusUpdate = buildStatusUpdate(key, {
+        requestID,
+        status: 'failed',
+        errors,
+    });
     return shouldShowErrorOutsideFlow ? [statusUpdate, buildAccountErrorsUpdate(errors)] : [statusUpdate];
+}
+
+function buildPendingUpdates(key: RequestKey, {requestID, shouldShowErrorOutsideFlow}: Waiter): Array<OnyxUpdate<RequestOnyxKey>> {
+    const statusUpdate = buildStatusUpdate(key, {
+        requestID,
+        status: 'pending',
+        errors: null,
+        hasResponse: false,
+    });
+    return shouldShowErrorOutsideFlow ? [statusUpdate, buildAccountErrorsUpdate(null)] : [statusUpdate];
 }
 
 function addStatusUpdates(key: RequestKey, waiter: Waiter, onyxData: OnyxData<RequestOnyxKey>): OnyxData<RequestOnyxKey> {
     const {requestID, errors, shouldShowErrorOutsideFlow} = waiter;
-    const optimisticUpdates: Array<OnyxUpdate<RequestOnyxKey>> = [buildStatusUpdate(key, {requestID, status: 'pending', errors: null, hasResponse: false})];
-    if (shouldShowErrorOutsideFlow) {
-        optimisticUpdates.push(buildAccountErrorsUpdate(null));
-    }
-
     return {
         ...onyxData,
-        optimisticData: [...(onyxData.optimisticData ?? []), ...optimisticUpdates],
+        optimisticData: [...(onyxData.optimisticData ?? []), ...buildPendingUpdates(key, waiter)],
         successData: [...(onyxData.successData ?? []), buildStatusUpdate(key, {requestID, status: 'succeeded', errors: null})],
         failureData: [...(onyxData.failureData ?? []), ...buildFailureUpdates(key, requestID, errors, shouldShowErrorOutsideFlow)],
         finallyData: [...(onyxData.finallyData ?? []), buildStatusUpdate(key, {requestID, hasResponse: true})],
@@ -137,10 +154,17 @@ function settleWaiter(key: RequestKey, waiter: Waiter, outcome: RequestOutcome) 
 
 function updateWaiter(key: RequestKey, waiter: Waiter) {
     const entry = latestRequests?.[key];
-    if (entry?.requestID !== waiter.requestID) {
+    if (!entry) {
         // A reset of the lab or a clear of the state removed the entry, so this attempt has no answer to report
         if (seenRequestIDs.has(waiter.requestID)) {
             settleWaiter(key, waiter, SKIPPED);
+        }
+        return;
+    }
+    if (entry.requestID !== waiter.requestID) {
+        // The answer of an attempt that this one replaced overwrote the entry, so the entry shows this attempt again
+        if (seenRequestIDs.has(waiter.requestID)) {
+            Onyx.update(buildPendingUpdates(key, waiter));
         }
         return;
     }
@@ -255,7 +279,14 @@ function retainRequestKey(key: RequestKey): () => void {
 }
 
 /** For code outside a flow (entry, lab). The same tracking as useOnboardingRequest, with an explicit scope. */
-function runRequest({name, scope, ...spec}: RequestSpec & {name: RequestName; scope?: RequestScope}): Promise<RequestOutcome> {
+function runRequest({
+    name,
+    scope,
+    ...spec
+}: RequestSpec & {
+    name: RequestName;
+    scope?: RequestScope;
+}): Promise<RequestOutcome> {
     return sendTrackedRequest(getRequestKey(name, scope), spec);
 }
 
@@ -290,7 +321,9 @@ function clearAccountErrorMirror(): Promise<void> {
     if (!hasMirroredError) {
         return Promise.resolve();
     }
-    return Onyx.merge(ONYXKEYS.SIMPLIFIED_BANK_ONBOARDING_ACCOUNT, {errors: null});
+    return Onyx.merge(ONYXKEYS.SIMPLIFIED_BANK_ONBOARDING_ACCOUNT, {
+        errors: null,
+    });
 }
 
 /** Clears every status and settles the pending requests as skipped (lab reset, bank account reset) */

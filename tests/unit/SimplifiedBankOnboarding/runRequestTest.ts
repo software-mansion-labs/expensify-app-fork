@@ -102,6 +102,41 @@ describe('runRequest', () => {
         expect((await getRequestState())?.status).toBe('succeeded');
     });
 
+    it('keeps a newer attempt pending when the answer of the attempt it replaced arrives', async () => {
+        // Given two attempts of one key in flight, the way the mock API sends them: the optimistic data at once, the answers later and in order
+        const sentData: Array<OnyxData<OnyxKey>> = [];
+        jest.mocked(write).mockImplementation((_command, _params, onyxData = {}) => {
+            sentData.push(onyxData);
+            Onyx.update(onyxData.optimisticData ?? []);
+        });
+        const olderOutcome = sendValidateUser();
+        const newerOutcome = sendValidateUser();
+        let newerResult: RequestOutcome | undefined;
+        newerOutcome.then((result) => {
+            newerResult = result;
+        });
+        await waitForBatchedUpdates();
+        const [olderData, newerData] = sentData;
+
+        // When the older attempt fails
+        await Onyx.update(olderData.failureData ?? []);
+        await Onyx.update(olderData.finallyData ?? []);
+        await waitForBatchedUpdates();
+
+        // Then the handler of the newer attempt still waits, and the page shows the newer attempt as pending, not the old failure
+        expect(await olderOutcome).toEqual({status: 'skipped'});
+        expect(newerResult).toBeUndefined();
+        expect((await getRequestState())?.status).toBe('pending');
+
+        // When the newer attempt succeeds
+        await Onyx.update(newerData.successData ?? []);
+        await Onyx.update(newerData.finallyData ?? []);
+
+        // Then its handler goes on with the answer of its own attempt
+        expect(await newerOutcome).toEqual({status: 'succeeded'});
+        expect((await getRequestState())?.status).toBe('succeeded');
+    });
+
     it('keeps the error of a failed request while a component uses its key', async () => {
         // Given a mounted page that uses the request, and a server that rejects it
         const release = retainRequestKey(getRequestKey(VALIDATE_NAME));
