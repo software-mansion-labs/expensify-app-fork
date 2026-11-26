@@ -4,7 +4,7 @@ import {OnboardingFlowActionsContext, OnboardingFlowStateContext} from '@pages/S
 import type {OnboardingFlowActions, OnboardingFlowState} from '@pages/SimplifiedBankOnboarding/core/flow/flowContext';
 import {clearRequestState} from '@pages/SimplifiedBankOnboarding/core/requests/runRequest';
 import type {OnboardingRequest, RequestOutcome} from '@pages/SimplifiedBankOnboarding/core/requests/types';
-import useOnboardingRequest, {useProgressSaveRequest} from '@pages/SimplifiedBankOnboarding/core/requests/useOnboardingRequest';
+import useOnboardingRequest, {useBackgroundRequest} from '@pages/SimplifiedBankOnboarding/core/requests/useOnboardingRequest';
 import {WRITE_COMMANDS} from '@pages/SimplifiedBankOnboarding/mockBackend/commands';
 import {write} from '@pages/SimplifiedBankOnboarding/mockBackend/mockApi';
 
@@ -173,7 +173,7 @@ describe('useOnboardingRequest', () => {
     it('sends the progress save of every page, also while an earlier one is pending', async () => {
         // Given a progress save that has no answer yet
         answerWrites('none');
-        const {result} = renderHook(() => useProgressSaveRequest(PROGRESS_REQUEST), {wrapper: FlowWrapper});
+        const {result} = renderHook(() => useBackgroundRequest(PROGRESS_REQUEST), {wrapper: FlowWrapper});
 
         // When two pages are saved one after the other
         await act(async () => {

@@ -21,9 +21,10 @@ import {failUnsentRequest, getRequestKey, sendTrackedRequest, useRequestKeyState
 
 /**
  * `userAction`: a press of the user, guarded against a second send while one is pending.
- * `progressSave`: the save after each page, never guarded, and its failure is not mirrored to the account (BC-08).
+ * `background`: a send that no press started (the save after each page, the read when a page opens), never guarded, and
+ * its failure is not mirrored to the account (BC-08).
  */
-type SendMode = 'userAction' | 'progressSave';
+type SendMode = 'userAction' | 'background';
 
 /** The keys of the user action sends that have not settled yet. A key is added at the press, so a second press in the same tick finds it. */
 const keysBeingSent = new Set<RequestKey>();
@@ -97,14 +98,15 @@ function useOnboardingRequest<TInput = void>(
 }
 
 /**
- * The progress save of the step shell (`saveAfterEachPage`). Every page sends it without the pending guard, so each save
- * goes out, and offline each one waits in the queue (BC-15). Its failure is shown nowhere (BC-08). Internal to core.
+ * A send that no press started: the progress save of the step shell (`saveAfterEachPage`) and the read when a page
+ * opens. Each call sends without the pending guard, so each progress save goes out, and offline each one waits in the
+ * queue (BC-15). Its failure is not mirrored to the account (BC-08). Internal to core.
  */
-function useProgressSaveRequest(request: OnboardingRequest | undefined): () => Promise<RequestOutcome> {
+function useBackgroundRequest(request: OnboardingRequest | undefined): () => Promise<RequestOutcome> {
     const key = useFlowRequestKey(request?.name);
-    const send = useSendOnboardingRequest(request, key, 'progressSave');
+    const send = useSendOnboardingRequest(request, key, 'background');
     return () => send();
 }
 
 export default useOnboardingRequest;
-export {useProgressSaveRequest};
+export {useBackgroundRequest};

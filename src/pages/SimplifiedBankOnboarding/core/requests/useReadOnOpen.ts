@@ -1,19 +1,19 @@
 /**
  * A read that a page needs before it can show anything. It is sent when the page opens and again after each reconnect
- * until it succeeds. The data of the flow comes from subscriptions, because the read starts in an effect.
+ * until it succeeds. It is built and sent the way every other request of a flow is.
  */
 import useNetwork from '@hooks/useNetwork';
 
 import {getIsOffline} from '@libs/NetworkState';
 
 import {useOnboardingFlow} from '@pages/SimplifiedBankOnboarding/core/flow/flowContext';
-import {useFlowData} from '@pages/SimplifiedBankOnboarding/core/flow/flowData';
 
 import {useEffect, useEffectEvent, useRef} from 'react';
 
 import type {OnboardingRequest} from './types';
 
-import {failUnsentRequest, getRequestKey, sendTrackedRequest, useRequestKeyState} from './runRequest';
+import {getRequestKey, useRequestKeyState} from './runRequest';
+import {useBackgroundRequest} from './useOnboardingRequest';
 
 /**
  * Sends the read on mount while `isEnabled` is true, when `isEnabled` turns true, and again after each reconnect until
@@ -23,23 +23,18 @@ import {failUnsentRequest, getRequestKey, sendTrackedRequest, useRequestKeyState
  */
 function useReadOnOpen(request: OnboardingRequest, {isEnabled = true}: {isEnabled?: boolean} = {}): {isPending: boolean; hasFailed: boolean} {
     const {bankAccount} = useOnboardingFlow();
-    const data = useFlowData();
+    const sendRead = useBackgroundRequest(request);
     const key = getRequestKey(request.name, bankAccount);
     const {status} = useRequestKeyState(key);
     const hasSkippedReadRef = useRef(false);
 
-    function read() {
+    async function read() {
         if (getIsOffline()) {
             hasSkippedReadRef.current = true;
             return;
         }
-        hasSkippedReadRef.current = false;
-        const spec = request.build(data);
-        if (!spec) {
-            failUnsentRequest(key, {});
-            return;
-        }
-        sendTrackedRequest(key, spec);
+        const outcome = await sendRead();
+        hasSkippedReadRef.current = outcome.status === 'skipped';
     }
 
     const readOnOpen = useEffectEvent(read);

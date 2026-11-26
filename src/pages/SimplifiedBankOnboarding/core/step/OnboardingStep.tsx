@@ -20,7 +20,7 @@ import {findLatestRouteOfStep, getFlowRoute, getStepBelow, writeShownPosition} f
 import useScreenGuard from '@pages/SimplifiedBankOnboarding/core/flow/useScreenGuard';
 import {clearAccountErrorMirror} from '@pages/SimplifiedBankOnboarding/core/requests/runRequest';
 import type {OnboardingRequest, RequestOutcome} from '@pages/SimplifiedBankOnboarding/core/requests/types';
-import {useProgressSaveRequest} from '@pages/SimplifiedBankOnboarding/core/requests/useOnboardingRequest';
+import {useBackgroundRequest} from '@pages/SimplifiedBankOnboarding/core/requests/useOnboardingRequest';
 
 import ONYXKEYS from '@src/ONYXKEYS';
 
@@ -78,7 +78,7 @@ function OnboardingStep({title, wrapperID, children, startAt, saveAfterEachPage,
     const navigation = useNavigation();
     const stepBelow = useNavigationState((state) => getStepBelow(state, route.key, target));
     const [doesAccountHoldErrors] = useOnyx(ONYXKEYS.SIMPLIFIED_BANK_ONBOARDING_ACCOUNT, {selector: hasAccountErrors});
-    const sendProgressSave = useProgressSaveRequest(saveAfterEachPage);
+    const sendProgressSave = useBackgroundRequest(saveAfterEachPage);
 
     const {pages, content} = readSubPages(children);
     const hasArrivedByNext = !!previousStep && stepBelow === previousStep;
