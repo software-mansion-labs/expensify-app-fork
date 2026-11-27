@@ -20,7 +20,6 @@ type USDAnswers = OwnerQuestionAnswers & {
     lastName: string;
     dob: string;
     ssnLast4: string;
-    isOnfidoSetupComplete: boolean;
     companyName: string;
     companyTaxID: string;
     incorporationType: string;

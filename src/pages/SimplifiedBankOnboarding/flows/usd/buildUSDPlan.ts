@@ -4,6 +4,7 @@
  * `core/form/fields`, a step names the request that saves it, a widget page names the read of its token, and a custom
  * page names the request that it sends itself.
  */
+import {getLastFourDigits} from '@libs/BankAccountUtils';
 import {isValidCompanyName, isValidSSNLastFour, isValidTaxID} from '@libs/ValidationUtils';
 
 import INPUT_IDS from '@pages/SimplifiedBankOnboarding/contract/form';
@@ -19,6 +20,7 @@ import {
     createFileField,
     createLegalNameField,
     createPicklistField,
+    createReadOnlyField,
     createTextField,
     getFormPage,
 } from '@pages/SimplifiedBankOnboarding/core';
@@ -28,7 +30,7 @@ import type {BaseStepInput} from '@pages/SimplifiedBankOnboarding/flows/shared/g
 import {canAddMoreUSDOwners} from '@pages/SimplifiedBankOnboarding/flows/shared/owners/canAddMoreOwners';
 import getOwnerPages from '@pages/SimplifiedBankOnboarding/flows/shared/owners/getOwnerPages';
 import {USD_OWNER_DRAFT} from '@pages/SimplifiedBankOnboarding/flows/shared/owners/ownerBuffer';
-import type {FlowPlan, FormPageConfig, FormPageDefinition, StepConfig} from '@pages/SimplifiedBankOnboarding/flows/shared/plan/types';
+import type {FlowPlan, FormPageConfig, FormPageDefinition, PageConfig, StepConfig} from '@pages/SimplifiedBankOnboarding/flows/shared/plan/types';
 
 import CONST from '@src/CONST';
 
@@ -146,29 +148,29 @@ function buildBankAccountStep({achData, bankAccount, answers, translate, buildFo
     const hasServerBankAccount = !!achData?.bankAccountID;
     const connectBankAccountRequest = isPlaidSetup ? getPlaidBankAccountRequest(bankAccount, answers.plaidAccountID) : getManualBankAccountRequest(bankAccount, answers);
 
+    // Once the server created the account, the Plaid page shows that account instead of the widget, like the locked
+    // manual fields, so a new pick that is never sent cannot look saved. That page sends and reads nothing, so it works
+    // offline. Before that, the bank step sends the picked account, so the widget cannot complete before the user picks one.
+    const plaidPage: PageConfig = hasServerBankAccount
+        ? buildFormPage({
+              id: SBO_CONST.USD.BANK_INFO_SUB_PAGES.PLAID,
+              title: translate('bankAccount.chooseAnAccount'),
+              fields: [createReadOnlyField(`${translate('bankAccount.accountEnding')} ${getLastFourDigits(achData.accountNumber ?? '')}`, achData.bankName ?? '')],
+          })
+        : createCustomPage(
+              PlaidStep,
+              {id: SBO_CONST.USD.BANK_INFO_SUB_PAGES.PLAID, isComplete: false, read: getPlaidLinkTokenRead(!!plaidLinkToken)},
+              {request: getPlaidBankAccountsRequest(), canComplete: !!answers.plaidAccountID},
+          );
+
     return {
         id: PAGE_NAMES.BANK_ACCOUNT,
         title: translate('bankAccount.bankInfo'),
         isComplete: hasPassedServerStep(achData, STEP.BANK_ACCOUNT),
 
         pages: [
-            // The bank step sends the picked account, so the Plaid page cannot be completed before the user picks one. Once
-            // the server created the account, the page shows that account instead of the list, like the locked manual
-            // fields, so a new pick that is never sent cannot look saved. The page then needs no link token either.
             isPlaidSetup
-                ? createCustomPage(
-                      PlaidStep,
-                      {
-                          id: SBO_CONST.USD.BANK_INFO_SUB_PAGES.PLAID,
-                          isComplete: hasServerBankAccount,
-                          read: hasServerBankAccount ? undefined : getPlaidLinkTokenRead(!!plaidLinkToken),
-                      },
-                      {
-                          request: getPlaidBankAccountsRequest(),
-                          canComplete: hasServerBankAccount || !!answers.plaidAccountID,
-                          connectedAccount: hasServerBankAccount ? {bankName: achData.bankName ?? '', accountNumber: achData.accountNumber ?? ''} : undefined,
-                      },
-                  )
+                ? plaidPage
                 : buildFormPage({
                       id: SBO_CONST.USD.BANK_INFO_SUB_PAGES.MANUAL,
                       title: translate('bankAccount.manuallyAdd'),

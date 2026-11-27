@@ -47,4 +47,3 @@ export {default as getRequestKey} from './requests/requestKey';
 export {default as runRequest, planRead, planRequest, planRequestWithInput} from './requests/runRequest';
 export type {BankAccountParams, OnboardingRequests, PlannedRead, PlannedRequest, RequestOutcome} from './requests/types';
 export {default as useRequest} from './requests/useRequest';
-export {default as useRequestState} from './requests/useRequestState';

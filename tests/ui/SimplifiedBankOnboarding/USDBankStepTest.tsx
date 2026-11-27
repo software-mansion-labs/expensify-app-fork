@@ -95,6 +95,37 @@ describe('USD bank step with a bank account on the server', () => {
         expect((await getOnyxValue(ONYXKEYS.FORMS.SIMPLIFIED_BANK_ONBOARDING_FORM_DRAFT))?.plaidAccountID).toBeUndefined();
     });
 
+    it('moves on from the connected Plaid account without a connection', async () => {
+        // Given a Plaid account that the server created, on a page that the user opened before the connection dropped
+        const navigate = spyOnNavigation();
+        await openFlowPage(
+            {kind: 'usd', params: {policyID: USD_POLICY_ID, page: USD.PAGE_NAMES.BANK_ACCOUNT, subPage: USD.BANK_INFO_SUB_PAGES.PLAID}},
+            {
+                achData: {
+                    policyID: USD_POLICY_ID,
+                    bankAccountID: BANK_ACCOUNT_ID,
+                    currentStep: USD.STEP.REQUESTOR,
+                    subStep: SBO_CONST.SETUP_TYPE.PLAID,
+                    bankName: BANK_NAME,
+                    accountNumber: maskAccountNumber(CONNECTED_PLAID_ACCOUNT.accountNumber),
+                    plaidAccountID: CONNECTED_PLAID_ACCOUNT.plaidAccountID,
+                },
+                draft: {country: SBO_CONST.COUNTRY.US, setupType: SBO_CONST.SETUP_TYPE.PLAID},
+            },
+        );
+        setForceOffline(true);
+        await waitForBatchedUpdatesWithAct();
+
+        // When the user presses Next
+        fireEvent.press(screen.getByText('common.next'));
+        await waitForBatchedUpdatesWithAct();
+
+        // Then the flow opens the personal info step, because the page sends nothing and works offline like the locked
+        // manual page
+        expect(write).not.toHaveBeenCalled();
+        expect(navigate).toHaveBeenCalledWith(PERSONAL_INFO_ROUTE);
+    });
+
     it('moves on from the locked manual page without saving the masked numbers to the draft', async () => {
         // Given a manual bank account that the server created and returns with a masked account number
         const navigate = spyOnNavigation();

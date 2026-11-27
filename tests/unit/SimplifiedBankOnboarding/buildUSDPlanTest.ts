@@ -14,7 +14,7 @@ import getResumePosition from '@pages/SimplifiedBankOnboarding/core/plan/positio
 import {getNextStepPosition, getPreviousPosition} from '@pages/SimplifiedBankOnboarding/core/plan/position/transitions';
 import getRequestKey from '@pages/SimplifiedBankOnboarding/core/requests/requestKey';
 import type FlowData from '@pages/SimplifiedBankOnboarding/flows/shared/flowData/types';
-import type {CustomStepProps, FlowPlan, PageConfig} from '@pages/SimplifiedBankOnboarding/flows/shared/plan/types';
+import type {FlowPlan} from '@pages/SimplifiedBankOnboarding/flows/shared/plan/types';
 import buildUSDPlan from '@pages/SimplifiedBankOnboarding/flows/usd/buildUSDPlan';
 import {WRITE_COMMANDS} from '@pages/SimplifiedBankOnboarding/mockBackend/commands';
 import {buildClientACHData, maskAccountNumber} from '@pages/SimplifiedBankOnboarding/mockBackend/handlers/buildResponse';
@@ -260,12 +260,6 @@ function position(stepID: StepID, pageID: PageID): FlowPosition {
     return {stepID, pageID, isEditing: false};
 }
 
-/** The element that the controller would render for a custom page, whose props show what the plan hands its screen */
-function renderCustomPage(page: PageConfig | undefined) {
-    const controllerProps: CustomStepProps = {policyID: POLICY_ID, isSubmitting: false, onComplete: jest.fn(), goToStep: jest.fn()};
-    return page?.kind === 'custom' ? page.render(controllerProps) : undefined;
-}
-
 function getStepIDs(plan: FlowPlan): StepID[] {
     return plan.steps.map((step) => step.id);
 }
@@ -387,21 +381,18 @@ describe('buildUSDPlan', () => {
             expect(plaidPage).toMatchObject({requestKey: getRequestKey(REQUEST_NAMES.OPEN_PLAID_BANK_ACCOUNT_SELECTOR)});
         });
 
-        it('shows the connected Plaid account instead of the list and lets Next move on', () => {
+        it('shows the connected Plaid account instead of the widget and lets Next move on', () => {
             // Given a Plaid account that the server created, and a client that holds no link token, such as after a reload
-            const connectedPlaidAccount = getFirst(PLAID_BANK_ACCOUNTS);
             const plan = buildPlan(createServer({setupType: PLAID}).advanceTo('company').readAccount(), {country: SBO_CONST.COUNTRY.US, setupType: PLAID});
 
             // When the Plaid page is read from the plan
             const plaidPage = findStep(plan, PAGE_NAMES.BANK_ACCOUNT)?.pages.at(0);
 
-            // Then the screen gets the account of the server to show instead of a list to pick from, because the bank step
-            // sends no new pick, and the page reads no link token, because it offers no bank login
-            expect(renderCustomPage(plaidPage)).toMatchObject({
-                props: {connectedAccount: {bankName: connectedPlaidAccount.bankName, accountNumber: maskAccountNumber(connectedPlaidAccount.accountNumber)}},
-            });
-            expect(plaidPage).toMatchObject({canComplete: true});
+            // Then the page is a form that only shows the account of the server, because the bank step sends no new pick.
+            // It reads no link token and submits nothing, so it needs no connection.
+            expect(plaidPage).toMatchObject({kind: 'form', id: BANK_INFO_SUB_PAGES.PLAID, isComplete: true});
             expect(plaidPage?.read).toBeUndefined();
+            expect(plaidPage?.kind === 'form' ? getFieldValues(plaidPage.fields, plan.answers) : undefined).toEqual({});
         });
 
         it('lets the user pick a Plaid account while the server has none', () => {
@@ -411,9 +402,8 @@ describe('buildUSDPlan', () => {
             // When the Plaid page is read from the plan
             const plaidPage = findStep(plan, PAGE_NAMES.BANK_ACCOUNT)?.pages.at(0);
 
-            // Then the screen shows the list of the bank login, and Next waits for a pick, which the bank step sends
-            expect(renderCustomPage(plaidPage)).toMatchObject({props: {connectedAccount: undefined}});
-            expect(plaidPage).toMatchObject({canComplete: false});
+            // Then the page is the Plaid widget, and Next waits for a pick, which the bank step sends
+            expect(plaidPage).toMatchObject({kind: 'custom', canComplete: false});
         });
 
         it('submits no bank numbers from the locked manual page', () => {

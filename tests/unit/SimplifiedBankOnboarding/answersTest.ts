@@ -18,6 +18,7 @@ const USD_ACCOUNT: OnboardingAccount = {
         lastName: 'Name',
         companyName: 'Server Company',
         isOnfidoSetupComplete: true,
+        certifyTrueInformation: true,
         ownsMoreThan25Percent: false,
         beneficialOwners: [
             {firstName: 'Anna', lastName: 'Owner', dob: '1980-01-01'},
@@ -73,14 +74,14 @@ describe('answers', () => {
         });
 
         it('keeps a false draft answer over a true saved one', () => {
-            // Given a saved passed identity check and a draft that holds false
-            const draft: OnboardingDraft = {isOnfidoSetupComplete: false};
+            // Given a saved certification and a draft where the user took it back
+            const draft: OnboardingDraft = {certifyTrueInformation: false};
 
             // When the answers are built
             const answers = getUSDAnswers(draft, USD_ACCOUNT);
 
             // Then only undefined falls back to the server, so a false answer of the user is not lost
-            expect(answers.isOnfidoSetupComplete).toBe(false);
+            expect(answers.certifyTrueInformation).toBe(false);
         });
 
         it('builds the owners from the server with the saved IDs, and IDs from the position where the server has none', () => {

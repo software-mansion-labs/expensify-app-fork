@@ -131,6 +131,9 @@ type NonUSDStepInput = BaseStepInput &
         buildFormPage: (definition: FormPageDefinition) => FormPageConfig;
         corpay: CorpayData | undefined;
         isAUD: boolean;
+
+        /** The currency needs a signed form, so the docusign step follows the agreements and sends what they collect */
+        hasDocusignStep: boolean;
         isSent: boolean;
     };
 
@@ -152,6 +155,7 @@ function buildNonUSDPlan(data: FlowData, {translate, policyID: urlPolicyID}: Pla
         buildFormPage: (definition) => getFormPage(definition, answers, translate),
         corpay: baseStepInput.achData?.corpay,
         isAUD: currency === SBO_CONST.CURRENCY.AUD,
+        hasDocusignStep: requiresDocusignStep(currency),
         isSent: isOnboardingSent(baseStepInput.achData),
     };
 
@@ -163,7 +167,7 @@ function buildNonUSDPlan(data: FlowData, {translate, policyID: urlPolicyID}: Pla
             buildBeneficialOwnersStep(input),
             buildSignerInfoStep(input),
             buildAgreementsStep(input),
-            ...(requiresDocusignStep(currency) ? [buildDocusignStep(input)] : []),
+            ...(input.hasDocusignStep ? [buildDocusignStep(input)] : []),
             buildFinishStep(input),
         ],
         answers,
@@ -467,10 +471,10 @@ function buildSignerInfoStep({bankAccount, corpay, isAUD, answers, translate, bu
 }
 
 /**
- * Without a docusign step after it, the agreements step sends the final request itself. For AUD it also collects
+ * Without a docusign step after it, the agreements step sends the final request itself. With one, it also collects
  * the bank statement, and the docusign step sends both together with the signed form.
  */
-function buildAgreementsStep({bankAccount, isAUD, isSent, answers, translate, buildFormPage}: NonUSDStepInput): StepConfig {
+function buildAgreementsStep({bankAccount, hasDocusignStep, isSent, answers, translate, buildFormPage}: NonUSDStepInput): StepConfig {
     const agreementFields = [
         createCheckboxField(INPUT_IDS.AUTHORIZED_TO_BIND_CLIENT_TO_AGREEMENT, {
             label: translate('agreementsStep.iAmAuthorized'),
@@ -484,7 +488,7 @@ function buildAgreementsStep({bankAccount, isAUD, isSent, answers, translate, bu
             label: translate('agreementsStep.iConsentToThePrivacyNoticeAccessibility'),
             requiredErrorText: translate('agreementsStep.error.consent'),
         }),
-        ...(isAUD
+        ...(hasDocusignStep
             ? [
                   createFileField(INPUT_IDS.BANK_STATEMENT, {
                       label: translate('agreementsStep.bankStatement'),
@@ -493,7 +497,7 @@ function buildAgreementsStep({bankAccount, isAUD, isSent, answers, translate, bu
               ]
             : []),
     ];
-    const areAgreementsComplete = isSent || (isAUD && areFieldsComplete(agreementFields, answers, translate));
+    const areAgreementsComplete = isSent || (hasDocusignStep && areFieldsComplete(agreementFields, answers, translate));
 
     return {
         id: PAGE_NAMES.AGREEMENTS,
@@ -505,12 +509,12 @@ function buildAgreementsStep({bankAccount, isAUD, isSent, answers, translate, bu
                 id: SBO_CONST.NON_USD.AGREEMENTS_SUB_PAGES.CONFIRM_AGREEMENTS,
                 isComplete: areAgreementsComplete,
                 title: translate('agreementsStep.pleaseConfirm'),
-                submitLabel: translate(isAUD ? 'common.confirm' : 'agreementsStep.accept'),
+                submitLabel: translate(hasDocusignStep ? 'common.confirm' : 'agreementsStep.accept'),
                 fields: agreementFields,
             }),
         ],
 
-        request: isAUD ? undefined : getFinishOnboardingRequest(bankAccount, answers),
+        request: hasDocusignStep ? undefined : getFinishOnboardingRequest(bankAccount, answers),
     };
 }
 

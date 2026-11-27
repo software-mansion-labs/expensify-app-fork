@@ -22,7 +22,6 @@ const INPUT_IDS = {
     LAST_NAME: 'lastName',
     DOB: 'dob',
     SSN_LAST_4: 'ssnLast4',
-    IS_ONFIDO_SETUP_COMPLETE: 'isOnfidoSetupComplete',
 
     // Company, shared by both flows
     COMPANY_NAME: 'companyName',
@@ -123,7 +122,6 @@ type OnboardingForm = OnboardingFormExtraProps &
             [INPUT_IDS.LAST_NAME]: string;
             [INPUT_IDS.DOB]: string;
             [INPUT_IDS.SSN_LAST_4]: string;
-            [INPUT_IDS.IS_ONFIDO_SETUP_COMPLETE]: boolean;
             [INPUT_IDS.COMPANY_NAME]: string;
             [INPUT_IDS.COMPANY_TAX_ID]: string;
             [INPUT_IDS.INCORPORATION_TYPE]: string;

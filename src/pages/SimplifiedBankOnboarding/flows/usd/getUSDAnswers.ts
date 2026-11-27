@@ -29,7 +29,6 @@ function getUSDAnswers(draft: OnboardingDraft | undefined, account: OnyxEntry<On
         lastName: draft?.lastName ?? achData?.lastName ?? '',
         dob: draft?.dob ?? achData?.dob ?? '',
         ssnLast4: draft?.ssnLast4 ?? achData?.ssnLast4 ?? '',
-        isOnfidoSetupComplete: draft?.isOnfidoSetupComplete ?? achData?.isOnfidoSetupComplete ?? false,
         companyName: draft?.companyName ?? achData?.companyName ?? '',
         // eslint-disable-next-line rulesdir/no-default-id-values -- A tax ID number is a form value, not a reference to an entity
         companyTaxID: draft?.companyTaxID ?? achData?.companyTaxID ?? '',
