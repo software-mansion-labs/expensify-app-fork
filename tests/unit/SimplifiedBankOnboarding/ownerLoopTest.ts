@@ -290,7 +290,7 @@ describe('update builders', () => {
 
 describe('server owners', () => {
     it('splits a full name at the first space', () => {
-        // Given full names with one, two and three words
+        // Given full names with one, two and three words, and extra spaces
         // When they are split
         // Then the first word is the first name and a middle name stays in the last name (BC-09)
         expect(splitFullName('Ada')).toEqual({firstName: 'Ada', lastName: ''});
@@ -298,7 +298,7 @@ describe('server owners', () => {
             firstName: 'Ada',
             lastName: 'Lovelace',
         });
-        expect(splitFullName('Ada King Lovelace')).toEqual({
+        expect(splitFullName('  Ada  King   Lovelace ')).toEqual({
             firstName: 'Ada',
             lastName: 'King Lovelace',
         });
@@ -322,7 +322,7 @@ describe('server owners', () => {
     });
 
     it('reads the global owners with a split name', () => {
-        // Given a saved global owner
+        // Given a saved global owner, and no corpay data at all
         const corpay = {
             beneficialOwners: [
                 {
@@ -334,7 +334,7 @@ describe('server owners', () => {
         };
 
         // When it is read
-        // Then the full name is split and the server ID stays
+        // Then the full name is split and the server ID stays, and no data gives an empty list
         expect(getGlobalOwnersFromServer(corpay)).toEqual([
             {
                 id: CURRENT_USER_OWNER_ID,
@@ -343,6 +343,7 @@ describe('server owners', () => {
                 ownershipPercentage: '50',
             },
         ]);
+        expect(getGlobalOwnersFromServer(undefined)).toEqual([]);
     });
 });
 
