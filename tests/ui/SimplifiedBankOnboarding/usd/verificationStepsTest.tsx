@@ -1,7 +1,6 @@
-import {fireEvent, render, screen} from '@testing-library/react-native';
+import {fireEvent, screen} from '@testing-library/react-native';
 
 import type InteractiveStepWrapperModule from '@components/InteractiveStepWrapper';
-import OnyxListItemProvider from '@components/OnyxListItemProvider';
 
 import useNetwork from '@hooks/useNetwork';
 
@@ -12,9 +11,7 @@ import type {OnboardingDraft} from '@pages/SimplifiedBankOnboarding/contract/for
 import type {PageID, StepID} from '@pages/SimplifiedBankOnboarding/contract/ids';
 import type {ACHData} from '@pages/SimplifiedBankOnboarding/contract/onyx';
 import SBO_CONST from '@pages/SimplifiedBankOnboarding/contract/SBO_CONST';
-import {saveFormDraft} from '@pages/SimplifiedBankOnboarding/core/draft/draft';
-import {FlowStepPositionContext, OnboardingFlowActionsContext, OnboardingFlowStateContext} from '@pages/SimplifiedBankOnboarding/core/flow/flowContext';
-import type {FlowStepPosition, FlowTarget, OnboardingFlowActions, OnboardingFlowState} from '@pages/SimplifiedBankOnboarding/core/flow/flowContext';
+import type {FlowStepPosition, FlowTarget} from '@pages/SimplifiedBankOnboarding/core/flow/flowContext';
 import {getFlowRoute} from '@pages/SimplifiedBankOnboarding/core/flow/flowRoutes';
 import type {FlowNavigationState} from '@pages/SimplifiedBankOnboarding/core/flow/flowRoutes';
 import {clearRequestState} from '@pages/SimplifiedBankOnboarding/core/requests/runRequest';
@@ -27,17 +24,15 @@ import {read, write} from '@pages/SimplifiedBankOnboarding/mockBackend/mockApi';
 
 import ONYXKEYS from '@src/ONYXKEYS';
 import SCREENS from '@src/SCREENS';
-import type {OnyxData} from '@src/types/onyx/Request';
 
 import type * as NativeNavigation from '@react-navigation/native';
 import type {ComponentType} from 'react';
 import type ReactNative from 'react-native';
-import type {OnyxKey} from 'react-native-onyx';
 
-import {NavigationContainer} from '@react-navigation/native';
 import React from 'react';
 import Onyx from 'react-native-onyx';
 
+import {answerWrites, renderInFlow} from '../../../utils/BankOnboardingLabStepTestUtils';
 import waitForBatchedUpdatesWithAct from '../../../utils/waitForBatchedUpdatesWithAct';
 
 const POLICY_ID = '1';
@@ -93,34 +88,13 @@ const BUSINESS_INFO: StepUnderTest = {Step: BusinessInfoStep, step: PAGE_NAMES.C
 const IDENTITY_CHECK: StepUnderTest = {Step: VerifyIdentityStep, step: PAGE_NAMES.VERIFY_IDENTITY, nextStep: PAGE_NAMES.COMPANY};
 const DOCUMENTS: StepUnderTest = {Step: KYBDocumentsStep, step: PAGE_NAMES.KYB_DOCS, nextStep: PAGE_NAMES.VALIDATION};
 
-const flowActions: OnboardingFlowActions = {
-    saveDraft: (values) => saveFormDraft(ONYXKEYS.FORMS.SIMPLIFIED_BANK_ONBOARDING_FORM, values),
-    returnToEntry: jest.fn(),
-    leaveFlow: jest.fn(),
-    openStep: jest.fn(),
-};
-
 async function renderStep({Step, step, nextStep}: StepUnderTest, page?: PageID) {
     const screenName = SCREENS.SETTINGS.BANK_ONBOARDING_LAB.USD_SETUP;
     mockNavigationState = {routes: [{key: ROUTE_KEY, name: screenName, params: {policyID: POLICY_ID, page: step, subPage: page}}]};
 
-    const flowState: OnboardingFlowState = {target: TARGET, bankAccount: {policyID: POLICY_ID, bankAccountID: BANK_ACCOUNT_ID}, formID: ONYXKEYS.FORMS.SIMPLIFIED_BANK_ONBOARDING_FORM};
     const position: FlowStepPosition = {step, previousStep: undefined, nextStep, counterIndex: 0, counterNames: ['1', '2'], page, isEditing: false};
 
-    render(
-        <OnyxListItemProvider>
-            <NavigationContainer>
-                <OnboardingFlowStateContext.Provider value={flowState}>
-                    <OnboardingFlowActionsContext.Provider value={flowActions}>
-                        <FlowStepPositionContext.Provider value={position}>
-                            <Step />
-                        </FlowStepPositionContext.Provider>
-                    </OnboardingFlowActionsContext.Provider>
-                </OnboardingFlowStateContext.Provider>
-            </NavigationContainer>
-        </OnyxListItemProvider>,
-    );
-    await waitForBatchedUpdatesWithAct();
+    await renderInFlow(<Step />, {target: TARGET, position, bankAccountID: BANK_ACCOUNT_ID});
 }
 
 async function setSavedData(achData: ACHData, draft: OnboardingDraft = {}) {
@@ -132,15 +106,6 @@ async function setSavedData(achData: ACHData, draft: OnboardingDraft = {}) {
 async function press(text: string) {
     fireEvent.press(screen.getByText(text));
     await waitForBatchedUpdatesWithAct();
-}
-
-/** The mock API applies the data of every write the way the server does for a valid or for a rejected request */
-function answerWrites(answer: 'success' | 'failure') {
-    jest.mocked(write).mockImplementation((_command, _params, onyxData: OnyxData<OnyxKey> = {}) => {
-        Onyx.update(onyxData.optimisticData ?? [])
-            .then(() => Onyx.update(answer === 'success' ? (onyxData.successData ?? []) : (onyxData.failureData ?? [])))
-            .then(() => Onyx.update(onyxData.finallyData ?? []));
-    });
 }
 
 function expectStepOpened({nextStep}: StepUnderTest) {

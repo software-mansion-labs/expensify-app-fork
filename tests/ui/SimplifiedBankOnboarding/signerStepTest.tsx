@@ -1,15 +1,12 @@
-import {fireEvent, render, screen} from '@testing-library/react-native';
+import {fireEvent, screen} from '@testing-library/react-native';
 
 import type InteractiveStepWrapperModule from '@components/InteractiveStepWrapper';
-import OnyxListItemProvider from '@components/OnyxListItemProvider';
 
 import Navigation from '@libs/Navigation/Navigation';
 
-import type {OnboardingDraft} from '@pages/SimplifiedBankOnboarding/contract/form';
 import type {PageID} from '@pages/SimplifiedBankOnboarding/contract/ids';
 import SBO_CONST from '@pages/SimplifiedBankOnboarding/contract/SBO_CONST';
-import {FlowStepPositionContext, OnboardingFlowActionsContext, OnboardingFlowStateContext} from '@pages/SimplifiedBankOnboarding/core/flow/flowContext';
-import type {FlowStepPosition, FlowTarget, OnboardingFlowActions, OnboardingFlowState} from '@pages/SimplifiedBankOnboarding/core/flow/flowContext';
+import type {FlowStepPosition, FlowTarget} from '@pages/SimplifiedBankOnboarding/core/flow/flowContext';
 import {getFlowRoute} from '@pages/SimplifiedBankOnboarding/core/flow/flowRoutes';
 import type {FlowNavigationState} from '@pages/SimplifiedBankOnboarding/core/flow/flowRoutes';
 import PAGES from '@pages/SimplifiedBankOnboarding/flows/nonUSD/signer/signerPages';
@@ -20,10 +17,10 @@ import ONYXKEYS from '@src/ONYXKEYS';
 import type * as NativeNavigation from '@react-navigation/native';
 import type ReactNative from 'react-native';
 
-import {NavigationContainer} from '@react-navigation/native';
 import React from 'react';
 import Onyx from 'react-native-onyx';
 
+import {createTestFlowActions, renderInFlow} from '../../utils/BankOnboardingLabStepTestUtils';
 import waitForBatchedUpdatesWithAct from '../../utils/waitForBatchedUpdatesWithAct';
 
 const POLICY_ID = '1';
@@ -62,11 +59,10 @@ jest.mock('@components/InteractiveStepWrapper', () => {
     );
 });
 
-const saveDraft = jest.fn((values: OnboardingDraft) => Onyx.merge(ONYXKEYS.FORMS.SIMPLIFIED_BANK_ONBOARDING_FORM_DRAFT, values));
+const flowActions = createTestFlowActions();
+const {saveDraft} = flowActions;
 
 async function renderSignerStep(page: PageID | undefined) {
-    const flowState: OnboardingFlowState = {target: TARGET, bankAccount: {policyID: POLICY_ID, bankAccountID: 0}, formID: ONYXKEYS.FORMS.SIMPLIFIED_BANK_ONBOARDING_FORM};
-    const flowActions: OnboardingFlowActions = {saveDraft, returnToEntry: jest.fn(), leaveFlow: jest.fn(), openStep: jest.fn()};
     const position: FlowStepPosition = {
         step: PAGE_NAMES.SIGNER_INFO,
         previousStep: PAGE_NAMES.BENEFICIAL_OWNER_INFO,
@@ -77,20 +73,7 @@ async function renderSignerStep(page: PageID | undefined) {
         isEditing: false,
     };
 
-    render(
-        <OnyxListItemProvider>
-            <NavigationContainer>
-                <OnboardingFlowStateContext.Provider value={flowState}>
-                    <OnboardingFlowActionsContext.Provider value={flowActions}>
-                        <FlowStepPositionContext.Provider value={position}>
-                            <SignerStep />
-                        </FlowStepPositionContext.Provider>
-                    </OnboardingFlowActionsContext.Provider>
-                </OnboardingFlowStateContext.Provider>
-            </NavigationContainer>
-        </OnyxListItemProvider>,
-    );
-    await waitForBatchedUpdatesWithAct();
+    await renderInFlow(<SignerStep />, {target: TARGET, position, flowActions});
 }
 
 async function answerDirectorQuestion(label: 'common.yes' | 'common.no') {

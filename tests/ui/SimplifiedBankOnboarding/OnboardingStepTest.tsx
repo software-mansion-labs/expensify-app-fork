@@ -7,8 +7,7 @@ import Text from '@components/Text';
 import Navigation from '@libs/Navigation/Navigation';
 
 import type {PageID, StepID} from '@pages/SimplifiedBankOnboarding/contract/ids';
-import {FlowStepPositionContext, OnboardingFlowActionsContext, OnboardingFlowStateContext} from '@pages/SimplifiedBankOnboarding/core/flow/flowContext';
-import type {FlowStepPosition, FlowTarget, OnboardingFlowActions, OnboardingFlowState} from '@pages/SimplifiedBankOnboarding/core/flow/flowContext';
+import type {FlowStepPosition, FlowTarget} from '@pages/SimplifiedBankOnboarding/core/flow/flowContext';
 import {getFlowRoute} from '@pages/SimplifiedBankOnboarding/core/flow/flowRoutes';
 import type {FlowNavigationState} from '@pages/SimplifiedBankOnboarding/core/flow/flowRoutes';
 import OnboardingStep from '@pages/SimplifiedBankOnboarding/core/step/OnboardingStep';
@@ -25,6 +24,7 @@ import type ReactNative from 'react-native';
 import React from 'react';
 import Onyx from 'react-native-onyx';
 
+import {createTestFlowActions, wrapInFlow} from '../../utils/BankOnboardingLabStepTestUtils';
 import getOnyxValue from '../../utils/getOnyxValue';
 import waitForBatchedUpdatesWithAct from '../../utils/waitForBatchedUpdatesWithAct';
 
@@ -102,12 +102,7 @@ type RenderOptions = {
     stepToWrite?: StepID;
 };
 
-const flowActions: OnboardingFlowActions = {
-    saveDraft: () => Promise.resolve(),
-    returnToEntry: jest.fn(),
-    leaveFlow: jest.fn(),
-    openStep: jest.fn(),
-};
+const flowActions = createTestFlowActions(() => Promise.resolve());
 
 function getStepRoute(step: StepID, page?: PageID, isEditing?: boolean, editReturnPage?: PageID) {
     return getFlowRoute(TARGET, {step, page, isEditing, editReturnPage});
@@ -138,37 +133,31 @@ function buildPersonalInfoStep(options: RenderOptions = {}) {
         nextStep: 'business-info',
         ...options,
     };
-    const flowState: OnboardingFlowState = {target: TARGET, bankAccount: {policyID: POLICY_ID, bankAccountID: 0}, formID: ONYXKEYS.FORMS.SIMPLIFIED_BANK_ONBOARDING_FORM};
     const position: FlowStepPosition = {step: 'personal-info', previousStep, nextStep, counterIndex: 1, counterNames: ['1', '2', '3'], page, isEditing, editReturnPage, stepToWrite};
 
-    return (
-        <OnboardingFlowStateContext.Provider value={flowState}>
-            <OnboardingFlowActionsContext.Provider value={flowActions}>
-                <FlowStepPositionContext.Provider value={position}>
-                    <OnboardingStep
-                        title="Personal info"
-                        wrapperID="PersonalInfoTestStep"
-                        startAt={startAt}
-                    >
-                        <TestPage
-                            name="full-name"
-                            label="Name page"
-                            isAnswered={answered.includes('full-name')}
-                        />
-                        <TestPage
-                            name="ssn"
-                            label="SSN page"
-                            isAnswered={answered.includes('ssn')}
-                        />
-                        <TestPage
-                            name="confirmation"
-                            label="Confirmation page"
-                            isAnswered={answered.includes('confirmation')}
-                        />
-                    </OnboardingStep>
-                </FlowStepPositionContext.Provider>
-            </OnboardingFlowActionsContext.Provider>
-        </OnboardingFlowStateContext.Provider>
+    return wrapInFlow(
+        <OnboardingStep
+            title="Personal info"
+            wrapperID="PersonalInfoTestStep"
+            startAt={startAt}
+        >
+            <TestPage
+                name="full-name"
+                label="Name page"
+                isAnswered={answered.includes('full-name')}
+            />
+            <TestPage
+                name="ssn"
+                label="SSN page"
+                isAnswered={answered.includes('ssn')}
+            />
+            <TestPage
+                name="confirmation"
+                label="Confirmation page"
+                isAnswered={answered.includes('confirmation')}
+            />
+        </OnboardingStep>,
+        {target: TARGET, position, flowActions},
     );
 }
 

@@ -1,10 +1,6 @@
-import {fireEvent, render, screen} from '@testing-library/react-native';
-
-import OnyxListItemProvider from '@components/OnyxListItemProvider';
+import {fireEvent, screen} from '@testing-library/react-native';
 
 import type {OnboardingDraft} from '@pages/SimplifiedBankOnboarding/contract/form';
-import {OnboardingFlowActionsContext, OnboardingFlowStateContext} from '@pages/SimplifiedBankOnboarding/core/flow/flowContext';
-import type {OnboardingFlowActions, OnboardingFlowState} from '@pages/SimplifiedBankOnboarding/core/flow/flowContext';
 import {clearRequestState} from '@pages/SimplifiedBankOnboarding/core/requests/runRequest';
 import type {OnboardingRequest, RequestOutcome} from '@pages/SimplifiedBankOnboarding/core/requests/types';
 import {PageNavigationActionsContext, PageNavigationStateContext} from '@pages/SimplifiedBankOnboarding/core/step/pageNavigation';
@@ -16,14 +12,11 @@ import {WRITE_COMMANDS} from '@pages/SimplifiedBankOnboarding/mockBackend/comman
 import {write} from '@pages/SimplifiedBankOnboarding/mockBackend/mockApi';
 
 import ONYXKEYS from '@src/ONYXKEYS';
-import type {OnyxData} from '@src/types/onyx/Request';
 
-import type {OnyxKey} from 'react-native-onyx';
-
-import {NavigationContainer} from '@react-navigation/native';
 import React from 'react';
 import Onyx from 'react-native-onyx';
 
+import {answerWrites, createTestFlowActions, renderInFlow} from '../../utils/BankOnboardingLabStepTestUtils';
 import waitForBatchedUpdatesWithAct from '../../utils/waitForBatchedUpdatesWithAct';
 
 jest.mock('@pages/SimplifiedBankOnboarding/mockBackend/mockApi', () => ({
@@ -63,12 +56,6 @@ async function renderQuestion({request, isEditing = false, isAnswerSaved = true}
     let navigatedPage: Promise<NavigatedPage> = Promise.reject(new Error('The page did not move'));
     navigatedPage.catch(() => {});
 
-    const flowState: OnboardingFlowState = {
-        target: {kind: 'usd', policyID: POLICY_ID, backTo: undefined},
-        bankAccount: {policyID: POLICY_ID, bankAccountID: 0},
-        formID: ONYXKEYS.FORMS.SIMPLIFIED_BANK_ONBOARDING_FORM,
-    };
-    const flowActions: OnboardingFlowActions = {saveDraft, returnToEntry: jest.fn(), leaveFlow: jest.fn(), openStep: jest.fn()};
     const pageState: PageNavigationState = {page: 'is-user-ubo', isEditing};
     const pageActions: PageNavigationActions = {
         goNext: jest.fn(),
@@ -79,30 +66,22 @@ async function renderQuestion({request, isEditing = false, isAnswerSaved = true}
         openPage: jest.fn(),
     };
 
-    render(
-        <OnyxListItemProvider>
-            <NavigationContainer>
-                <OnboardingFlowStateContext.Provider value={flowState}>
-                    <OnboardingFlowActionsContext.Provider value={flowActions}>
-                        <PageNavigationStateContext.Provider value={pageState}>
-                            <PageNavigationActionsContext.Provider value={pageActions}>
-                                <YesNoSubPage
-                                    name="is-user-ubo"
-                                    inputID={isAnswerSaved ? 'ownsMoreThan25Percent' : undefined}
-                                    title={QUESTION}
-                                    defaultValue={false}
-                                    getNext={(answer) => (answer ? 'legal-name' : NEXT_STEP)}
-                                    getDraftUpdate={(answer) => (answer ? {} : {usdOwners: []})}
-                                    request={request}
-                                />
-                            </PageNavigationActionsContext.Provider>
-                        </PageNavigationStateContext.Provider>
-                    </OnboardingFlowActionsContext.Provider>
-                </OnboardingFlowStateContext.Provider>
-            </NavigationContainer>
-        </OnyxListItemProvider>,
+    await renderInFlow(
+        <PageNavigationStateContext.Provider value={pageState}>
+            <PageNavigationActionsContext.Provider value={pageActions}>
+                <YesNoSubPage
+                    name="is-user-ubo"
+                    inputID={isAnswerSaved ? 'ownsMoreThan25Percent' : undefined}
+                    title={QUESTION}
+                    defaultValue={false}
+                    getNext={(answer) => (answer ? 'legal-name' : NEXT_STEP)}
+                    getDraftUpdate={(answer) => (answer ? {} : {usdOwners: []})}
+                    request={request}
+                />
+            </PageNavigationActionsContext.Provider>
+        </PageNavigationStateContext.Provider>,
+        {target: {kind: 'usd', policyID: POLICY_ID, backTo: undefined}, flowActions: createTestFlowActions(saveDraft)},
     );
-    await waitForBatchedUpdatesWithAct();
     return {saveDraft, getNavigatedPage: () => navigatedPage};
 }
 
@@ -112,15 +91,6 @@ async function chooseAnswer(label: 'common.yes' | 'common.no') {
     await waitForBatchedUpdatesWithAct();
 }
 
-/** The mock API applies the success data of every write, as the server does for a valid request */
-function answerWritesWithSuccess() {
-    jest.mocked(write).mockImplementation((_command, _params, onyxData: OnyxData<OnyxKey> = {}) => {
-        Onyx.update(onyxData.optimisticData ?? [])
-            .then(() => Onyx.update(onyxData.successData ?? []))
-            .then(() => Onyx.update(onyxData.finallyData ?? []));
-    });
-}
-
 describe('YesNoSubPage', () => {
     beforeAll(() => {
         Onyx.init({keys: ONYXKEYS});
@@ -128,7 +98,7 @@ describe('YesNoSubPage', () => {
 
     beforeEach(async () => {
         jest.mocked(write).mockReset();
-        answerWritesWithSuccess();
+        answerWrites('success');
         await clearRequestState();
         await Onyx.clear();
         await waitForBatchedUpdatesWithAct();

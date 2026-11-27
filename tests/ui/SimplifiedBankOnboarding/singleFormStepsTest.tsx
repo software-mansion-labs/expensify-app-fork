@@ -1,16 +1,13 @@
-import {fireEvent, render, screen} from '@testing-library/react-native';
+import {fireEvent, screen} from '@testing-library/react-native';
 
 import type InteractiveStepWrapperModule from '@components/InteractiveStepWrapper';
-import OnyxListItemProvider from '@components/OnyxListItemProvider';
 
 import Navigation from '@libs/Navigation/Navigation';
 
 import type {OnboardingDraft} from '@pages/SimplifiedBankOnboarding/contract/form';
 import type {StepID} from '@pages/SimplifiedBankOnboarding/contract/ids';
 import SBO_CONST from '@pages/SimplifiedBankOnboarding/contract/SBO_CONST';
-import {saveFormDraft} from '@pages/SimplifiedBankOnboarding/core/draft/draft';
-import {FlowStepPositionContext, OnboardingFlowActionsContext, OnboardingFlowStateContext} from '@pages/SimplifiedBankOnboarding/core/flow/flowContext';
-import type {FlowStepPosition, FlowTarget, OnboardingFlowActions, OnboardingFlowState} from '@pages/SimplifiedBankOnboarding/core/flow/flowContext';
+import type {FlowStepPosition, FlowTarget} from '@pages/SimplifiedBankOnboarding/core/flow/flowContext';
 import {getFlowRoute} from '@pages/SimplifiedBankOnboarding/core/flow/flowRoutes';
 import type {FlowNavigationState} from '@pages/SimplifiedBankOnboarding/core/flow/flowRoutes';
 import {clearRequestState} from '@pages/SimplifiedBankOnboarding/core/requests/runRequest';
@@ -22,17 +19,15 @@ import {WRITE_COMMANDS} from '@pages/SimplifiedBankOnboarding/mockBackend/comman
 import {write} from '@pages/SimplifiedBankOnboarding/mockBackend/mockApi';
 
 import ONYXKEYS from '@src/ONYXKEYS';
-import type {OnyxData} from '@src/types/onyx/Request';
 
 import type * as NativeNavigation from '@react-navigation/native';
 import type {ComponentType} from 'react';
 import type ReactNative from 'react-native';
-import type {OnyxKey} from 'react-native-onyx';
 
-import {NavigationContainer} from '@react-navigation/native';
 import React from 'react';
 import Onyx from 'react-native-onyx';
 
+import {answerWrites, renderInFlow} from '../../utils/BankOnboardingLabStepTestUtils';
 import getOnyxValue from '../../utils/getOnyxValue';
 import waitForBatchedUpdatesWithAct from '../../utils/waitForBatchedUpdatesWithAct';
 
@@ -91,31 +86,10 @@ const GLOBAL_COUNTRY: StepUnderTest = {Step: CountryStep, target: NON_USD_TARGET
 const GLOBAL_AGREEMENTS: StepUnderTest = {Step: AgreementsStep, target: NON_USD_TARGET, step: NON_USD.PAGE_NAMES.AGREEMENTS, nextStep: NON_USD.PAGE_NAMES.DOCUSIGN};
 const DOCUSIGN: StepUnderTest = {Step: DocusignStep, target: NON_USD_TARGET, step: NON_USD.PAGE_NAMES.DOCUSIGN, nextStep: NON_USD.PAGE_NAMES.FINISH};
 
-const flowActions: OnboardingFlowActions = {
-    saveDraft: (values) => saveFormDraft(ONYXKEYS.FORMS.SIMPLIFIED_BANK_ONBOARDING_FORM, values),
-    returnToEntry: jest.fn(),
-    leaveFlow: jest.fn(),
-    openStep: jest.fn(),
-};
-
 async function renderStep({Step, target, step, nextStep}: StepUnderTest) {
-    const flowState: OnboardingFlowState = {target, bankAccount: {policyID: POLICY_ID, bankAccountID: BANK_ACCOUNT_ID}, formID: ONYXKEYS.FORMS.SIMPLIFIED_BANK_ONBOARDING_FORM};
     const position: FlowStepPosition = {step, previousStep: undefined, nextStep, counterIndex: 0, counterNames: ['1', '2'], page: undefined, isEditing: false};
 
-    render(
-        <OnyxListItemProvider>
-            <NavigationContainer>
-                <OnboardingFlowStateContext.Provider value={flowState}>
-                    <OnboardingFlowActionsContext.Provider value={flowActions}>
-                        <FlowStepPositionContext.Provider value={position}>
-                            <Step />
-                        </FlowStepPositionContext.Provider>
-                    </OnboardingFlowActionsContext.Provider>
-                </OnboardingFlowStateContext.Provider>
-            </NavigationContainer>
-        </OnyxListItemProvider>,
-    );
-    await waitForBatchedUpdatesWithAct();
+    await renderInFlow(<Step />, {target, position, bankAccountID: BANK_ACCOUNT_ID});
 }
 
 async function setSavedData(currency: string, draft: OnboardingDraft = {}) {
@@ -130,15 +104,6 @@ async function press(text: string) {
     await waitForBatchedUpdatesWithAct();
 }
 
-/** The mock API applies the success data of every write, as the server does for a valid request */
-function answerWritesWithSuccess() {
-    jest.mocked(write).mockImplementation((_command, _params, onyxData: OnyxData<OnyxKey> = {}) => {
-        Onyx.update(onyxData.optimisticData ?? [])
-            .then(() => Onyx.update(onyxData.successData ?? []))
-            .then(() => Onyx.update(onyxData.finallyData ?? []));
-    });
-}
-
 function expectStepOpened({target, nextStep}: StepUnderTest) {
     expect(Navigation.navigate).toHaveBeenCalledWith(getFlowRoute(target, {step: nextStep}));
 }
@@ -150,7 +115,7 @@ describe('steps made of one form', () => {
 
     beforeEach(async () => {
         jest.clearAllMocks();
-        answerWritesWithSuccess();
+        answerWrites('success');
         await clearRequestState();
         await Onyx.clear();
         await waitForBatchedUpdatesWithAct();

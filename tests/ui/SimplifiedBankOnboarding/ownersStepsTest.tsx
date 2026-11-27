@@ -1,7 +1,6 @@
-import {fireEvent, render, screen} from '@testing-library/react-native';
+import {fireEvent, screen} from '@testing-library/react-native';
 
 import type InteractiveStepWrapperModule from '@components/InteractiveStepWrapper';
-import OnyxListItemProvider from '@components/OnyxListItemProvider';
 
 import Navigation from '@libs/Navigation/Navigation';
 
@@ -9,8 +8,7 @@ import type {GlobalOwnerDraft, OnboardingDraft, USDOwnerDraft} from '@pages/Simp
 import type {PageID, StepID} from '@pages/SimplifiedBankOnboarding/contract/ids';
 import type {OnboardingAccount} from '@pages/SimplifiedBankOnboarding/contract/onyx';
 import SBO_CONST from '@pages/SimplifiedBankOnboarding/contract/SBO_CONST';
-import {FlowStepPositionContext, OnboardingFlowActionsContext, OnboardingFlowStateContext} from '@pages/SimplifiedBankOnboarding/core/flow/flowContext';
-import type {FlowStepPosition, FlowTarget, OnboardingFlowActions, OnboardingFlowState} from '@pages/SimplifiedBankOnboarding/core/flow/flowContext';
+import type {FlowStepPosition, FlowTarget} from '@pages/SimplifiedBankOnboarding/core/flow/flowContext';
 import {getFlowRoute} from '@pages/SimplifiedBankOnboarding/core/flow/flowRoutes';
 import type {FlowNavigationState} from '@pages/SimplifiedBankOnboarding/core/flow/flowRoutes';
 import {clearRequestState} from '@pages/SimplifiedBankOnboarding/core/requests/runRequest';
@@ -25,16 +23,14 @@ import {write} from '@pages/SimplifiedBankOnboarding/mockBackend/mockApi';
 
 import ONYXKEYS from '@src/ONYXKEYS';
 import SCREENS from '@src/SCREENS';
-import type {OnyxData} from '@src/types/onyx/Request';
 
 import type * as NativeNavigation from '@react-navigation/native';
 import type ReactNative from 'react-native';
-import type {OnyxKey} from 'react-native-onyx';
 
-import {NavigationContainer} from '@react-navigation/native';
 import React from 'react';
 import Onyx from 'react-native-onyx';
 
+import {answerWrites, createTestFlowActions, renderInFlow} from '../../utils/BankOnboardingLabStepTestUtils';
 import waitForBatchedUpdatesWithAct from '../../utils/waitForBatchedUpdatesWithAct';
 
 const ROUTE_KEY = 'current-route';
@@ -126,7 +122,8 @@ function createGlobalOwner(id: string, ownershipPercentage: string): GlobalOwner
     };
 }
 
-const saveDraft = jest.fn((values: OnboardingDraft) => Onyx.merge(ONYXKEYS.FORMS.SIMPLIFIED_BANK_ONBOARDING_FORM_DRAFT, values));
+const flowActions = createTestFlowActions();
+const {saveDraft} = flowActions;
 
 type StepSetup = {
     target: FlowTarget;
@@ -159,17 +156,6 @@ async function setUp(draft: OnboardingDraft, account?: OnboardingAccount) {
 }
 
 async function renderStep({target, step, previousStep, nextStep, element}: StepSetup, page: PageID | undefined) {
-    const flowState: OnboardingFlowState = {
-        target,
-        bankAccount: {policyID: POLICY_ID, bankAccountID: 0},
-        formID: ONYXKEYS.FORMS.SIMPLIFIED_BANK_ONBOARDING_FORM,
-    };
-    const flowActions: OnboardingFlowActions = {
-        saveDraft,
-        returnToEntry: jest.fn(),
-        leaveFlow: jest.fn(),
-        openStep: jest.fn(),
-    };
     const position: FlowStepPosition = {
         step,
         previousStep,
@@ -180,18 +166,7 @@ async function renderStep({target, step, previousStep, nextStep, element}: StepS
         isEditing: false,
     };
 
-    render(
-        <OnyxListItemProvider>
-            <NavigationContainer>
-                <OnboardingFlowStateContext.Provider value={flowState}>
-                    <OnboardingFlowActionsContext.Provider value={flowActions}>
-                        <FlowStepPositionContext.Provider value={position}>{element}</FlowStepPositionContext.Provider>
-                    </OnboardingFlowActionsContext.Provider>
-                </OnboardingFlowStateContext.Provider>
-            </NavigationContainer>
-        </OnyxListItemProvider>,
-    );
-    await waitForBatchedUpdatesWithAct();
+    await renderInFlow(element, {target, position, flowActions});
 }
 
 async function answer(label: 'common.yes' | 'common.no') {
@@ -208,15 +183,6 @@ async function confirm() {
 async function pressBack() {
     fireEvent.press(screen.getByLabelText('Back'));
     await waitForBatchedUpdatesWithAct();
-}
-
-/** Applies the data of a write the way the mock API does when the server accepts it */
-function acceptWrites() {
-    jest.mocked(write).mockImplementation((_command, _params, onyxData: OnyxData<OnyxKey> = {}) => {
-        Onyx.update(onyxData.optimisticData ?? [])
-            .then(() => Onyx.update(onyxData.successData ?? []))
-            .then(() => Onyx.update(onyxData.finallyData ?? []));
-    });
 }
 
 function getUSDRoute(page?: PageID) {
@@ -313,7 +279,7 @@ describe('owner steps', () => {
 
         it('sends no owners at once when nobody owns 25%', async () => {
             // Given a user who does not own 25%, and an owner left in the draft by an earlier "yes"
-            acceptWrites();
+            answerWrites('success');
             await setUp({ownsMoreThan25Percent: false, usdOwners: [ADA]});
             await renderStep(USD_STEP, USD_PAGES.IS_ANYONE_ELSE_UBO);
 
@@ -570,7 +536,7 @@ describe('owner steps', () => {
 
         it('sends no owners at once when nobody owns 25%', async () => {
             // Given a user who does not own 25%, and an owner left by an earlier "yes"
-            acceptWrites();
+            answerWrites('success');
             await setUp({
                 ownsMoreThan25Percent: false,
                 globalOwners: [createGlobalOwner('a', '30')],

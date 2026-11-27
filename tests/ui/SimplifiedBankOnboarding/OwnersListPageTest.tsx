@@ -1,7 +1,6 @@
-import {fireEvent, render, screen} from '@testing-library/react-native';
+import {fireEvent, screen} from '@testing-library/react-native';
 
 import type InteractiveStepWrapperModule from '@components/InteractiveStepWrapper';
-import OnyxListItemProvider from '@components/OnyxListItemProvider';
 import Text from '@components/Text';
 
 import Navigation from '@libs/Navigation/Navigation';
@@ -10,8 +9,7 @@ import type {OnboardingDraft} from '@pages/SimplifiedBankOnboarding/contract/for
 import SBO_CONST from '@pages/SimplifiedBankOnboarding/contract/SBO_CONST';
 import {NEXT_STEP} from '@pages/SimplifiedBankOnboarding/core';
 import type {OnboardingRequest} from '@pages/SimplifiedBankOnboarding/core';
-import {FlowStepPositionContext, OnboardingFlowActionsContext, OnboardingFlowStateContext} from '@pages/SimplifiedBankOnboarding/core/flow/flowContext';
-import type {FlowStepPosition, FlowTarget, OnboardingFlowActions, OnboardingFlowState} from '@pages/SimplifiedBankOnboarding/core/flow/flowContext';
+import type {FlowStepPosition, FlowTarget} from '@pages/SimplifiedBankOnboarding/core/flow/flowContext';
 import {getFlowRoute} from '@pages/SimplifiedBankOnboarding/core/flow/flowRoutes';
 import type {FlowNavigationState} from '@pages/SimplifiedBankOnboarding/core/flow/flowRoutes';
 import {clearRequestState} from '@pages/SimplifiedBankOnboarding/core/requests/runRequest';
@@ -24,16 +22,14 @@ import {WRITE_COMMANDS} from '@pages/SimplifiedBankOnboarding/mockBackend/comman
 import {write} from '@pages/SimplifiedBankOnboarding/mockBackend/mockApi';
 
 import ONYXKEYS from '@src/ONYXKEYS';
-import type {OnyxData} from '@src/types/onyx/Request';
 
 import type * as NativeNavigation from '@react-navigation/native';
 import type ReactNative from 'react-native';
-import type {OnyxKey} from 'react-native-onyx';
 
-import {NavigationContainer} from '@react-navigation/native';
 import React from 'react';
 import Onyx from 'react-native-onyx';
 
+import {answerWrites, createTestFlowActions, renderInFlow} from '../../utils/BankOnboardingLabStepTestUtils';
 import waitForBatchedUpdatesWithAct from '../../utils/waitForBatchedUpdatesWithAct';
 
 const POLICY_ID = '1';
@@ -106,30 +102,11 @@ const OWNER_ROW: OwnerRow = {
 
 const PRESS_EVENT = {nativeEvent: {}};
 
-const saveDraft = jest.fn((values: OnboardingDraft) => Onyx.merge(ONYXKEYS.FORMS.SIMPLIFIED_BANK_ONBOARDING_FORM_DRAFT, values));
+const flowActions = createTestFlowActions();
+const {saveDraft} = flowActions;
 const getEditUpdate = jest.fn((id: string): OnboardingDraft => ({ownerBeingModifiedID: id}));
 
-/** Applies the data of a write the way the mock API does */
-function answerWrites(answer: 'success' | 'failure') {
-    jest.mocked(write).mockImplementation((_command, _params, onyxData: OnyxData<OnyxKey> = {}) => {
-        Onyx.update(onyxData.optimisticData ?? [])
-            .then(() => Onyx.update(answer === 'success' ? (onyxData.successData ?? []) : (onyxData.failureData ?? [])))
-            .then(() => Onyx.update(onyxData.finallyData ?? []));
-    });
-}
-
 async function renderOwnersList(rows: OwnerRow[]) {
-    const flowState: OnboardingFlowState = {
-        target: TARGET,
-        bankAccount: {policyID: POLICY_ID, bankAccountID: 0},
-        formID: ONYXKEYS.FORMS.SIMPLIFIED_BANK_ONBOARDING_FORM,
-    };
-    const flowActions: OnboardingFlowActions = {
-        saveDraft,
-        returnToEntry: jest.fn(),
-        leaveFlow: jest.fn(),
-        openStep: jest.fn(),
-    };
     const position: FlowStepPosition = {
         step: PAGE_NAMES.BENEFICIAL_OWNERS,
         previousStep: PAGE_NAMES.COMPANY,
@@ -140,38 +117,28 @@ async function renderOwnersList(rows: OwnerRow[]) {
         isEditing: false,
     };
 
-    render(
-        <OnyxListItemProvider>
-            <NavigationContainer>
-                <OnboardingFlowStateContext.Provider value={flowState}>
-                    <OnboardingFlowActionsContext.Provider value={flowActions}>
-                        <FlowStepPositionContext.Provider value={position}>
-                            <OnboardingStep
-                                title="Owners"
-                                wrapperID="OwnersListTestStep"
-                            >
-                                <SubPage
-                                    name={PAGES.UBOS_LIST}
-                                    next={NEXT_STEP}
-                                >
-                                    <OwnersListPage
-                                        rows={rows}
-                                        request={OWNERS_REQUEST}
-                                        detailsStartPage={PAGES.LEGAL_NAME}
-                                        getEditUpdate={getEditUpdate}
-                                    />
-                                </SubPage>
-                                <SubPage name={PAGES.LEGAL_NAME}>
-                                    <Text>Name page</Text>
-                                </SubPage>
-                            </OnboardingStep>
-                        </FlowStepPositionContext.Provider>
-                    </OnboardingFlowActionsContext.Provider>
-                </OnboardingFlowStateContext.Provider>
-            </NavigationContainer>
-        </OnyxListItemProvider>,
+    await renderInFlow(
+        <OnboardingStep
+            title="Owners"
+            wrapperID="OwnersListTestStep"
+        >
+            <SubPage
+                name={PAGES.UBOS_LIST}
+                next={NEXT_STEP}
+            >
+                <OwnersListPage
+                    rows={rows}
+                    request={OWNERS_REQUEST}
+                    detailsStartPage={PAGES.LEGAL_NAME}
+                    getEditUpdate={getEditUpdate}
+                />
+            </SubPage>
+            <SubPage name={PAGES.LEGAL_NAME}>
+                <Text>Name page</Text>
+            </SubPage>
+        </OnboardingStep>,
+        {target: TARGET, position, flowActions},
     );
-    await waitForBatchedUpdatesWithAct();
 }
 
 describe('OwnersListPage', () => {

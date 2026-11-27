@@ -1,7 +1,6 @@
-import {fireEvent, render, screen} from '@testing-library/react-native';
+import {fireEvent, screen} from '@testing-library/react-native';
 
 import type InteractiveStepWrapperModule from '@components/InteractiveStepWrapper';
-import OnyxListItemProvider from '@components/OnyxListItemProvider';
 import TextInput from '@components/TextInput';
 
 import Navigation from '@libs/Navigation/Navigation';
@@ -9,9 +8,7 @@ import Navigation from '@libs/Navigation/Navigation';
 import INPUT_IDS from '@pages/SimplifiedBankOnboarding/contract/form';
 import type {InputID, OnboardingDraft} from '@pages/SimplifiedBankOnboarding/contract/form';
 import SBO_CONST from '@pages/SimplifiedBankOnboarding/contract/SBO_CONST';
-import {saveFormDraft} from '@pages/SimplifiedBankOnboarding/core/draft/draft';
-import {FlowStepPositionContext, OnboardingFlowActionsContext, OnboardingFlowStateContext} from '@pages/SimplifiedBankOnboarding/core/flow/flowContext';
-import type {FlowStepPosition, FlowTarget, OnboardingFlowActions, OnboardingFlowState} from '@pages/SimplifiedBankOnboarding/core/flow/flowContext';
+import type {FlowStepPosition, FlowTarget} from '@pages/SimplifiedBankOnboarding/core/flow/flowContext';
 import {getFlowRoute} from '@pages/SimplifiedBankOnboarding/core/flow/flowRoutes';
 import type {FlowNavigationState} from '@pages/SimplifiedBankOnboarding/core/flow/flowRoutes';
 import OnboardingStep from '@pages/SimplifiedBankOnboarding/core/step/OnboardingStep';
@@ -19,17 +16,16 @@ import FormSubPage, {useResetFieldError} from '@pages/SimplifiedBankOnboarding/c
 import type {SubPageFormErrors} from '@pages/SimplifiedBankOnboarding/core/subPageForms/FormSubPage';
 import SubPageInput from '@pages/SimplifiedBankOnboarding/core/subPageForms/SubPageInput';
 
-import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';
 
 import type * as NativeNavigation from '@react-navigation/native';
 import type ReactNative from 'react-native';
 
-import {NavigationContainer} from '@react-navigation/native';
 import React from 'react';
 import {Button} from 'react-native';
 import Onyx from 'react-native-onyx';
 
+import {renderInFlow} from '../../utils/BankOnboardingLabStepTestUtils';
 import getOnyxValue from '../../utils/getOnyxValue';
 import waitForBatchedUpdatesWithAct from '../../utils/waitForBatchedUpdatesWithAct';
 
@@ -71,19 +67,6 @@ jest.mock('@components/InteractiveStepWrapper', () => {
     return ({children}: React.ComponentProps<typeof InteractiveStepWrapperModule>) => <RN.View>{children}</RN.View>;
 });
 
-const flowState: OnboardingFlowState = {
-    target: TARGET,
-    bankAccount: {policyID: POLICY_ID, bankAccountID: CONST.DEFAULT_NUMBER_ID},
-    formID: ONYXKEYS.FORMS.SIMPLIFIED_BANK_ONBOARDING_FORM,
-};
-
-const flowActions: OnboardingFlowActions = {
-    saveDraft: (values) => saveFormDraft(ONYXKEYS.FORMS.SIMPLIFIED_BANK_ONBOARDING_FORM, values),
-    returnToEntry: jest.fn(),
-    leaveFlow: jest.fn(),
-    openStep: jest.fn(),
-};
-
 const position: FlowStepPosition = {
     step: PAGE_NAMES.COMPANY,
     previousStep: PAGE_NAMES.REQUESTOR,
@@ -117,45 +100,35 @@ function ResetCompanyNameErrorButton() {
 }
 
 async function renderCompanyPage({isSubmitDisabled, optionalInputIDs, children}: CompanyPageProps = {}) {
-    render(
-        <OnyxListItemProvider>
-            <NavigationContainer>
-                <OnboardingFlowStateContext.Provider value={flowState}>
-                    <OnboardingFlowActionsContext.Provider value={flowActions}>
-                        <FlowStepPositionContext.Provider value={position}>
-                            <OnboardingStep
-                                title="Company"
-                                wrapperID="FormSubPageTest"
-                            >
-                                <FormSubPage
-                                    title="Company details"
-                                    inputIDs={[INPUT_IDS.COMPANY_NAME, INPUT_IDS.COMPANY_TAX_ID]}
-                                    optionalInputIDs={optionalInputIDs}
-                                    validate={validateCompany}
-                                    isSubmitDisabled={isSubmitDisabled}
-                                >
-                                    <SubPageInput
-                                        InputComponent={TextInput}
-                                        inputID={INPUT_IDS.COMPANY_NAME}
-                                        label="Company name"
-                                        accessibilityLabel="Company name"
-                                    />
-                                    <SubPageInput
-                                        InputComponent={TextInput}
-                                        inputID={INPUT_IDS.COMPANY_TAX_ID}
-                                        label="Tax ID"
-                                        accessibilityLabel="Tax ID"
-                                    />
-                                    {children}
-                                </FormSubPage>
-                            </OnboardingStep>
-                        </FlowStepPositionContext.Provider>
-                    </OnboardingFlowActionsContext.Provider>
-                </OnboardingFlowStateContext.Provider>
-            </NavigationContainer>
-        </OnyxListItemProvider>,
+    await renderInFlow(
+        <OnboardingStep
+            title="Company"
+            wrapperID="FormSubPageTest"
+        >
+            <FormSubPage
+                title="Company details"
+                inputIDs={[INPUT_IDS.COMPANY_NAME, INPUT_IDS.COMPANY_TAX_ID]}
+                optionalInputIDs={optionalInputIDs}
+                validate={validateCompany}
+                isSubmitDisabled={isSubmitDisabled}
+            >
+                <SubPageInput
+                    InputComponent={TextInput}
+                    inputID={INPUT_IDS.COMPANY_NAME}
+                    label="Company name"
+                    accessibilityLabel="Company name"
+                />
+                <SubPageInput
+                    InputComponent={TextInput}
+                    inputID={INPUT_IDS.COMPANY_TAX_ID}
+                    label="Tax ID"
+                    accessibilityLabel="Tax ID"
+                />
+                {children}
+            </FormSubPage>
+        </OnboardingStep>,
+        {target: TARGET, position},
     );
-    await waitForBatchedUpdatesWithAct();
 }
 
 async function pressNext() {
