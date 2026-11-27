@@ -1,13 +1,12 @@
 /**
  * The whole USD flow as a plan, built from the draft and the server data. It is the one place that decides which steps
  * and pages the USD flow has, so the controller never skips a step on its own. A form page only lists its fields from
- * `core/form/fields`, and a step names the request that saves it.
+ * `core/form/fields`, a step names the request that saves it, and a widget page names the read of its token.
  */
 import {isValidCompanyName, isValidSSNLastFour, isValidTaxID} from '@libs/ValidationUtils';
 
-import type {OnboardingDraft} from '@pages/SimplifiedBankOnboarding/contract/form';
 import INPUT_IDS from '@pages/SimplifiedBankOnboarding/contract/form';
-import type {ACHData, OnboardingAccount, USDStep} from '@pages/SimplifiedBankOnboarding/contract/onyx';
+import type {ACHData, USDStep} from '@pages/SimplifiedBankOnboarding/contract/onyx';
 import {getOwnerFullName} from '@pages/SimplifiedBankOnboarding/contract/ownerNames';
 import REQUEST_NAMES from '@pages/SimplifiedBankOnboarding/contract/REQUEST_NAMES';
 import SBO_CONST from '@pages/SimplifiedBankOnboarding/contract/SBO_CONST';
@@ -23,6 +22,7 @@ import {
     getFormPage,
     getRequestKey,
 } from '@pages/SimplifiedBankOnboarding/core';
+import type FlowData from '@pages/SimplifiedBankOnboarding/flows/shared/flowData/types';
 import getBaseStepInput from '@pages/SimplifiedBankOnboarding/flows/shared/getBaseStepInput';
 import {canAddMoreUSDOwners} from '@pages/SimplifiedBankOnboarding/flows/shared/owners/canAddMoreOwners';
 import getOwnerPages from '@pages/SimplifiedBankOnboarding/flows/shared/owners/getOwnerPages';
@@ -31,8 +31,6 @@ import type {FlowPlan, FormPageDefinition, StepConfig} from '@pages/SimplifiedBa
 
 import CONST from '@src/CONST';
 
-import type {OnyxEntry} from 'react-native-onyx';
-
 import getUSDAnswers from './answers/getUSDAnswers';
 import {getManualBankAccountRequest, getPlaidBankAccountRequest} from './requests/connectBankAccount';
 import getACHContractRequest from './requests/getACHContractRequest';
@@ -40,7 +38,8 @@ import getCompanyRequest from './requests/getCompanyRequest';
 import getKYBDocumentsRequest from './requests/getKYBDocumentsRequest';
 import getOwnersRequest from './requests/getOwnersRequest';
 import getPersonalInfoRequest from './requests/getPersonalInfoRequest';
-import {getVerifyIdentityRequest} from './requests/identityCheck';
+import {getIdentityCheckRead, getVerifyIdentityRequest} from './requests/identityCheck';
+import {getPlaidLinkTokenRead} from './requests/plaid';
 
 const {PAGE_NAMES, STEP, STEP_INDEX} = SBO_CONST.USD;
 const SERVER_STEP_ORDER: USDStep[] = [STEP.COUNTRY, STEP.BANK_ACCOUNT, STEP.REQUESTOR, STEP.COMPANY, STEP.BENEFICIAL_OWNERS, STEP.ACH_CONTRACT, STEP.KYB_DOCS, STEP.VALIDATION, STEP.ENABLE];
@@ -67,7 +66,7 @@ function isValidAccountNumber(value: string): boolean {
  * The identity check and the documents step are only in the plan while the server asks for them, so no transition has
  * to skip them.
  */
-function buildUSDPlan(draft: OnboardingDraft | undefined, account: OnyxEntry<OnboardingAccount>, {translate, policyID: urlPolicyID}: PlanContext): FlowPlan {
+function buildUSDPlan({draft, account, plaidLinkToken, onfidoToken}: FlowData, {translate, policyID: urlPolicyID}: PlanContext): FlowPlan {
     const {achData, bankAccount} = getBaseStepInput(account, urlPolicyID, translate);
     const answers = getUSDAnswers(draft, account);
     const buildFormPage = (definition: FormPageDefinition) => getFormPage(definition, answers, translate);
@@ -124,6 +123,7 @@ function buildUSDPlan(draft: OnboardingDraft | undefined, account: OnyxEntry<Onb
                       component: 'plaid',
                       isComplete: hasServerBankAccount,
                       canComplete: !!answers.plaidAccountID,
+                      read: getPlaidLinkTokenRead(!!plaidLinkToken),
                   }
                 : buildFormPage({
                       id: SBO_CONST.USD.BANK_INFO_SUB_PAGES.MANUAL,
@@ -207,7 +207,9 @@ function buildUSDPlan(draft: OnboardingDraft | undefined, account: OnyxEntry<Onb
             counterIndex: STEP_INDEX.PERSONAL_INFO,
             isComplete: false,
 
-            pages: [{kind: 'custom', id: SBO_CONST.USD.VERIFY_IDENTITY_SUB_PAGES.IDENTITY_CHECK, component: 'onfido', isComplete: false}],
+            pages: [
+                {kind: 'custom', id: SBO_CONST.USD.VERIFY_IDENTITY_SUB_PAGES.IDENTITY_CHECK, component: 'onfido', isComplete: false, read: getIdentityCheckRead(bankAccount, !!onfidoToken)},
+            ],
             request: getVerifyIdentityRequest(bankAccount, MOCK_ONFIDO_DATA),
         });
     }

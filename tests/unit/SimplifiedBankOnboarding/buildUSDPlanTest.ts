@@ -3,12 +3,15 @@ import type {LocalizedTranslate} from '@components/LocaleContextProvider';
 import type {OnboardingDraft} from '@pages/SimplifiedBankOnboarding/contract/form';
 import type {PageID, StepID} from '@pages/SimplifiedBankOnboarding/contract/ids';
 import type {OnboardingAccount, SetupType} from '@pages/SimplifiedBankOnboarding/contract/onyx';
+import REQUEST_NAMES from '@pages/SimplifiedBankOnboarding/contract/REQUEST_NAMES';
 import SBO_CONST from '@pages/SimplifiedBankOnboarding/contract/SBO_CONST';
 import type {FlowPosition} from '@pages/SimplifiedBankOnboarding/core/plan/position/position';
 import {findStep} from '@pages/SimplifiedBankOnboarding/core/plan/position/position';
 import isPositionReachable from '@pages/SimplifiedBankOnboarding/core/plan/position/reachability';
 import getResumePosition from '@pages/SimplifiedBankOnboarding/core/plan/position/resume';
 import {getNextStepPosition, getPreviousPosition} from '@pages/SimplifiedBankOnboarding/core/plan/position/transitions';
+import getRequestKey from '@pages/SimplifiedBankOnboarding/core/requests/requestKey';
+import type FlowData from '@pages/SimplifiedBankOnboarding/flows/shared/flowData/types';
 import type {FlowPlan} from '@pages/SimplifiedBankOnboarding/flows/shared/plan/types';
 import buildUSDPlan from '@pages/SimplifiedBankOnboarding/flows/usd/buildUSDPlan';
 import {WRITE_COMMANDS} from '@pages/SimplifiedBankOnboarding/mockBackend/commands';
@@ -243,8 +246,11 @@ function createServer({setupType = MANUAL, shouldRequireKYBDocuments = false}: S
     };
 }
 
-function buildPlan(account: OnboardingAccount, draft?: OnboardingDraft): FlowPlan {
-    return buildUSDPlan(draft, account, {translate, policyID: POLICY_ID});
+/** The tokens of the fake widgets that the client stored */
+type WidgetTokens = Pick<FlowData, 'plaidLinkToken' | 'onfidoToken'>;
+
+function buildPlan(account: OnboardingAccount, draft?: OnboardingDraft, {plaidLinkToken, onfidoToken}: Partial<WidgetTokens> = {}): FlowPlan {
+    return buildUSDPlan({draft, account, workspaces: undefined, bankFields: undefined, picklists: undefined, plaidLinkToken, onfidoToken}, {translate, policyID: POLICY_ID});
 }
 
 function position(stepID: StepID, pageID: PageID): FlowPosition {
@@ -343,6 +349,35 @@ describe('buildUSDPlan', () => {
             // the manual one would also store the masked number as the real one
             expect(bankStep?.request).toBeUndefined();
         });
+
+        test.each<[string, string | undefined, boolean]>([
+            ['waits for the link token while the client has none', undefined, false],
+            ['shows the widget once the link token is stored', 'link-token', true],
+        ])('reads the Plaid link token when the Plaid page opens and %s', (_, plaidLinkToken, expectedIsLoaded) => {
+            // Given a Plaid setup, with or without a link token from an earlier read
+            const draft: OnboardingDraft = {country: SBO_CONST.COUNTRY.US, setupType: PLAID};
+            const plan = buildPlan(createServer({setupType: PLAID}).readAccount(), draft, {plaidLinkToken});
+
+            // When the Plaid page is read from the plan
+            const plaidPage = findStep(plan, PAGE_NAMES.BANK_ACCOUNT)?.pages.at(0);
+
+            // Then the page names the read of the token, because the widget cannot start without one
+            expect(plaidPage?.id).toBe(BANK_INFO_SUB_PAGES.PLAID);
+            expect(plaidPage?.read?.key).toBe(getRequestKey(REQUEST_NAMES.OPEN_PLAID_BANK_LOGIN));
+            expect(plaidPage?.read?.isLoaded).toBe(expectedIsLoaded);
+        });
+
+        it('reads nothing on the manual page', () => {
+            // Given a manual setup
+            const plan = buildPlan(createServer().readAccount(), STARTED_DRAFT);
+
+            // When the manual page is read from the plan
+            const manualPage = findStep(plan, PAGE_NAMES.BANK_ACCOUNT)?.pages.at(0);
+
+            // Then the page opens without a read, because the user types the numbers
+            expect(manualPage?.id).toBe(BANK_INFO_SUB_PAGES.MANUAL);
+            expect(manualPage?.read).toBeUndefined();
+        });
     });
 
     describe('identity check', () => {
@@ -361,6 +396,21 @@ describe('buildUSDPlan', () => {
             expect(isPositionReachable(plan, position(PAGE_NAMES.VERIFY_IDENTITY, VERIFY_IDENTITY_SUB_PAGES.IDENTITY_CHECK))).toBe(true);
             expect(isPositionReachable(plan, position(PAGE_NAMES.REQUESTOR, PERSONAL_INFO_SUB_PAGES.CONFIRMATION))).toBe(true);
             expect(isPositionReachable(plan, position(PAGE_NAMES.COMPANY, BUSINESS_INFO_SUB_PAGES.NAME))).toBe(false);
+        });
+
+        test.each<[string, string | undefined, boolean]>([
+            ['waits for the Onfido token while the client has none', undefined, false],
+            ['shows the widget once the Onfido token is stored', 'onfido-token', true],
+        ])('reads the Onfido token of the workspace when the page opens and %s', (_, onfidoToken, expectedIsLoaded) => {
+            // Given saved personal info, with or without an Onfido token from an earlier read
+            const plan = buildPlan(createServer().advanceTo('personalInfo').readAccount(), STARTED_DRAFT, {onfidoToken});
+
+            // When the identity check page is read from the plan
+            const identityPage = findStep(plan, PAGE_NAMES.VERIFY_IDENTITY)?.pages.at(0);
+
+            // Then the page names the read of the token of its workspace, because the widget cannot start without one
+            expect(identityPage?.read?.key).toBe(getRequestKey(REQUEST_NAMES.OPEN_IDENTITY_CHECK_FLOW, {policyID: POLICY_ID}));
+            expect(identityPage?.read?.isLoaded).toBe(expectedIsLoaded);
         });
 
         test.each<[string, ServerStage, boolean]>([

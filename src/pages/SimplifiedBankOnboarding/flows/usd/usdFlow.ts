@@ -15,7 +15,7 @@ const usdFlow: FlowDescriptor<FlowData> = {
     saveDraft,
     clearDraftInputs,
     getStepNames: () => SBO_CONST.USD.STEP_NAMES,
-    buildPlan: (data, context) => buildUSDPlan(data.draft, data.account, context),
+    buildPlan: buildUSDPlan,
     CustomStep: USDCustomStep,
 };
 

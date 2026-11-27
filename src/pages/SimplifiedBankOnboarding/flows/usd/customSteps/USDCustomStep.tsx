@@ -24,7 +24,6 @@ function USDCustomStep({page, policyID, isSubmitting, errorText, onComplete, goT
         case 'onfido':
             return (
                 <OnfidoStep
-                    policyID={policyID}
                     isSubmitting={isSubmitting}
                     errorText={errorText}
                     onComplete={onComplete}

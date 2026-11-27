@@ -1,6 +1,6 @@
 /**
- * The screen body of the USD and the NonUSD flow. It leaves everything to the shared flow page, so a screen that needs
- * more data before the pages make sense wraps this body itself.
+ * The screen body of the USD and the NonUSD flow. It leaves everything to the shared flow page, which also sends the
+ * reads that the plan names for the open page.
  */
 import useThemeStyles from '@hooks/useThemeStyles';
 

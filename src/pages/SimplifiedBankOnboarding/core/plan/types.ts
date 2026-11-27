@@ -7,7 +7,7 @@ import type {LocalizedTranslate} from '@components/LocaleContextProvider';
 
 import type {OnboardingDraft} from '@pages/SimplifiedBankOnboarding/contract/form';
 import type {Field, SummaryRow} from '@pages/SimplifiedBankOnboarding/core/form/fields/types';
-import type {PlannedRequest} from '@pages/SimplifiedBankOnboarding/core/requests/types';
+import type {PlannedRead, PlannedRequest} from '@pages/SimplifiedBankOnboarding/core/requests/types';
 
 /**
  * The names that a flow gives to its steps, its pages and its custom steps. A flow passes closed unions of its own names,
@@ -55,8 +55,8 @@ type PageBase<TVocabulary extends FlowVocabulary> = {
     /** Defaults to the preceding page, or to the last page of the previous step */
     previousPageID?: TVocabulary['pageID'];
 
-    /** The server data that describes the page did not arrive yet, such as the bank inputs of a country */
-    isLoading?: boolean;
+    /** The server data that the page needs, such as the bank inputs of a country. The controller reads it when the page opens. */
+    read?: PlannedRead;
 
     /**
      * A request that saves the answers of the page before the next page opens, for a step that talks to the server in

@@ -6,6 +6,7 @@ import SBO_CONST from '@pages/SimplifiedBankOnboarding/contract/SBO_CONST';
 import getConfirmationRows from '@pages/SimplifiedBankOnboarding/core/form/pages/getConfirmationRows';
 import {findStep} from '@pages/SimplifiedBankOnboarding/core/plan/position/position';
 import buildNonUSDPlan from '@pages/SimplifiedBankOnboarding/flows/nonUSD/buildNonUSDPlan';
+import type FlowData from '@pages/SimplifiedBankOnboarding/flows/shared/flowData/types';
 import type {FlowPlan} from '@pages/SimplifiedBankOnboarding/flows/shared/plan/types';
 import buildUSDPlan from '@pages/SimplifiedBankOnboarding/flows/usd/buildUSDPlan';
 
@@ -24,14 +25,19 @@ function getRows(plan: FlowPlan, stepID: StepID, confirmationPageID: PageID) {
     return getConfirmationRows(step, confirmationPageID, plan.answers, translate);
 }
 
+/** The plans of these tests come from the draft alone */
+function getDraftOnlyData(draft: OnboardingDraft): FlowData {
+    return {draft, account: undefined, bankFields: undefined, picklists: undefined, workspaces: undefined, plaidLinkToken: undefined, onfidoToken: undefined};
+}
+
 function buildNonUSDPlanFromDraft(draft: OnboardingDraft) {
-    return buildNonUSDPlan({draft, account: undefined, bankFields: undefined, picklists: undefined, workspaces: undefined}, context);
+    return buildNonUSDPlan(getDraftOnlyData(draft), context);
 }
 
 describe('getConfirmationRows', () => {
     it('shows one row per field of the form pages before the confirmation, each opening its page', () => {
         // Given a USD user who typed the personal details
-        const plan = buildUSDPlan({firstName: 'Ada', lastName: 'Lovelace', dob: '1980-05-05', ssnLast4: '1234'}, undefined, context);
+        const plan = buildUSDPlan(getDraftOnlyData({firstName: 'Ada', lastName: 'Lovelace', dob: '1980-05-05', ssnLast4: '1234'}), context);
 
         // When the confirmation of the personal info step lists its rows
         const rows = getRows(plan, USD.PAGE_NAMES.REQUESTOR, USD.PERSONAL_INFO_SUB_PAGES.CONFIRMATION);
@@ -47,7 +53,7 @@ describe('getConfirmationRows', () => {
     it('shows the label of a picked option instead of its value', () => {
         // Given a USD user who picked a company type
         const incorporationType = Object.values(USD.INCORPORATION_TYPES).at(0) ?? '';
-        const plan = buildUSDPlan({companyName: 'Acme', companyTaxID: '123456789', incorporationType}, undefined, context);
+        const plan = buildUSDPlan(getDraftOnlyData({companyName: 'Acme', companyTaxID: '123456789', incorporationType}), context);
 
         // When the confirmation of the company step lists its rows
         const rows = getRows(plan, USD.PAGE_NAMES.COMPANY, USD.BUSINESS_INFO_SUB_PAGES.CONFIRMATION);

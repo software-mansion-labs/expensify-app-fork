@@ -74,7 +74,7 @@ the lower its level.
 | `lab/` | The lab page: workspace list, the other entry points, the Payments page stand-in, the reads of these pages (`labActions.ts`) and the panel of the mock server (`mockServerPanel/`) |
 | `entry/` | The entry page: the account reference, the pure screen state, one view per state, the start over modal, the verify-account page, its moves (`entryNavigation.ts`) and its requests (`requests/`) |
 | `flows/` | **The flow configurations.** `index.ts` is what the entry page and the app import, and `openFlowAtResume.ts` picks the flow of a workspace |
-| `flows/usd/`, `flows/nonUSD/` | One flow each. The route screen, the flow descriptor and the plan builder are at the top. Below them are the answers built from the draft and the server data (`answers/`), the custom pages that are not forms (`customSteps/`) and the requests that the plan names (`requests/`, each a `PlannedRequest`). The NonUSD flow also has the bank fields and picklists that the server sends (`serverLists/`) |
+| `flows/usd/`, `flows/nonUSD/` | One flow each. The route screen, the flow descriptor and the plan builder are at the top. Below them are the answers built from the draft and the server data (`answers/`), the custom pages that are not forms (`customSteps/`) and the requests and reads that the plan names (`requests/`, each a `PlannedRequest` or a `PlannedRead`). The NonUSD flow also has the pure helpers for the bank fields and picklists that the server sends (`serverLists/`) |
 | `flows/enterSignerInfo/` | The separate flow that a director opens from an email, on the same controller with its own form |
 | `flows/shared/` | What more than one flow uses, so that no flow folder imports another: the screen body of the USD and NonUSD flows (`setupScreen/`), the `FlowData` type and its reads (`flowData/`), the account read of a screen and the gate of a cold deep link (`accountRead/`), the owner step (`owners/`), the signer pages (`signerDetails/`) and the draft writes |
 | `core/` | **The generic engine.** `index.ts` is the only path that `flows/` and `entry/` import |
@@ -82,7 +82,7 @@ the lower its level.
 | `core/plan/` | The shape of a plan (`types.ts`) and the pure helpers over it: positions, the resume position, reachability and the moves between positions (`position/`) |
 | `core/form/pages/` | The generic renderer: a form page, and one page for confirmations and lists, which both render through the shared `ConfirmationStep`. The rows of a confirmation come from the fields of its step (`getConfirmationRows.ts`), and `confirmationStepRows.ts` shapes the rows of both for the shared step |
 | `core/form/fields/` | The fields of a form page, one file per kind: text, legal name, date of birth, picklist, checkbox, yes or no question, file, read-only row. A `createXField` factory returns a `Field` (`types.ts`): the inputs it owns, their rules, its rows on the confirmation of the step and how it renders. `fieldSet.ts` answers what the page, the plan and the controller ask of the fields of a page |
-| `core/requests/` | `runRequest`, the key of a request status and the request status hook `useRequestState` |
+| `core/requests/` | `runRequest` and `planRead`, the key of a request status, the request status hook `useRequestState` and `useReadOnOpen`, which sends the read of the open page |
 | `core/navigation/` | The moves of a flow along the routes that the flow passes in (`flowNavigation.ts`). The mapping between a position and a route belongs to the flows (`flows/shared/routes/flowRoutes.ts`). With `entry/entryNavigation.ts` it is the only code that calls `Navigation` |
 | `contract/` | The data that every folder shares: the draft type, the Onyx types, step and page IDs, request names, mock values (`contract/SBO_CONST.ts`) and pure checks on the server data (`setupStatus.ts`) |
 | `mockBackend/` | The server: database, command handlers, queue |
@@ -122,6 +122,12 @@ values it sends and holds its guards, so the plan has no request code. A form pa
 sends no request, so a plan never says so itself.
 
 A new kind of field is one new file in `core/form/fields/`. Nothing else has a list of field kinds to extend.
+
+A page that needs server data names its read as `read: getBankFieldsRead(country, currency, isLoaded)`. The builder
+computes `isLoaded` from the data, such as the stored bank inputs of the right country. The controller sends the read
+when the page opens and again after each reconnect until the read succeeded, because a read made offline is not sent.
+The page shows a loader while its data is not there, and the not found view when the read failed before the data came.
+The read is sent on every open, also when the data is stored, because a key such as the picklists names no country.
 
 ### Every move happens in a handler
 
@@ -289,7 +295,7 @@ pattern.
 | Default values read in a different order by different steps | `getSubStepValues`, the business and owner sub pages | The `answers/` folder of each flow (one rule for every value) |
 | Fields locked once the account passed review | `R/USD/BusinessInfo/subSteps/*` | `flows/usd/buildUSDPlan.ts` (`isLocked` of the fields) |
 | Validators written inside the component | most sub pages | The rule of each field in `core/form/fields/`, given by the plan as `validate` where a page has its own |
-| Fields, rules and picklists sent by the server | `R/NonUSD/BankInfo/*`, `R/NonUSD/BusinessInfo/subSteps/BusinessType.tsx` | `flows/nonUSD/serverLists/`, `flows/nonUSD/buildNonUSDPlan.ts` (`createBankField`) |
+| Fields, rules and picklists sent by the server | `R/NonUSD/BankInfo/*`, `R/NonUSD/BusinessInfo/subSteps/BusinessType.tsx` | `flows/nonUSD/serverLists/`, `flows/nonUSD/requests/getBankFieldsRead.ts`, `flows/nonUSD/requests/getPicklistsRead.ts`, `flows/nonUSD/buildNonUSDPlan.ts` (`createBankField`) |
 | The form key and the account key are the same Onyx string | `ONYXKEYS.REIMBURSEMENT_ACCOUNT` and `FORMS.REIMBURSEMENT_ACCOUNT_FORM` | Separate keys: `FORMS.SIMPLIFIED_BANK_ONBOARDING_FORM` |
 | File uploads kept in local state and in the draft | `R/USD/KYBDocuments`, `R/NonUSD/Docusign` | `core/form/fields/createFileField.tsx`, in the form value until the page is submitted, kept there by the upload adapter of `DynamicForm` |
 | A file that one step collects and a later step sends | bank statement in `R/NonUSD/Agreements`, sent by `R/NonUSD/Docusign` | `flows/nonUSD/buildNonUSDPlan.ts` (the agreements and the docusign steps) |

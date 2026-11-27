@@ -42,6 +42,6 @@ export type {
 export {default as clearRequestState} from './requests/clearRequestState';
 export {default as planFailedRequest} from './requests/planFailedRequest';
 export {default as getRequestKey} from './requests/requestKey';
-export {default as runRequest, planRequest} from './requests/runRequest';
-export type {BankAccountParams, OnboardingRequests, PlannedRequest, RequestOutcome} from './requests/types';
+export {default as runRequest, planRead, planRequest} from './requests/runRequest';
+export type {BankAccountParams, OnboardingRequests, PlannedRead, PlannedRequest, RequestOutcome} from './requests/types';
 export {default as useRequestState} from './requests/useRequestState';

@@ -34,6 +34,15 @@ type PlannedRequest = {
     send?: () => Promise<RequestOutcome>;
 };
 
+/**
+ * A read that a page needs before it can show anything, such as the bank inputs of a country. The controller sends it
+ * when the page opens and again after each reconnect until it succeeds.
+ */
+type PlannedRead = Required<PlannedRequest> & {
+    /** The data that the read brings is there, so the page can show. Until then the page shows a loader, or the not found view once the read failed. */
+    isLoaded: boolean;
+};
+
 /** One member per command, so the command and its params stay matched at the call site */
 type ReadRequest = {
     [TCommand in ReadCommand]: {type: 'read'; command: TCommand; params: ReadCommandParams[TCommand]};
@@ -45,4 +54,4 @@ type WriteRequest = {
 
 type MockRequest = ReadRequest | WriteRequest;
 
-export type {BankAccountParams, MockRequest, OnboardingRequests, PlannedRequest, ReadRequest, RequestOutcome, RequestState, WriteRequest};
+export type {BankAccountParams, MockRequest, OnboardingRequests, PlannedRead, PlannedRequest, ReadRequest, RequestOutcome, RequestState, WriteRequest};

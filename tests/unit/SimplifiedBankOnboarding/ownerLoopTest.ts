@@ -56,7 +56,10 @@ const GLOBAL_ACCOUNT: OnboardingAccount = {
 };
 
 function buildUSDOwnersPlan(draft: OnboardingDraft): FlowPlan {
-    return buildUSDPlan(draft, USD_ACCOUNT, {translate, policyID: 'usd'});
+    return buildUSDPlan(
+        {draft, account: USD_ACCOUNT, workspaces: undefined, bankFields: undefined, picklists: undefined, plaidLinkToken: undefined, onfidoToken: undefined},
+        {translate, policyID: 'usd'},
+    );
 }
 
 function buildGlobalOwnersPlan(draft: OnboardingDraft): FlowPlan {
@@ -74,6 +77,8 @@ function buildGlobalOwnersPlan(draft: OnboardingDraft): FlowPlan {
             },
             bankFields: undefined,
             picklists: undefined,
+            plaidLinkToken: undefined,
+            onfidoToken: undefined,
         },
         {translate, policyID: 'eur'},
     );

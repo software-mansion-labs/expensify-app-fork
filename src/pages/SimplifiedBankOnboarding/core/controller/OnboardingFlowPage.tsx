@@ -43,16 +43,11 @@ type OnboardingFlowPageProps<TData, TVocabulary extends FlowVocabulary> = {
 
 function OnboardingFlowPage<TData, TVocabulary extends FlowVocabulary>({flow, routes, urlPosition, policyID, dataSource, dataStatus}: OnboardingFlowPageProps<TData, TVocabulary>) {
     const styles = useThemeStyles();
-    const {data, context, plan, step, page, position, isSubmitting, canSubmitOffline, errorText, submitPage, goBack, editPage, pressRow, goToStep} = useOnboardingFlow({
-        flow,
-        routes,
-        urlPosition,
-        policyID,
-        dataSource,
-        dataStatus,
-    });
+    const {data, context, plan, step, page, position, isSubmitting, canSubmitOffline, errorText, isWaitingForRead, hasReadFailed, submitPage, goBack, editPage, pressRow, goToStep} =
+        useOnboardingFlow({flow, routes, urlPosition, policyID, dataSource, dataStatus});
 
-    if (dataStatus === 'notFound') {
+    // A page whose server data could not be read has nothing to show, like the real bank step without its bank inputs
+    if (dataStatus === 'notFound' || hasReadFailed) {
         return <NotFoundPage />;
     }
 
@@ -69,7 +64,7 @@ function OnboardingFlowPage<TData, TVocabulary extends FlowVocabulary>({flow, ro
     const {CustomStep} = flow;
 
     const renderPage = () => {
-        if (page.isLoading) {
+        if (isWaitingForRead) {
             return (
                 <View style={[styles.flex1, styles.alignItemsCenter, styles.justifyContentCenter]}>
                     <ActivityIndicator size={CONST.ACTIVITY_INDICATOR_SIZE.LARGE} />

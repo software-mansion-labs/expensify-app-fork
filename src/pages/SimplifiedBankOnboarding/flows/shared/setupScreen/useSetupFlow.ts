@@ -1,6 +1,6 @@
 /**
- * The data and the target of the USD and the NonUSD flow screens. It waits for the account of the workspace, so the
- * screen of a flow that needs more data can read it from the same data before it shows the flow page.
+ * The data and the target of the USD and the NonUSD flow screens. The flow page waits until the account of the
+ * workspace is read.
  */
 import type BankOnboardingLabParamList from '@libs/Navigation/paramLists/BankOnboardingLabParamList';
 

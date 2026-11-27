@@ -23,7 +23,7 @@ async function failRequest(key: RequestKey, errorKey: TranslationPaths = 'common
     return {status: 'failed'};
 }
 
-function planFailedRequest(name: string, scope?: RequestScope): PlannedRequest {
+function planFailedRequest(name: string, scope?: RequestScope): Required<PlannedRequest> {
     const key = getRequestKey(name, scope);
     return {key, send: () => failRequest(key)};
 }

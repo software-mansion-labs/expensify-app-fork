@@ -4,12 +4,14 @@ import INPUT_IDS from '@pages/SimplifiedBankOnboarding/contract/form';
 import type {GlobalOwnerDraft, OnboardingDraft} from '@pages/SimplifiedBankOnboarding/contract/form';
 import type {PageID, StepID} from '@pages/SimplifiedBankOnboarding/contract/ids';
 import type {BankFields, OnboardingAccount} from '@pages/SimplifiedBankOnboarding/contract/onyx';
+import REQUEST_NAMES from '@pages/SimplifiedBankOnboarding/contract/REQUEST_NAMES';
 import SBO_CONST from '@pages/SimplifiedBankOnboarding/contract/SBO_CONST';
 import type {FlowPosition} from '@pages/SimplifiedBankOnboarding/core/plan/position/position';
 import {findStep} from '@pages/SimplifiedBankOnboarding/core/plan/position/position';
 import isPositionReachable from '@pages/SimplifiedBankOnboarding/core/plan/position/reachability';
 import getResumePosition from '@pages/SimplifiedBankOnboarding/core/plan/position/resume';
 import {getNextStepPosition} from '@pages/SimplifiedBankOnboarding/core/plan/position/transitions';
+import getRequestKey from '@pages/SimplifiedBankOnboarding/core/requests/requestKey';
 import buildNonUSDPlan from '@pages/SimplifiedBankOnboarding/flows/nonUSD/buildNonUSDPlan';
 import type FlowData from '@pages/SimplifiedBankOnboarding/flows/shared/flowData/types';
 import type {FlowPlan} from '@pages/SimplifiedBankOnboarding/flows/shared/plan/types';
@@ -232,15 +234,20 @@ type PlanOptions = {
 
     /** The country of the bank fields that the client read last, or null while no read has finished */
     bankFieldsCountry?: string | null;
+
+    /** The client stored the picklists of an earlier read */
+    hasPicklists?: boolean;
 };
 
-function buildPlan(market: Market, server: Server, {draft, bankFieldsCountry = COUNTRY_OF_MARKET[market]}: PlanOptions = {}): FlowPlan {
+function buildPlan(market: Market, server: Server, {draft, bankFieldsCountry = COUNTRY_OF_MARKET[market], hasPicklists = true}: PlanOptions = {}): FlowPlan {
     const data: FlowData = {
         draft,
         account: server.readAccount(),
         workspaces: server.workspaces,
         bankFields: bankFieldsCountry === null ? undefined : getBankFields(bankFieldsCountry, CURRENCY_OF_MARKET[market]),
-        picklists: {picklists: {businessType: BUSINESS_TYPES}},
+        picklists: hasPicklists ? {picklists: {businessType: BUSINESS_TYPES}} : undefined,
+        plaidLinkToken: undefined,
+        onfidoToken: undefined,
     };
     return buildNonUSDPlan(data, {translate, policyID: market});
 }
@@ -341,12 +348,11 @@ describe('buildNonUSDPlan', () => {
     });
 
     describe('bank step', () => {
-        test.each<[string, string | null, boolean]>([
-            ['shows a loader while no bank inputs were read', null, true],
-            ['shows a loader while the inputs of another country are stored', SBO_CONST.COUNTRY.FR, true],
-            ['shows the inputs once those of the confirmed country arrived', SBO_CONST.COUNTRY.DE, false],
-        ])('%s', (_, bankFieldsCountry, expectedIsLoading) => {
-            // Given a EUR user who confirmed Germany, and the bank inputs that the client stored last
+        test.each<[string, string | null]>([
+            ['while no bank inputs were read', null],
+            ['while the inputs of another country are stored', SBO_CONST.COUNTRY.FR],
+        ])('reads the inputs of the confirmed country on its only page %s', (_, bankFieldsCountry) => {
+            // Given a EUR user who confirmed Germany, and no bank inputs of Germany in the client
             const plan = buildPlan('eur', createServer('eur'), {
                 draft: {country: SBO_CONST.COUNTRY.DE},
                 bankFieldsCountry,
@@ -355,9 +361,23 @@ describe('buildNonUSDPlan', () => {
             // When the bank step is read from the plan
             const pages = findStep(plan, PAGE_NAMES.BANK_INFO)?.pages ?? [];
 
-            // Then the inputs of another country never show, because the server would reject them for this one
-            expect(pages.at(0)?.isLoading ?? false).toBe(expectedIsLoading);
-            expect(pages.length === 1).toBe(expectedIsLoading);
+            // Then the step is one page that waits for the read, so the inputs of another country never show, because
+            // the server would reject them for this one
+            expect(pages.map((page) => page.id)).toEqual([BANK_INFO_SUB_PAGES.BANK_ACCOUNT_DETAILS]);
+            expect(pages.at(0)?.read?.key).toBe(getRequestKey(REQUEST_NAMES.GET_BANK_ACCOUNT_FIELDS));
+            expect(pages.at(0)?.read?.isLoaded).toBe(false);
+        });
+
+        it('shows the inputs without a read once those of the confirmed country arrived', () => {
+            // Given a EUR user who confirmed Germany, and the bank inputs of Germany in the client
+            const plan = buildPlan('eur', createServer('eur'), {draft: {country: SBO_CONST.COUNTRY.DE}});
+
+            // When the bank step is read from the plan
+            const pages = findStep(plan, PAGE_NAMES.BANK_INFO)?.pages ?? [];
+
+            // Then every page of the step shows, and none reads the inputs again, because the stored ones name their country
+            expect(pages.map((page) => page.id)).toEqual([BANK_INFO_SUB_PAGES.BANK_ACCOUNT_DETAILS, BANK_INFO_SUB_PAGES.ACCOUNT_HOLDER_DETAILS, BANK_INFO_SUB_PAGES.CONFIRMATION]);
+            expect(pages.every((page) => !page.read)).toBe(true);
         });
 
         it('opens the business step after the request that created the account', () => {
@@ -375,6 +395,39 @@ describe('buildNonUSDPlan', () => {
 
             // Then the flow continues on the business step
             expect(nextPosition).toEqual(AT_BUSINESS_NAME);
+        });
+    });
+
+    describe('business step', () => {
+        it('reads the picklists only on the pages that show a business type', () => {
+            // Given a created account
+            const plan = buildPlan('eur', createServer('eur').createAccount());
+
+            // When the business step is read from the plan
+            const pages = findStep(plan, PAGE_NAMES.BUSINESS_INFO)?.pages ?? [];
+
+            // Then the business type page and the confirmation read the picklists when they open, also while a list is
+            // stored, because the stored list names no country and may belong to another one
+            expect(pages.map((page) => [page.id, page.read?.key])).toEqual([
+                [BUSINESS_INFO_SUB_PAGES.NAME, undefined],
+                [BUSINESS_INFO_SUB_PAGES.BUSINESS_TYPE, getRequestKey(REQUEST_NAMES.GET_ONBOARDING_FIELDS)],
+                [BUSINESS_INFO_SUB_PAGES.CONFIRMATION, getRequestKey(REQUEST_NAMES.GET_ONBOARDING_FIELDS)],
+            ]);
+        });
+
+        test.each<[string, boolean, OnboardingDraft, boolean]>([
+            ['waits while no picklists and no business type are stored', false, {}, false],
+            ['shows the saved business type while no picklists are stored', false, {businessType: getFirst(BUSINESS_TYPES).id}, true],
+            ['shows the stored picklists', true, {}, true],
+        ])('%s', (_, hasPicklists, draft, expectedIsLoaded) => {
+            // Given a created account, the picklists of an earlier read or none, and the business type of the draft
+            const plan = buildPlan('eur', createServer('eur').createAccount(), {draft, hasPicklists});
+
+            // When the business type page is read from the plan
+            const businessTypePage = findStep(plan, PAGE_NAMES.BUSINESS_INFO)?.pages.find((page) => page.id === BUSINESS_INFO_SUB_PAGES.BUSINESS_TYPE);
+
+            // Then the page waits only while it has no business type to show
+            expect(businessTypePage?.read?.isLoaded).toBe(expectedIsLoaded);
         });
     });
 

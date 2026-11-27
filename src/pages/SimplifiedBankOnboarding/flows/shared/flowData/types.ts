@@ -3,7 +3,7 @@ import type {BankFields, OnboardingAccount, OnboardingPicklists, Workspaces} fro
 
 import type {OnyxEntry} from 'react-native-onyx';
 
-/** The Onyx values that a plan is built from. A flow reads the ones it needs, such as the server lists of the NonUSD flow. */
+/** The Onyx values that a plan is built from. A flow reads the ones it needs, such as the server lists of the NonUSD flow or the widget tokens of the USD flow. */
 type FlowData = {
     draft: OnboardingDraft | undefined;
     account: OnyxEntry<OnboardingAccount>;
@@ -14,6 +14,10 @@ type FlowData = {
     /** The bank inputs that the server describes for a country */
     bankFields: OnyxEntry<BankFields>;
     picklists: OnyxEntry<OnboardingPicklists>;
+
+    /** The tokens that the fake Plaid and Onfido widgets of the USD flow need to start */
+    plaidLinkToken: OnyxEntry<string>;
+    onfidoToken: OnyxEntry<string>;
 };
 
 export default FlowData;

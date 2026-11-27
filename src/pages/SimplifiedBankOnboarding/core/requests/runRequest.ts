@@ -22,7 +22,7 @@ import type {OnyxUpdate} from 'react-native-onyx';
 import Onyx from 'react-native-onyx';
 
 import type {RequestKey, RequestScope} from './requestKey';
-import type {MockRequest, PlannedRequest, RequestOutcome, RequestState} from './types';
+import type {MockRequest, PlannedRead, PlannedRequest, ReadRequest, RequestOutcome, RequestState} from './types';
 
 import getRequestKey from './requestKey';
 
@@ -134,10 +134,15 @@ function runRequest(args: RunRequestArgs): Promise<RequestOutcome> {
 }
 
 /** Describes a request without sending it, so a plan can name the request of a step and show its status */
-function planRequest(args: RunRequestArgs): PlannedRequest {
+function planRequest(args: RunRequestArgs): Required<PlannedRequest> {
     return {key: getRequestKey(args.name, args.scope), send: () => runRequest(args)};
 }
 
+/** Describes the read that a page needs, so the controller sends it when the page opens */
+function planRead(args: RunRequestArgs & ReadRequest, isLoaded: boolean): PlannedRead {
+    return {...planRequest(args), isLoaded};
+}
+
 export default runRequest;
-export {planRequest};
+export {planRead, planRequest};
 export type {RequestOnyxKey};

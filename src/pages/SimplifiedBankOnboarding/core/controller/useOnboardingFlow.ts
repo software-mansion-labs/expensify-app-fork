@@ -4,7 +4,7 @@
  * from fresh Onyx data, runs the request of the page or, at the end of a step, the step request and only then navigates.
  * A request made offline waits in the queue and the page shows it as pending until it settles. A handler navigates
  * after a request only if the user is still on the page that sent it. The one effect redirects a URL that names no
- * reachable position, once the data of the plan is there.
+ * reachable position, once the data of the plan is there. The read that the open page needs is sent when it opens.
  */
 import useLocalize from '@hooks/useLocalize';
 
@@ -23,6 +23,7 @@ import {getEditReturnPosition, getNextStepPosition, getPositionAfterSubmit, getP
 import type {FlowPlan, FlowVocabulary, PageConfig, PlanContext, StepConfig} from '@pages/SimplifiedBankOnboarding/core/plan/types';
 import clearRequestState from '@pages/SimplifiedBankOnboarding/core/requests/clearRequestState';
 import type {RequestKey} from '@pages/SimplifiedBankOnboarding/core/requests/requestKey';
+import useReadOnOpen from '@pages/SimplifiedBankOnboarding/core/requests/useReadOnOpen';
 import useRequestState from '@pages/SimplifiedBankOnboarding/core/requests/useRequestState';
 
 import ONYXKEYS from '@src/ONYXKEYS';
@@ -65,6 +66,12 @@ type OnboardingFlow<TData, TVocabulary extends FlowVocabulary> = {
 
     /** The error of the request that the open page sends */
     errorText: string;
+
+    /** The open page waits for the data of its read */
+    isWaitingForRead: boolean;
+
+    /** The read of the open page failed before its data was there, so the page has nothing to show */
+    hasReadFailed: boolean;
     submitPage: (values: OnboardingDraft) => void;
     goBack: () => void;
     editPage: (pageID: string) => void;
@@ -95,6 +102,11 @@ function useOnboardingFlow<TData, TVocabulary extends FlowVocabulary>({
     const page = step && position ? findPage(step, position.pageID) : undefined;
     const pageRequestKey = getPageRequestKey(step, page);
     const requestState = useRequestState(pageRequestKey);
+    const isDataReady = dataStatus === 'ready';
+
+    // A read built from data that is not there yet could ask for the wrong thing, such as the bank inputs of no country
+    const readState = useReadOnOpen(isDataReady ? page?.read : undefined);
+    const isWaitingForRead = !!page?.read && !page.read.isLoaded;
 
     // A handler is running: a second submit is ignored and the redirect waits, because the data changes under it
     const isHandlingRef = useRef(false);
@@ -275,7 +287,6 @@ function useOnboardingFlow<TData, TVocabulary extends FlowVocabulary>({
 
     const urlPositionKey = getPositionKey(urlPosition);
     const isUnreachable = !position;
-    const isDataReady = dataStatus === 'ready';
 
     const redirectToResume = useEffectEvent(() => {
         if (isHandlingRef.current || leftPositionKeyRef.current === urlPositionKey) {
@@ -325,6 +336,8 @@ function useOnboardingFlow<TData, TVocabulary extends FlowVocabulary>({
         isSubmitting: requestState.isPending,
         canSubmitOffline: !pageRequestKey,
         errorText: getLatestErrorMessage({errors: requestState.errors}),
+        isWaitingForRead,
+        hasReadFailed: isWaitingForRead && readState.hasFailed,
         submitPage,
         goBack,
         editPage,

@@ -1,7 +1,7 @@
 /**
- * The Plaid page of the USD bank step. A fake widget keeps the real sequence of requests: a link token on mount and
- * again after a reconnect, then a public token after the bank login, which the server exchanges for the list of
- * accounts. The picked account goes to the draft, and Next hands it to the controller, which sends the bank step.
+ * The Plaid page of the USD bank step. A fake widget keeps the real sequence of requests: a link token, which the
+ * controller reads when the page opens, then a public token after the bank login, which the server exchanges for the
+ * list of accounts. The picked account goes to the draft, and Next hands it to the controller, which sends the bank step.
  */
 import ActivityIndicator from '@components/ActivityIndicator';
 import FullPageOfflineBlockingView from '@components/BlockingViews/FullPageOfflineBlockingView';
@@ -12,7 +12,6 @@ import RadioButtons from '@components/RadioButtons';
 import Text from '@components/Text';
 
 import useLocalize from '@hooks/useLocalize';
-import useNetwork from '@hooks/useNetwork';
 import useOnyx from '@hooks/useOnyx';
 import useThemeStyles from '@hooks/useThemeStyles';
 
@@ -22,12 +21,12 @@ import REQUEST_NAMES from '@pages/SimplifiedBankOnboarding/contract/REQUEST_NAME
 import {useRequestState} from '@pages/SimplifiedBankOnboarding/core';
 import {saveDraft} from '@pages/SimplifiedBankOnboarding/flows/shared/draft';
 import type {CustomStepProps} from '@pages/SimplifiedBankOnboarding/flows/shared/plan/types';
-import {openPlaidBankAccountSelector, openPlaidBankLogin} from '@pages/SimplifiedBankOnboarding/flows/usd/requests/plaid';
+import {openPlaidBankAccountSelector} from '@pages/SimplifiedBankOnboarding/flows/usd/requests/plaid';
 
 import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';
 
-import React, {useEffect} from 'react';
+import React from 'react';
 import {View} from 'react-native';
 
 type PlaidStepProps = Pick<CustomStepProps, 'isSubmitting' | 'errorText' | 'onComplete'> & {
@@ -42,30 +41,17 @@ function PlaidStep({canComplete, isSubmitting, errorText, onComplete}: PlaidStep
     const styles = useThemeStyles();
     const [draft] = useOnyx(ONYXKEYS.FORMS.SIMPLIFIED_BANK_ONBOARDING_FORM_DRAFT);
     const [plaidData] = useOnyx(ONYXKEYS.SIMPLIFIED_BANK_ONBOARDING_PLAID_DATA);
-    const [plaidLinkToken] = useOnyx(ONYXKEYS.RAM_ONLY_SIMPLIFIED_BANK_ONBOARDING_PLAID_LINK_TOKEN);
-    const linkTokenRequest = useRequestState(REQUEST_NAMES.OPEN_PLAID_BANK_LOGIN);
     const accountsRequest = useRequestState(REQUEST_NAMES.OPEN_PLAID_BANK_ACCOUNT_SELECTOR);
-
-    // A read made offline is dropped, so the token is asked for again once the connection is back
-    useNetwork({
-        onReconnect: () => {
-            openPlaidBankLogin();
-        },
-    });
-
-    useEffect(() => {
-        openPlaidBankLogin();
-    }, []);
 
     const plaidBankAccounts = plaidData?.bankAccounts ?? [];
     const selectedPlaidAccountID = draft?.plaidAccountID;
-    const plaidErrorText = getLatestErrorMessage({errors: linkTokenRequest.errors ?? accountsRequest.errors});
+    const plaidErrorText = getLatestErrorMessage({errors: accountsRequest.errors});
 
     const renderPlaidLink = () => {
         if (plaidErrorText) {
             return <Text style={[styles.formError, styles.mh5]}>{plaidErrorText}</Text>;
         }
-        if (!plaidLinkToken || linkTokenRequest.isPending || accountsRequest.isPending) {
+        if (accountsRequest.isPending) {
             return (
                 <View style={[styles.flex1, styles.alignItemsCenter, styles.justifyContentCenter]}>
                     <ActivityIndicator size={CONST.ACTIVITY_INDICATOR_SIZE.LARGE} />

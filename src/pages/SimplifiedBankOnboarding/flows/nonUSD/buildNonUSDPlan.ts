@@ -1,7 +1,7 @@
 /**
  * The whole NonUSD flow as a plan, built from the draft, the server data and the server lists. It is the one place that
- * decides which steps and pages the NonUSD flow has. A form page only lists its fields from `core/form/fields`, and a
- * step or a page names the request that saves it.
+ * decides which steps and pages the NonUSD flow has. A form page only lists its fields from `core/form/fields`, a step
+ * or a page names the request that saves it, and a page that needs a server list names the read of that list.
  */
 import type {LocalizedTranslate} from '@components/LocaleContextProvider';
 
@@ -40,11 +40,14 @@ import CONST from '@src/CONST';
 import {Str} from 'expensify-common';
 
 import getNonUSDFlowState from './answers/getNonUSDFlowState';
+import getBankFieldsRead from './requests/getBankFieldsRead';
 import getFinishOnboardingRequest from './requests/getFinishOnboardingRequest';
 import getGlobalBankAccountRequest from './requests/getGlobalBankAccountRequest';
 import getGlobalCompanyRequest from './requests/getGlobalCompanyRequest';
 import getGlobalOwnersRequest from './requests/getGlobalOwnersRequest';
+import getPicklistsRead from './requests/getPicklistsRead';
 import areBankFieldsLoaded from './serverLists/areBankFieldsLoaded';
+import arePicklistsLoaded from './serverLists/arePicklistsLoaded';
 import getBankFieldRuleError from './serverLists/getBankFieldRuleError';
 import {getAccountHolderDetailsFields, getBankAccountDetailsFields} from './serverLists/splitBankFields';
 
@@ -159,9 +162,11 @@ function buildNonUSDPlan(data: FlowData, {translate, policyID: urlPolicyID}: Pla
     });
 
     // The server describes the bank inputs for the country and the currency. Until they arrive, the bank page stands
-    // alone and waits for them. The request at the end creates the bank account.
+    // alone and reads them. Every workspace shares the key of the bank inputs, so the stored inputs may belong to
+    // another country. The request at the end creates the bank account.
     const BANK_INFO = SBO_CONST.NON_USD.BANK_INFO_SUB_PAGES;
     const isBankAccountCreated = isGlobalAccountCreated(achData);
+    const bankFieldsRead = getBankFieldsRead(answers.country, currency, areBankFieldsLoaded(bankFields, answers.country, currency));
 
     // A group without inputs has no page
     const bankFieldGroups = [
@@ -175,12 +180,12 @@ function buildNonUSDPlan(data: FlowData, {translate, policyID: urlPolicyID}: Pla
         counterIndex: STEP_INDEX.BANK_INFO,
         isComplete: isBankAccountCreated,
 
-        pages: areBankFieldsLoaded(bankFields, answers.country, currency)
+        pages: bankFieldsRead.isLoaded
             ? [
                   ...bankFieldGroups.map(({pageID, title, fields}) => buildFormPage({id: pageID, title, fields: fields.map(createBankField)})),
                   {kind: 'confirmation', id: BANK_INFO.CONFIRMATION, isComplete: isBankAccountCreated, title: translate('bankInfoStep.letsDoubleCheck')},
               ]
-            : [{kind: 'form', id: BANK_INFO.BANK_ACCOUNT_DETAILS, isComplete: false, isLoading: true, title: translate('bankInfoStep.whatAreYour'), fields: []}],
+            : [buildFormPage({id: BANK_INFO.BANK_ACCOUNT_DETAILS, title: translate('bankInfoStep.whatAreYour'), fields: [], read: bankFieldsRead})],
 
         request: getGlobalBankAccountRequest(bankAccount, {
             country: answers.country,
@@ -189,9 +194,12 @@ function buildNonUSDPlan(data: FlowData, {translate, policyID: urlPolicyID}: Pla
         }),
     });
 
-    // The business types come from the server picklists of the country
+    // The business types come from the server picklists of the country. The pages that show them read the picklists
+    // on every open, because the stored picklists name no country. A page waits for them only while it has no
+    // business type to show.
     const BUSINESS_INFO = SBO_CONST.NON_USD.BUSINESS_INFO_SUB_PAGES;
     const businessTypeOptions = (picklists?.picklists?.businessType ?? []).map((businessType) => ({value: businessType.id, label: businessType.name}));
+    const picklistsRead = getPicklistsRead(answers.country, arePicklistsLoaded(picklists) || !!answers.businessType);
 
     steps.push({
         id: PAGE_NAMES.BUSINESS_INFO,
@@ -215,8 +223,7 @@ function buildNonUSDPlan(data: FlowData, {translate, policyID: urlPolicyID}: Pla
             buildFormPage({
                 id: BUSINESS_INFO.BUSINESS_TYPE,
                 title: translate('businessInfoStep.whatTypeOfBusinessIsIt'),
-                // The page waits for the business types, unless it already has a value to show
-                isLoading: businessTypeOptions.length === 0 && !answers.businessType,
+                read: picklistsRead,
 
                 fields: [
                     createPicklistField(INPUT_IDS.BUSINESS_TYPE, {
@@ -228,7 +235,7 @@ function buildNonUSDPlan(data: FlowData, {translate, policyID: urlPolicyID}: Pla
                 ],
             }),
 
-            {kind: 'confirmation', id: BUSINESS_INFO.CONFIRMATION, isComplete: true, title: translate('businessInfoStep.letsDoubleCheck')},
+            {kind: 'confirmation', id: BUSINESS_INFO.CONFIRMATION, isComplete: true, title: translate('businessInfoStep.letsDoubleCheck'), read: picklistsRead},
         ],
 
         request: getGlobalCompanyRequest(bankAccount, answers),

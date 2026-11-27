@@ -15,9 +15,11 @@ function useFlowData(): FlowDataSource<FlowData> {
     const [workspaces] = useOnyx(ONYXKEYS.SIMPLIFIED_BANK_ONBOARDING_WORKSPACES);
     const [bankFields] = useOnyx(ONYXKEYS.SIMPLIFIED_BANK_ONBOARDING_BANK_FIELDS);
     const [picklists] = useOnyx(ONYXKEYS.SIMPLIFIED_BANK_ONBOARDING_PICKLISTS);
+    const [plaidLinkToken] = useOnyx(ONYXKEYS.RAM_ONLY_SIMPLIFIED_BANK_ONBOARDING_PLAID_LINK_TOKEN);
+    const [onfidoToken] = useOnyx(ONYXKEYS.SIMPLIFIED_BANK_ONBOARDING_ONFIDO_TOKEN);
     const readData = useReadFlowData();
 
-    return {data: {draft, account, workspaces, bankFields, picklists}, readData};
+    return {data: {draft, account, workspaces, bankFields, picklists, plaidLinkToken, onfidoToken}, readData};
 }
 
 export default useFlowData;

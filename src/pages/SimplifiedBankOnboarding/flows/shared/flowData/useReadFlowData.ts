@@ -12,14 +12,16 @@ import type FlowData from './types';
 function useReadFlowData(): () => Promise<FlowData> {
     // Only handlers call it, after a write that the data of the last render does not show yet
     const readFlowData = async (): Promise<FlowData> => {
-        const [draft, account, workspaces, bankFields, picklists] = await Onyx.multiGet([
+        const [draft, account, workspaces, bankFields, picklists, plaidLinkToken, onfidoToken] = await Onyx.multiGet([
             ONYXKEYS.FORMS.SIMPLIFIED_BANK_ONBOARDING_FORM_DRAFT,
             ONYXKEYS.SIMPLIFIED_BANK_ONBOARDING_ACCOUNT,
             ONYXKEYS.SIMPLIFIED_BANK_ONBOARDING_WORKSPACES,
             ONYXKEYS.SIMPLIFIED_BANK_ONBOARDING_BANK_FIELDS,
             ONYXKEYS.SIMPLIFIED_BANK_ONBOARDING_PICKLISTS,
+            ONYXKEYS.RAM_ONLY_SIMPLIFIED_BANK_ONBOARDING_PLAID_LINK_TOKEN,
+            ONYXKEYS.SIMPLIFIED_BANK_ONBOARDING_ONFIDO_TOKEN,
         ]);
-        return {draft: draft ?? undefined, account, workspaces, bankFields, picklists};
+        return {draft: draft ?? undefined, account, workspaces, bankFields, picklists, plaidLinkToken, onfidoToken};
     };
     return readFlowData;
 }
