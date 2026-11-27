@@ -18,8 +18,8 @@ import type {OnyxFormValuesMapping} from '@src/ONYXKEYS';
 import {subYears} from 'date-fns';
 import React from 'react';
 
-type DateOfBirthStepProps<TFormID extends keyof OnyxFormValuesMapping> = Partial<SubPageProps> &
-    Pick<SubPageProps, 'isEditing'> &
+type DateOfBirthStepProps<TFormID extends keyof OnyxFormValuesMapping> = Pick<SubPageProps, 'isEditing'> &
+    Partial<Pick<SubPageProps, 'onNext' | 'onMove'>> &
     ForwardedFSClassProps & {
         formID: TFormID;
         formTitle: string;
