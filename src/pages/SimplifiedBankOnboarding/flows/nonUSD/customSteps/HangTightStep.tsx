@@ -27,10 +27,10 @@ import {View} from 'react-native';
 
 type HangTightStepProps = Pick<CustomStepProps, 'policyID' | 'onComplete'> & {
     /** Reminds the invited directors to fill in their details */
-    reminderRequest: PlannedRequest;
+    request: PlannedRequest;
 
     /** The directors filled in their details, so the flow can go on */
-    canContinue: boolean;
+    canComplete: boolean;
 
     /** Opens the page that an invited director receives */
     openSignerForm: (policyID: string | undefined, bankAccountID: number | undefined) => void;
@@ -38,11 +38,11 @@ type HangTightStepProps = Pick<CustomStepProps, 'policyID' | 'onComplete'> & {
 
 const bankAccountIDSelector = (account: OnyxEntry<OnboardingAccount>) => account?.achData?.bankAccountID;
 
-function HangTightStep({reminderRequest, policyID, canContinue, openSignerForm, onComplete}: HangTightStepProps) {
+function HangTightStep({request, policyID, canComplete, openSignerForm, onComplete}: HangTightStepProps) {
     const {translate} = useLocalize();
     const styles = useThemeStyles();
     const [bankAccountID] = useOnyx(ONYXKEYS.SIMPLIFIED_BANK_ONBOARDING_ACCOUNT, {selector: bankAccountIDSelector});
-    const {send: sendReminder, isPending: isSendingReminder, errorMessage: reminderErrorMessage} = useRequest(reminderRequest);
+    const {send: sendReminder, isPending: isSendingReminder, errorMessage: reminderErrorMessage} = useRequest(request);
 
     return (
         <ScrollView contentContainerStyle={[styles.flexGrow1, styles.pb5]}>
@@ -71,7 +71,7 @@ function HangTightStep({reminderRequest, policyID, canContinue, openSignerForm, 
                     variant={CONST.BUTTON_VARIANT.SUCCESS}
                     size={CONST.BUTTON_SIZE.LARGE}
                     onPress={() => onComplete()}
-                    isDisabled={!canContinue}
+                    isDisabled={!canComplete}
                     sentryLabel={CONST.SENTRY_LABEL.BANK_ONBOARDING_LAB.SUBMIT_STEP}
                 >
                     <Button.Text>{translate('common.continue')}</Button.Text>

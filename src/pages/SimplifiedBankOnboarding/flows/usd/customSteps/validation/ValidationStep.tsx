@@ -25,7 +25,7 @@ import MaxAttemptsReachedMessage from './MaxAttemptsReachedMessage';
 
 type ValidationStepProps = Pick<CustomStepProps, 'policyID' | 'onComplete' | 'goToStep'> & {
     /** Sends the amounts of the test deposits */
-    validateRequest: PlannedRequest<string[]>;
+    request: PlannedRequest<string[]>;
 };
 
 type ValidationState = {
@@ -39,7 +39,7 @@ const validationStateSelector = (account: OnyxEntry<OnboardingAccount>): Validat
     hasReachedMaxAttempts: !!account?.maxAttemptsReached,
 });
 
-function ValidationStep({validateRequest, policyID, onComplete, goToStep}: ValidationStepProps) {
+function ValidationStep({request, policyID, onComplete, goToStep}: ValidationStepProps) {
     const [validationState] = useOnyx(ONYXKEYS.SIMPLIFIED_BANK_ONBOARDING_ACCOUNT, {selector: validationStateSelector});
     const achData = validationState?.achData;
 
@@ -50,7 +50,7 @@ function ValidationStep({validateRequest, policyID, onComplete, goToStep}: Valid
         return <MaxAttemptsReachedMessage />;
     }
     if (isPendingValidation(achData)) {
-        return <DepositsForm validateRequest={validateRequest} />;
+        return <DepositsForm validateRequest={request} />;
     }
     if (isVerifying(achData)) {
         return (

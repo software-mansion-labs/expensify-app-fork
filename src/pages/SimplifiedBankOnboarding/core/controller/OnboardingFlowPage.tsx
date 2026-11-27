@@ -1,7 +1,7 @@
 /**
  * The screen body of a flow: the header with the step counter and the open page of the plan. The flow descriptor
- * supplies the form, the plan and the custom steps, and the screen supplies the routes and the position of the URL, so
- * the same page serves every flow.
+ * supplies the form and the plan, whose custom pages render their own screens, and the screen supplies the routes and
+ * the position of the URL, so the same page serves every flow.
  */
 import ActivityIndicator from '@components/ActivityIndicator';
 import FullScreenLoadingIndicator from '@components/FullscreenLoadingIndicator';
@@ -68,7 +68,6 @@ function OnboardingFlowPage<TData, TVocabulary extends FlowVocabulary>({flow, ro
         );
     }
 
-    const {CustomStep} = flow;
     const stepCounter = getStepCounter(plan.steps, step.id);
 
     const renderPage = () => {
@@ -80,19 +79,16 @@ function OnboardingFlowPage<TData, TVocabulary extends FlowVocabulary>({flow, ro
             );
         }
         if (page.kind === 'custom') {
-            if (!CustomStep) {
-                return null;
-            }
             return (
-                <CustomStep
-                    key={page.id}
-                    page={page}
-                    policyID={policyID}
-                    isSubmitting={isSubmitting}
-                    errorText={errorText || undefined}
-                    onComplete={(values) => submitPage(values ?? {})}
-                    goToStep={goToStep}
-                />
+                <React.Fragment key={page.id}>
+                    {page.render({
+                        policyID,
+                        isSubmitting,
+                        errorText: errorText || undefined,
+                        onComplete: (values) => submitPage(values ?? {}),
+                        goToStep,
+                    })}
+                </React.Fragment>
             );
         }
         return (

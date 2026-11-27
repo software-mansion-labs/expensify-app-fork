@@ -536,8 +536,8 @@ describe('buildNonUSDPlan', () => {
             // When the hang tight page is read from the plan
             const hangTightPage = findStep(buildPlan('eur', server), PAGE_NAMES.SIGNER_INFO)?.pages.find((page) => page.id === SIGNER_INFO_SUB_PAGES.HANG_TIGHT);
 
-            // Then the page sends the reminder that the plan names, so its button shares the guard and the status of that write
-            expect(hangTightPage).toMatchObject({request: {key: getRequestKey(REQUEST_NAMES.SEND_SIGNER_REMINDER, {policyID: 'eur'})}});
+            // Then the screen of the page sends the reminder that the plan names, so its button shares the guard and the status of that write
+            expect(hangTightPage).toMatchObject({requestKey: getRequestKey(REQUEST_NAMES.SEND_SIGNER_REMINDER, {policyID: 'eur'})});
         });
     });
 

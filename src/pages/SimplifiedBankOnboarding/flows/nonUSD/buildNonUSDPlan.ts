@@ -17,6 +17,7 @@ import type {Field, PicklistOption, PlanContext} from '@pages/SimplifiedBankOnbo
 import {
     areFieldsComplete,
     createCheckboxField,
+    createCustomPage,
     createFileField,
     createLegalNameField,
     createPicklistField,
@@ -32,6 +33,7 @@ import getOwnerPages from '@pages/SimplifiedBankOnboarding/flows/shared/owners/g
 import {GLOBAL_OWNER_DRAFT} from '@pages/SimplifiedBankOnboarding/flows/shared/owners/ownerBuffer';
 import {findOwner, removeOwner} from '@pages/SimplifiedBankOnboarding/flows/shared/owners/ownerList';
 import type {FlowPlan, FormPageDefinition, PageConfig, StepConfig} from '@pages/SimplifiedBankOnboarding/flows/shared/plan/types';
+import {openEnterSignerInfo} from '@pages/SimplifiedBankOnboarding/flows/shared/routes/flowNavigation';
 import getSignerDetailsPages from '@pages/SimplifiedBankOnboarding/flows/shared/signerDetails/getSignerDetailsPages';
 import {getDirectorInfoRequest, getSignerInvitationRequest, getSignerReminderRequest} from '@pages/SimplifiedBankOnboarding/flows/shared/signerDetails/signerInfo';
 
@@ -40,6 +42,8 @@ import CONST from '@src/CONST';
 import {Str} from 'expensify-common';
 
 import getNonUSDFlowState from './answers/getNonUSDFlowState';
+import FinishStep from './customSteps/FinishStep';
+import HangTightStep from './customSteps/HangTightStep';
 import getBankFieldsRead from './requests/getBankFieldsRead';
 import getFinishOnboardingRequest from './requests/getFinishOnboardingRequest';
 import getGlobalBankAccountRequest from './requests/getGlobalBankAccountRequest';
@@ -386,14 +390,12 @@ function buildNonUSDPlan(data: FlowData, {translate, policyID: urlPolicyID}: Pla
                         : {signerEmail: answers.signerEmail, secondSignerEmail: isAUD ? answers.secondSignerEmail : undefined},
                 ),
             }),
-            {
-                kind: 'custom',
-                id: SIGNER.HANG_TIGHT,
-                component: 'hangTight',
-                isComplete: areSignersKnown,
-                canComplete: areSignersKnown,
-                request: getSignerReminderRequest(bankAccount),
-            },
+            // The screen never navigates itself, so the plan hands it the navigation to the form of an invited director
+            createCustomPage(
+                HangTightStep,
+                {id: SIGNER.HANG_TIGHT, isComplete: areSignersKnown},
+                {request: getSignerReminderRequest(bankAccount), canComplete: areSignersKnown, openSignerForm: openEnterSignerInfo},
+            ),
         );
     }
 
@@ -484,7 +486,7 @@ function buildNonUSDPlan(data: FlowData, {translate, policyID: urlPolicyID}: Pla
         counter: 'none',
         isComplete: false,
 
-        pages: [{kind: 'custom', id: SBO_CONST.NON_USD.FINISH_SUB_PAGES.DONE, component: 'finish', isComplete: false, shouldExitOnBack: true}],
+        pages: [createCustomPage(FinishStep, {id: SBO_CONST.NON_USD.FINISH_SUB_PAGES.DONE, isComplete: false, shouldExitOnBack: true}, {})],
     });
 
     return {steps, answers};

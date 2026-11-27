@@ -99,7 +99,7 @@ function useOnboardingFlow<TData, TVocabulary extends FlowVocabulary>({
     const requestState = useRequestState(pageRequestKey);
 
     // A custom page shows the state of its own request, and the controller only ends the visit that saw it fail
-    const customPageRequestKey = page?.kind === 'custom' ? page.request?.key : undefined;
+    const customPageRequestKey = page?.kind === 'custom' ? page.requestKey : undefined;
     const customPageRequestState = useRequestState(customPageRequestKey);
     const isDataReady = dataStatus === 'ready';
 

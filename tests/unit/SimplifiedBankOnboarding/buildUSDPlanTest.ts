@@ -375,8 +375,8 @@ describe('buildUSDPlan', () => {
             // When the Plaid page is read from the plan
             const plaidPage = findStep(plan, PAGE_NAMES.BANK_ACCOUNT)?.pages.at(0);
 
-            // Then the page sends the read with the token of the bank login, which only the widget returns
-            expect(plaidPage).toMatchObject({request: {key: getRequestKey(REQUEST_NAMES.OPEN_PLAID_BANK_ACCOUNT_SELECTOR)}});
+            // Then the screen of the page sends the read with the token of the bank login, which only the widget returns, and the page tells the controller its key
+            expect(plaidPage).toMatchObject({requestKey: getRequestKey(REQUEST_NAMES.OPEN_PLAID_BANK_ACCOUNT_SELECTOR)});
         });
 
         it('reads nothing on the manual page', () => {
@@ -561,9 +561,9 @@ describe('buildUSDPlan', () => {
             // When the validation step is read from the plan
             const validationStep = findStep(plan, PAGE_NAMES.VALIDATION);
 
-            // Then the page carries the request, because only the page has the amounts, and the controller has nothing to send
+            // Then the screen of the page gets the request, because only the screen has the amounts, and the controller has nothing to send
             expect(validationStep?.request).toBeUndefined();
-            expect(validationStep?.pages.at(0)).toMatchObject({request: {key: getRequestKey(REQUEST_NAMES.VALIDATE_BANK_ACCOUNT, {policyID: POLICY_ID})}});
+            expect(validationStep?.pages.at(0)).toMatchObject({requestKey: getRequestKey(REQUEST_NAMES.VALIDATE_BANK_ACCOUNT, {policyID: POLICY_ID})});
         });
     });
 

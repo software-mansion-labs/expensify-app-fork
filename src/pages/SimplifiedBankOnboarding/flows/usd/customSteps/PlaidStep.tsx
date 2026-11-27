@@ -29,7 +29,7 @@ import {View} from 'react-native';
 
 type PlaidStepProps = Pick<CustomStepProps, 'isSubmitting' | 'errorText' | 'onComplete'> & {
     /** Exchanges the public token of the bank login for the list of accounts */
-    bankAccountsRequest: PlannedRequest<string>;
+    request: PlannedRequest<string>;
 
     /** An account was picked, so the bank step has an account to send */
     canComplete: boolean;
@@ -37,12 +37,12 @@ type PlaidStepProps = Pick<CustomStepProps, 'isSubmitting' | 'errorText' | 'onCo
 
 const MOCK_PUBLIC_TOKEN = 'mock-public-token';
 
-function PlaidStep({bankAccountsRequest, canComplete, isSubmitting, errorText, onComplete}: PlaidStepProps) {
+function PlaidStep({request, canComplete, isSubmitting, errorText, onComplete}: PlaidStepProps) {
     const {translate} = useLocalize();
     const styles = useThemeStyles();
     const [draft] = useOnyx(ONYXKEYS.FORMS.SIMPLIFIED_BANK_ONBOARDING_FORM_DRAFT);
     const [plaidData] = useOnyx(ONYXKEYS.SIMPLIFIED_BANK_ONBOARDING_PLAID_DATA);
-    const {send: openBankAccountSelector, isPending: isLoadingBankAccounts, errorMessage: plaidErrorText} = useRequest(bankAccountsRequest);
+    const {send: openBankAccountSelector, isPending: isLoadingBankAccounts, errorMessage: plaidErrorText} = useRequest(request);
 
     const plaidBankAccounts = plaidData?.bankAccounts ?? [];
     const selectedPlaidAccountID = draft?.plaidAccountID;

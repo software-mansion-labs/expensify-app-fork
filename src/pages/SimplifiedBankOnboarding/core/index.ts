@@ -4,7 +4,7 @@
  * configuration. A flow configuration in `flows/` and the entry page import the engine only from here.
  */
 export {default as OnboardingFlowPage} from './controller/OnboardingFlowPage';
-export type {CustomStepProps, FlowDataSource, FlowDataStatus, FlowDescriptor} from './controller/types';
+export type {FlowDataSource, FlowDataStatus, FlowDescriptor} from './controller/types';
 
 export {default as createCheckboxField} from './form/fields/createCheckboxField';
 export {default as createDateOfBirthField} from './form/fields/createDateOfBirthField';
@@ -21,6 +21,7 @@ export type {Field} from './form/fields/types';
 export {goToPosition, replacePosition} from './navigation/flowNavigation';
 export type {FlowRoutes} from './navigation/flowNavigation';
 
+export {default as createCustomPage} from './plan/createCustomPage';
 export {default as getFormPage} from './plan/getFormPage';
 export type {FormPageDefinition} from './plan/getFormPage';
 export type {FlowPosition} from './plan/position/position';
@@ -28,7 +29,7 @@ export {default as getResumePosition} from './plan/position/resume';
 export type {
     ConfirmationPageConfig,
     CustomPageConfig,
-    CustomPageContent,
+    CustomStepProps,
     FlowPlan,
     FlowVocabulary,
     FormPageConfig,

@@ -7,24 +7,14 @@ import type {LocalizedTranslate} from '@components/LocaleContextProvider';
 
 import type {OnboardingDraft} from '@pages/SimplifiedBankOnboarding/contract/form';
 import type {Field, SummaryRow} from '@pages/SimplifiedBankOnboarding/core/form/fields/types';
+import type {RequestKey} from '@pages/SimplifiedBankOnboarding/core/requests/requestKey';
 import type {PlannedRead, PlannedRequest} from '@pages/SimplifiedBankOnboarding/core/requests/types';
 
-/** What a custom page holds besides what every page holds */
-type CustomPageContent = {
-    /** The name of the page. The flow picks the screen of the page by it. */
-    component: string;
-
-    /**
-     * The request that the page sends itself through `useRequest`, such as the test deposits. The controller never sends
-     * it, so the engine sees no input type here and only the flow, which types the input per page, can call `send`.
-     */
-    request?: PlannedRequest<never>;
-};
+import type {ReactNode} from 'react';
 
 /**
- * The names that a flow gives to its steps, its pages and its custom pages. A flow passes closed unions of its own names,
- * so its plan cannot point at a page that does not exist. The engine only compares the names, so its own code takes any
- * vocabulary.
+ * The names that a flow gives to its steps and its pages. A flow passes closed unions of its own names, so its plan
+ * cannot point at a page that does not exist. The engine only compares the names, so its own code takes any vocabulary.
  */
 type FlowVocabulary = {
     /** The name of a step, which the URL holds */
@@ -32,9 +22,6 @@ type FlowVocabulary = {
 
     /** The name of a page of a step, which the URL holds */
     pageID: string;
-
-    /** A union with one member per custom page of the flow, which ties the name of the page to the input of its request */
-    customPage: CustomPageContent;
 };
 
 /** What happens after a page: the draft values to save and the page to show next */
@@ -128,14 +115,40 @@ type ListPageConfig<TVocabulary extends FlowVocabulary = FlowVocabulary> = PageB
         onRowPress?: (rowID: string) => PageTransition<TVocabulary>;
     };
 
-/** A page that is not a form. It is a screen in the `customSteps/` of its flow, picked by name. */
-type CustomPageConfig<TVocabulary extends FlowVocabulary = FlowVocabulary> = PageBase<TVocabulary> &
-    TVocabulary['customPage'] & {
-        kind: 'custom';
+/** What a custom step gets from the controller. A custom step never navigates: it reports through these callbacks. */
+type CustomStepProps<TVocabulary extends FlowVocabulary = FlowVocabulary> = {
+    /** The workspace of the flow */
+    policyID: string | undefined;
 
-        /** False while the page waits for an input it does not have yet, such as the account picked in Plaid or the other directors. Defaults to true. */
-        canComplete?: boolean;
-    };
+    /** The request of the step is running */
+    isSubmitting: boolean;
+
+    /** The error of the request of the step */
+    errorText?: string;
+
+    /** The page is done. The values go to the draft before the flow moves on, and the last page runs the step request. */
+    onComplete: (values?: OnboardingDraft) => void;
+
+    /** Opens the first page of another step, such as the personal info step from the review card */
+    goToStep: (stepID: TVocabulary['stepID']) => void;
+};
+
+/** A page that is not a form, but a screen of the flow. `createCustomPage` builds it from the screen and the props that only the screen needs. */
+type CustomPageConfig<TVocabulary extends FlowVocabulary = FlowVocabulary> = PageBase<TVocabulary> & {
+    kind: 'custom';
+
+    /** False while the page waits for an input it does not have yet, such as the account picked in Plaid or the other directors. Defaults to true. */
+    canComplete?: boolean;
+
+    /**
+     * The key of the request that the screen sends itself through `useRequest`, such as the test deposits. The controller
+     * never sends it, but clears its error when the user leaves the page and blocks the page offline.
+     */
+    requestKey?: RequestKey;
+
+    /** Renders the screen with what the controller provides and the props that the plan gave it */
+    render: (props: CustomStepProps<TVocabulary>) => ReactNode;
+};
 
 type PageConfig<TVocabulary extends FlowVocabulary = FlowVocabulary> =
     | FormPageConfig<TVocabulary>
@@ -183,7 +196,7 @@ export type {
     ConfirmationPageConfig,
     ConfirmationRow,
     CustomPageConfig,
-    CustomPageContent,
+    CustomStepProps,
     FlowPlan,
     FlowVocabulary,
     FormPageConfig,

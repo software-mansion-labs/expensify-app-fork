@@ -74,12 +74,12 @@ the lower its level.
 | `lab/` | The lab page: workspace list, the other entry points, the Payments page stand-in, the reads of these pages (`labActions.ts`) and the panel of the mock server (`mockServerPanel/`) |
 | `entry/` | The entry page: the account reference, the pure screen state, one view per state, the start over modal, the verify-account page, its moves (`entryNavigation.ts`) and its requests (`requests/`) |
 | `flows/` | **The flow configurations.** `index.ts` is what the entry page and the app import, and `openFlowAtResume.ts` picks the flow of a workspace |
-| `flows/usd/`, `flows/nonUSD/` | One flow each. The route screen, the flow descriptor and the plan builder are at the top. Below them are the answers built from the draft and the server data (`answers/`), the custom pages that are not forms (`customSteps/`) and the requests and reads that the plan names (`requests/`, each a `PlannedRequest` or a `PlannedRead`). The NonUSD flow also has the pure helpers for the bank fields and picklists that the server sends (`serverLists/`) |
+| `flows/usd/`, `flows/nonUSD/` | One flow each. The route screen, the flow descriptor and the plan builder are at the top. Below them are the answers built from the draft and the server data (`answers/`), the screens of the custom pages that are not forms (`customSteps/`, which the plan builder names) and the requests and reads that the plan names (`requests/`, each a `PlannedRequest` or a `PlannedRead`). The NonUSD flow also has the pure helpers for the bank fields and picklists that the server sends (`serverLists/`) |
 | `flows/enterSignerInfo/` | The separate flow that a director opens from an email, on the same controller with its own form |
 | `flows/shared/` | What more than one flow uses, so that no flow folder imports another: the screen body of the USD and NonUSD flows (`setupScreen/`), the `FlowData` type and its reads (`flowData/`), the account read of a screen and the gate of a cold deep link (`accountRead/`), the owner step (`owners/`), the signer pages (`signerDetails/`) and the draft writes |
 | `core/` | **The generic engine.** `index.ts` is the only path that `flows/` and `entry/` import |
 | `core/controller/` | The generic flow screen (`OnboardingFlowPage`), its hook (`useOnboardingFlow`) and the `FlowDescriptor` type |
-| `core/plan/` | The shape of a plan (`types.ts`) and the pure helpers over it: positions, the resume position, reachability and the moves between positions (`position/`) |
+| `core/plan/` | The shape of a plan (`types.ts`), the builders of a form page (`getFormPage.ts`) and of a custom page (`createCustomPage.tsx`), and the pure helpers over a plan: positions, the resume position, reachability and the moves between positions (`position/`) |
 | `core/form/pages/` | The generic renderer: a form page, and one page for confirmations and lists, which both render through the shared `ConfirmationStep`. The rows of a confirmation come from the fields of its step (`getConfirmationRows.ts`), and `confirmationStepRows.ts` shapes the rows of both for the shared step |
 | `core/form/fields/` | The fields of a form page, one file per kind: text, legal name, date of birth, picklist, checkbox, yes or no question, file, read-only row. A `createXField` factory returns a `Field` (`types.ts`): the inputs it owns, their rules, its rows on the confirmation of the step and how it renders. `fieldSet.ts` answers what the page, the plan and the controller ask of the fields of a page |
 | `core/requests/` | `runRequest`, `planRequest`, `planRequestWithInput` and `planRead`, the key of a request status, the request status hook `useRequestState`, `useRequest`, which a custom page sends its request with, and `useReadOnOpen`, which sends the read of the open page |
@@ -121,11 +121,23 @@ A step or a page names its request as `request: getCompanyRequest(bankAccount, a
 values it sends and holds its guards, so the plan has no request code. A form page works offline exactly when its submit
 sends no request, so a plan never says so itself.
 
-A custom page names its request the same way, as `request: getValidateBankAccountRequest(bankAccount)`, but the
-controller never sends it. The page sends it with `useRequest(page.request)`, which returns `send`, `isPending` and
-`errorMessage`, and passes the input that only the page has, such as the amounts of the test deposits
-(`planRequestWithInput`). The vocabulary of the flows types the input per custom page, so the Plaid page sends a token and
-the deposits page sends amounts. No custom page calls a request function directly.
+A page that is not a form is a custom page. The plan names its screen and the props that only this screen needs, the
+same way a form page names its fields:
+
+```ts
+createCustomPage(ValidationStep, {id, isComplete: false}, {request: getValidateBankAccountRequest(bankAccount)});
+```
+
+A reader of the plan jumps from the page straight to its screen, and no flow keeps a list of its screens. The builder
+stays a plain `.ts` file, because the page holds the screen and renders it only when the controller asks (`render`).
+
+The props type of the screen decides what the plan must pass, so a request with the wrong input, such as amounts for
+the Plaid page that sends a token, does not compile. The controller still sends no request of a custom page. The screen
+sends it with `useRequest(request)`, which returns `send`, `isPending` and `errorMessage`, and passes the input that only
+the screen has, such as the amounts of the test deposits (`planRequestWithInput`). No custom page calls a request function
+directly. A screen takes its request as `request` and its readiness as `canComplete`, and the page copies the key of the
+request and the readiness out of these props as plain data, because the controller needs them without rendering the
+screen.
 
 A new kind of field is one new file in `core/form/fields/`. Nothing else has a list of field kinds to extend.
 
@@ -177,11 +189,14 @@ those errors when the lab closes, so an error of the flow does not stay on the P
 
 ### One generic controller
 
-A flow is a `FlowDescriptor`: its form ID, its draft writes, its plan builder and the component of its
-custom steps (`CustomStep`), which the controller renders as an element keyed by the page ID. The
-controller knows nothing else about a flow, so the USD flow, the NonUSD flow and the invited director page share it.
-Custom steps never navigate: they report through `onComplete` and `goToStep`. The controller still clears the error of
-the request of a custom page when the user leaves the page, and blocks the page offline like a form page with a request.
+A flow is a `FlowDescriptor`: its form ID, its draft writes and its plan builder. The controller renders a custom page
+through the `render` of the page, keyed by the page ID, and passes what every custom screen may use (`CustomStepProps`):
+the workspace, the state and the error of the step request, `onComplete` and `goToStep`. The props type of each screen
+picks the part that it uses. The controller knows nothing else about a flow, so the USD flow, the NonUSD flow and the
+invited director page share it. Custom steps never navigate: they report through `onComplete` and `goToStep`, and a
+screen that opens another page, such as the form of an invited director from the page that waits for the directors, gets
+that navigation from the plan. The controller still clears the error of the request of a custom page when the user leaves
+the page, and blocks the page offline like a form page with a request.
 
 The step counter of the header comes from the order of the steps in the plan (`core/plan/getStepCounter.ts`). A step
 only says how it counts: `counter: 'own'` (the default) takes the next number, `'shared'` shows the number of the step

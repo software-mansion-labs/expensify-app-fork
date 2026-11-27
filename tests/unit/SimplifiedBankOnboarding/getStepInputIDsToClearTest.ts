@@ -80,8 +80,8 @@ describe('getStepInputIDsToClear', () => {
                 {
                     kind: 'custom',
                     id: PERSONAL_INFO_SUB_PAGES.CONFIRMATION,
-                    component: 'onfido',
                     isComplete: true,
+                    render: () => null,
                 },
             ],
         };

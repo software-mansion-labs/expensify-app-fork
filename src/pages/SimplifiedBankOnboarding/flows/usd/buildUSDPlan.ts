@@ -12,7 +12,16 @@ import {getOwnerFullName} from '@pages/SimplifiedBankOnboarding/contract/ownerNa
 import SBO_CONST from '@pages/SimplifiedBankOnboarding/contract/SBO_CONST';
 import {areCompanyDetailsLocked, isPendingValidation} from '@pages/SimplifiedBankOnboarding/contract/setupStatus';
 import type {PlanContext} from '@pages/SimplifiedBankOnboarding/core';
-import {createCheckboxField, createDateOfBirthField, createFileField, createLegalNameField, createPicklistField, createTextField, getFormPage} from '@pages/SimplifiedBankOnboarding/core';
+import {
+    createCheckboxField,
+    createCustomPage,
+    createDateOfBirthField,
+    createFileField,
+    createLegalNameField,
+    createPicklistField,
+    createTextField,
+    getFormPage,
+} from '@pages/SimplifiedBankOnboarding/core';
 import type FlowData from '@pages/SimplifiedBankOnboarding/flows/shared/flowData/types';
 import getBaseStepInput from '@pages/SimplifiedBankOnboarding/flows/shared/getBaseStepInput';
 import {canAddMoreUSDOwners} from '@pages/SimplifiedBankOnboarding/flows/shared/owners/canAddMoreOwners';
@@ -23,6 +32,9 @@ import type {FlowPlan, FormPageDefinition, StepConfig} from '@pages/SimplifiedBa
 import CONST from '@src/CONST';
 
 import getUSDAnswers from './answers/getUSDAnswers';
+import OnfidoStep from './customSteps/OnfidoStep';
+import PlaidStep from './customSteps/PlaidStep';
+import ValidationStep from './customSteps/validation/ValidationStep';
 import {getManualBankAccountRequest, getPlaidBankAccountRequest} from './requests/connectBankAccount';
 import getACHContractRequest from './requests/getACHContractRequest';
 import getCompanyRequest from './requests/getCompanyRequest';
@@ -107,15 +119,11 @@ function buildUSDPlan({draft, account, plaidLinkToken, onfidoToken}: FlowData, {
         pages: [
             // The bank step sends the picked account, so the Plaid page cannot be completed before the user picks one
             isPlaidSetup
-                ? {
-                      kind: 'custom',
-                      id: SBO_CONST.USD.BANK_INFO_SUB_PAGES.PLAID,
-                      component: 'plaid',
-                      isComplete: hasServerBankAccount,
-                      canComplete: !!answers.plaidAccountID,
-                      read: getPlaidLinkTokenRead(!!plaidLinkToken),
-                      request: getPlaidBankAccountsRequest(),
-                  }
+                ? createCustomPage(
+                      PlaidStep,
+                      {id: SBO_CONST.USD.BANK_INFO_SUB_PAGES.PLAID, isComplete: hasServerBankAccount, read: getPlaidLinkTokenRead(!!plaidLinkToken)},
+                      {request: getPlaidBankAccountsRequest(), canComplete: !!answers.plaidAccountID},
+                  )
                 : buildFormPage({
                       id: SBO_CONST.USD.BANK_INFO_SUB_PAGES.MANUAL,
                       title: translate('bankAccount.manuallyAdd'),
@@ -199,7 +207,7 @@ function buildUSDPlan({draft, account, plaidLinkToken, onfidoToken}: FlowData, {
             isComplete: false,
 
             pages: [
-                {kind: 'custom', id: SBO_CONST.USD.VERIFY_IDENTITY_SUB_PAGES.IDENTITY_CHECK, component: 'onfido', isComplete: false, read: getIdentityCheckRead(bankAccount, !!onfidoToken)},
+                createCustomPage(OnfidoStep, {id: SBO_CONST.USD.VERIFY_IDENTITY_SUB_PAGES.IDENTITY_CHECK, isComplete: false, read: getIdentityCheckRead(bankAccount, !!onfidoToken)}, {}),
             ],
             request: getVerifyIdentityRequest(bankAccount, MOCK_ONFIDO_DATA),
         });
@@ -414,14 +422,11 @@ function buildUSDPlan({draft, account, plaidLinkToken, onfidoToken}: FlowData, {
         isComplete: hasPassedServerStep(achData, STEP.VALIDATION),
 
         pages: [
-            {
-                kind: 'custom',
-                id: SBO_CONST.USD.VALIDATION_SUB_PAGES.VALIDATE,
-                component: 'validation',
-                isComplete: false,
-                shouldExitOnBack: isPendingDeposits,
-                request: getValidateBankAccountRequest(bankAccount),
-            },
+            createCustomPage(
+                ValidationStep,
+                {id: SBO_CONST.USD.VALIDATION_SUB_PAGES.VALIDATE, isComplete: false, shouldExitOnBack: isPendingDeposits},
+                {request: getValidateBankAccountRequest(bankAccount)},
+            ),
         ],
     });
 

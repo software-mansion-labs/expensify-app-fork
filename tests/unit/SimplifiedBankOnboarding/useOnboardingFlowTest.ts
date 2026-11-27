@@ -3,6 +3,7 @@ import {act, renderHook} from '@testing-library/react-native';
 import type {FlowDescriptor} from '@pages/SimplifiedBankOnboarding/core/controller/types';
 import useOnboardingFlow from '@pages/SimplifiedBankOnboarding/core/controller/useOnboardingFlow';
 import type {FlowRoutes} from '@pages/SimplifiedBankOnboarding/core/navigation/flowNavigation';
+import createCustomPage from '@pages/SimplifiedBankOnboarding/core/plan/createCustomPage';
 import type {FlowPosition} from '@pages/SimplifiedBankOnboarding/core/plan/position/position';
 import type {FlowPlan} from '@pages/SimplifiedBankOnboarding/core/plan/types';
 import type {RequestOutcome, RequestState} from '@pages/SimplifiedBankOnboarding/core/requests/types';
@@ -77,6 +78,11 @@ async function renderConfirmationPage(requestState: RequestState) {
     return rendered;
 }
 
+/** The screen of the test deposits. The controller never renders it in these tests, so it shows nothing. */
+function DepositsScreen() {
+    return null;
+}
+
 async function getRequestState() {
     const requests = await getOnyxValue(ONYXKEYS.RAM_ONLY_SIMPLIFIED_BANK_ONBOARDING_REQUESTS);
     return requests?.[REQUEST_KEY];
@@ -143,37 +149,75 @@ describe('useOnboardingFlow', () => {
         expect(await getRequestState()).toEqual(pendingState);
     });
 
-    it('leaves the request of a custom page to the page', async () => {
-        // Given a step whose only page is a custom page with its own request, like the test deposits
+    describe('a custom page whose screen sends its own request', () => {
         const sendPageRequest = jest.fn((): Promise<RequestOutcome> => Promise.resolve({status: 'succeeded'}));
-        const customPagePlan: FlowPlan = {
-            answers: {},
-            steps: [
-                {
-                    id: STEP_ID,
-                    title: 'Validation',
-                    isComplete: false,
-                    pages: [{kind: 'custom', id: CUSTOM_PAGE_ID, component: 'deposits', isComplete: false, request: {key: CUSTOM_PAGE_REQUEST_KEY, send: sendPageRequest}}],
-                },
-            ],
-        };
-        const {result} = renderHook(() =>
-            useOnboardingFlow({
-                flow: {...flow, buildPlan: () => customPagePlan},
-                routes,
-                urlPosition: {stepID: STEP_ID, pageID: CUSTOM_PAGE_ID, isEditing: false},
-                policyID: '1',
-                dataSource: {data: undefined, readData: () => Promise.resolve(undefined)},
-                dataStatus: 'ready',
-            }),
-        );
-        await waitForBatchedUpdatesWithAct();
 
-        // When the page reports that it is done
-        act(() => result.current.submitPage({}));
-        await waitForBatchedUpdatesWithAct();
+        /** A step whose only page is a custom page that gets its request from the plan, like the test deposits */
+        async function renderDepositsPage() {
+            const customPagePlan: FlowPlan = {
+                answers: {},
+                steps: [
+                    {
+                        id: STEP_ID,
+                        title: 'Validation',
+                        isComplete: false,
+                        pages: [createCustomPage(DepositsScreen, {id: CUSTOM_PAGE_ID, isComplete: false}, {request: {key: CUSTOM_PAGE_REQUEST_KEY, send: sendPageRequest}})],
+                    },
+                ],
+            };
+            const rendered = renderHook(() =>
+                useOnboardingFlow({
+                    flow: {...flow, buildPlan: () => customPagePlan},
+                    routes,
+                    urlPosition: {stepID: STEP_ID, pageID: CUSTOM_PAGE_ID, isEditing: false},
+                    policyID: '1',
+                    dataSource: {data: undefined, readData: () => Promise.resolve(undefined)},
+                    dataStatus: 'ready',
+                }),
+            );
+            await waitForBatchedUpdatesWithAct();
+            return rendered;
+        }
 
-        // Then the controller does not send the request again, because only the page has its input and already sent it
-        expect(sendPageRequest).not.toHaveBeenCalled();
+        beforeEach(() => {
+            sendPageRequest.mockClear();
+        });
+
+        it('is left to the page', async () => {
+            // Given the custom page of the test deposits
+            const {result} = await renderDepositsPage();
+
+            // When the page reports that it is done
+            act(() => result.current.submitPage({}));
+            await waitForBatchedUpdatesWithAct();
+
+            // Then the controller does not send the request again, because only the page has its input and already sent it
+            expect(sendPageRequest).not.toHaveBeenCalled();
+        });
+
+        it('cannot be submitted offline', async () => {
+            // Given the custom page of the test deposits
+            // When the controller decides whether the page works offline
+            const {result} = await renderDepositsPage();
+
+            // Then it does not, because the controller knows the key of the request that the screen sends
+            expect(result.current.canSubmitOffline).toBe(false);
+        });
+
+        it('drops the error of its request when the user goes back', async () => {
+            // Given the custom page of the test deposits, whose request failed
+            await Onyx.merge(ONYXKEYS.RAM_ONLY_SIMPLIFIED_BANK_ONBOARDING_REQUESTS, {
+                [CUSTOM_PAGE_REQUEST_KEY]: {requestID: 'request-1', status: 'failed', errors: {[ERROR_TIME]: ERROR_MESSAGE}},
+            });
+            const {result} = await renderDepositsPage();
+
+            // When the user goes back
+            act(() => result.current.goBack());
+            await waitForBatchedUpdatesWithAct();
+
+            // Then the error is gone, because it belongs to the visit of the page that saw the request fail
+            const requests = await getOnyxValue(ONYXKEYS.RAM_ONLY_SIMPLIFIED_BANK_ONBOARDING_REQUESTS);
+            expect(requests?.[CUSTOM_PAGE_REQUEST_KEY]).toBeUndefined();
+        });
     });
 });
