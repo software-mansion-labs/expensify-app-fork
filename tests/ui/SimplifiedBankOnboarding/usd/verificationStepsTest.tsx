@@ -18,6 +18,7 @@ import {clearRequestState} from '@pages/SimplifiedBankOnboarding/core/requests/r
 import BUSINESS_PAGES from '@pages/SimplifiedBankOnboarding/flows/usd/businessInfo/businessInfoPages';
 import BusinessInfoStep from '@pages/SimplifiedBankOnboarding/flows/usd/businessInfo/BusinessInfoStep';
 import KYBDocumentsStep from '@pages/SimplifiedBankOnboarding/flows/usd/kybDocuments/KYBDocumentsStep';
+import ValidationStep from '@pages/SimplifiedBankOnboarding/flows/usd/validation/ValidationStep';
 import VerifyIdentityStep from '@pages/SimplifiedBankOnboarding/flows/usd/verifyIdentity/VerifyIdentityStep';
 import {READ_COMMANDS, WRITE_COMMANDS} from '@pages/SimplifiedBankOnboarding/mockBackend/commands';
 import {read, write} from '@pages/SimplifiedBankOnboarding/mockBackend/mockApi';
@@ -80,13 +81,14 @@ type StepUnderTest = {
     Step: ComponentType;
     step: StepID;
 
-    /** The next step in the order of the flow. The flow itself skips it when its rule says so. */
-    nextStep: StepID;
+    /** The next step in the order of the flow, undefined for the last one. The flow itself skips it when its rule says so. */
+    nextStep: StepID | undefined;
 };
 
 const BUSINESS_INFO: StepUnderTest = {Step: BusinessInfoStep, step: PAGE_NAMES.COMPANY, nextStep: PAGE_NAMES.BENEFICIAL_OWNERS};
 const IDENTITY_CHECK: StepUnderTest = {Step: VerifyIdentityStep, step: PAGE_NAMES.VERIFY_IDENTITY, nextStep: PAGE_NAMES.COMPANY};
 const DOCUMENTS: StepUnderTest = {Step: KYBDocumentsStep, step: PAGE_NAMES.KYB_DOCS, nextStep: PAGE_NAMES.VALIDATION};
+const VALIDATION: StepUnderTest = {Step: ValidationStep, step: PAGE_NAMES.VALIDATION, nextStep: undefined};
 
 async function renderStep({Step, step, nextStep}: StepUnderTest, page?: PageID) {
     const screenName = SCREENS.SETTINGS.BANK_ONBOARDING_LAB.USD_SETUP;
@@ -106,6 +108,12 @@ async function setSavedData(achData: ACHData, draft: OnboardingDraft = {}) {
 async function press(text: string) {
     fireEvent.press(screen.getByText(text));
     await waitForBatchedUpdatesWithAct();
+}
+
+function typeAmounts(amounts: string[]) {
+    for (const [index, amount] of amounts.entries()) {
+        fireEvent.changeText(screen.getByLabelText(`connectBankAccountStep.validationInputLabel ${index + 1}`), amount);
+    }
 }
 
 function expectStepOpened({nextStep}: StepUnderTest) {
@@ -252,6 +260,54 @@ describe('USD verification steps', () => {
             // Then the mock server gets the file name, because it takes no files, and the step ends
             expect(write).toHaveBeenCalledWith(WRITE_COMMANDS.UPLOAD_KYB_DOCUMENTS, expect.objectContaining({documentNames: [TAX_ID_DOCUMENT.name]}), expect.anything());
             expectStepOpened(DOCUMENTS);
+        });
+    });
+
+    describe('test deposits', () => {
+        it('sends the trimmed amounts as one code in the order of the inputs', async () => {
+            // Given the deposit form of a pending account
+            await setSavedData({state: SBO_CONST.STATE.PENDING});
+            await renderStep(VALIDATION);
+
+            // When the user types the amounts with spaces around them and submits
+            typeAmounts([' 0.01 ', '0.02 ', ' 0.03']);
+            await press('connectBankAccountStep.validateButtonText');
+
+            // Then the server gets the amounts without the spaces, joined in the order of the inputs
+            expect(write).toHaveBeenCalledWith(
+                WRITE_COMMANDS.VALIDATE_BANK_ACCOUNT,
+                expect.objectContaining({policyID: POLICY_ID, bankAccountID: BANK_ACCOUNT_ID, validateCode: '0.01,0.02,0.03'}),
+                expect.anything(),
+            );
+        });
+
+        it('asks again for each amount that is not a positive number and sends nothing', async () => {
+            // Given the deposit form of a pending account
+            await setSavedData({state: SBO_CONST.STATE.PENDING});
+            await renderStep(VALIDATION);
+
+            // When the user types one right amount, one text and one zero, and submits
+            typeAmounts(['0.01', 'abc', '0']);
+            await press('connectBankAccountStep.validateButtonText');
+
+            // Then the two wrong inputs show the amount message, and the server is not asked
+            expect(screen.getAllByText('common.error.invalidAmount')).toHaveLength(2);
+            expect(write).not.toHaveBeenCalled();
+        });
+
+        it('shows the error of the server above the submit button', async () => {
+            // Given the deposit form of a pending account and a server that rejects the amounts
+            answerWrites('failure');
+            await setSavedData({state: SBO_CONST.STATE.PENDING});
+            await renderStep(VALIDATION);
+
+            // When the user submits valid amounts
+            typeAmounts(['0.01', '0.02', '0.03']);
+            await press('connectBankAccountStep.validateButtonText');
+
+            // Then the error is shown on the form, which stays for the next try
+            expect(screen.getByText('walletPage.addBankAccountFailure')).toBeOnTheScreen();
+            expect(screen.getByLabelText('connectBankAccountStep.validationInputLabel 1')).toBeOnTheScreen();
         });
     });
 });
