@@ -177,11 +177,17 @@ those errors when the lab closes, so an error of the flow does not stay on the P
 
 ### One generic controller
 
-A flow is a `FlowDescriptor`: its form ID, its draft writes, its plan builder, its step names and the component of its
+A flow is a `FlowDescriptor`: its form ID, its draft writes, its plan builder and the component of its
 custom steps (`CustomStep`), which the controller renders as an element keyed by the page ID. The
 controller knows nothing else about a flow, so the USD flow, the NonUSD flow and the invited director page share it.
 Custom steps never navigate: they report through `onComplete` and `goToStep`. The controller still clears the error of
 the request of a custom page when the user leaves the page, and blocks the page offline like a form page with a request.
+
+The step counter of the header comes from the order of the steps in the plan (`core/plan/getStepCounter.ts`). A step
+only says how it counts: `counter: 'own'` (the default) takes the next number, `'shared'` shows the number of the step
+before it, like the USD identity check that belongs to the personal info step, and `'none'` hides the counter, like the
+USD documents step and the NonUSD finish page. A step that the plan leaves out takes no number, so the NonUSD docusign
+step adds the seventh position only for AUD.
 
 ### Dependency direction
 
@@ -297,7 +303,7 @@ pattern.
 | Lossy round trip of the owner name | `R/NonUSD/utils/getDraftValuesForBeneficialOwners.ts` | `flows/shared/owners/` (owners are a list in the draft, a name from the server is split once) |
 | The client writes the server-owned `currentStep` and `subStep` | `goToWithdrawalAccountSetupStep`, `setBankAccountSubStep` | Gone: the URL is the position |
 | Start page of a step computed from which values exist | `R/USD/utils/getInitialSubStepForPersonalInfo.ts` and its siblings | `isComplete` of each page in the plan builders of `flows/`, read by `core/plan/position/resume.ts` |
-| Three vocabularies for one position | `CONST.BANK_ACCOUNT.STEP`, `PAGE_NAMES`, `startStepIndex` | One: step ID and page ID, `core/plan/position/position.ts`, `flows/shared/routes/flowRoutes.ts` |
+| Three vocabularies for one position | `CONST.BANK_ACCOUNT.STEP`, `PAGE_NAMES`, `startStepIndex` | One: step ID and page ID, `core/plan/position/position.ts`, `flows/shared/routes/flowRoutes.ts`. The counter of the header is derived from the order of the steps (`core/plan/getStepCounter.ts`) |
 | A typed or stale URL that skips a page | not guarded | `core/plan/position/reachability.ts` |
 | `goBack` as a switch on `currentStep` | `R/ReimbursementAccountPage.tsx` | `core/plan/position/transitions.ts` (`getPreviousPosition`) |
 

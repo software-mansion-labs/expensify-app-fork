@@ -1,7 +1,7 @@
 /**
  * Constants of the simplified bank onboarding module.
- * They keep the three step vocabularies of the real flow: STEP is what the server stores, PAGE_NAMES is what the URL holds,
- * and the position in STEP_NAMES is what the header shows.
+ * They keep two step vocabularies of the real flow: STEP is what the server stores and PAGE_NAMES is what the URL holds.
+ * The step counter of the header comes from the order of the steps in the plan of each flow, not from a constant.
  */
 const USD_PAGE_NAMES = {
     COUNTRY: 'country',
@@ -76,18 +76,6 @@ const SBO_CONST = {
             ENABLE: 'EnableStep',
         },
         PAGE_NAMES: USD_PAGE_NAMES,
-        STEP_NAMES: ['1', '2', '3', '4', '5', '6', '7'],
-
-        /** The position of each step in STEP_NAMES. The identity check counts as part of the personal info step. */
-        STEP_INDEX: {
-            COUNTRY: 0,
-            BANK_ACCOUNT: 1,
-            PERSONAL_INFO: 2,
-            BUSINESS_INFO: 3,
-            BENEFICIAL_OWNERS: 4,
-            COMPLETE_VERIFICATION: 5,
-            VALIDATION: 6,
-        },
         MAX_NUMBER_OF_UBOS: 3,
         COUNTRY_SUB_PAGES: {
             CONFIRM_CURRENCY: 'confirm-currency',
@@ -142,19 +130,6 @@ const SBO_CONST = {
     },
     NON_USD: {
         PAGE_NAMES: NON_USD_PAGE_NAMES,
-        STEP_NAMES: ['1', '2', '3', '4', '5', '6'],
-        DOCUSIGN_REQUIRED_STEP_NAMES: ['1', '2', '3', '4', '5', '6', '7'],
-
-        /** The position of each step in STEP_NAMES, or in DOCUSIGN_REQUIRED_STEP_NAMES for the DocuSign step */
-        STEP_INDEX: {
-            COUNTRY: 0,
-            BANK_INFO: 1,
-            BUSINESS_INFO: 2,
-            BENEFICIAL_OWNERS: 3,
-            SIGNER_INFO: 4,
-            AGREEMENTS: 5,
-            DOCUSIGN: 6,
-        },
         ACCOUNT_HOLDER_KEY_PREFIX: 'accountHolder',
 
         /** The owner ID of the current user. Every other owner gets a generated one. */

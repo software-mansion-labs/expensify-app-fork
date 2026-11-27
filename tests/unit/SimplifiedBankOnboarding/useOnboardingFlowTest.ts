@@ -51,7 +51,6 @@ const flow: FlowDescriptor<undefined> = {
     wrapperID: 'TestFlow',
     formID: ONYXKEYS.FORMS.SIMPLIFIED_BANK_ONBOARDING_FORM,
     saveDraft: () => Promise.resolve(),
-    getStepNames: () => [],
     buildPlan: () => plan,
 };
 

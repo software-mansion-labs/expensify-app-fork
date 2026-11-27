@@ -6,6 +6,7 @@ import type {PageID, StepID} from '@pages/SimplifiedBankOnboarding/contract/ids'
 import type {BankFields, OnboardingAccount} from '@pages/SimplifiedBankOnboarding/contract/onyx';
 import REQUEST_NAMES from '@pages/SimplifiedBankOnboarding/contract/REQUEST_NAMES';
 import SBO_CONST from '@pages/SimplifiedBankOnboarding/contract/SBO_CONST';
+import getStepCounter from '@pages/SimplifiedBankOnboarding/core/plan/getStepCounter';
 import type {FlowPosition} from '@pages/SimplifiedBankOnboarding/core/plan/position/position';
 import {findStep} from '@pages/SimplifiedBankOnboarding/core/plan/position/position';
 import isPositionReachable from '@pages/SimplifiedBankOnboarding/core/plan/position/reachability';
@@ -468,6 +469,24 @@ describe('buildNonUSDPlan', () => {
 
             // Then AUD collects the signed form before the final request, EUR already sent it with the agreements
             expect(nextPosition).toEqual(expectedPosition);
+        });
+
+        test.each<[string, Market, string[]]>([
+            ['seven positions for AUD, the last one for the docusign step', 'aud', ['1', '2', '3', '4', '5', '6', '7']],
+            ['six positions for EUR, which has no docusign step', 'eur', ['1', '2', '3', '4', '5', '6']],
+        ])('gives the header counter %s', (_, market, expectedStepNames) => {
+            // Given a new setup of the market
+            const plan = buildPlan(market, createServer(market));
+
+            // When the counters of the agreements, the docusign and the finish steps are read
+            const agreementsCounter = getStepCounter(plan.steps, PAGE_NAMES.AGREEMENTS);
+            const docusignCounter = getStepCounter(plan.steps, PAGE_NAMES.DOCUSIGN);
+            const finishCounter = getStepCounter(plan.steps, PAGE_NAMES.FINISH);
+
+            // Then the docusign step adds the last position only where it is in the plan, and the finish page is no step of the setup
+            expect(agreementsCounter).toEqual({index: 5, stepNames: expectedStepNames});
+            expect(docusignCounter).toEqual(market === 'aud' ? {index: 6, stepNames: expectedStepNames} : undefined);
+            expect(finishCounter).toBeUndefined();
         });
     });
 

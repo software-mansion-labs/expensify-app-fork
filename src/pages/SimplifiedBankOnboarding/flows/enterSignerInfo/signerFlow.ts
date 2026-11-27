@@ -27,6 +27,7 @@ function buildSignerPlan({draft, bankAccountID}: SignerData, {translate, policyI
             {
                 id: ENTER_SIGNER_INFO_STEP_ID,
                 title: translate('signerInfoStep.signerInfo'),
+                counter: 'none',
                 isComplete: false,
 
                 pages: getSignerDetailsPages({
@@ -46,7 +47,6 @@ const signerFlow: FlowDescriptor<SignerData> = {
     wrapperID: 'SimplifiedBankOnboardingEnterSignerInfo',
     formID: ONYXKEYS.FORMS.SIMPLIFIED_BANK_ONBOARDING_SIGNER_FORM,
     saveDraft: saveSignerDraft,
-    getStepNames: () => [],
     buildPlan: buildSignerPlan,
 };
 

@@ -51,7 +51,7 @@ import arePicklistsLoaded from './serverLists/arePicklistsLoaded';
 import getBankFieldRuleError from './serverLists/getBankFieldRuleError';
 import {getAccountHolderDetailsFields, getBankAccountDetailsFields} from './serverLists/splitBankFields';
 
-const {CURRENT_USER_KEY, PAGE_NAMES, STEP_INDEX} = SBO_CONST.NON_USD;
+const {CURRENT_USER_KEY, PAGE_NAMES} = SBO_CONST.NON_USD;
 
 /** The last request went through: the server reviews the setup or already opened the account */
 function isOnboardingSent(achData: ACHData | undefined): boolean {
@@ -137,7 +137,6 @@ function buildNonUSDPlan(data: FlowData, {translate, policyID: urlPolicyID}: Pla
     steps.push({
         id: PAGE_NAMES.COUNTRY,
         title: translate('countryStep.confirmCurrency'),
-        counterIndex: STEP_INDEX.COUNTRY,
         isComplete: isCountryConfirmed,
 
         pages: [
@@ -177,7 +176,6 @@ function buildNonUSDPlan(data: FlowData, {translate, policyID: urlPolicyID}: Pla
     steps.push({
         id: PAGE_NAMES.BANK_INFO,
         title: translate('bankAccount.bankInfo'),
-        counterIndex: STEP_INDEX.BANK_INFO,
         isComplete: isBankAccountCreated,
 
         pages: bankFieldsRead.isLoaded
@@ -204,7 +202,6 @@ function buildNonUSDPlan(data: FlowData, {translate, policyID: urlPolicyID}: Pla
     steps.push({
         id: PAGE_NAMES.BUSINESS_INFO,
         title: translate('businessInfoStep.businessInfoTitle'),
-        counterIndex: STEP_INDEX.BUSINESS_INFO,
         isComplete: !!corpay?.companyName && !!corpay.businessType,
 
         pages: [
@@ -252,7 +249,6 @@ function buildNonUSDPlan(data: FlowData, {translate, policyID: urlPolicyID}: Pla
     steps.push({
         id: PAGE_NAMES.BENEFICIAL_OWNER_INFO,
         title: translate('ownershipInfoStep.ownerInfo'),
-        counterIndex: STEP_INDEX.BENEFICIAL_OWNERS,
         isComplete: corpay?.anyIndividualOwn25PercentOrMore !== undefined,
 
         pages: getOwnerPages({
@@ -404,7 +400,6 @@ function buildNonUSDPlan(data: FlowData, {translate, policyID: urlPolicyID}: Pla
     steps.push({
         id: PAGE_NAMES.SIGNER_INFO,
         title: translate('signerInfoStep.signerInfo'),
-        counterIndex: STEP_INDEX.SIGNER_INFO,
         isComplete: areSignersKnown,
 
         pages: signerPages,
@@ -439,7 +434,6 @@ function buildNonUSDPlan(data: FlowData, {translate, policyID: urlPolicyID}: Pla
     steps.push({
         id: PAGE_NAMES.AGREEMENTS,
         title: translate('agreementsStep.agreements'),
-        counterIndex: STEP_INDEX.AGREEMENTS,
         isComplete: areAgreementsComplete,
 
         pages: [
@@ -461,7 +455,6 @@ function buildNonUSDPlan(data: FlowData, {translate, policyID: urlPolicyID}: Pla
         steps.push({
             id: PAGE_NAMES.DOCUSIGN,
             title: translate('docusignStep.subheader'),
-            counterIndex: STEP_INDEX.DOCUSIGN,
             isComplete: isSent,
 
             pages: [
@@ -484,9 +477,11 @@ function buildNonUSDPlan(data: FlowData, {translate, policyID: urlPolicyID}: Pla
     }
 
     // The last page shows the state of the review. It never counts as complete, so the flow resumes there once all is sent.
+    // It is not a step of the setup, so it shows no counter.
     steps.push({
         id: PAGE_NAMES.FINISH,
         title: translate('bankAccount.addBankAccount'),
+        counter: 'none',
         isComplete: false,
 
         pages: [{kind: 'custom', id: SBO_CONST.NON_USD.FINISH_SUB_PAGES.DONE, component: 'finish', isComplete: false, shouldExitOnBack: true}],

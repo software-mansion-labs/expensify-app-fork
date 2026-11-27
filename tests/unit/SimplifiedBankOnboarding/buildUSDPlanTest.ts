@@ -5,6 +5,7 @@ import type {PageID, StepID} from '@pages/SimplifiedBankOnboarding/contract/ids'
 import type {OnboardingAccount, SetupType} from '@pages/SimplifiedBankOnboarding/contract/onyx';
 import REQUEST_NAMES from '@pages/SimplifiedBankOnboarding/contract/REQUEST_NAMES';
 import SBO_CONST from '@pages/SimplifiedBankOnboarding/contract/SBO_CONST';
+import getStepCounter from '@pages/SimplifiedBankOnboarding/core/plan/getStepCounter';
 import type {FlowPosition} from '@pages/SimplifiedBankOnboarding/core/plan/position/position';
 import {findStep} from '@pages/SimplifiedBankOnboarding/core/plan/position/position';
 import isPositionReachable from '@pages/SimplifiedBankOnboarding/core/plan/position/reachability';
@@ -483,12 +484,13 @@ describe('buildUSDPlan', () => {
             // Given an account before the identity check
             const plan = buildPlan(createServer().advanceTo('personalInfo').readAccount(), STARTED_DRAFT);
 
-            // When the counter positions of both steps are read
-            const personalInfoIndex = findStep(plan, PAGE_NAMES.REQUESTOR)?.counterIndex;
-            const identityIndex = findStep(plan, PAGE_NAMES.VERIFY_IDENTITY)?.counterIndex;
+            // When the counters of both steps are read
+            const personalInfoCounter = getStepCounter(plan.steps, PAGE_NAMES.REQUESTOR);
+            const identityCounter = getStepCounter(plan.steps, PAGE_NAMES.VERIFY_IDENTITY);
 
-            // Then they share one position, so the counter keeps the seven positions of STEP_NAMES
-            expect(identityIndex).toBe(personalInfoIndex);
+            // Then both show the third of seven positions, so the identity check adds no position of its own
+            expect(personalInfoCounter).toEqual({index: 2, stepNames: ['1', '2', '3', '4', '5', '6', '7']});
+            expect(identityCounter).toEqual(personalInfoCounter);
         });
     });
 
@@ -527,11 +529,13 @@ describe('buildUSDPlan', () => {
             // Given an account with required documents
             const plan = buildPlan(createServer({shouldRequireKYBDocuments: true}).advanceTo('agreements').readAccount(), STARTED_DRAFT);
 
-            // When the counter position of the documents step is read
-            const counterIndex = findStep(plan, PAGE_NAMES.KYB_DOCS)?.counterIndex;
+            // When the counters of the documents step and of the validation step after it are read
+            const documentsCounter = getStepCounter(plan.steps, PAGE_NAMES.KYB_DOCS);
+            const validationCounter = getStepCounter(plan.steps, PAGE_NAMES.VALIDATION);
 
-            // Then it has none, so the counter keeps the seven positions of STEP_NAMES
-            expect(counterIndex).toBeUndefined();
+            // Then the documents step shows none and the validation stays the last of seven positions, as without documents
+            expect(documentsCounter).toBeUndefined();
+            expect(validationCounter).toEqual({index: 6, stepNames: ['1', '2', '3', '4', '5', '6', '7']});
         });
     });
 

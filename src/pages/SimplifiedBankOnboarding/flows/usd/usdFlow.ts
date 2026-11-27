@@ -1,4 +1,3 @@
-import SBO_CONST from '@pages/SimplifiedBankOnboarding/contract/SBO_CONST';
 import {clearDraftInputs, saveDraft} from '@pages/SimplifiedBankOnboarding/flows/shared/draft';
 import type FlowData from '@pages/SimplifiedBankOnboarding/flows/shared/flowData/types';
 import type {FlowDescriptor} from '@pages/SimplifiedBankOnboarding/flows/shared/plan/types';
@@ -14,7 +13,6 @@ const usdFlow: FlowDescriptor<FlowData> = {
     formID: ONYXKEYS.FORMS.SIMPLIFIED_BANK_ONBOARDING_FORM,
     saveDraft,
     clearDraftInputs,
-    getStepNames: () => SBO_CONST.USD.STEP_NAMES,
     buildPlan: buildUSDPlan,
     CustomStep: USDCustomStep,
 };

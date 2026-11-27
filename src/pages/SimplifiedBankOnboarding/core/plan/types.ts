@@ -147,8 +147,12 @@ type StepConfig<TVocabulary extends FlowVocabulary = FlowVocabulary> = {
     id: TVocabulary['stepID'];
     title: string;
 
-    /** The position of the step in the step counter of the header. Undefined hides the counter. */
-    counterIndex?: number;
+    /**
+     * How the step counts in the step counter of the header, which numbers the steps in the order of the plan. 'own'
+     * takes the next number, 'shared' shows the number of the step before it, such as a check that belongs to that step,
+     * and 'none' hides the counter. Defaults to 'own'.
+     */
+    counter?: 'own' | 'shared' | 'none';
 
     /** Skipped pages are left out, so the transitions never special-case them */
     pages: Array<PageConfig<TVocabulary>>;

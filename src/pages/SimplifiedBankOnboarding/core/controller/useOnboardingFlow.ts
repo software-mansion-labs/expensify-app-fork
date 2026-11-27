@@ -47,9 +47,7 @@ type OnboardingFlowOptions<TData, TVocabulary extends FlowVocabulary> = {
     dataStatus: FlowDataStatus;
 };
 
-type OnboardingFlow<TData, TVocabulary extends FlowVocabulary> = {
-    data: TData;
-    context: PlanContext;
+type OnboardingFlow<TVocabulary extends FlowVocabulary> = {
     plan: FlowPlan<TVocabulary>;
     position: FlowPosition<TVocabulary> | undefined;
     step: StepConfig<TVocabulary> | undefined;
@@ -87,7 +85,7 @@ function useOnboardingFlow<TData, TVocabulary extends FlowVocabulary>({
     policyID,
     dataSource,
     dataStatus,
-}: OnboardingFlowOptions<TData, TVocabulary>): OnboardingFlow<TData, TVocabulary> {
+}: OnboardingFlowOptions<TData, TVocabulary>): OnboardingFlow<TVocabulary> {
     const {translate} = useLocalize();
     const isFocused = useIsFocused();
     const {data, readData} = dataSource;
@@ -317,8 +315,6 @@ function useOnboardingFlow<TData, TVocabulary extends FlowVocabulary>({
     }, [isUnreachable, isFocused, isDataReady, urlPositionKey]);
 
     return {
-        data,
-        context,
         plan,
         position,
         step,

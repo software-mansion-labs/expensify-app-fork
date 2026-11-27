@@ -12,6 +12,7 @@ import useThemeStyles from '@hooks/useThemeStyles';
 import NotFoundPage from '@pages/ErrorPage/NotFoundPage';
 import PageRenderer from '@pages/SimplifiedBankOnboarding/core/form/pages/PageRenderer';
 import type {FlowRoutes} from '@pages/SimplifiedBankOnboarding/core/navigation/flowNavigation';
+import getStepCounter from '@pages/SimplifiedBankOnboarding/core/plan/getStepCounter';
 import type {FlowPosition} from '@pages/SimplifiedBankOnboarding/core/plan/position/position';
 import type {FlowVocabulary} from '@pages/SimplifiedBankOnboarding/core/plan/types';
 
@@ -43,8 +44,14 @@ type OnboardingFlowPageProps<TData, TVocabulary extends FlowVocabulary> = {
 
 function OnboardingFlowPage<TData, TVocabulary extends FlowVocabulary>({flow, routes, urlPosition, policyID, dataSource, dataStatus}: OnboardingFlowPageProps<TData, TVocabulary>) {
     const styles = useThemeStyles();
-    const {data, context, plan, step, page, position, isSubmitting, canSubmitOffline, errorText, isWaitingForRead, hasReadFailed, submitPage, goBack, editPage, pressRow, goToStep} =
-        useOnboardingFlow({flow, routes, urlPosition, policyID, dataSource, dataStatus});
+    const {plan, step, page, position, isSubmitting, canSubmitOffline, errorText, isWaitingForRead, hasReadFailed, submitPage, goBack, editPage, pressRow, goToStep} = useOnboardingFlow({
+        flow,
+        routes,
+        urlPosition,
+        policyID,
+        dataSource,
+        dataStatus,
+    });
 
     // A page whose server data could not be read has nothing to show, like the real bank step without its bank inputs
     if (dataStatus === 'notFound' || hasReadFailed) {
@@ -62,6 +69,7 @@ function OnboardingFlowPage<TData, TVocabulary extends FlowVocabulary>({flow, ro
     }
 
     const {CustomStep} = flow;
+    const stepCounter = getStepCounter(plan.steps, step.id);
 
     const renderPage = () => {
         if (isWaitingForRead) {
@@ -109,8 +117,8 @@ function OnboardingFlowPage<TData, TVocabulary extends FlowVocabulary>({flow, ro
             wrapperID={flow.wrapperID}
             headerTitle={step.title}
             handleBackButtonPress={goBack}
-            startStepIndex={step.counterIndex}
-            stepNames={step.counterIndex === undefined ? undefined : flow.getStepNames(data, context)}
+            startStepIndex={stepCounter?.index}
+            stepNames={stepCounter?.stepNames}
             stepAccessibilityDescription={page.kind === 'custom' ? undefined : page.title}
             shouldAnnounceCompletedSteps
             shouldShowOfflineIndicatorInWideScreen={!canSubmitOffline}

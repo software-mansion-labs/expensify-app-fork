@@ -33,7 +33,7 @@ import getValidateBankAccountRequest from './requests/getValidateBankAccountRequ
 import {getIdentityCheckRead, getVerifyIdentityRequest} from './requests/identityCheck';
 import {getPlaidBankAccountsRequest, getPlaidLinkTokenRead} from './requests/plaid';
 
-const {PAGE_NAMES, STEP, STEP_INDEX} = SBO_CONST.USD;
+const {PAGE_NAMES, STEP} = SBO_CONST.USD;
 const SERVER_STEP_ORDER: USDStep[] = [STEP.COUNTRY, STEP.BANK_ACCOUNT, STEP.REQUESTOR, STEP.COMPANY, STEP.BENEFICIAL_OWNERS, STEP.ACH_CONTRACT, STEP.KYB_DOCS, STEP.VALIDATION, STEP.ENABLE];
 const ROUTING_NUMBER_PATTERN = /^\d{9}$/;
 
@@ -72,7 +72,6 @@ function buildUSDPlan({draft, account, plaidLinkToken, onfidoToken}: FlowData, {
     steps.push({
         id: PAGE_NAMES.COUNTRY,
         title: translate('countryStep.confirmCurrency'),
-        counterIndex: STEP_INDEX.COUNTRY,
         isComplete: isCountryConfirmed,
 
         pages: [
@@ -103,7 +102,6 @@ function buildUSDPlan({draft, account, plaidLinkToken, onfidoToken}: FlowData, {
     steps.push({
         id: PAGE_NAMES.BANK_ACCOUNT,
         title: translate('bankAccount.bankInfo'),
-        counterIndex: STEP_INDEX.BANK_ACCOUNT,
         isComplete: hasPassedServerStep(achData, STEP.BANK_ACCOUNT),
 
         pages: [
@@ -154,7 +152,6 @@ function buildUSDPlan({draft, account, plaidLinkToken, onfidoToken}: FlowData, {
     steps.push({
         id: PAGE_NAMES.REQUESTOR,
         title: translate('personalInfoStep.personalInfo'),
-        counterIndex: STEP_INDEX.PERSONAL_INFO,
         isComplete: hasPassedServerStep(achData, STEP.REQUESTOR) || hasServerPersonalInfo,
 
         pages: [
@@ -192,12 +189,13 @@ function buildUSDPlan({draft, account, plaidLinkToken, onfidoToken}: FlowData, {
         request: getPersonalInfoRequest(bankAccount, answers),
     });
 
-    // The identity check stays in the plan only while the server has not finished it
+    // The identity check stays in the plan only while the server has not finished it. The counter shows it as part of the
+    // personal info step.
     if (!achData?.isOnfidoSetupComplete) {
         steps.push({
             id: PAGE_NAMES.VERIFY_IDENTITY,
             title: translate('onfidoStep.verifyIdentity'),
-            counterIndex: STEP_INDEX.PERSONAL_INFO,
+            counter: 'shared',
             isComplete: false,
 
             pages: [
@@ -214,7 +212,6 @@ function buildUSDPlan({draft, account, plaidLinkToken, onfidoToken}: FlowData, {
     steps.push({
         id: PAGE_NAMES.COMPANY,
         title: translate('businessInfoStep.businessInfo'),
-        counterIndex: STEP_INDEX.BUSINESS_INFO,
         isComplete: hasPassedServerStep(achData, STEP.COMPANY),
 
         pages: [
@@ -274,7 +271,6 @@ function buildUSDPlan({draft, account, plaidLinkToken, onfidoToken}: FlowData, {
     steps.push({
         id: PAGE_NAMES.BENEFICIAL_OWNERS,
         title: translate('beneficialOwnerInfoStep.companyOwner'),
-        counterIndex: STEP_INDEX.BENEFICIAL_OWNERS,
         isComplete: hasPassedServerStep(achData, STEP.BENEFICIAL_OWNERS),
 
         pages: getOwnerPages({
@@ -329,7 +325,6 @@ function buildUSDPlan({draft, account, plaidLinkToken, onfidoToken}: FlowData, {
     steps.push({
         id: PAGE_NAMES.ACH_CONTRACT,
         title: translate('completeVerificationStep.completeVerification'),
-        counterIndex: STEP_INDEX.COMPLETE_VERIFICATION,
         isComplete: hasPassedServerStep(achData, STEP.ACH_CONTRACT),
 
         pages: [
@@ -358,7 +353,8 @@ function buildUSDPlan({draft, account, plaidLinkToken, onfidoToken}: FlowData, {
         request: getACHContractRequest(bankAccount, answers),
     });
 
-    // The server asks for documents only when its automatic checks fail, so the step exists only while it lists some
+    // The server asks for documents only when its automatic checks fail, so the step exists only while it lists some.
+    // Like in the real flow, it shows no counter.
     const requiredDocuments = achData?.requiredKYBDocuments ?? [];
     const needsTaxIDDocument = requiredDocuments.includes(SBO_CONST.USD.KYB_DOCUMENT_TYPES.COMPANY_TAX_ID);
     const needsAddressDocument = requiredDocuments.includes(SBO_CONST.USD.KYB_DOCUMENT_TYPES.COMPANY_ADDRESS);
@@ -372,6 +368,7 @@ function buildUSDPlan({draft, account, plaidLinkToken, onfidoToken}: FlowData, {
         steps.push({
             id: PAGE_NAMES.KYB_DOCS,
             title: translate('documentsStep.subheader'),
+            counter: 'none',
             isComplete: hasPassedServerStep(achData, STEP.KYB_DOCS),
 
             pages: [
@@ -414,7 +411,6 @@ function buildUSDPlan({draft, account, plaidLinkToken, onfidoToken}: FlowData, {
     steps.push({
         id: PAGE_NAMES.VALIDATION,
         title: isPendingDeposits ? translate('connectBankAccountStep.validateYourBankAccount') : translate('bankAccount.addBankAccount'),
-        counterIndex: STEP_INDEX.VALIDATION,
         isComplete: hasPassedServerStep(achData, STEP.VALIDATION),
 
         pages: [

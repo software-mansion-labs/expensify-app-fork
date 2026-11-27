@@ -39,7 +39,7 @@ type CustomStepProps<TVocabulary extends FlowVocabulary = FlowVocabulary> = {
     goToStep: (stepID: TVocabulary['stepID']) => void;
 };
 
-/** What makes a flow: its form, its plan, its header and its custom steps. The controller knows nothing else about it. */
+/** What makes a flow: its form, its plan and its custom steps. The controller knows nothing else about it. */
 type FlowDescriptor<TData, TVocabulary extends FlowVocabulary = FlowVocabulary> = {
     /** The ID of the step wrapper, which tells the screens apart in tests and logs */
     wrapperID: string;
@@ -53,8 +53,6 @@ type FlowDescriptor<TData, TVocabulary extends FlowVocabulary = FlowVocabulary> 
     /** Removes inputs from that draft after the server saved them. A flow that leaves after its only request needs none. */
     clearDraftInputs?: (inputIDs: InputID[]) => Promise<void>;
 
-    /** The names of the step counter of the header */
-    getStepNames: (data: TData, context: PlanContext) => readonly string[];
     buildPlan: (data: TData, context: PlanContext) => FlowPlan<TVocabulary>;
 
     /** Renders the custom pages of the plan. A flow without custom pages has none. */
