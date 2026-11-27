@@ -312,6 +312,39 @@ describe('buildUSDPlan', () => {
         });
     });
 
+    describe('bank step', () => {
+        const plaidAccountID = getFirst(PLAID_BANK_ACCOUNTS).plaidAccountID;
+
+        test.each<[SetupType, OnboardingDraft]>([
+            [MANUAL, {...STARTED_DRAFT, routingNumber: '011401533', accountNumber: '1234567890'}],
+            [PLAID, {country: SBO_CONST.COUNTRY.US, setupType: PLAID, plaidAccountID}],
+        ])('sends the %s bank account while the server has none', (setupType, draft) => {
+            // Given a new setup where the user typed the numbers or picked a Plaid account
+            const plan = buildPlan(createServer({setupType}).readAccount(), draft);
+
+            // When the bank step is read from the plan
+            const bankStep = findStep(plan, PAGE_NAMES.BANK_ACCOUNT);
+
+            // Then Next on the bank page creates the bank account on the server
+            expect(bankStep?.request?.send).toBeDefined();
+        });
+
+        test.each<[SetupType, OnboardingDraft]>([
+            [MANUAL, STARTED_DRAFT],
+            [PLAID, {country: SBO_CONST.COUNTRY.US, setupType: PLAID, plaidAccountID}],
+        ])('sends nothing again once the server created the %s bank account', (setupType, draft) => {
+            // Given the bank account that the server created, which a user who goes back to the bank page finds there
+            const plan = buildPlan(createServer({setupType}).advanceTo('company').readAccount(), draft);
+
+            // When the bank step is read from the plan
+            const bankStep = findStep(plan, PAGE_NAMES.BANK_ACCOUNT);
+
+            // Then Next only moves on, because a second send would move the server back to the personal info step, and
+            // the manual one would also store the masked number as the real one
+            expect(bankStep?.request).toBeUndefined();
+        });
+    });
+
     describe('identity check', () => {
         it('keeps the identity check reachable after the personal info is confirmed, while the server still holds the requestor step', () => {
             // Given personal info that the server saved, while Onfido has not passed yet

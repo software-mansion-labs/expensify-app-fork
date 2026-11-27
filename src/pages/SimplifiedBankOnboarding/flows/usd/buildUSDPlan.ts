@@ -106,7 +106,8 @@ function buildUSDPlan(draft: OnboardingDraft | undefined, account: OnyxEntry<Onb
 
     // The setup type that the entry page saved decides between the Plaid page and the manual form
     const isPlaidSetup = answers.setupType === SBO_CONST.SETUP_TYPE.PLAID;
-    const areBankNumbersLocked = !!achData?.bankAccountID;
+    const hasServerBankAccount = !!achData?.bankAccountID;
+    const connectBankAccountRequest = isPlaidSetup ? getPlaidBankAccountRequest(bankAccount, answers.plaidAccountID) : getManualBankAccountRequest(bankAccount, answers);
 
     steps.push({
         id: PAGE_NAMES.BANK_ACCOUNT,
@@ -121,7 +122,7 @@ function buildUSDPlan(draft: OnboardingDraft | undefined, account: OnyxEntry<Onb
                       kind: 'custom',
                       id: SBO_CONST.USD.BANK_INFO_SUB_PAGES.PLAID,
                       component: 'plaid',
-                      isComplete: !!achData?.bankAccountID,
+                      isComplete: hasServerBankAccount,
                       canComplete: !!answers.plaidAccountID,
                   }
                 : buildFormPage({
@@ -133,14 +134,14 @@ function buildUSDPlan(draft: OnboardingDraft | undefined, account: OnyxEntry<Onb
                           createTextField(INPUT_IDS.ROUTING_NUMBER, {
                               label: translate('bankAccount.routingNumber'),
                               inputMode: CONST.INPUT_MODE.NUMERIC,
-                              isLocked: areBankNumbersLocked,
+                              isLocked: hasServerBankAccount,
                               isSensitive: true,
                               validate: (value) => (ROUTING_NUMBER_PATTERN.test(value.trim()) ? undefined : translate('bankAccount.error.routingNumber')),
                           }),
                           createTextField(INPUT_IDS.ACCOUNT_NUMBER, {
                               label: translate('bankAccount.accountNumber'),
                               inputMode: CONST.INPUT_MODE.NUMERIC,
-                              isLocked: areBankNumbersLocked,
+                              isLocked: hasServerBankAccount,
                               isSensitive: true,
                               validate: (value) => (isValidAccountNumber(value) ? undefined : translate('bankAccount.error.accountNumber')),
                           }),
@@ -148,7 +149,9 @@ function buildUSDPlan(draft: OnboardingDraft | undefined, account: OnyxEntry<Onb
                   }),
         ],
 
-        request: isPlaidSetup ? getPlaidBankAccountRequest(bankAccount, answers.plaidAccountID) : getManualBankAccountRequest(bankAccount, answers),
+        // Once the server created the account, Next only moves on. A second send would move the server back to the personal
+        // info step, and the manual one would also store the masked number from the locked fields as the real number.
+        request: hasServerBankAccount ? undefined : connectBankAccountRequest,
     });
 
     // The user's legal name, date of birth and the last four digits of the SSN, sent together after the confirmation
