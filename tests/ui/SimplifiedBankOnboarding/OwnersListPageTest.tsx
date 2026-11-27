@@ -195,6 +195,7 @@ describe('OwnersListPage', () => {
                 page: PAGES.LEGAL_NAME,
             }),
         );
+        expect(jest.mocked(saveDraft).mock.invocationCallOrder[0]).toBeLessThan(jest.mocked(Navigation.navigate).mock.invocationCallOrder[0]);
     });
 
     it('opens nothing from a read only row', async () => {
