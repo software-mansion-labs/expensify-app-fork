@@ -2,9 +2,9 @@
  * Static data that the mock backend serves: the bank accounts behind the fake Plaid login, the bank inputs that each
  * country needs and the picklists of the global flow.
  */
-import SBO_CONST from '@pages/SimplifiedBankOnboarding/SBO_CONST';
-import INPUT_IDS from '@pages/SimplifiedBankOnboarding/types/form';
-import type {BankFormField, PlaidBankAccount} from '@pages/SimplifiedBankOnboarding/types/onyx';
+import INPUT_IDS from '@pages/SimplifiedBankOnboarding/contract/form';
+import type {BankFormField, PlaidBankAccount} from '@pages/SimplifiedBankOnboarding/contract/onyx';
+import SBO_CONST from '@pages/SimplifiedBankOnboarding/contract/SBO_CONST';
 
 const PLAID_BANK_ACCOUNTS: PlaidBankAccount[] = [
     {plaidAccountID: 'plaid-checking', bankName: 'First Platypus Bank', accountNumber: '1111222233330000', routingNumber: '011401533', mask: '0000'},

@@ -7,7 +7,7 @@
 import Log from '@libs/Log';
 import {getIsOffline, subscribe} from '@libs/NetworkState';
 
-import SBO_CONST from '@pages/SimplifiedBankOnboarding/SBO_CONST';
+import SBO_CONST from '@pages/SimplifiedBankOnboarding/contract/SBO_CONST';
 
 import type {OnyxData} from '@src/types/onyx/Request';
 

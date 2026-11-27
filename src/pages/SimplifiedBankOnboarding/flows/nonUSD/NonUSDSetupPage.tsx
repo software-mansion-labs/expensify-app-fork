@@ -1,0 +1,30 @@
+/**
+ * The route screen of the NonUSD flow
+ */
+import type BankOnboardingLabParamList from '@libs/Navigation/paramLists/BankOnboardingLabParamList';
+import type {PlatformStackScreenProps} from '@libs/Navigation/PlatformStackNavigation/types';
+
+import SetupFlowPage from '@pages/SimplifiedBankOnboarding/flows/shared/setupScreen/SetupFlowPage';
+import useSetupFlow from '@pages/SimplifiedBankOnboarding/flows/shared/setupScreen/useSetupFlow';
+
+import type SCREENS from '@src/SCREENS';
+
+import React from 'react';
+
+import nonUSDFlow from './nonUSDFlow';
+
+type NonUSDSetupPageProps = PlatformStackScreenProps<BankOnboardingLabParamList, typeof SCREENS.SETTINGS.BANK_ONBOARDING_LAB.NON_USD_SETUP>;
+
+function NonUSDSetupPage({route}: NonUSDSetupPageProps) {
+    const setup = useSetupFlow('nonUSD', route.params);
+
+    return (
+        <SetupFlowPage
+            flow={nonUSDFlow}
+            setup={setup}
+            params={route.params}
+        />
+    );
+}
+
+export default NonUSDSetupPage;
