@@ -20,12 +20,12 @@ type ConfirmationPageConfig = Core.ConfirmationPageConfig<OnboardingVocabulary>;
 type ListPageConfig = Core.ListPageConfig<OnboardingVocabulary>;
 type PageTransition = Core.PageTransition<OnboardingVocabulary>;
 type FlowPosition = Core.FlowPosition<OnboardingVocabulary>;
-type CustomStepProps = Core.CustomStepProps<OnboardingVocabulary>;
+type CustomPageProps = Core.CustomPageProps<OnboardingVocabulary>;
 type FlowDescriptor<TData> = Core.FlowDescriptor<TData, OnboardingVocabulary>;
 
 export type {
     ConfirmationPageConfig,
-    CustomStepProps,
+    CustomPageProps,
     FlowDescriptor,
     FlowPlan,
     FlowPosition,

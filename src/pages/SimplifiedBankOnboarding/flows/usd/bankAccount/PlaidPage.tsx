@@ -19,7 +19,7 @@ import useThemeStyles from '@hooks/useThemeStyles';
 import type {PlannedRequest} from '@pages/SimplifiedBankOnboarding/core';
 import {useRequest} from '@pages/SimplifiedBankOnboarding/core';
 import {saveDraft} from '@pages/SimplifiedBankOnboarding/flows/shared/draft';
-import type {CustomStepProps} from '@pages/SimplifiedBankOnboarding/flows/shared/plan/types';
+import type {CustomPageProps} from '@pages/SimplifiedBankOnboarding/flows/shared/plan/types';
 
 import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';
@@ -27,7 +27,7 @@ import ONYXKEYS from '@src/ONYXKEYS';
 import React from 'react';
 import {View} from 'react-native';
 
-type PlaidStepProps = Pick<CustomStepProps, 'isSubmitting' | 'errorText' | 'onComplete'> & {
+type PlaidPageProps = Pick<CustomPageProps, 'isSubmitting' | 'errorText' | 'onComplete'> & {
     /** Exchanges the public token of the bank login for the list of accounts */
     request: PlannedRequest<string>;
 
@@ -37,7 +37,7 @@ type PlaidStepProps = Pick<CustomStepProps, 'isSubmitting' | 'errorText' | 'onCo
 
 const MOCK_PUBLIC_TOKEN = 'mock-public-token';
 
-function PlaidStep({request, canComplete, isSubmitting, errorText, onComplete}: PlaidStepProps) {
+function PlaidPage({request, canComplete, isSubmitting, errorText, onComplete}: PlaidPageProps) {
     const {translate} = useLocalize();
     const styles = useThemeStyles();
     const [draft] = useOnyx(ONYXKEYS.FORMS.SIMPLIFIED_BANK_ONBOARDING_FORM_DRAFT);
@@ -107,4 +107,4 @@ function PlaidStep({request, canComplete, isSubmitting, errorText, onComplete}: 
     );
 }
 
-export default PlaidStep;
+export default PlaidPage;

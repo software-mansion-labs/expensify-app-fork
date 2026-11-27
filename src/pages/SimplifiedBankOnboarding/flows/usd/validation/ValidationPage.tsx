@@ -10,7 +10,7 @@ import type {ACHData, OnboardingAccount} from '@pages/SimplifiedBankOnboarding/c
 import SBO_CONST from '@pages/SimplifiedBankOnboarding/contract/SBO_CONST';
 import {isPendingValidation, isVerifying} from '@pages/SimplifiedBankOnboarding/contract/setupStatus';
 import type {PlannedRequest} from '@pages/SimplifiedBankOnboarding/core';
-import type {CustomStepProps} from '@pages/SimplifiedBankOnboarding/flows/shared/plan/types';
+import type {CustomPageProps} from '@pages/SimplifiedBankOnboarding/flows/shared/plan/types';
 
 import ONYXKEYS from '@src/ONYXKEYS';
 
@@ -23,7 +23,7 @@ import DepositsForm from './DepositsForm';
 import FinishReviewCard from './FinishReviewCard';
 import MaxAttemptsReachedMessage from './MaxAttemptsReachedMessage';
 
-type ValidationStepProps = Pick<CustomStepProps, 'policyID' | 'onComplete' | 'goToStep'> & {
+type ValidationPageProps = Pick<CustomPageProps, 'policyID' | 'onComplete' | 'goToStep'> & {
     /** Sends the amounts of the test deposits */
     request: PlannedRequest<string[]>;
 };
@@ -39,7 +39,7 @@ const validationStateSelector = (account: OnyxEntry<OnboardingAccount>): Validat
     hasReachedMaxAttempts: !!account?.maxAttemptsReached,
 });
 
-function ValidationStep({request, policyID, onComplete, goToStep}: ValidationStepProps) {
+function ValidationPage({request, policyID, onComplete, goToStep}: ValidationPageProps) {
     const [validationState] = useOnyx(ONYXKEYS.SIMPLIFIED_BANK_ONBOARDING_ACCOUNT, {selector: validationStateSelector});
     const achData = validationState?.achData;
 
@@ -63,4 +63,4 @@ function ValidationStep({request, policyID, onComplete, goToStep}: ValidationSte
     return null;
 }
 
-export default ValidationStep;
+export default ValidationPage;

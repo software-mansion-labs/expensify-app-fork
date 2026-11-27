@@ -8,14 +8,14 @@ import Text from '@components/Text';
 import useLocalize from '@hooks/useLocalize';
 import useThemeStyles from '@hooks/useThemeStyles';
 
-import type {CustomStepProps} from '@pages/SimplifiedBankOnboarding/flows/shared/plan/types';
+import type {CustomPageProps} from '@pages/SimplifiedBankOnboarding/flows/shared/plan/types';
 
 import CONST from '@src/CONST';
 
 import React from 'react';
 import {View} from 'react-native';
 
-type ConnectedBankAccountProps = Pick<CustomStepProps, 'onComplete'>;
+type ConnectedBankAccountProps = Pick<CustomPageProps, 'onComplete'>;
 
 function ConnectedBankAccount({onComplete}: ConnectedBankAccountProps) {
     const {translate} = useLocalize();

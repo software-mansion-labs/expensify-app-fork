@@ -10,16 +10,16 @@ import Text from '@components/Text';
 
 import useThemeStyles from '@hooks/useThemeStyles';
 
-import type {CustomStepProps} from '@pages/SimplifiedBankOnboarding/flows/shared/plan/types';
+import type {CustomPageProps} from '@pages/SimplifiedBankOnboarding/flows/shared/plan/types';
 
 import CONST from '@src/CONST';
 
 import React from 'react';
 import {View} from 'react-native';
 
-type OnfidoStepProps = Pick<CustomStepProps, 'isSubmitting' | 'errorText' | 'onComplete'>;
+type OnfidoPageProps = Pick<CustomPageProps, 'isSubmitting' | 'errorText' | 'onComplete'>;
 
-function OnfidoStep({isSubmitting, errorText, onComplete}: OnfidoStepProps) {
+function OnfidoPage({isSubmitting, errorText, onComplete}: OnfidoPageProps) {
     const styles = useThemeStyles();
 
     return (
@@ -40,4 +40,4 @@ function OnfidoStep({isSubmitting, errorText, onComplete}: OnfidoStepProps) {
     );
 }
 
-export default OnfidoStep;
+export default OnfidoPage;

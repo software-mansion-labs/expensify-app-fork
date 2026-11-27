@@ -1,8 +1,14 @@
 /**
  * The whole USD flow as a plan, built from the draft and the server data. It is the one place that decides which steps
  * and pages the USD flow has, so the controller never skips a step on its own. A form page only lists its fields from
- * `core/form/fields`, a step names the request that saves it, a widget page names the read of its token, and a custom
- * page names the request that it sends itself.
+ * `core/form/fields`, a step names the request that saves it (`StepConfig.request` says when it is sent), a page names
+ * the read of the server data it needs, and a custom page names the request that it sends itself. Every input is
+ * required unless its field is marked `isOptional`. The owner step takes its questions, its confirmation and its list
+ * from `flows/shared/owners`.
+ *
+ * A new input also needs its ID and type in `contract/form.ts`, its value in the answers (`USDAnswers.ts`,
+ * `getUSDAnswers.ts`), a parameter of the request of its step and, where the step checks the server data to count as
+ * saved, a place in that check. The field brings its validation, its confirmation row and the clearing of the draft.
  */
 import {getLastFourDigits} from '@libs/BankAccountUtils';
 import {isValidCompanyName, isValidSSNLastFour, isValidTaxID} from '@libs/ValidationUtils';
@@ -39,16 +45,16 @@ import type USDAnswers from './USDAnswers';
 import getACHContractRequest from './agreements/getACHContractRequest';
 import {getManualBankAccountRequest, getPlaidBankAccountRequest} from './bankAccount/connectBankAccount';
 import {getPlaidBankAccountsRequest, getPlaidLinkTokenRead} from './bankAccount/plaid';
-import PlaidStep from './bankAccount/PlaidStep';
+import PlaidPage from './bankAccount/PlaidPage';
 import getOwnersRequest from './beneficialOwners/getOwnersRequest';
 import getCompanyRequest from './businessInfo/getCompanyRequest';
 import getKYBDocumentsRequest from './documents/getKYBDocumentsRequest';
 import getUSDAnswers from './getUSDAnswers';
 import {getIdentityCheckRead, getVerifyIdentityRequest} from './identityCheck/identityCheck';
-import OnfidoStep from './identityCheck/OnfidoStep';
+import OnfidoPage from './identityCheck/OnfidoPage';
 import getPersonalInfoRequest from './personalInfo/getPersonalInfoRequest';
 import getValidateBankAccountRequest from './validation/getValidateBankAccountRequest';
-import ValidationStep from './validation/ValidationStep';
+import ValidationPage from './validation/ValidationPage';
 
 const {PAGE_NAMES, STEP} = SBO_CONST.USD;
 const SERVER_STEP_ORDER: USDStep[] = [STEP.COUNTRY, STEP.BANK_ACCOUNT, STEP.REQUESTOR, STEP.COMPANY, STEP.BENEFICIAL_OWNERS, STEP.ACH_CONTRACT, STEP.KYB_DOCS, STEP.VALIDATION, STEP.ENABLE];
@@ -158,7 +164,7 @@ function buildBankAccountStep({achData, bankAccount, answers, translate, buildFo
               fields: [createReadOnlyField(`${translate('bankAccount.accountEnding')} ${getLastFourDigits(achData.accountNumber ?? '')}`, achData.bankName ?? '')],
           })
         : createCustomPage(
-              PlaidStep,
+              PlaidPage,
               {id: SBO_CONST.USD.BANK_INFO_SUB_PAGES.PLAID, isComplete: false, read: getPlaidLinkTokenRead(!!plaidLinkToken)},
               {request: getPlaidBankAccountsRequest(), canComplete: !!answers.plaidAccountID},
           );
@@ -258,7 +264,7 @@ function buildIdentityCheckStep({bankAccount, translate, onfidoToken}: USDStepIn
         counter: 'shared',
         isComplete: false,
 
-        pages: [createCustomPage(OnfidoStep, {id: SBO_CONST.USD.VERIFY_IDENTITY_SUB_PAGES.IDENTITY_CHECK, isComplete: false, read: getIdentityCheckRead(bankAccount, !!onfidoToken)}, {})],
+        pages: [createCustomPage(OnfidoPage, {id: SBO_CONST.USD.VERIFY_IDENTITY_SUB_PAGES.IDENTITY_CHECK, isComplete: false, read: getIdentityCheckRead(bankAccount, !!onfidoToken)}, {})],
         request: getVerifyIdentityRequest(bankAccount, MOCK_ONFIDO_DATA),
     };
 }
@@ -324,7 +330,10 @@ function buildBusinessInfoStep({achData, bankAccount, answers, translate, buildF
     };
 }
 
-/** The user is the requestor and stays out of the list, so the owner pages exist only once someone else owns 25% or more */
+/**
+ * The user is the requestor and stays out of the list, so the owner pages exist only once someone else owns 25% or more.
+ * The questions, the confirmation and the list come from `getOwnerPages`, which says in which order the user visits them.
+ */
 function buildBeneficialOwnersStep({achData, bankAccount, answers, translate}: USDStepInput): StepConfig {
     const OWNERS = SBO_CONST.USD.BENEFICIAL_OWNERS_SUB_PAGES;
     const isUserOwner = answers.ownsMoreThan25Percent ?? false;
@@ -483,7 +492,7 @@ function buildValidationStep({achData, bankAccount, translate}: USDStepInput): S
 
         pages: [
             createCustomPage(
-                ValidationStep,
+                ValidationPage,
                 {id: SBO_CONST.USD.VALIDATION_SUB_PAGES.VALIDATE, isComplete: false, shouldExitOnBack: isPendingDeposits},
                 {request: getValidateBankAccountRequest(bankAccount)},
             ),

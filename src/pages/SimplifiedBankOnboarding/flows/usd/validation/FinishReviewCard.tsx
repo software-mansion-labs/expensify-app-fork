@@ -12,13 +12,13 @@ import useThemeStyles from '@hooks/useThemeStyles';
 
 import SBO_CONST from '@pages/SimplifiedBankOnboarding/contract/SBO_CONST';
 import MockReviewButtons from '@pages/SimplifiedBankOnboarding/flows/shared/MockReviewButtons';
-import type {CustomStepProps} from '@pages/SimplifiedBankOnboarding/flows/shared/plan/types';
+import type {CustomPageProps} from '@pages/SimplifiedBankOnboarding/flows/shared/plan/types';
 
 import CONST from '@src/CONST';
 
 import React from 'react';
 
-type FinishReviewCardProps = Pick<CustomStepProps, 'policyID' | 'goToStep'>;
+type FinishReviewCardProps = Pick<CustomPageProps, 'policyID' | 'goToStep'>;
 
 function FinishReviewCard({policyID, goToStep}: FinishReviewCardProps) {
     const {translate} = useLocalize();

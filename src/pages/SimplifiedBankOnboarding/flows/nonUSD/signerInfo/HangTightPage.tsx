@@ -15,7 +15,7 @@ import useThemeStyles from '@hooks/useThemeStyles';
 import type {OnboardingAccount} from '@pages/SimplifiedBankOnboarding/contract/onyx';
 import type {PlannedRequest} from '@pages/SimplifiedBankOnboarding/core';
 import {useRequest} from '@pages/SimplifiedBankOnboarding/core';
-import type {CustomStepProps} from '@pages/SimplifiedBankOnboarding/flows/shared/plan/types';
+import type {CustomPageProps} from '@pages/SimplifiedBankOnboarding/flows/shared/plan/types';
 
 import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';
@@ -25,7 +25,7 @@ import type {OnyxEntry} from 'react-native-onyx';
 import React from 'react';
 import {View} from 'react-native';
 
-type HangTightStepProps = Pick<CustomStepProps, 'policyID' | 'onComplete'> & {
+type HangTightPageProps = Pick<CustomPageProps, 'policyID' | 'onComplete'> & {
     /** Reminds the invited directors to fill in their details */
     request: PlannedRequest;
 
@@ -38,7 +38,7 @@ type HangTightStepProps = Pick<CustomStepProps, 'policyID' | 'onComplete'> & {
 
 const bankAccountIDSelector = (account: OnyxEntry<OnboardingAccount>) => account?.achData?.bankAccountID;
 
-function HangTightStep({request, policyID, canComplete, openSignerForm, onComplete}: HangTightStepProps) {
+function HangTightPage({request, policyID, canComplete, openSignerForm, onComplete}: HangTightPageProps) {
     const {translate} = useLocalize();
     const styles = useThemeStyles();
     const [bankAccountID] = useOnyx(ONYXKEYS.SIMPLIFIED_BANK_ONBOARDING_ACCOUNT, {selector: bankAccountIDSelector});
@@ -81,4 +81,4 @@ function HangTightStep({request, policyID, canComplete, openSignerForm, onComple
     );
 }
 
-export default HangTightStep;
+export default HangTightPage;

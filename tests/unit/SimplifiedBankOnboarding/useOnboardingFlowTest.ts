@@ -195,12 +195,13 @@ describe('useOnboardingFlow', () => {
             expect(sendPageRequest).not.toHaveBeenCalled();
         });
 
-        it('cannot be submitted offline', async () => {
+        it('tells the wrapper that the page needs a connection', async () => {
             // Given the custom page of the test deposits
             // When the controller decides whether the page works offline
             const {result} = await renderDepositsPage();
 
-            // Then it does not, because the controller knows the key of the request that the screen sends
+            // Then it does not, because the controller knows the key of the request that the screen sends, so the wrapper
+            // shows the offline indicator. Blocking the page is left to the screen.
             expect(result.current.canSubmitOffline).toBe(false);
         });
 

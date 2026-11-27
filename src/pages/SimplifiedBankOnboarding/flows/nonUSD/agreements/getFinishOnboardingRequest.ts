@@ -8,8 +8,8 @@ import type {BankAccountParams, WriteCommandParams} from '@pages/SimplifiedBankO
 type FinishDetails = Omit<WriteCommandParams[typeof WRITE_COMMANDS.FINISH_GLOBAL_BANK_ACCOUNT_ONBOARDING], keyof BankAccountParams>;
 
 /**
- * Sends the agreements and, for AUD, the names of the uploaded files. The mock server never receives the files. The
- * details may be the answers of the whole flow, so only their own values are sent.
+ * Sends the agreements and, for a currency with a docusign step, the names of the uploaded files. The mock server never
+ * receives the files. The details may be the answers of the whole flow, so only their own values are sent.
  */
 function getFinishOnboardingRequest(
     bankAccount: BankAccountParams,

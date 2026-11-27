@@ -9,7 +9,7 @@ import getBankAccountParams from '@pages/SimplifiedBankOnboarding/flows/shared/g
 import type {FlowDescriptor, FlowPlan} from '@pages/SimplifiedBankOnboarding/flows/shared/plan/types';
 import {ENTER_SIGNER_INFO_STEP_ID} from '@pages/SimplifiedBankOnboarding/flows/shared/routes/flowRoutes';
 import getSignerDetailsPages from '@pages/SimplifiedBankOnboarding/flows/shared/signerDetails/getSignerDetailsPages';
-import {getSignerInfoRequest} from '@pages/SimplifiedBankOnboarding/flows/shared/signerDetails/signerInfo';
+import getSignerInfoRequest from '@pages/SimplifiedBankOnboarding/flows/shared/signerDetails/getSignerInfoRequest';
 
 import ONYXKEYS from '@src/ONYXKEYS';
 

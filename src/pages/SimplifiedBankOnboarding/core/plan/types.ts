@@ -54,7 +54,11 @@ type PageBase<TVocabulary extends FlowVocabulary> = {
     /** Defaults to the preceding page, or to the last page of the previous step */
     previousPageID?: TVocabulary['pageID'];
 
-    /** The server data that the page needs, such as the bank inputs of a country. The controller reads it when the page opens. */
+    /**
+     * The server data that the page needs, such as the bank inputs of a country. The controller reads it when the page
+     * opens and shows a loader until the data is there, or the not found view when the read failed. Offline the loader
+     * stays until the connection returns, because a read made offline is not sent.
+     */
     read?: PlannedRead;
 };
 
@@ -115,8 +119,11 @@ type ListPageConfig<TVocabulary extends FlowVocabulary = FlowVocabulary> = PageB
         onRowPress?: (rowID: string) => PageTransition<TVocabulary>;
     };
 
-/** What a custom step gets from the controller. A custom step never navigates: it reports through these callbacks. */
-type CustomStepProps<TVocabulary extends FlowVocabulary = FlowVocabulary> = {
+/**
+ * What a custom page gets from the controller. A custom page never navigates on its own: it reports through these
+ * callbacks, and any other navigation it needs comes from the plan.
+ */
+type CustomPageProps<TVocabulary extends FlowVocabulary = FlowVocabulary> = {
     /** The workspace of the flow */
     policyID: string | undefined;
 
@@ -142,12 +149,17 @@ type CustomPageConfig<TVocabulary extends FlowVocabulary = FlowVocabulary> = Pag
 
     /**
      * The key of the request that the screen sends itself through `useRequest`, such as the test deposits. The controller
-     * never sends it, but clears its error when the user leaves the page and blocks the page offline.
+     * never sends it, but clears its error when the user leaves the page and shows the offline indicator. A screen that
+     * cannot work offline blocks itself.
      */
     requestKey?: RequestKey;
 
-    /** Renders the screen with what the controller provides and the props that the plan gave it */
-    render: (props: CustomStepProps<TVocabulary>) => ReactNode;
+    /**
+     * Renders the screen with what the controller provides and the props that the plan gave it. The page holds a render
+     * function and not a component slot, because the plan names the screen while the controller reads `requestKey` and
+     * `canComplete` without rendering it.
+     */
+    render: (props: CustomPageProps<TVocabulary>) => ReactNode;
 };
 
 type PageConfig<TVocabulary extends FlowVocabulary = FlowVocabulary> =
@@ -173,7 +185,11 @@ type StepConfig<TVocabulary extends FlowVocabulary = FlowVocabulary> = {
     /** Used to find the step where the flow resumes */
     isComplete: boolean;
 
-    /** The request that runs after the last page of the step, which shows its pending state and its error */
+    /**
+     * The request that saves the step. It is sent on each submit of the last page of the step, also when the server saved
+     * the step before, and not when the user returns from an edit to the confirmation. That page shows its pending state
+     * and its error.
+     */
     request?: PlannedRequest;
 };
 
@@ -196,7 +212,7 @@ export type {
     ConfirmationPageConfig,
     ConfirmationRow,
     CustomPageConfig,
-    CustomStepProps,
+    CustomPageProps,
     FlowPlan,
     FlowVocabulary,
     FormPageConfig,

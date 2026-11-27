@@ -12,16 +12,16 @@ import useThemeStyles from '@hooks/useThemeStyles';
 
 import SBO_CONST from '@pages/SimplifiedBankOnboarding/contract/SBO_CONST';
 import MockReviewButtons from '@pages/SimplifiedBankOnboarding/flows/shared/MockReviewButtons';
-import type {CustomStepProps} from '@pages/SimplifiedBankOnboarding/flows/shared/plan/types';
+import type {CustomPageProps} from '@pages/SimplifiedBankOnboarding/flows/shared/plan/types';
 
 import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';
 
 import React from 'react';
 
-type FinishStepProps = Pick<CustomStepProps, 'policyID' | 'onComplete'>;
+type FinishPageProps = Pick<CustomPageProps, 'policyID' | 'onComplete'>;
 
-function FinishStep({policyID, onComplete}: FinishStepProps) {
+function FinishPage({policyID, onComplete}: FinishPageProps) {
     const {translate} = useLocalize();
     const styles = useThemeStyles();
     const [state] = useOnyx(ONYXKEYS.SIMPLIFIED_BANK_ONBOARDING_ACCOUNT, {selector: (account) => account?.achData?.state});
@@ -53,4 +53,4 @@ function FinishStep({policyID, onComplete}: FinishStepProps) {
     );
 }
 
-export default FinishStep;
+export default FinishPage;

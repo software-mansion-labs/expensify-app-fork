@@ -1,7 +1,7 @@
 import {render} from '@testing-library/react-native';
 
 import createCustomPage from '@pages/SimplifiedBankOnboarding/core/plan/createCustomPage';
-import type {CustomStepProps} from '@pages/SimplifiedBankOnboarding/core/plan/types';
+import type {CustomPageProps} from '@pages/SimplifiedBankOnboarding/core/plan/types';
 import type {PlannedRequest, RequestOutcome} from '@pages/SimplifiedBankOnboarding/core/requests/types';
 
 import React from 'react';
@@ -10,7 +10,7 @@ const PAGE_ID = 'deposits';
 const REQUEST_KEY = 'validate:policy-1';
 const POLICY_ID = 'policy-1';
 
-type DepositsScreenProps = Pick<CustomStepProps, 'policyID' | 'goToStep'> & {
+type DepositsScreenProps = Pick<CustomPageProps, 'policyID' | 'goToStep'> & {
     request: PlannedRequest<string[]>;
     canComplete: boolean;
 };
@@ -49,7 +49,7 @@ describe('createCustomPage', () => {
         // Given the page of a screen that takes props from both
         const DepositsScreen = jest.fn<null, [DepositsScreenProps]>(() => null);
         const page = createCustomPage(DepositsScreen, {id: PAGE_ID, isComplete: false}, {request, canComplete: true});
-        const controllerProps: CustomStepProps = {policyID: POLICY_ID, isSubmitting: false, onComplete: jest.fn(), goToStep: jest.fn()};
+        const controllerProps: CustomPageProps = {policyID: POLICY_ID, isSubmitting: false, onComplete: jest.fn(), goToStep: jest.fn()};
 
         // When the controller renders the page
         render(<>{page.render(controllerProps)}</>);

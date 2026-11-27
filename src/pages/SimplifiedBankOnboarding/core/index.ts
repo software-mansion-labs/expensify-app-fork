@@ -29,7 +29,7 @@ export {default as getResumePosition} from './plan/position/resume';
 export type {
     ConfirmationPageConfig,
     CustomPageConfig,
-    CustomStepProps,
+    CustomPageProps,
     FlowPlan,
     FlowVocabulary,
     FormPageConfig,

@@ -1,7 +1,14 @@
 /**
  * The whole NonUSD flow as a plan, built from the draft, the server data and the server lists. It is the one place that
  * decides which steps and pages the NonUSD flow has. A form page only lists its fields from `core/form/fields`, a step
- * or a page names the request that saves it, and a page that needs a server list names the read of that list.
+ * or a page names the request that saves it (`StepConfig.request` says when a step request is sent), and a page that
+ * needs a server list names the read of that list. Every input is required unless its field is marked `isOptional`. The
+ * owner step takes its questions, its confirmation and its list from `flows/shared/owners`, and the signer step its
+ * director pages from `flows/shared/signerDetails`.
+ *
+ * A new input also needs its ID and type in `contract/form.ts`, its value in the answers (`NonUSDAnswers.ts`,
+ * `getNonUSDAnswers.ts`) and a parameter of the request that saves it. The field brings its validation, its
+ * confirmation row and the clearing of the draft.
  */
 import type {LocalizedTranslate} from '@components/LocaleContextProvider';
 
@@ -36,7 +43,6 @@ import {findOwner, removeOwner} from '@pages/SimplifiedBankOnboarding/flows/shar
 import type {FlowPlan, FormPageConfig, FormPageDefinition, PageConfig, StepConfig} from '@pages/SimplifiedBankOnboarding/flows/shared/plan/types';
 import {openEnterSignerInfo} from '@pages/SimplifiedBankOnboarding/flows/shared/routes/flowNavigation';
 import getSignerDetailsPages from '@pages/SimplifiedBankOnboarding/flows/shared/signerDetails/getSignerDetailsPages';
-import {getDirectorInfoRequest, getSignerInvitationRequest, getSignerReminderRequest} from '@pages/SimplifiedBankOnboarding/flows/shared/signerDetails/signerInfo';
 
 import CONST from '@src/CONST';
 
@@ -44,6 +50,7 @@ import {Str} from 'expensify-common';
 
 import type NonUSDAnswers from './NonUSDAnswers';
 
+import getFinishOnboardingRequest from './agreements/getFinishOnboardingRequest';
 import areBankFieldsLoaded from './bankInfo/areBankFieldsLoaded';
 import getBankFieldRuleError from './bankInfo/getBankFieldRuleError';
 import getBankFieldsRead from './bankInfo/getBankFieldsRead';
@@ -53,10 +60,10 @@ import getGlobalOwnersRequest from './beneficialOwners/getGlobalOwnersRequest';
 import arePicklistsLoaded from './businessInfo/arePicklistsLoaded';
 import getGlobalCompanyRequest from './businessInfo/getGlobalCompanyRequest';
 import getPicklistsRead from './businessInfo/getPicklistsRead';
-import FinishStep from './finish/FinishStep';
-import getFinishOnboardingRequest from './finish/getFinishOnboardingRequest';
+import FinishPage from './finish/FinishPage';
 import getNonUSDFlowState from './getNonUSDFlowState';
-import HangTightStep from './signerInfo/HangTightStep';
+import HangTightPage from './signerInfo/HangTightPage';
+import {getDirectorInfoRequest, getSignerInvitationRequest, getSignerReminderRequest} from './signerInfo/signerInfo';
 
 const {CURRENT_USER_KEY, PAGE_NAMES} = SBO_CONST.NON_USD;
 
@@ -213,7 +220,8 @@ function buildCountryStep({draft, achData, currency, translate, buildFormPage}: 
 
 /**
  * The server describes the bank inputs for the country and the currency. Until they arrive, the bank page stands
- * alone and reads them. Every workspace shares the key of the bank inputs, so the stored inputs may belong to
+ * alone and reads them: it shows a loader until the read lands, the not found view when the read fails, and offline it
+ * waits for the connection. Every workspace shares the key of the bank inputs, so the stored inputs may belong to
  * another country. The request at the end creates the bank account.
  */
 function buildBankInfoStep({achData, bankAccount, bankFields, currency, answers, translate, buildFormPage}: NonUSDStepInput): StepConfig {
@@ -299,7 +307,8 @@ function buildBusinessInfoStep({bankAccount, picklists, corpay, answers, transla
 
 /**
  * The user is an owner in the list under a fixed ID, so a user who owns 25% or more enters their own name and
- * share first. The shares of all owners may not exceed 100%.
+ * share first. The shares of all owners may not exceed 100%. The questions, the confirmation and the list come from
+ * `getOwnerPages`, which says in which order the user visits them.
  */
 function buildBeneficialOwnersStep({bankAccount, corpay, answers, translate}: NonUSDStepInput): StepConfig {
     const OWNERS = SBO_CONST.NON_USD.BENEFICIAL_OWNER_INFO_SUB_PAGES;
@@ -375,8 +384,9 @@ function buildBeneficialOwnersStep({bankAccount, corpay, answers, translate}: No
 
 /**
  * The pages follow the director answer, so until it is given the step holds only the question. A director gives
- * their name and job title, an owner only the job title because the owner step has the name. Other directors are
- * invited by email and the step waits for them on the hang tight page.
+ * their name and job title, an owner only the job title because the owner step has the name. These pages and their
+ * confirmation, which saves the director details, come from `getSignerDetailsPages`. Other directors are invited by
+ * email and the step waits for them on the hang tight page. The step has no request of its own, its pages save it.
  */
 function buildSignerInfoStep({bankAccount, corpay, isAUD, answers, translate, buildFormPage}: NonUSDStepInput): StepConfig {
     const SIGNER = SBO_CONST.NON_USD.SIGNER_INFO_SUB_PAGES;
@@ -454,7 +464,7 @@ function buildSignerInfoStep({bankAccount, corpay, isAUD, answers, translate, bu
             }),
             // The screen never navigates itself, so the plan hands it the navigation to the form of an invited director
             createCustomPage(
-                HangTightStep,
+                HangTightPage,
                 {id: SIGNER.HANG_TIGHT, isComplete: areSignersKnown},
                 {request: getSignerReminderRequest(bankAccount), canComplete: areSignersKnown, openSignerForm: openEnterSignerInfo},
             ),
@@ -558,7 +568,7 @@ function buildFinishStep({translate}: NonUSDStepInput): StepConfig {
         counter: 'none',
         isComplete: false,
 
-        pages: [createCustomPage(FinishStep, {id: SBO_CONST.NON_USD.FINISH_SUB_PAGES.DONE, isComplete: false, shouldExitOnBack: true}, {})],
+        pages: [createCustomPage(FinishPage, {id: SBO_CONST.NON_USD.FINISH_SUB_PAGES.DONE, isComplete: false, shouldExitOnBack: true}, {})],
     };
 }
 

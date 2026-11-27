@@ -169,6 +169,11 @@ function getOwnersListPage<TOwner extends Owner>({subPages, answers, ownerDraft,
  * a user whom the flow lists as an owner. The question about more owners exists only once someone else owns 25% and the
  * list only when it has someone to show. A user who owns less than 25% and answers that nobody else does finishes the
  * step on the second question.
+ *
+ * The order of the pages is not the order of a visit, because the answers jump between them. A user whom the flow lists
+ * as an owner goes from the first question to their own details and confirmation, and only then to the question about
+ * other owners. Each other owner goes through the details and the confirmation to the question about more owners, which
+ * leads back to the details or on to the list.
  */
 function getOwnerPages<TOwner extends Owner>(definition: OwnersStepDefinition<TOwner>): PageConfig[] {
     const {answers, userOwnerID} = definition;

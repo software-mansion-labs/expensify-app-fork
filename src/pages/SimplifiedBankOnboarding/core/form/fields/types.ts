@@ -43,7 +43,10 @@ type Field = {
     /** The React key of the field on its page */
     key: string;
 
-    /** The page validates and submits these inputs, and the draft drops them once the server saved the step */
+    /**
+     * The page validates these inputs and submits them unless the field is held by the server, and the draft drops them
+     * once the server saved the step
+     */
     inputIDs: InputID[];
 
     /** The errors of the inputs, keyed by input ID. The page shows them and counts as complete without any. */

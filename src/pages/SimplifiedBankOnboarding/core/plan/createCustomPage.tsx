@@ -10,7 +10,7 @@ import type {ComponentType} from 'react';
 
 import React from 'react';
 
-import type {CustomPageConfig, CustomStepProps, FlowVocabulary} from './types';
+import type {CustomPageConfig, CustomPageProps, FlowVocabulary} from './types';
 
 /** Where the page sits in its step and how it counts for the resume position */
 type CustomPageDefinition<TVocabulary extends FlowVocabulary = FlowVocabulary> = Omit<CustomPageConfig<TVocabulary>, 'kind' | 'canComplete' | 'requestKey' | 'render'>;
@@ -20,7 +20,10 @@ type CustomPageDefinition<TVocabulary extends FlowVocabulary = FlowVocabulary> =
  * copies them out of the props that the plan gives the screen, so the plan states each of them once.
  */
 type ScreenPropsKnownToController = {
-    /** The request that the screen sends itself. The controller never sends it, but clears its error when the user leaves the page and blocks the page offline. */
+    /**
+     * The request that the screen sends itself. The controller never sends it, but clears its error when the user leaves
+     * the page and shows the offline indicator. A screen that cannot work offline blocks itself.
+     */
     request?: Pick<PlannedRequest, 'key'>;
 
     /** False while the screen cannot complete the page yet, so the controller ignores its submit. Defaults to true. */
@@ -29,7 +32,7 @@ type ScreenPropsKnownToController = {
 
 // `NoInfer` lets only the props that the plan passes decide their type, so the screen is checked against them instead of widening them
 function createCustomPage<TScreenProps extends Record<string, unknown>, TVocabulary extends FlowVocabulary>(
-    Screen: ComponentType<NoInfer<TScreenProps> & CustomStepProps<TVocabulary>>,
+    Screen: ComponentType<NoInfer<TScreenProps> & CustomPageProps<TVocabulary>>,
     definition: CustomPageDefinition<TVocabulary>,
     screenProps: TScreenProps & ScreenPropsKnownToController,
 ): CustomPageConfig<TVocabulary> {
