@@ -2,10 +2,9 @@ import REQUEST_NAMES from '@pages/SimplifiedBankOnboarding/contract/REQUEST_NAME
 import SBO_CONST from '@pages/SimplifiedBankOnboarding/contract/SBO_CONST';
 import type {PlannedRequest} from '@pages/SimplifiedBankOnboarding/core';
 import {planRequest} from '@pages/SimplifiedBankOnboarding/core';
+import getUSDOnyxData, {USD_ERROR_KEY} from '@pages/SimplifiedBankOnboarding/flows/usd/getUSDOnyxData';
 import {WRITE_COMMANDS} from '@pages/SimplifiedBankOnboarding/mockBackend/commands';
 import type {BankAccountParams, WriteCommandParams} from '@pages/SimplifiedBankOnboarding/mockBackend/commands';
-
-import getUSDOnyxData, {USD_ERROR_KEY} from './getUSDOnyxData';
 
 type PersonalInfo = Required<Omit<WriteCommandParams[typeof WRITE_COMMANDS.UPDATE_PERSONAL_INFORMATION], keyof BankAccountParams | 'confirm'>>;
 

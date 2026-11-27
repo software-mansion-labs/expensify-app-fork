@@ -74,7 +74,7 @@ the lower its level.
 | `lab/` | The lab page: workspace list, the other entry points, the Payments page stand-in, the reads of these pages (`labActions.ts`) and the panel of the mock server (`mockServerPanel/`) |
 | `entry/` | The entry page: the account reference, the pure screen state, one view per state, the start over modal, the verify-account page, its moves (`entryNavigation.ts`) and its requests (`requests/`) |
 | `flows/` | **The flow configurations.** `index.ts` is what the entry page and the app import, and `openFlowAtResume.ts` picks the flow of a workspace |
-| `flows/usd/`, `flows/nonUSD/` | One flow each. The route screen, the flow descriptor and the plan builder are at the top. Below them are the answers built from the draft and the server data (`answers/`), the screens of the custom pages that are not forms (`customSteps/`, which the plan builder names) and the requests and reads that the plan names (`requests/`, each a `PlannedRequest` or a `PlannedRead`). The NonUSD flow also has the pure helpers for the bank fields and picklists that the server sends (`serverLists/`) |
+| `flows/usd/`, `flows/nonUSD/` | One flow each. The top holds the route screen, the flow descriptor, the plan builder, the answers built from the draft and the server data (`getUSDAnswers.ts`, `getNonUSDAnswers.ts`) and, in the USD flow, the Onyx data that every write shares (`getUSDOnyxData.ts`). Next to them is one folder per step of the builder, named like its step function, such as `bankAccount/` for `buildBankAccountStep`. It holds what the step needs: the requests and reads that the plan names (each a `PlannedRequest` or a `PlannedRead`), the screen of its custom page and, in the NonUSD bank and business steps, the pure helpers for the bank fields and picklists that the server sends. A step that needs no code of its own, such as the country step, has no folder. The NonUSD request that sends the agreements (`finish/getFinishOnboardingRequest.ts`) sits with the finish page, because the agreements step and the docusign step both send it |
 | `flows/enterSignerInfo/` | The separate flow that a director opens from an email, on the same controller with its own form |
 | `flows/shared/` | What more than one flow uses, so that no flow folder imports another: the screen body of the USD and NonUSD flows (`setupScreen/`), the `FlowData` type and its reads (`flowData/`), the account read of a screen and the gate of a cold deep link (`accountRead/`), the owner step (`owners/`), the signer pages (`signerDetails/`) and the draft writes |
 | `core/` | **The generic engine.** `index.ts` is the only path that `flows/` and `entry/` import |
@@ -229,8 +229,10 @@ step adds the seventh position only for AUD.
 
 `contract` <- `mockBackend` <- `core` <- `flows` <- `entry`, `lab` <- `index.ts`. `core` imports nothing from `flows`. `flows`
 and `entry` import the engine only through `core/index.ts`, and `entry` imports the flows only through `flows/index.ts`.
-Inside `flows`, a flow folder imports `shared` and never another flow. Inside `core`: `requests`, `form/fields` <- `plan`
-<- `form/pages`, `navigation` <- `controller`.
+Inside `flows`, a flow folder imports `shared` and never another flow. Inside a flow, the builder imports the step
+folders, and a step folder imports nothing from another step folder. It may import the files at the top of its flow that
+every step shares, such as `getUSDOnyxData.ts`. Inside `core`: `requests`, `form/fields` <- `plan` <- `form/pages`,
+`navigation` <- `controller`.
 
 `core` is not generic yet. It shares the draft type, the step and page IDs and the request names of `contract` with the
 flows, so a flow with another draft needs these types to become parameters of the engine first.
@@ -334,7 +336,7 @@ pattern.
 | --- | --- | --- |
 | USD: the server keeps `currentStep`, a dictionary turns it into a page name | `R/ReimbursementAccountPage.tsx` (`stepToPageName`) | Gone: `core/plan/position/resume.ts` finds the first incomplete page of the plan |
 | NonUSD: the client works out the first unfinished page | `R/NonUSD/utils/getStartPageForContinueSetup.ts` | `core/plan/position/resume.ts`, the same rule for both flows |
-| `draftStep`: an effect copies the server values of a step into the draft | `R/ReimbursementAccountPage.tsx` | Gone: the `answers/` folder of each flow merges the draft and the server data in render |
+| `draftStep`: an effect copies the server values of a step into the draft | `R/ReimbursementAccountPage.tsx` | Gone: the answers of each flow (`flows/usd/getUSDAnswers.ts`, `flows/nonUSD/getNonUSDAnswers.ts`) merge the draft and the server data in render |
 | Lossy prefill: the server returns a masked account number | `achData` of a resumed setup | `flows/usd/buildUSDPlan.ts`: once the account exists, the bank step sends nothing, the manual numbers are locked and stay out of the draft, and the Plaid page shows the connected account instead of the list |
 | Lossy round trip of the owner name | `R/NonUSD/utils/getDraftValuesForBeneficialOwners.ts` | `flows/shared/owners/` (owners are a list in the draft, a name from the server is split once) |
 | The client writes the server-owned `currentStep` and `subStep` | `goToWithdrawalAccountSetupStep`, `setBankAccountSubStep` | Gone: the URL is the position |
@@ -349,10 +351,10 @@ pattern.
 | --- | --- | --- |
 | One field per sub page, saved to the draft on every change | `R/USD/Requestor/PersonalInfo/subSteps/*` | `core/form/pages/FormPage.tsx` renders the `fields` of a page of the plan and checks their rules. The draft is written on submit only |
 | Confirmation page that sends the user back by numeric `onMove(index)` | `ConfirmationStep` usages | `core/form/pages/ConfirmationPage.tsx`. The rows come from the fields of the step (`core/form/pages/getConfirmationRows.ts`) and each carries the ID of the page to edit |
-| Default values read in a different order by different steps | `getSubStepValues`, the business and owner sub pages | The `answers/` folder of each flow (one rule for every value) |
+| Default values read in a different order by different steps | `getSubStepValues`, the business and owner sub pages | The answers of each flow, `flows/usd/getUSDAnswers.ts` and `flows/nonUSD/getNonUSDAnswers.ts` (one rule for every value) |
 | Fields locked once the account passed review | `R/USD/BusinessInfo/subSteps/*` | `flows/usd/buildUSDPlan.ts` (`isLocked` of the fields) |
 | Validators written inside the component | most sub pages | The rule of each field in `core/form/fields/`, given by the plan as `validate` where a page has its own |
-| Fields, rules and picklists sent by the server | `R/NonUSD/BankInfo/*`, `R/NonUSD/BusinessInfo/subSteps/BusinessType.tsx` | `flows/nonUSD/serverLists/`, `flows/nonUSD/requests/getBankFieldsRead.ts`, `flows/nonUSD/requests/getPicklistsRead.ts`, `flows/nonUSD/buildNonUSDPlan.ts` (`createBankField`) |
+| Fields, rules and picklists sent by the server | `R/NonUSD/BankInfo/*`, `R/NonUSD/BusinessInfo/subSteps/BusinessType.tsx` | `flows/nonUSD/bankInfo/`, `flows/nonUSD/businessInfo/`, `flows/nonUSD/buildNonUSDPlan.ts` (`createBankField`) |
 | The form key and the account key are the same Onyx string | `ONYXKEYS.REIMBURSEMENT_ACCOUNT` and `FORMS.REIMBURSEMENT_ACCOUNT_FORM` | Separate keys: `FORMS.SIMPLIFIED_BANK_ONBOARDING_FORM` |
 | File uploads kept in local state and in the draft | `R/USD/KYBDocuments`, `R/NonUSD/Docusign` | `core/form/fields/createFileField.tsx`, in the form value until the page is submitted, kept there by the upload adapter of `DynamicForm` |
 | A file that one step collects and a later step sends | bank statement in `R/NonUSD/Agreements`, sent by `R/NonUSD/Docusign` | `flows/nonUSD/buildNonUSDPlan.ts` (the agreements and the docusign steps) |
@@ -364,10 +366,10 @@ pattern.
 | Style 1: shared `isLoading` and `errors` on the account, a hook moves on when the request ends | `src/hooks/useReimbursementAccountSubmitCallback.ts` | `core/requests/runRequest.ts`: the handler awaits the outcome |
 | Style 2: a flag per request, the shared `isSuccess`, a ref, a `clear...` call in the cleanup of an effect | `R/NonUSD/BusinessInfo/BusinessInfo.tsx` and the other NonUSD steps | The same as style 1, with one status entry per request and workspace read by `core/requests/useRequestState.ts` |
 | Style 3: send and move on without waiting | `R/USD/Requestor/VerifyIdentity/VerifyIdentity.tsx` | The same as style 1: the identity step awaits its request |
-| State-driven screen: the next screen follows the account state | `R/USD/ConnectBankAccount/*` | `flows/usd/customSteps/validation/ValidationStep.tsx` |
+| State-driven screen: the next screen follows the account state | `R/USD/ConnectBankAccount/*` | `flows/usd/validation/ValidationStep.tsx` |
 | One action that writes the account key and the workspace key, and restores the second on a failure | `src/libs/actions/ReimbursementAccount/resetUSDBankAccount.ts` | `entry/requests/resetBankAccount.ts` |
-| A key that is never persisted | `RAM_ONLY_*` keys, the Plaid link token | `RAM_ONLY_SIMPLIFIED_BANK_ONBOARDING_PLAID_LINK_TOKEN`, `flows/usd/requests/plaid.ts` |
-| A step that is blocked offline | Onfido and Plaid steps | `flows/usd/customSteps/OnfidoStep.tsx`, `flows/usd/customSteps/PlaidStep.tsx` |
+| A key that is never persisted | `RAM_ONLY_*` keys, the Plaid link token | `RAM_ONLY_SIMPLIFIED_BANK_ONBOARDING_PLAID_LINK_TOKEN`, `flows/usd/bankAccount/plaid.ts` |
+| A step that is blocked offline | Onfido and Plaid steps | `flows/usd/identityCheck/OnfidoStep.tsx`, `flows/usd/bankAccount/PlaidStep.tsx` |
 | Offline queue for writes, optimistic data with rollback | `API.write` | `mockBackend/mockApi.ts` (unchanged) |
 
 ### Loops, branches and the second flow
@@ -377,12 +379,12 @@ pattern.
 | Owner loop limited by a count, owners under flat draft keys | `R/USD/BeneficialOwnerInfo/*` | `flows/usd/buildUSDPlan.ts`, `flows/shared/owners/`, owners as a list in the draft edited through a buffer (`flows/shared/owners/ownerBuffer.ts`) |
 | Owner loop limited by the ownership sum | `R/NonUSD/BeneficialOwnerInfo/*` | `flows/nonUSD/buildNonUSDPlan.ts`, `flows/shared/owners/canAddMoreOwners.ts` |
 | A step container that renders question pages itself and nests a second `useSubPage` | both owner steps | Gone: a question is a form page with one yes or no field, and it sits next to the list and the other form pages of one plan step |
-| Branch on "are you a director", with an email request and a waiting page | `R/NonUSD/SignerInfo/*` | `flows/nonUSD/buildNonUSDPlan.ts` (the signer step), `flows/nonUSD/customSteps/HangTightStep.tsx` |
+| Branch on "are you a director", with an email request and a waiting page | `R/NonUSD/SignerInfo/*` | `flows/nonUSD/buildNonUSDPlan.ts` (the signer step), `flows/nonUSD/signerInfo/HangTightStep.tsx` |
 | A step whose pages depend on the answer of another step | `R/NonUSD/SignerInfo/SignerDetailsFormPages.tsx` (`skipPages`) | `flows/nonUSD/buildNonUSDPlan.ts` builds the pages from the current answers |
 | The current user as an owner, stored under a reserved owner key | `R/NonUSD/BeneficialOwnerInfo/*` (`CURRENT_USER_KEY`) | `flows/nonUSD/buildNonUSDPlan.ts`, `contract/SBO_CONST.ts` (`CURRENT_USER_KEY`) |
 | A second flow with its own form key | `R/EnterSignerInfo/*` | `flows/enterSignerInfo/`: the shared controller with its own form, reusing `flows/shared/signerDetails/getSignerDetailsPages.ts` |
 | A step that only some currencies get | Docusign (`R/NonUSD/utils/requiresDocusignStep.ts`) | `contract/setupStatus.ts` (`requiresDocusignStep`), `flows/nonUSD/buildNonUSDPlan.ts` |
-| Third-party widgets: Plaid, Onfido, Docusign | their real SDK wrappers | Fake widgets with `[mock]` buttons in the `customSteps/` folder of each flow |
+| Third-party widgets: Plaid, Onfido, Docusign | their real SDK wrappers | Fake widgets with `[mock]` buttons on the custom page of their step, such as `flows/usd/bankAccount/PlaidStep.tsx` |
 | A review that ends on the backend and reaches the client as a push | Pusher updates of `reimbursementAccount` | `mockBackend/serverEvents.ts` (`finishReview`), `flows/shared/MockReviewButtons.tsx` |
 
 ## What is simplified

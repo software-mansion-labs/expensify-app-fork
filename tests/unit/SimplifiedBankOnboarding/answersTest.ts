@@ -1,8 +1,8 @@
 import type {GlobalOwnerDraft, OnboardingDraft, USDOwnerDraft} from '@pages/SimplifiedBankOnboarding/contract/form';
 import type {CorpayData, OnboardingAccount} from '@pages/SimplifiedBankOnboarding/contract/onyx';
 import SBO_CONST from '@pages/SimplifiedBankOnboarding/contract/SBO_CONST';
-import getNonUSDAnswers from '@pages/SimplifiedBankOnboarding/flows/nonUSD/answers/getNonUSDAnswers';
-import getUSDAnswers from '@pages/SimplifiedBankOnboarding/flows/usd/answers/getUSDAnswers';
+import getNonUSDAnswers from '@pages/SimplifiedBankOnboarding/flows/nonUSD/getNonUSDAnswers';
+import getUSDAnswers from '@pages/SimplifiedBankOnboarding/flows/usd/getUSDAnswers';
 
 const {CURRENT_USER_KEY} = SBO_CONST.NON_USD;
 

@@ -42,21 +42,21 @@ import CONST from '@src/CONST';
 
 import {Str} from 'expensify-common';
 
-import type NonUSDAnswers from './answers/types';
+import type NonUSDAnswers from './NonUSDAnswers';
 
-import getNonUSDFlowState from './answers/getNonUSDFlowState';
-import FinishStep from './customSteps/FinishStep';
-import HangTightStep from './customSteps/HangTightStep';
-import getBankFieldsRead from './requests/getBankFieldsRead';
-import getFinishOnboardingRequest from './requests/getFinishOnboardingRequest';
-import getGlobalBankAccountRequest from './requests/getGlobalBankAccountRequest';
-import getGlobalCompanyRequest from './requests/getGlobalCompanyRequest';
-import getGlobalOwnersRequest from './requests/getGlobalOwnersRequest';
-import getPicklistsRead from './requests/getPicklistsRead';
-import areBankFieldsLoaded from './serverLists/areBankFieldsLoaded';
-import arePicklistsLoaded from './serverLists/arePicklistsLoaded';
-import getBankFieldRuleError from './serverLists/getBankFieldRuleError';
-import {getAccountHolderDetailsFields, getBankAccountDetailsFields} from './serverLists/splitBankFields';
+import areBankFieldsLoaded from './bankInfo/areBankFieldsLoaded';
+import getBankFieldRuleError from './bankInfo/getBankFieldRuleError';
+import getBankFieldsRead from './bankInfo/getBankFieldsRead';
+import getGlobalBankAccountRequest from './bankInfo/getGlobalBankAccountRequest';
+import {getAccountHolderDetailsFields, getBankAccountDetailsFields} from './bankInfo/splitBankFields';
+import getGlobalOwnersRequest from './beneficialOwners/getGlobalOwnersRequest';
+import arePicklistsLoaded from './businessInfo/arePicklistsLoaded';
+import getGlobalCompanyRequest from './businessInfo/getGlobalCompanyRequest';
+import getPicklistsRead from './businessInfo/getPicklistsRead';
+import FinishStep from './finish/FinishStep';
+import getFinishOnboardingRequest from './finish/getFinishOnboardingRequest';
+import getNonUSDFlowState from './getNonUSDFlowState';
+import HangTightStep from './signerInfo/HangTightStep';
 
 const {CURRENT_USER_KEY, PAGE_NAMES} = SBO_CONST.NON_USD;
 

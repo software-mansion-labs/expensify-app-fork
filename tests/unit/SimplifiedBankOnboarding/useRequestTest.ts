@@ -3,7 +3,7 @@ import {act, renderHook} from '@testing-library/react-native';
 import REQUEST_NAMES from '@pages/SimplifiedBankOnboarding/contract/REQUEST_NAMES';
 import runRequest from '@pages/SimplifiedBankOnboarding/core/requests/runRequest';
 import useRequest from '@pages/SimplifiedBankOnboarding/core/requests/useRequest';
-import getValidateBankAccountRequest from '@pages/SimplifiedBankOnboarding/flows/usd/requests/getValidateBankAccountRequest';
+import getValidateBankAccountRequest from '@pages/SimplifiedBankOnboarding/flows/usd/validation/getValidateBankAccountRequest';
 import {WRITE_COMMANDS} from '@pages/SimplifiedBankOnboarding/mockBackend/commands';
 import type {BankAccountParams} from '@pages/SimplifiedBankOnboarding/mockBackend/commands';
 import {write} from '@pages/SimplifiedBankOnboarding/mockBackend/mockApi';

@@ -7,10 +7,9 @@ import REQUEST_NAMES from '@pages/SimplifiedBankOnboarding/contract/REQUEST_NAME
 import type {PlannedRequest} from '@pages/SimplifiedBankOnboarding/core';
 import {planRequest} from '@pages/SimplifiedBankOnboarding/core';
 import {getUSDOwnersParams} from '@pages/SimplifiedBankOnboarding/flows/shared/owners/ownerParams';
+import getUSDOnyxData, {USD_ERROR_KEY} from '@pages/SimplifiedBankOnboarding/flows/usd/getUSDOnyxData';
 import {WRITE_COMMANDS} from '@pages/SimplifiedBankOnboarding/mockBackend/commands';
 import type {BankAccountParams} from '@pages/SimplifiedBankOnboarding/mockBackend/commands';
-
-import getUSDOnyxData, {USD_ERROR_KEY} from './getUSDOnyxData';
 
 type USDOwnersAnswers = {
     ownsMoreThan25Percent: boolean;

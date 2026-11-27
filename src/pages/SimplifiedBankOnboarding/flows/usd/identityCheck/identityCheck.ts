@@ -5,10 +5,9 @@
 import REQUEST_NAMES from '@pages/SimplifiedBankOnboarding/contract/REQUEST_NAMES';
 import type {PlannedRead, PlannedRequest} from '@pages/SimplifiedBankOnboarding/core';
 import {planFailedRequest, planRead, planRequest} from '@pages/SimplifiedBankOnboarding/core';
+import getUSDOnyxData, {USD_ERROR_KEY} from '@pages/SimplifiedBankOnboarding/flows/usd/getUSDOnyxData';
 import {READ_COMMANDS, WRITE_COMMANDS} from '@pages/SimplifiedBankOnboarding/mockBackend/commands';
 import type {BankAccountParams} from '@pages/SimplifiedBankOnboarding/mockBackend/commands';
-
-import getUSDOnyxData, {USD_ERROR_KEY} from './getUSDOnyxData';
 
 /** The token belongs to the bank account of a workspace, so a flow opened without one gets a read that only records the failure */
 function getIdentityCheckRead(bankAccount: BankAccountParams, isLoaded: boolean): PlannedRead {

@@ -32,21 +32,21 @@ import type {FlowPlan, FormPageConfig, FormPageDefinition, StepConfig} from '@pa
 
 import CONST from '@src/CONST';
 
-import type USDAnswers from './answers/types';
+import type USDAnswers from './USDAnswers';
 
-import getUSDAnswers from './answers/getUSDAnswers';
-import OnfidoStep from './customSteps/OnfidoStep';
-import PlaidStep from './customSteps/PlaidStep';
-import ValidationStep from './customSteps/validation/ValidationStep';
-import {getManualBankAccountRequest, getPlaidBankAccountRequest} from './requests/connectBankAccount';
-import getACHContractRequest from './requests/getACHContractRequest';
-import getCompanyRequest from './requests/getCompanyRequest';
-import getKYBDocumentsRequest from './requests/getKYBDocumentsRequest';
-import getOwnersRequest from './requests/getOwnersRequest';
-import getPersonalInfoRequest from './requests/getPersonalInfoRequest';
-import getValidateBankAccountRequest from './requests/getValidateBankAccountRequest';
-import {getIdentityCheckRead, getVerifyIdentityRequest} from './requests/identityCheck';
-import {getPlaidBankAccountsRequest, getPlaidLinkTokenRead} from './requests/plaid';
+import getACHContractRequest from './agreements/getACHContractRequest';
+import {getManualBankAccountRequest, getPlaidBankAccountRequest} from './bankAccount/connectBankAccount';
+import {getPlaidBankAccountsRequest, getPlaidLinkTokenRead} from './bankAccount/plaid';
+import PlaidStep from './bankAccount/PlaidStep';
+import getOwnersRequest from './beneficialOwners/getOwnersRequest';
+import getCompanyRequest from './businessInfo/getCompanyRequest';
+import getKYBDocumentsRequest from './documents/getKYBDocumentsRequest';
+import getUSDAnswers from './getUSDAnswers';
+import {getIdentityCheckRead, getVerifyIdentityRequest} from './identityCheck/identityCheck';
+import OnfidoStep from './identityCheck/OnfidoStep';
+import getPersonalInfoRequest from './personalInfo/getPersonalInfoRequest';
+import getValidateBankAccountRequest from './validation/getValidateBankAccountRequest';
+import ValidationStep from './validation/ValidationStep';
 
 const {PAGE_NAMES, STEP} = SBO_CONST.USD;
 const SERVER_STEP_ORDER: USDStep[] = [STEP.COUNTRY, STEP.BANK_ACCOUNT, STEP.REQUESTOR, STEP.COMPANY, STEP.BENEFICIAL_OWNERS, STEP.ACH_CONTRACT, STEP.KYB_DOCS, STEP.VALIDATION, STEP.ENABLE];

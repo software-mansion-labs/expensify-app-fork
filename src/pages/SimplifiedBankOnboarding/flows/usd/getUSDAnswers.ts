@@ -9,7 +9,7 @@ import {getUSDOwnersFromServer} from '@pages/SimplifiedBankOnboarding/flows/shar
 
 import type {OnyxEntry} from 'react-native-onyx';
 
-import type USDAnswers from './types';
+import type USDAnswers from './USDAnswers';
 
 function getUSDAnswers(draft: OnboardingDraft | undefined, account: OnyxEntry<OnboardingAccount>): USDAnswers {
     const achData = account?.achData;

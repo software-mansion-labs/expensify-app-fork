@@ -6,7 +6,7 @@ import getNonUSDCurrency from '@pages/SimplifiedBankOnboarding/contract/getNonUS
 import getFlowPolicyID from '@pages/SimplifiedBankOnboarding/flows/shared/flowData/getFlowPolicyID';
 import type FlowData from '@pages/SimplifiedBankOnboarding/flows/shared/flowData/types';
 
-import type NonUSDAnswers from './types';
+import type NonUSDAnswers from './NonUSDAnswers';
 
 import getNonUSDAnswers from './getNonUSDAnswers';
 

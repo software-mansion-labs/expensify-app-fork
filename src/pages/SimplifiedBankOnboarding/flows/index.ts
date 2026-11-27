@@ -7,7 +7,7 @@ export {default as NonUSDSetupPage} from './nonUSD/NonUSDSetupPage';
 export {default as openFlowAtResume} from './openFlowAtResume';
 export {default as USDSetupPage} from './usd/USDSetupPage';
 export {default as usdFlow} from './usd/usdFlow';
-export {clearPlaid} from './usd/requests/plaid';
+export {clearPlaid} from './usd/bankAccount/plaid';
 
 export {default as openOnboardingPage} from './shared/accountRead/openOnboardingPage';
 export {default as useAccountRead} from './shared/accountRead/useAccountRead';

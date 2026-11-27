@@ -3,7 +3,7 @@ import {act, fireEvent, screen} from '@testing-library/react-native';
 import {setForceOffline} from '@libs/NetworkState';
 
 import SBO_CONST from '@pages/SimplifiedBankOnboarding/contract/SBO_CONST';
-import getValidateBankAccountRequest from '@pages/SimplifiedBankOnboarding/flows/usd/requests/getValidateBankAccountRequest';
+import getValidateBankAccountRequest from '@pages/SimplifiedBankOnboarding/flows/usd/validation/getValidateBankAccountRequest';
 import {WRITE_COMMANDS} from '@pages/SimplifiedBankOnboarding/mockBackend/commands';
 import {write} from '@pages/SimplifiedBankOnboarding/mockBackend/mockApi';
 

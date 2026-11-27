@@ -10,7 +10,7 @@ import {getGlobalOwnersFromServer} from '@pages/SimplifiedBankOnboarding/flows/s
 
 import type {OnyxEntry} from 'react-native-onyx';
 
-import type NonUSDAnswers from './types';
+import type NonUSDAnswers from './NonUSDAnswers';
 
 /**
  * The server does not store whether the user is the director. A saved signer email means the user invited someone else,
