@@ -24,7 +24,7 @@ function areFieldsComplete(fields: Field[], values: OnboardingDraft, translate: 
     return isEmptyObject(validateFields(fields, values, translate));
 }
 
-/** The form holds the whole draft, so a page submits only the values of its own inputs */
+/** The form holds the whole draft, so a page submits only the values of its own inputs, and none that the server holds */
 function getFieldValues(fields: Field[], values: OnboardingDraft): OnboardingDraft {
     const fieldValues: OnboardingDraft = {};
 
@@ -33,7 +33,7 @@ function getFieldValues(fields: Field[], values: OnboardingDraft): OnboardingDra
         fieldValues[inputID] = values[inputID];
     };
 
-    for (const inputID of fields.flatMap((field) => field.inputIDs)) {
+    for (const inputID of fields.filter((field) => !field.isHeldByServer).flatMap((field) => field.inputIDs)) {
         copyValue(inputID);
     }
     return fieldValues;

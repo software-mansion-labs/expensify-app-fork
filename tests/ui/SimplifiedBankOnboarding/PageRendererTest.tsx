@@ -4,6 +4,8 @@ import OnyxListItemProvider from '@components/OnyxListItemProvider';
 
 import type {OnboardingDraft} from '@pages/SimplifiedBankOnboarding/contract/form';
 import SBO_CONST from '@pages/SimplifiedBankOnboarding/contract/SBO_CONST';
+import createPicklistField from '@pages/SimplifiedBankOnboarding/core/form/fields/createPicklistField';
+import createTextField from '@pages/SimplifiedBankOnboarding/core/form/fields/createTextField';
 import createYesNoField from '@pages/SimplifiedBankOnboarding/core/form/fields/createYesNoField';
 import PageRenderer from '@pages/SimplifiedBankOnboarding/core/form/pages/PageRenderer';
 import type {CustomPageConfig, PageConfig, StepConfig} from '@pages/SimplifiedBankOnboarding/core/plan/types';
@@ -18,8 +20,10 @@ import waitForBatchedUpdatesWithAct from '../../utils/waitForBatchedUpdatesWithA
 
 jest.mock('@hooks/useLocalize', () => jest.fn(() => ({translate: (key: string) => key})));
 
-const {PAGE_NAMES, BENEFICIAL_OWNERS_SUB_PAGES} = SBO_CONST.USD;
+const {PAGE_NAMES, BENEFICIAL_OWNERS_SUB_PAGES, BANK_INFO_SUB_PAGES, COUNTRY_SUB_PAGES} = SBO_CONST.USD;
 const QUESTION = 'Do you own 25% or more?';
+const ROUTING_NUMBER = '011401533';
+const MASKED_ACCOUNT_NUMBER = 'XXXXXX7890';
 const READ_ONLY_ROW_ID = 'requestor';
 const OWNER_ROW_ID = 'owner-1';
 
@@ -42,6 +46,22 @@ const listPage: PageConfig = {
         {id: READ_ONLY_ROW_ID, title: 'Ada Lovelace', description: '1990-01-01', isReadOnly: true},
         {id: OWNER_ROW_ID, title: 'Grace Hopper', description: '1985-05-05'},
     ],
+};
+
+const bankNumbersPage: PageConfig = {
+    kind: 'form',
+    id: BANK_INFO_SUB_PAGES.MANUAL,
+    title: 'Bank account',
+    isComplete: true,
+    fields: [createTextField('routingNumber', {label: 'Routing number'}), createTextField('accountNumber', {label: 'Account number', isLocked: true})],
+};
+
+const countryPage: PageConfig = {
+    kind: 'form',
+    id: COUNTRY_SUB_PAGES.CONFIRM_CURRENCY,
+    title: 'Confirm the country',
+    isComplete: false,
+    fields: [createPicklistField('country', {label: 'Country', options: [{value: SBO_CONST.COUNTRY.US, label: 'United States'}], defaultValue: SBO_CONST.COUNTRY.US, isLocked: true})],
 };
 
 type RenderedPage = {
@@ -171,6 +191,34 @@ describe('PageRenderer', () => {
 
             // Then the page submits no values, because the entries were saved when they were edited
             expect(onSubmit).toHaveBeenCalledWith({});
+        });
+    });
+
+    describe('a locked field', () => {
+        it('submits no value of a text field that the server holds', async () => {
+            // Given a page with a routing number that the user may change and an account number that the server holds and
+            // shows masked
+            const {onSubmit} = await renderPage(bankNumbersPage, {routingNumber: ROUTING_NUMBER, accountNumber: MASKED_ACCOUNT_NUMBER});
+
+            // When the user submits the page as it opened
+            fireEvent.press(screen.getByText('common.next'));
+            await waitForBatchedUpdatesWithAct();
+
+            // Then only the routing number is submitted, because the masked number would stay in the draft, hide the server
+            // value and could be sent later as the real number
+            expect(onSubmit).toHaveBeenCalledWith({routingNumber: ROUTING_NUMBER});
+        });
+
+        it('submits the shown option of a locked picklist', async () => {
+            // Given a country picklist locked to the only country of the flow, which the user has not confirmed yet
+            const {onSubmit} = await renderPage(countryPage);
+
+            // When the user confirms the page
+            fireEvent.press(screen.getByText('common.next'));
+            await waitForBatchedUpdatesWithAct();
+
+            // Then the shown country is submitted, because confirming it is the answer of the page
+            expect(onSubmit).toHaveBeenCalledWith({country: SBO_CONST.COUNTRY.US});
         });
     });
 });

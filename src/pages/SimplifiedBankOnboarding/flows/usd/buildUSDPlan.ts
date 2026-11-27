@@ -117,12 +117,22 @@ function buildUSDPlan({draft, account, plaidLinkToken, onfidoToken}: FlowData, {
         isComplete: hasPassedServerStep(achData, STEP.BANK_ACCOUNT),
 
         pages: [
-            // The bank step sends the picked account, so the Plaid page cannot be completed before the user picks one
+            // The bank step sends the picked account, so the Plaid page cannot be completed before the user picks one. Once
+            // the server created the account, the page shows that account instead of the list, like the locked manual
+            // fields, so a new pick that is never sent cannot look saved. The page then needs no link token either.
             isPlaidSetup
                 ? createCustomPage(
                       PlaidStep,
-                      {id: SBO_CONST.USD.BANK_INFO_SUB_PAGES.PLAID, isComplete: hasServerBankAccount, read: getPlaidLinkTokenRead(!!plaidLinkToken)},
-                      {request: getPlaidBankAccountsRequest(), canComplete: !!answers.plaidAccountID},
+                      {
+                          id: SBO_CONST.USD.BANK_INFO_SUB_PAGES.PLAID,
+                          isComplete: hasServerBankAccount,
+                          read: hasServerBankAccount ? undefined : getPlaidLinkTokenRead(!!plaidLinkToken),
+                      },
+                      {
+                          request: getPlaidBankAccountsRequest(),
+                          canComplete: hasServerBankAccount || !!answers.plaidAccountID,
+                          connectedAccount: hasServerBankAccount ? {bankName: achData.bankName ?? '', accountNumber: achData.accountNumber ?? ''} : undefined,
+                      },
                   )
                 : buildFormPage({
                       id: SBO_CONST.USD.BANK_INFO_SUB_PAGES.MANUAL,

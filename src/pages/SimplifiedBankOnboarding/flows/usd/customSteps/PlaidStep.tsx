@@ -2,19 +2,23 @@
  * The Plaid page of the USD bank step. A fake widget keeps the real sequence of requests: a link token, which the
  * controller reads when the page opens, then a public token after the bank login, which the server exchanges for the
  * list of accounts. The page sends that exchange itself with the request that the plan gives it. The picked account goes
- * to the draft, and Next hands it to the controller, which sends the bank step.
+ * to the draft, and Next hands it to the controller, which sends the bank step. Once the server holds an account, the
+ * page shows that account and Next only moves on.
  */
 import ActivityIndicator from '@components/ActivityIndicator';
 import FullPageOfflineBlockingView from '@components/BlockingViews/FullPageOfflineBlockingView';
 import Button from '@components/Button';
 import FormProvider from '@components/Form/FormProvider';
 import FormHelpMessage from '@components/FormHelpMessage';
+import MenuItemField from '@components/MenuItem/presets/MenuItemField';
 import RadioButtons from '@components/RadioButtons';
 import Text from '@components/Text';
 
 import useLocalize from '@hooks/useLocalize';
 import useOnyx from '@hooks/useOnyx';
 import useThemeStyles from '@hooks/useThemeStyles';
+
+import {getLastFourDigits} from '@libs/BankAccountUtils';
 
 import type {PlannedRequest} from '@pages/SimplifiedBankOnboarding/core';
 import {useRequest} from '@pages/SimplifiedBankOnboarding/core';
@@ -27,17 +31,27 @@ import ONYXKEYS from '@src/ONYXKEYS';
 import React from 'react';
 import {View} from 'react-native';
 
+type ConnectedPlaidAccount = {
+    bankName: string;
+
+    /** Masked by the server */
+    accountNumber: string;
+};
+
 type PlaidStepProps = Pick<CustomStepProps, 'isSubmitting' | 'errorText' | 'onComplete'> & {
     /** Exchanges the public token of the bank login for the list of accounts */
     request: PlannedRequest<string>;
 
     /** An account was picked, so the bank step has an account to send */
     canComplete: boolean;
+
+    /** The account that the server created. The page shows it instead of the list, because the bank step sends no other account then. */
+    connectedAccount: ConnectedPlaidAccount | undefined;
 };
 
 const MOCK_PUBLIC_TOKEN = 'mock-public-token';
 
-function PlaidStep({request, canComplete, isSubmitting, errorText, onComplete}: PlaidStepProps) {
+function PlaidStep({request, canComplete, connectedAccount, isSubmitting, errorText, onComplete}: PlaidStepProps) {
     const {translate} = useLocalize();
     const styles = useThemeStyles();
     const [draft] = useOnyx(ONYXKEYS.FORMS.SIMPLIFIED_BANK_ONBOARDING_FORM_DRAFT);
@@ -72,7 +86,7 @@ function PlaidStep({request, canComplete, isSubmitting, errorText, onComplete}: 
         );
     };
 
-    if (!plaidBankAccounts.length) {
+    if (!connectedAccount && !plaidBankAccounts.length) {
         return <FullPageOfflineBlockingView>{renderPlaidLink()}</FullPageOfflineBlockingView>;
     }
 
@@ -80,7 +94,7 @@ function PlaidStep({request, canComplete, isSubmitting, errorText, onComplete}: 
         <FullPageOfflineBlockingView>
             <FormProvider
                 formID={ONYXKEYS.FORMS.SIMPLIFIED_BANK_ONBOARDING_FORM}
-                onSubmit={() => onComplete({plaidAccountID: selectedPlaidAccountID})}
+                onSubmit={() => onComplete(connectedAccount ? undefined : {plaidAccountID: selectedPlaidAccountID})}
                 submitButtonText={translate('common.next')}
                 style={styles.flexGrow1}
                 submitButtonStyles={styles.mh5}
@@ -90,14 +104,24 @@ function PlaidStep({request, canComplete, isSubmitting, errorText, onComplete}: 
                 sentryLabel={CONST.SENTRY_LABEL.BANK_ONBOARDING_LAB.SUBMIT_STEP}
             >
                 <Text style={[styles.mh5, styles.mb3, styles.textHeadlineLineHeightXXL]}>{translate('bankAccount.chooseAnAccount')}</Text>
-                <Text style={[styles.mh5, styles.mb6, styles.textSupporting]}>{translate('bankAccount.plaidBodyCopy')}</Text>
-                <RadioButtons
-                    items={plaidBankAccounts.map((bankAccount) => ({value: bankAccount.plaidAccountID, label: `${bankAccount.bankName} ${bankAccount.mask}`}))}
-                    defaultCheckedValue={selectedPlaidAccountID}
-                    onSelect={(plaidAccountID) => {
-                        saveDraft({plaidAccountID});
-                    }}
-                />
+                {connectedAccount ? (
+                    <MenuItemField
+                        name={`${translate('bankAccount.accountEnding')} ${getLastFourDigits(connectedAccount.accountNumber)}`}
+                        value={connectedAccount.bankName}
+                        forwardedFSClass={CONST.FULLSTORY.CLASS.MASK}
+                    />
+                ) : (
+                    <>
+                        <Text style={[styles.mh5, styles.mb6, styles.textSupporting]}>{translate('bankAccount.plaidBodyCopy')}</Text>
+                        <RadioButtons
+                            items={plaidBankAccounts.map((bankAccount) => ({value: bankAccount.plaidAccountID, label: `${bankAccount.bankName} ${bankAccount.mask}`}))}
+                            defaultCheckedValue={selectedPlaidAccountID}
+                            onSelect={(plaidAccountID) => {
+                                saveDraft({plaidAccountID});
+                            }}
+                        />
+                    </>
+                )}
                 <FormHelpMessage
                     style={styles.mh5}
                     message={errorText}

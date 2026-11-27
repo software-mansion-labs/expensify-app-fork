@@ -116,6 +116,9 @@ A field is a plain object, so everything that needs to know a page reads it with
 - A confirmation page lists no rows. Its rows are the summary rows of the fields on the form pages before it in the
   step, and each row opens the page of its field.
 - After a step request the draft drops the inputs of the fields, except a field that keeps its value, such as a file.
+- A locked text field shows the value of the server and submits nothing, because the server may show it masked, such as
+  the account number, and a step that sends no request would never clear it from the draft. A locked picklist still
+  submits its option, because confirming the only country of a flow is the answer of its page.
 
 A step or a page names its request as `request: getCompanyRequest(bankAccount, answers)`. The request module picks the
 values it sends and holds its guards, so the plan has no request code. A form page works offline exactly when its submit
@@ -317,7 +320,7 @@ pattern.
 | USD: the server keeps `currentStep`, a dictionary turns it into a page name | `R/ReimbursementAccountPage.tsx` (`stepToPageName`) | Gone: `core/plan/position/resume.ts` finds the first incomplete page of the plan |
 | NonUSD: the client works out the first unfinished page | `R/NonUSD/utils/getStartPageForContinueSetup.ts` | `core/plan/position/resume.ts`, the same rule for both flows |
 | `draftStep`: an effect copies the server values of a step into the draft | `R/ReimbursementAccountPage.tsx` | Gone: the `answers/` folder of each flow merges the draft and the server data in render |
-| Lossy prefill: the server returns a masked account number | `achData` of a resumed setup | `flows/usd/buildUSDPlan.ts` (the numbers are locked once the account exists) |
+| Lossy prefill: the server returns a masked account number | `achData` of a resumed setup | `flows/usd/buildUSDPlan.ts`: once the account exists, the bank step sends nothing, the manual numbers are locked and stay out of the draft, and the Plaid page shows the connected account instead of the list |
 | Lossy round trip of the owner name | `R/NonUSD/utils/getDraftValuesForBeneficialOwners.ts` | `flows/shared/owners/` (owners are a list in the draft, a name from the server is split once) |
 | The client writes the server-owned `currentStep` and `subStep` | `goToWithdrawalAccountSetupStep`, `setBankAccountSubStep` | Gone: the URL is the position |
 | Start page of a step computed from which values exist | `R/USD/utils/getInitialSubStepForPersonalInfo.ts` and its siblings | `isComplete` of each page in the plan builders of `flows/`, read by `core/plan/position/resume.ts` |

@@ -54,6 +54,12 @@ type Field = {
 
     /** The server never returns the value, such as a file, so the draft keeps it after the step is saved */
     shouldKeepInDraft?: boolean;
+
+    /**
+     * The server holds the value and takes no new one, such as a saved account number. The page shows the value but does
+     * not submit it, because the server may show it masked and no step request would clear it from the draft again.
+     */
+    isHeldByServer?: boolean;
     render: (context: FieldRenderContext) => ReactNode;
 };
 

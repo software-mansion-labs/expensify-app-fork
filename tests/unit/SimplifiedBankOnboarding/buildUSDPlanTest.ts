@@ -5,6 +5,7 @@ import type {PageID, StepID} from '@pages/SimplifiedBankOnboarding/contract/ids'
 import type {OnboardingAccount, SetupType} from '@pages/SimplifiedBankOnboarding/contract/onyx';
 import REQUEST_NAMES from '@pages/SimplifiedBankOnboarding/contract/REQUEST_NAMES';
 import SBO_CONST from '@pages/SimplifiedBankOnboarding/contract/SBO_CONST';
+import {getFieldValues} from '@pages/SimplifiedBankOnboarding/core/form/fields/fieldSet';
 import getStepCounter from '@pages/SimplifiedBankOnboarding/core/plan/getStepCounter';
 import type {FlowPosition} from '@pages/SimplifiedBankOnboarding/core/plan/position/position';
 import {findStep} from '@pages/SimplifiedBankOnboarding/core/plan/position/position';
@@ -13,10 +14,10 @@ import getResumePosition from '@pages/SimplifiedBankOnboarding/core/plan/positio
 import {getNextStepPosition, getPreviousPosition} from '@pages/SimplifiedBankOnboarding/core/plan/position/transitions';
 import getRequestKey from '@pages/SimplifiedBankOnboarding/core/requests/requestKey';
 import type FlowData from '@pages/SimplifiedBankOnboarding/flows/shared/flowData/types';
-import type {FlowPlan} from '@pages/SimplifiedBankOnboarding/flows/shared/plan/types';
+import type {CustomStepProps, FlowPlan, PageConfig} from '@pages/SimplifiedBankOnboarding/flows/shared/plan/types';
 import buildUSDPlan from '@pages/SimplifiedBankOnboarding/flows/usd/buildUSDPlan';
 import {WRITE_COMMANDS} from '@pages/SimplifiedBankOnboarding/mockBackend/commands';
-import {buildClientACHData} from '@pages/SimplifiedBankOnboarding/mockBackend/handlers/buildResponse';
+import {buildClientACHData, maskAccountNumber} from '@pages/SimplifiedBankOnboarding/mockBackend/handlers/buildResponse';
 import usdWriteHandlers from '@pages/SimplifiedBankOnboarding/mockBackend/handlers/usdWriteHandlers';
 import {PLAID_BANK_ACCOUNTS} from '@pages/SimplifiedBankOnboarding/mockBackend/serverCatalog';
 import type {MockServerDatabase, MockServerResponse, ServerBankAccount} from '@pages/SimplifiedBankOnboarding/mockBackend/types';
@@ -30,6 +31,7 @@ const {COMPLETE_VERIFICATION_SUB_PAGES, KYB_DOCUMENTS_SUB_PAGES, VALIDATION_SUB_
 const {MANUAL, PLAID} = SBO_CONST.SETUP_TYPE;
 
 const POLICY_ID = 'usd';
+const MANUAL_ACCOUNT_NUMBER = '1234567890';
 /** Returns the key with its parameters, so a validator error is never an empty string that would make an invalid form look complete */
 const translate: LocalizedTranslate = (path, ...parameters) => [path, ...parameters.map(String)].join(' ');
 
@@ -115,7 +117,7 @@ function runStage(database: MockServerDatabase, stage: WriteStage, setupType: Se
                           {
                               policyID: POLICY_ID,
                               routingNumber: '011401533',
-                              accountNumber: '1234567890',
+                              accountNumber: MANUAL_ACCOUNT_NUMBER,
                           },
                           database,
                       ),
@@ -258,6 +260,12 @@ function position(stepID: StepID, pageID: PageID): FlowPosition {
     return {stepID, pageID, isEditing: false};
 }
 
+/** The element that the controller would render for a custom page, whose props show what the plan hands its screen */
+function renderCustomPage(page: PageConfig | undefined) {
+    const controllerProps: CustomStepProps = {policyID: POLICY_ID, isSubmitting: false, onComplete: jest.fn(), goToStep: jest.fn()};
+    return page?.kind === 'custom' ? page.render(controllerProps) : undefined;
+}
+
 function getStepIDs(plan: FlowPlan): StepID[] {
     return plan.steps.map((step) => step.id);
 }
@@ -377,6 +385,49 @@ describe('buildUSDPlan', () => {
 
             // Then the screen of the page sends the read with the token of the bank login, which only the widget returns, and the page tells the controller its key
             expect(plaidPage).toMatchObject({requestKey: getRequestKey(REQUEST_NAMES.OPEN_PLAID_BANK_ACCOUNT_SELECTOR)});
+        });
+
+        it('shows the connected Plaid account instead of the list and lets Next move on', () => {
+            // Given a Plaid account that the server created, and a client that holds no link token, such as after a reload
+            const connectedPlaidAccount = getFirst(PLAID_BANK_ACCOUNTS);
+            const plan = buildPlan(createServer({setupType: PLAID}).advanceTo('company').readAccount(), {country: SBO_CONST.COUNTRY.US, setupType: PLAID});
+
+            // When the Plaid page is read from the plan
+            const plaidPage = findStep(plan, PAGE_NAMES.BANK_ACCOUNT)?.pages.at(0);
+
+            // Then the screen gets the account of the server to show instead of a list to pick from, because the bank step
+            // sends no new pick, and the page reads no link token, because it offers no bank login
+            expect(renderCustomPage(plaidPage)).toMatchObject({
+                props: {connectedAccount: {bankName: connectedPlaidAccount.bankName, accountNumber: maskAccountNumber(connectedPlaidAccount.accountNumber)}},
+            });
+            expect(plaidPage).toMatchObject({canComplete: true});
+            expect(plaidPage?.read).toBeUndefined();
+        });
+
+        it('lets the user pick a Plaid account while the server has none', () => {
+            // Given a new Plaid setup where the user has not picked an account yet
+            const plan = buildPlan(createServer({setupType: PLAID}).readAccount(), {country: SBO_CONST.COUNTRY.US, setupType: PLAID});
+
+            // When the Plaid page is read from the plan
+            const plaidPage = findStep(plan, PAGE_NAMES.BANK_ACCOUNT)?.pages.at(0);
+
+            // Then the screen shows the list of the bank login, and Next waits for a pick, which the bank step sends
+            expect(renderCustomPage(plaidPage)).toMatchObject({props: {connectedAccount: undefined}});
+            expect(plaidPage).toMatchObject({canComplete: false});
+        });
+
+        it('submits no bank numbers from the locked manual page', () => {
+            // Given a manual bank account that the server created, which returns the account number masked
+            const plan = buildPlan(createServer().advanceTo('company').readAccount(), STARTED_DRAFT);
+            const manualPage = findStep(plan, PAGE_NAMES.BANK_ACCOUNT)?.pages.at(0);
+
+            // When the user presses Next on the page that shows the numbers of the server
+            const submittedValues = manualPage?.kind === 'form' ? getFieldValues(manualPage.fields, plan.answers) : undefined;
+
+            // Then the page submits nothing, because the bank step sends no request that would clear the draft again, and
+            // a masked number in the draft would hide the server value and pass the rule of the account number field
+            expect(plan.answers.accountNumber).toBe(maskAccountNumber(MANUAL_ACCOUNT_NUMBER));
+            expect(submittedValues).toEqual({});
         });
 
         it('reads nothing on the manual page', () => {

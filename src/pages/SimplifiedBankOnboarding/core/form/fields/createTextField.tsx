@@ -26,7 +26,7 @@ type TextInputOptions = {
     placeholder?: string;
     hint?: string;
 
-    /** The server accepted the value and no longer takes a new one */
+    /** The server accepted the value and no longer takes a new one, so the page shows the value and does not submit it */
     isLocked?: boolean;
 
     /** The value is hidden in session recordings, such as an account number */
@@ -79,6 +79,7 @@ function createTextField(inputID: TextInputID, options: TextFieldOptions): Field
         key: inputID,
         inputIDs: [inputID],
         getErrors: (values, translate) => getInputErrors(inputID, {isOptional, requiredErrorText, validate}, values, translate),
+        isHeldByServer: isLocked,
 
         getSummaryRows: (values) => {
             const value = values[inputID] ?? '';

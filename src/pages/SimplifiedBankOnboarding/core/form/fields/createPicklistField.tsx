@@ -24,6 +24,11 @@ type PicklistOption = {
 type PicklistInputOptions = {
     label: string;
     options: PicklistOption[];
+
+    /**
+     * The user cannot pick another option. The page still submits the shown option, because confirming it can be the
+     * answer itself, such as the only country of a flow, and an option is never a masked value.
+     */
     isLocked?: boolean;
 
     /** The title of the list that opens from the row. Defaults to the label. */
