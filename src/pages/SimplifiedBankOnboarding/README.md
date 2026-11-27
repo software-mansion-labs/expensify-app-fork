@@ -131,8 +131,10 @@ A new kind of field is one new file in `core/form/fields/`. Nothing else has a l
 
 A page that needs server data names its read as `read: getBankFieldsRead(country, currency, isLoaded)`. The builder
 computes `isLoaded` from the data, such as the stored bank inputs of the right country. The controller sends the read
-when the page opens and again after each reconnect until the read succeeded, because a read made offline is not sent.
-The page shows a loader while its data is not there, and the not found view when the read failed before the data came.
+when the page opens, again when its data disappears, such as the Plaid or Onfido token that a failed write clears, and
+again after each reconnect until the read succeeded, because a read made offline is not sent. The page shows a loader
+while its data is not there, and the not found view when its own read failed before the data came. A failure that an
+earlier visit of the page saw does not count.
 The read is sent on every open, also when the data is stored, because a key such as the picklists names no country.
 
 ### Every move happens in a handler

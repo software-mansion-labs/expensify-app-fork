@@ -6,32 +6,14 @@ import {READ_COMMANDS, WRITE_COMMANDS} from '@pages/SimplifiedBankOnboarding/moc
 import {read, write} from '@pages/SimplifiedBankOnboarding/mockBackend/mockApi';
 
 import ONYXKEYS from '@src/ONYXKEYS';
-import type {OnyxData} from '@src/types/onyx/Request';
-
-import type {OnyxKey} from 'react-native-onyx';
 
 import Onyx from 'react-native-onyx';
 
+import answerBankOnboardingRequests from '../../utils/answerBankOnboardingRequests';
 import getOnyxValue from '../../utils/getOnyxValue';
 import waitForBatchedUpdates from '../../utils/waitForBatchedUpdates';
 
 jest.mock('@pages/SimplifiedBankOnboarding/mockBackend/mockApi', () => ({read: jest.fn(), write: jest.fn()}));
-
-type Answer = 'success' | 'failure' | 'adminRequired' | 'none';
-
-/** Applies the data of a request the way the real API does for each kind of answer. An answer that needs an admin applies neither the success nor the failure data. */
-function answerWrites(answer: Answer) {
-    jest.mocked(write).mockImplementation((_command, _params, onyxData: OnyxData<OnyxKey> = {}) => {
-        Onyx.update(onyxData.optimisticData ?? [])
-            .then(() => {
-                if (answer === 'success') {
-                    return Onyx.update(onyxData.successData ?? []);
-                }
-                return answer === 'failure' ? Onyx.update(onyxData.failureData ?? []) : undefined;
-            })
-            .then(() => (answer === 'none' ? undefined : Onyx.update(onyxData.finallyData ?? [])));
-    });
-}
 
 function sendValidateUser(): Promise<RequestOutcome> {
     return runRequest({name: REQUEST_NAMES.VALIDATE_USER, type: 'write', command: WRITE_COMMANDS.VALIDATE_USER, params: {validateCode: '123456'}});
@@ -57,7 +39,7 @@ describe('runRequest', () => {
 
     it('settles as succeeded when the answer applies the success data', async () => {
         // Given a server that accepts the request
-        answerWrites('success');
+        answerBankOnboardingRequests('write', 'success');
 
         // When the request is sent
         const outcome = await sendValidateUser();
@@ -69,7 +51,7 @@ describe('runRequest', () => {
 
     it('settles as failed when the answer applies the failure data', async () => {
         // Given a server that rejects the request
-        answerWrites('failure');
+        answerBankOnboardingRequests('write', 'failure');
 
         // When the request is sent
         const outcome = await sendValidateUser();
@@ -81,7 +63,7 @@ describe('runRequest', () => {
 
     it('settles as failed when the answer applies neither the success nor the failure data', async () => {
         // Given an answer that needs an admin, for which the real API applies only the finally data
-        answerWrites('adminRequired');
+        answerBankOnboardingRequests('write', 'adminRequired');
 
         // When the request is sent
         const outcome = await sendValidateUser();
@@ -96,12 +78,12 @@ describe('runRequest', () => {
 
     it('keeps a new attempt pending after an earlier attempt with the same key was answered', async () => {
         // Given an answered request, whose status entry keeps the mark of its answer
-        answerWrites('success');
+        answerBankOnboardingRequests('write', 'success');
         await sendValidateUser();
         await waitForBatchedUpdates();
 
         // When the same request is sent again and the server has not answered yet
-        answerWrites('none');
+        answerBankOnboardingRequests('write', 'none');
         let hasSettled = false;
         sendValidateUser().then(() => {
             hasSettled = true;
@@ -116,7 +98,7 @@ describe('runRequest', () => {
     it('sends a write once when it is sent again before the first send settled', async () => {
         // Given a server that has not answered yet, like a slow connection during a double press
         jest.mocked(write).mockClear();
-        answerWrites('none');
+        answerBankOnboardingRequests('write', 'none');
         sendValidateUser();
 
         // When the same write is sent again while the first one is in flight
@@ -130,12 +112,12 @@ describe('runRequest', () => {
     it('sends a write again once the earlier send settled', async () => {
         // Given a write that the server rejected
         jest.mocked(write).mockClear();
-        answerWrites('failure');
+        answerBankOnboardingRequests('write', 'failure');
         await sendValidateUser();
         await waitForBatchedUpdates();
 
         // When the user tries again
-        answerWrites('success');
+        answerBankOnboardingRequests('write', 'success');
         const outcome = await sendValidateUser();
 
         // Then the retry reaches the server, because the guard only holds while a write is in flight
@@ -146,9 +128,7 @@ describe('runRequest', () => {
     it('sends a read again while an earlier read with the same key is in flight', async () => {
         // Given a read that the server has not answered yet
         jest.mocked(read).mockClear();
-        jest.mocked(read).mockImplementation((_command, _params, onyxData: OnyxData<OnyxKey> = {}) => {
-            Onyx.update(onyxData.optimisticData ?? []);
-        });
+        answerBankOnboardingRequests('read', 'none');
         const sendLinkTokenRead = () => runRequest({name: REQUEST_NAMES.OPEN_PLAID_BANK_LOGIN, type: 'read', command: READ_COMMANDS.OPEN_PLAID_BANK_LOGIN, params: {}});
         sendLinkTokenRead();
 

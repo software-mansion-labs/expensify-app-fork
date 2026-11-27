@@ -38,7 +38,7 @@ type PlannedRequest<TInput = void> = {
 
 /**
  * A read that a page needs before it can show anything, such as the bank inputs of a country. The controller sends it
- * when the page opens and again after each reconnect until it succeeds.
+ * when the page opens, again when its data disappears and again after each reconnect until it succeeds.
  */
 type PlannedRead = PlannedRequest & {
     /** The data that the read brings is there, so the page can show. Until then the page shows a loader, or the not found view once the read failed. */

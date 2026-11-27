@@ -1,18 +1,17 @@
-import {fireEvent, screen} from '@testing-library/react-native';
+import {act, fireEvent, screen} from '@testing-library/react-native';
 
 import {setForceOffline} from '@libs/NetworkState';
 
 import SBO_CONST from '@pages/SimplifiedBankOnboarding/contract/SBO_CONST';
+import getValidateBankAccountRequest from '@pages/SimplifiedBankOnboarding/flows/usd/requests/getValidateBankAccountRequest';
 import {WRITE_COMMANDS} from '@pages/SimplifiedBankOnboarding/mockBackend/commands';
 import {write} from '@pages/SimplifiedBankOnboarding/mockBackend/mockApi';
 
 import ONYXKEYS from '@src/ONYXKEYS';
-import type {OnyxData} from '@src/types/onyx/Request';
-
-import type {OnyxKey} from 'react-native-onyx';
 
 import Onyx from 'react-native-onyx';
 
+import answerBankOnboardingRequests from '../../utils/answerBankOnboardingRequests';
 import {openFlowPage, USD_POLICY_ID} from '../../utils/SimplifiedBankOnboardingTestUtils';
 import waitForBatchedUpdatesWithAct from '../../utils/waitForBatchedUpdatesWithAct';
 
@@ -22,13 +21,7 @@ jest.mock('@pages/SimplifiedBankOnboarding/mockBackend/mockApi', () => ({read: j
 const {USD} = SBO_CONST;
 const BANK_ACCOUNT_ID = 1001;
 const [AMOUNT_1, AMOUNT_2, AMOUNT_3] = SBO_CONST.MOCK.MICRO_DEPOSIT_AMOUNTS;
-
-/** Each write stays pending, so the second press comes while the first send is still in flight */
-function holdWrites() {
-    jest.mocked(write).mockImplementation((_command, _params, onyxData: OnyxData<OnyxKey> = {}) => {
-        Onyx.update(onyxData.optimisticData ?? []);
-    });
-}
+const AMOUNTS = [AMOUNT_1, AMOUNT_2, AMOUNT_3];
 
 describe('DepositsForm', () => {
     beforeAll(() => {
@@ -46,9 +39,9 @@ describe('DepositsForm', () => {
 
     afterAll(() => Onyx.clear());
 
-    it('sends the amounts once when the user presses the button twice', async () => {
-        // Given a manual bank account that waits for the test deposits, with the three amounts typed in
-        holdWrites();
+    it('sends the amounts once when they are sent again before the server answers', async () => {
+        // Given a manual bank account that waits for the test deposits, with the three amounts typed in, and a server that has not answered yet
+        answerBankOnboardingRequests('write', 'none');
         await openFlowPage(
             {kind: 'usd', params: {policyID: USD_POLICY_ID, page: USD.PAGE_NAMES.VALIDATION, subPage: USD.VALIDATION_SUB_PAGES.VALIDATE}},
             {
@@ -65,17 +58,22 @@ describe('DepositsForm', () => {
             },
         );
 
-        // When the user presses the button twice before the server answers
-        const validateButton = screen.getByText('connectBankAccountStep.validateButtonText');
-        fireEvent.press(validateButton);
-        fireEvent.press(validateButton);
+        // When the user presses the button and the same request is sent again before the answer. The form already ignores
+        // a second press while it shows its loader, so the second send goes around the form, the way a second sender of
+        // the same request, such as the controller, would.
+        fireEvent.press(screen.getByText('connectBankAccountStep.validateButtonText'));
         await waitForBatchedUpdatesWithAct();
+        let secondOutcome;
+        await act(async () => {
+            secondOutcome = await getValidateBankAccountRequest({policyID: USD_POLICY_ID, bankAccountID: BANK_ACCOUNT_ID}).send(AMOUNTS);
+        });
 
         // Then the server gets the amounts once, because each wrong attempt counts toward the limit that blocks the account
+        expect(secondOutcome).toEqual({status: 'skipped'});
         expect(write).toHaveBeenCalledTimes(1);
         expect(write).toHaveBeenCalledWith(
             WRITE_COMMANDS.VALIDATE_BANK_ACCOUNT,
-            {policyID: USD_POLICY_ID, bankAccountID: BANK_ACCOUNT_ID, validateCode: [AMOUNT_1, AMOUNT_2, AMOUNT_3].join(',')},
+            {policyID: USD_POLICY_ID, bankAccountID: BANK_ACCOUNT_ID, validateCode: AMOUNTS.join(',')},
             expect.anything(),
         );
     });

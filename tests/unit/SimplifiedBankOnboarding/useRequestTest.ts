@@ -9,32 +9,16 @@ import type {BankAccountParams} from '@pages/SimplifiedBankOnboarding/mockBacken
 import {write} from '@pages/SimplifiedBankOnboarding/mockBackend/mockApi';
 
 import ONYXKEYS from '@src/ONYXKEYS';
-import type {OnyxData} from '@src/types/onyx/Request';
-
-import type {OnyxKey} from 'react-native-onyx';
 
 import Onyx from 'react-native-onyx';
 
+import answerBankOnboardingRequests from '../../utils/answerBankOnboardingRequests';
 import waitForBatchedUpdatesWithAct from '../../utils/waitForBatchedUpdatesWithAct';
 
 jest.mock('@pages/SimplifiedBankOnboarding/mockBackend/mockApi', () => ({read: jest.fn(), write: jest.fn()}));
 
-type Answer = 'success' | 'failure' | 'none';
-
 const BANK_ACCOUNT: BankAccountParams = {policyID: 'policy', bankAccountID: 1};
 const AMOUNTS = ['1.01', '1.02', '1.03'];
-
-/** Applies the data of each write the way the server answers it. A write without an answer stays pending. */
-function answerWrites(answer: Answer) {
-    jest.mocked(write).mockImplementation((_command, _params, onyxData: OnyxData<OnyxKey> = {}) => {
-        Onyx.update(onyxData.optimisticData ?? []).then(() => {
-            if (answer === 'none') {
-                return;
-            }
-            return Onyx.update(answer === 'success' ? (onyxData.successData ?? []) : (onyxData.failureData ?? [])).then(() => Onyx.update(onyxData.finallyData ?? []));
-        });
-    });
-}
 
 async function renderValidateRequest() {
     const rendered = renderHook(() => useRequest(getValidateBankAccountRequest(BANK_ACCOUNT)));
@@ -58,7 +42,7 @@ describe('useRequest', () => {
 
     it('sends the input of the page with the request', async () => {
         // Given a server that accepts the amounts
-        answerWrites('success');
+        answerBankOnboardingRequests('write', 'success');
         const {result} = await renderValidateRequest();
 
         // When the page sends the amounts that the user typed
@@ -72,7 +56,7 @@ describe('useRequest', () => {
 
     it('shows the request as pending until the server answers', async () => {
         // Given a server that has not answered yet
-        answerWrites('none');
+        answerBankOnboardingRequests('write', 'none');
         const {result} = await renderValidateRequest();
 
         // When the page sends the request
@@ -88,7 +72,7 @@ describe('useRequest', () => {
 
     it('shows the error of a failed request', async () => {
         // Given a server that rejects the amounts
-        answerWrites('failure');
+        answerBankOnboardingRequests('write', 'failure');
         const {result} = await renderValidateRequest();
 
         // When the page sends them
@@ -102,7 +86,7 @@ describe('useRequest', () => {
 
     it('sends a write once when the page presses twice before the answer', async () => {
         // Given a server that has not answered yet
-        answerWrites('none');
+        answerBankOnboardingRequests('write', 'none');
         const {result} = await renderValidateRequest();
 
         // When the page sends the request twice in a row, like a double press
@@ -119,7 +103,7 @@ describe('useRequest', () => {
 
     it('sends nothing from the page while the controller sends the same write', async () => {
         // Given the same write sent outside the page, the way the controller sends a step request, and not answered yet
-        answerWrites('none');
+        answerBankOnboardingRequests('write', 'none');
         runRequest({
             name: REQUEST_NAMES.VALIDATE_BANK_ACCOUNT,
             scope: BANK_ACCOUNT,

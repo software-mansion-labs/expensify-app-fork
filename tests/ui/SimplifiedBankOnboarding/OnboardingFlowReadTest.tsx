@@ -1,9 +1,9 @@
-import {act, screen} from '@testing-library/react-native';
+import {act, fireEvent, screen} from '@testing-library/react-native';
 
 import {setForceOffline} from '@libs/NetworkState';
 
 import SBO_CONST from '@pages/SimplifiedBankOnboarding/contract/SBO_CONST';
-import {read} from '@pages/SimplifiedBankOnboarding/mockBackend/mockApi';
+import {read, write} from '@pages/SimplifiedBankOnboarding/mockBackend/mockApi';
 import {getBankFormFields} from '@pages/SimplifiedBankOnboarding/mockBackend/serverCatalog';
 
 import ONYXKEYS from '@src/ONYXKEYS';
@@ -14,6 +14,7 @@ import type {OnyxKey, OnyxUpdate} from 'react-native-onyx';
 
 import Onyx from 'react-native-onyx';
 
+import answerBankOnboardingRequests from '../../utils/answerBankOnboardingRequests';
 import {EUR_POLICY_ID, openFlowPage, USD_POLICY_ID} from '../../utils/SimplifiedBankOnboardingTestUtils';
 import waitForBatchedUpdatesWithAct from '../../utils/waitForBatchedUpdatesWithAct';
 
@@ -28,6 +29,7 @@ jest.mock('@components/ActivityIndicator', () => {
 
 const LOADER_TEST_ID = 'ActivityIndicator';
 const NOT_FOUND_TEST_ID = 'NotFoundPage';
+const PLAID_ACCOUNT_ID = 'plaid-account-1';
 
 const {NON_USD, USD} = SBO_CONST;
 
@@ -68,6 +70,7 @@ describe('OnboardingFlowPage reads on open', () => {
 
     beforeEach(async () => {
         jest.mocked(read).mockReset();
+        jest.mocked(write).mockReset();
         heldAnswers = [];
         setForceOffline(false);
         await Onyx.clear();
@@ -121,6 +124,8 @@ describe('OnboardingFlowPage reads on open', () => {
                 draft: {companyName: 'Acme GmbH'},
             },
         );
+
+        // Then the page reads the business types and shows a loader while it waits for them
         expect(read).toHaveBeenCalledTimes(1);
         expect(screen.getByTestId(LOADER_TEST_ID)).toBeOnTheScreen();
 
@@ -153,7 +158,7 @@ describe('OnboardingFlowPage reads on open', () => {
             },
         );
 
-        // A read made offline is dropped, so the page waits without a token
+        // Then no read is sent, because a read made offline is dropped, and the page waits for the token
         expect(read).not.toHaveBeenCalled();
         expect(screen.getByTestId(LOADER_TEST_ID)).toBeOnTheScreen();
 
@@ -165,5 +170,38 @@ describe('OnboardingFlowPage reads on open', () => {
         // Then the page sends the read it still owed and shows the identity check
         expect(read).toHaveBeenCalledTimes(1);
         expect(screen.getByText('[mock] Pass the identity check')).toBeOnTheScreen();
+    });
+
+    it('reads the Plaid link token again after a failed bank step cleared it, and shows the accounts with the error', async () => {
+        // Given the Plaid page with a picked account, its link token and the accounts of the bank login, and a server that
+        // rejects the bank step, whose failure data clears the link token like every failed USD write
+        holdReads({updates: [{onyxMethod: Onyx.METHOD.SET, key: ONYXKEYS.RAM_ONLY_SIMPLIFIED_BANK_ONBOARDING_PLAID_LINK_TOKEN, value: 'plaid-link-token'}], isSuccess: true});
+        answerBankOnboardingRequests('write', 'failure');
+        await Onyx.multiSet({
+            [ONYXKEYS.RAM_ONLY_SIMPLIFIED_BANK_ONBOARDING_PLAID_LINK_TOKEN]: 'plaid-link-token',
+            [ONYXKEYS.SIMPLIFIED_BANK_ONBOARDING_PLAID_DATA]: {
+                bankAccounts: [{plaidAccountID: PLAID_ACCOUNT_ID, bankName: 'Platypus Bank', accountNumber: '1111222233331111', routingNumber: '011401533', mask: '1111'}],
+            },
+        });
+        await openFlowPage(
+            {kind: 'usd', params: {policyID: USD_POLICY_ID, page: USD.PAGE_NAMES.BANK_ACCOUNT, subPage: USD.BANK_INFO_SUB_PAGES.PLAID}},
+            {
+                achData: {policyID: USD_POLICY_ID, currentStep: USD.STEP.BANK_ACCOUNT, subStep: SBO_CONST.SETUP_TYPE.PLAID},
+                draft: {country: SBO_CONST.COUNTRY.US, setupType: SBO_CONST.SETUP_TYPE.PLAID, plaidAccountID: PLAID_ACCOUNT_ID},
+            },
+        );
+        await answerHeldReads();
+        jest.mocked(read).mockClear();
+
+        // When the user presses Next and the server rejects the account
+        fireEvent.press(screen.getByText('common.next'));
+        await waitForBatchedUpdatesWithAct();
+        await answerHeldReads();
+
+        // Then the page reads the token it lost and shows the accounts again with the error, so the user can retry
+        expect(read).toHaveBeenCalledTimes(1);
+        expect(screen.getByText('bankAccount.chooseAnAccount')).toBeOnTheScreen();
+        expect(screen.getByText('walletPage.addBankAccountFailure')).toBeOnTheScreen();
+        expect(screen.queryByTestId(LOADER_TEST_ID)).not.toBeOnTheScreen();
     });
 });
