@@ -11,10 +11,11 @@ type RequestState = {
     errors?: OnyxCommon.Errors | null;
 
     /**
-     * The server answered. The real API applies neither the success nor the failure data of an answer that needs an
-     * admin, so only this tells a request that got such an answer from one that still waits.
+     * The request that the server answered last. The real API applies neither the success nor the failure data of an
+     * answer that needs an admin, so only this tells a request that got such an answer from one that still waits. It
+     * can name an older request than `requestID`, whose answer landed after a newer attempt started.
      */
-    hasResponse?: boolean;
+    answeredRequestID?: string;
 };
 
 /** One entry per request key, so a page reads the state of its own request and nothing else */

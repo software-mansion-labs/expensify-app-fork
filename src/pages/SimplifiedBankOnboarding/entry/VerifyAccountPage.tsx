@@ -15,13 +15,11 @@ import TextInput from '@components/TextInput';
 import useLocalize from '@hooks/useLocalize';
 import useThemeStyles from '@hooks/useThemeStyles';
 
-import {getLatestErrorMessage} from '@libs/ErrorUtils';
 import type BankOnboardingLabParamList from '@libs/Navigation/paramLists/BankOnboardingLabParamList';
 import type {PlatformStackScreenProps} from '@libs/Navigation/PlatformStackNavigation/types';
 
-import REQUEST_NAMES from '@pages/SimplifiedBankOnboarding/contract/REQUEST_NAMES';
 import SBO_CONST from '@pages/SimplifiedBankOnboarding/contract/SBO_CONST';
-import {useRequestState} from '@pages/SimplifiedBankOnboarding/core';
+import {useRequest} from '@pages/SimplifiedBankOnboarding/core';
 import {openFlowAtResume, useReadFlowData} from '@pages/SimplifiedBankOnboarding/flows';
 
 import CONST from '@src/CONST';
@@ -31,7 +29,7 @@ import React, {useEffect, useState} from 'react';
 import {View} from 'react-native';
 
 import {leaveVerifyAccount} from './entryNavigation';
-import validateUser, {clearValidateUserErrors} from './requests/validateUser';
+import {clearValidateUserErrors, getValidateUserRequest} from './requests/validateUser';
 
 type VerifyAccountPageProps = PlatformStackScreenProps<BankOnboardingLabParamList, typeof SCREENS.SETTINGS.BANK_ONBOARDING_LAB.VERIFY_ACCOUNT>;
 
@@ -39,7 +37,7 @@ function VerifyAccountPage({route}: VerifyAccountPageProps) {
     const styles = useThemeStyles();
     const {translate} = useLocalize();
     const readFlowData = useReadFlowData();
-    const {isPending, errors} = useRequestState(REQUEST_NAMES.VALIDATE_USER);
+    const {send: validateUser, isPending, errorMessage} = useRequest(getValidateUserRequest());
     const [validateCode, setValidateCode] = useState('');
 
     const policyID = route.params?.policyID;
@@ -55,7 +53,7 @@ function VerifyAccountPage({route}: VerifyAccountPageProps) {
 
     const updateValidateCode = (code: string) => {
         setValidateCode(code);
-        if (!errors) {
+        if (!errorMessage) {
             return;
         }
         clearValidateUserErrors();
@@ -105,7 +103,7 @@ function VerifyAccountPage({route}: VerifyAccountPageProps) {
                     />
                     <FormHelpMessage
                         style={styles.mt3}
-                        message={getLatestErrorMessage({errors})}
+                        message={errorMessage}
                     />
                 </View>
                 <Button

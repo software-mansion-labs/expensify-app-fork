@@ -4,9 +4,10 @@
  * sends it through the mock API and returns a Promise that settles when the status of this very request leaves `pending`.
  * The status comes from the optimistic, success and failure data of the request, like any other server result, so the
  * Promise only tells the handler when Onyx holds the result. The status entry carries a request ID, so the result of an
- * older request with the same key never settles a newer one. The finally data marks the entry as answered, so a request
- * whose answer applied neither the success nor the failure data still settles, as failed. A write is never in flight
- * twice under one key, whoever sends it, so a double press or a page and the controller sending the same write make one call.
+ * older request with the same key never settles a newer one. The finally data names the request that got its answer, so
+ * a request whose answer applied neither the success nor the failure data still settles, as failed. A write is never in
+ * flight twice under one key, whoever sends it, so a double press or a page and the controller sending the same write
+ * make one call.
  */
 import {getMicroSecondOnyxErrorWithTranslationKey} from '@libs/ErrorUtils';
 import {getIsOffline} from '@libs/NetworkState';
@@ -77,12 +78,13 @@ function getFailedState(requestID: string, errorKey: TranslationPaths): Partial<
 function addStatusUpdates(key: RequestKey, requestID: string, errorKey: TranslationPaths, onyxData: OnyxData<RequestOnyxKey>): OnyxData<RequestOnyxKey> {
     return {
         ...onyxData,
-
-        // The entry may still hold the answered mark of the previous attempt with the same key, which the new attempt must not inherit
-        optimisticData: [...(onyxData.optimisticData ?? []), buildStatusUpdate(key, {requestID, status: 'pending', errors: null, hasResponse: false})],
+        optimisticData: [...(onyxData.optimisticData ?? []), buildStatusUpdate(key, {requestID, status: 'pending', errors: null})],
         successData: [...(onyxData.successData ?? []), buildStatusUpdate(key, {requestID, status: 'succeeded', errors: null})],
         failureData: [...(onyxData.failureData ?? []), buildStatusUpdate(key, getFailedState(requestID, errorKey))],
-        finallyData: [...(onyxData.finallyData ?? []), buildStatusUpdate(key, {requestID, hasResponse: true})],
+
+        // The handler goes on once the success or the failure data landed, so a retry may take over the entry before
+        // this lands. Writing the request ID here would give the entry back to the older request and skip the retry.
+        finallyData: [...(onyxData.finallyData ?? []), buildStatusUpdate(key, {answeredRequestID: requestID})],
     };
 }
 
@@ -109,7 +111,7 @@ function waitForRequestToSettle(key: RequestKey, requestID: string, errorKey: Tr
                     if (entry.status === 'pending') {
                         // The answer applied neither the success nor the failure data, which the real API does when the command needs an admin.
                         // The entry would stay pending forever, so it is failed here and the next callback settles the request.
-                        if (entry.hasResponse) {
+                        if (entry.answeredRequestID === requestID) {
                             Onyx.merge(ONYXKEYS.RAM_ONLY_SIMPLIFIED_BANK_ONBOARDING_REQUESTS, {[key]: getFailedState(requestID, errorKey)});
                         }
                         return;

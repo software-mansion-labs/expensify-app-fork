@@ -166,9 +166,10 @@ Each request goes through `runRequest`. It writes `{requestID, status, errors}` 
 Promise of the outcome (`succeeded`, `failed` or `skipped`). The status is written by the optimistic, success and
 failure data of the request, so the Promise only tells the handler when Onyx holds the result. The real `API.write`
 resolves when the request is queued, not when the server answers, so the flow needs this bridge. The request ID ties
-the outcome to this very request, so an older request never settles a newer one. The finally data marks the entry as
-answered. The real API applies neither the success nor the failure data of an answer that needs an admin (460), and
-such a request settles as failed instead of staying pending.
+the outcome to this very request, so an older request never settles a newer one. The finally data names the request
+that got its answer. The real API applies neither the success nor the failure data of an answer that needs an admin
+(460), and such a request settles as failed instead of staying pending. The finally data never writes the request ID:
+the handler goes on once the success or the failure data landed, so a retry sent at once may own the entry already.
 
 A write is never in flight twice under one key. `runRequest` keeps the keys of the writes that have not settled, and a
 second send of the same key settles at once as `skipped` without a call. The guard sits in `runRequest`, so it holds for a
@@ -183,7 +184,9 @@ reload would never settle.
 
 A write made offline is queued, and the page shows it as pending until the connection returns and the request settles.
 Reads made offline are not sent. The button spinner and the error come from `useRequestState(key)`, which `useRequest`
-wraps for custom pages. Requests keep the
+wraps for every page that sends its own request: the custom pages, the verify account page and the account read
+(`useAccountRead`) of the entry page and of a flow opened by a deep link. No code outside `core/` pairs a status with a
+send by hand. Requests keep the
 account `errors` that the frozen landing page shows, and write no other flags to the account key. The entry page clears
 those errors when the lab closes, so an error of the flow does not stay on the Payments page.
 

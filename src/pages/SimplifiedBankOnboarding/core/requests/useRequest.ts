@@ -1,7 +1,8 @@
 /**
- * The one way a custom page sends a request. The page takes the request from its page of the plan, so the plan still
+ * The one way a page sends its own request. A custom page takes the request from its page of the plan, so the plan still
  * names every request of the flow, and the page only adds the input that it alone has, such as the amounts of the test
- * deposits. A write sent again while it is in flight is skipped by `runRequest`, also when the controller sent it.
+ * deposits. A page outside the flow, such as the verify account page, plans its request itself. A write sent again
+ * while it is in flight is skipped by `runRequest`, also when the controller sent it.
  */
 import {getLatestErrorMessage} from '@libs/ErrorUtils';
 

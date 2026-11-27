@@ -4,14 +4,13 @@
  */
 import useNetwork from '@hooks/useNetwork';
 
-import REQUEST_NAMES from '@pages/SimplifiedBankOnboarding/contract/REQUEST_NAMES';
-import {getRequestKey, useRequestState} from '@pages/SimplifiedBankOnboarding/core';
+import {useRequest} from '@pages/SimplifiedBankOnboarding/core';
 
 import {useEffect, useRef, useState} from 'react';
 
 import type {OpenOnboardingPageParams} from './openOnboardingPage';
 
-import openOnboardingPage from './openOnboardingPage';
+import {getOpenOnboardingPageRequest} from './openOnboardingPage';
 
 type AccountReadParams = Pick<OpenOnboardingPageParams, 'policyID' | 'bankAccountID'>;
 
@@ -38,7 +37,8 @@ function getParamsKey(params: AccountReadParams | undefined): string | undefined
 
 /** Undefined params mean the screen has nothing to read, such as a flow whose account is already there */
 function useAccountRead(params: AccountReadParams | undefined, {shouldJoinPendingRead = false, shouldReadOnReconnect = true}: AccountReadOptions = {}): AccountRead {
-    const {isPending} = useRequestState(getRequestKey(REQUEST_NAMES.OPEN_ONBOARDING_PAGE, params));
+    // Without params the screen sends nothing, and the request without a scope only gives the hook a status entry to read
+    const {send: sendRead, isPending} = useRequest(getOpenOnboardingPageRequest(params ?? {}));
     const paramsKey = getParamsKey(params);
 
     // Only the last read may report its outcome, so a slow answer of an earlier read or of an unmounted screen is ignored
@@ -51,7 +51,7 @@ function useAccountRead(params: AccountReadParams | undefined, {shouldJoinPendin
         }
         lastReadIDRef.current += 1;
         const readID = lastReadIDRef.current;
-        openOnboardingPage(params).then((outcome) => {
+        sendRead().then((outcome) => {
             if (readID !== lastReadIDRef.current) {
                 return;
             }

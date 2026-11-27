@@ -125,6 +125,20 @@ describe('runRequest', () => {
         expect(write).toHaveBeenCalledTimes(2);
     });
 
+    it('settles a write that is sent again right after the earlier send settled with its own outcome', async () => {
+        // Given a write that the server rejected, where the handler goes on before the rest of the answer, its finally data, landed
+        answerBankOnboardingRequests('write', 'failure');
+        await sendValidateUser();
+
+        // When the user tries again at once and the server accepts the retry
+        answerBankOnboardingRequests('write', 'success');
+        const outcome = await sendValidateUser();
+
+        // Then the retry reports its own answer, because the late finally data of the earlier send must not take over the status entry
+        expect(outcome).toEqual({status: 'succeeded'});
+        expect((await getRequestState())?.status).toBe('succeeded');
+    });
+
     it('sends a read again while an earlier read with the same key is in flight', async () => {
         // Given a read that the server has not answered yet
         jest.mocked(read).mockClear();
