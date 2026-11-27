@@ -2,8 +2,7 @@
  * Sends the requests of one definition for the bank account of the open flow, and reports their state.
  *
  * What it hides: the read of the flow data at the moment of the send, the bank account scope of the flow, the default of
- * the account error mirror, the guard against a second send while one is pending (also within one tick), and a request
- * that cannot be built, which counts as a failed attempt.
+ * the account error mirror, and the guard against a second send while one is pending (also within one tick).
  */
 import type {FlowTarget} from '@pages/SimplifiedBankOnboarding/core/flow/flowContext';
 import {useOnboardingFlow} from '@pages/SimplifiedBankOnboarding/core/flow/flowContext';
@@ -17,12 +16,12 @@ import Onyx from 'react-native-onyx';
 import type {RequestKey} from './runRequest';
 import type {OnboardingRequest, RequestName, RequestOutcome} from './types';
 
-import {failUnsentRequest, getRequestKey, sendTrackedRequest, useRequestKeyState} from './runRequest';
+import {getRequestKey, sendTrackedRequest, useRequestKeyState} from './runRequest';
 
 /**
  * `userAction`: a press of the user, guarded against a second send while one is pending.
- * `background`: a send that no press started (the save after each page, the read when a page opens), never guarded, and
- * its failure is not mirrored to the account (BC-08).
+ * `background`: a send that no press started (the save after each page), never guarded, and its failure is not mirrored
+ * to the account (BC-08).
  */
 type SendMode = 'userAction' | 'background';
 
@@ -56,10 +55,7 @@ function useSendOnboardingRequest<TInput>(request: OnboardingRequest<TInput> | u
     async function buildAndSend(sentRequest: OnboardingRequest<TInput>, sentKey: RequestKey, input: TInput): Promise<RequestOutcome> {
         try {
             const spec = sentRequest.build(await readFlowData(), input);
-            if (!spec) {
-                return await failUnsentRequest(sentKey, {});
-            }
-            return await sendTrackedRequest(sentKey, {...spec, shouldShowErrorOutsideFlow: spec.shouldShowErrorOutsideFlow ?? shouldMirrorErrorByDefault(target, spec.type, mode)});
+            return await sendTrackedRequest(sentKey, spec && {...spec, shouldShowErrorOutsideFlow: spec.shouldShowErrorOutsideFlow ?? shouldMirrorErrorByDefault(target, spec.type, mode)});
         } finally {
             if (mode === 'userAction') {
                 keysBeingSent.delete(sentKey);
@@ -98,9 +94,9 @@ function useOnboardingRequest<TInput = void>(
 }
 
 /**
- * A send that no press started: the progress save of the step shell (`saveAfterEachPage`) and the read when a page
- * opens. Each call sends without the pending guard, so each progress save goes out, and offline each one waits in the
- * queue (BC-15). Its failure is not mirrored to the account (BC-08). Internal to core.
+ * A send that no press started: the progress save of the step shell (`saveAfterEachPage`). Each call sends without the
+ * pending guard, so each progress save goes out, and offline each one waits in the queue (BC-15). Its failure is not
+ * mirrored to the account (BC-08). Internal to core.
  */
 function useBackgroundRequest(request: OnboardingRequest | undefined): () => Promise<RequestOutcome> {
     const key = useFlowRequestKey(request?.name);

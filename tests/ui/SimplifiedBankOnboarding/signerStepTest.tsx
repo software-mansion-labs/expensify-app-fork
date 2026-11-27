@@ -62,7 +62,7 @@ jest.mock('@components/InteractiveStepWrapper', () => {
 const flowActions = createTestFlowActions();
 const {saveDraft} = flowActions;
 
-async function renderSignerStep(page: PageID | undefined) {
+async function renderSignerStep(page: PageID | undefined, isEditing = false) {
     const position: FlowStepPosition = {
         step: PAGE_NAMES.SIGNER_INFO,
         previousStep: PAGE_NAMES.BENEFICIAL_OWNER_INFO,
@@ -70,7 +70,7 @@ async function renderSignerStep(page: PageID | undefined) {
         counterIndex: 4,
         counterNames: [],
         page,
-        isEditing: false,
+        isEditing,
     };
 
     await renderInFlow(<SignerStep />, {target: TARGET, position, flowActions});
@@ -95,6 +95,17 @@ describe('SignerStep', () => {
         jest.clearAllMocks();
         await Onyx.clear();
         await waitForBatchedUpdatesWithAct();
+    });
+
+    it('returns an older edit link to the signer confirmation', async () => {
+        // Given a job title edit link saved before the URL included the return page
+        await renderSignerStep(PAGES.JOB_TITLE, true);
+
+        // When the user leaves edit mode
+        fireEvent.press(screen.getByText('test-back'));
+
+        // Then the user can review the director details before continuing to the invitation
+        expect(Navigation.goBack).toHaveBeenCalledWith(getSignerRoute(PAGES.CONFIRMATION));
     });
 
     it('opens the name page after "Yes"', async () => {

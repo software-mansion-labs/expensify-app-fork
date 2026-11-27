@@ -33,7 +33,7 @@ import type {PageNavigationActions, PageNavigationState} from './pageNavigation'
 import type {PageTarget} from './readSubPages';
 
 import {PageNavigationActionsContext, PageNavigationStateContext} from './pageNavigation';
-import {getNextPage, getPreviousPage, getStartPage, NEXT_STEP, readSubPages} from './readSubPages';
+import {getDefaultEditReturnPage, getNextPage, getPreviousPage, getStartPage, NEXT_STEP, readSubPages} from './readSubPages';
 
 type OnboardingStepProps = {
     title: string;
@@ -102,9 +102,10 @@ function OnboardingStep({title, wrapperID, children, startAt, saveAfterEachPage,
         Navigation.navigate(getFlowRoute(target, {step: nextStep}));
     }
 
-    /** Back to the page that opened edit mode, or to the last page when the URL names none */
+    /** Back to the page that opened edit mode, or to the default return page when the URL names none */
     function returnFromEditing() {
-        Navigation.goBack(getFlowRoute(target, {step, page: editReturnPage ?? pages.at(-1)?.name}));
+        const returnPage = editReturnPage ?? (currentPage && getDefaultEditReturnPage(pages, currentPage)?.name);
+        Navigation.goBack(getFlowRoute(target, {step, page: returnPage}));
     }
 
     function goBackToPreviousStep() {

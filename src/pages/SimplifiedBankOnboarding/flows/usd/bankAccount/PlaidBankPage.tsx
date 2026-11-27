@@ -49,7 +49,7 @@ function PlaidBankPage() {
         if (plaidErrorMessage) {
             return <Text style={[styles.formError, styles.mh5]}>{plaidErrorMessage}</Text>;
         }
-        if (!plaidLinkToken || accountSelector.isPending) {
+        if (!plaidLinkToken || loginRead.isPending || accountSelector.isPending) {
             return <PageLoadingIndicator />;
         }
         return (

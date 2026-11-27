@@ -1,40 +1,50 @@
 /**
  * A read that a page needs before it can show anything. It is sent when the page opens and again after each reconnect
- * until it succeeds. It is built and sent the way every other request of a flow is.
+ * until it succeeds. It is tracked under its request key the way every other request of a flow is.
  */
 import useNetwork from '@hooks/useNetwork';
 
 import {getIsOffline} from '@libs/NetworkState';
 
-import {useOnboardingFlow} from '@pages/SimplifiedBankOnboarding/core/flow/flowContext';
+import {useFlowData} from '@pages/SimplifiedBankOnboarding/core/flow/flowData';
 
 import {useEffect, useEffectEvent, useRef} from 'react';
 
-import type {OnboardingRequest} from './types';
+import type {OnboardingRequest, RequestOutcome} from './types';
 
-import {getRequestKey, useRequestKeyState} from './runRequest';
-import {useBackgroundRequest} from './useOnboardingRequest';
+import {getRequestKey, sendTrackedRequest, useRequestKeyState} from './runRequest';
 
 /**
  * Sends the read on mount while `isEnabled` is true, when `isEnabled` turns true, and again after each reconnect until
- * it succeeds. It is never sent while offline, and a read skipped offline is sent after the reconnect even when the key
- * still holds a success of an earlier read, because that read could have used other params. Works only inside
- * OnboardingFlow.
+ * the read of this page succeeds. It is never sent while offline. The status of the key does not say whether this page
+ * has read: another page may use the same key with other params (the bank fields of another country), so a read that
+ * this page skipped offline is sent after the reconnect also while the read of that other page is pending or succeeded.
+ * The request is built from the data of the last render, because an effect must not read Onyx on its own. Works only
+ * inside OnboardingFlow.
  */
 function useReadOnOpen(request: OnboardingRequest, {isEnabled = true}: {isEnabled?: boolean} = {}): {isPending: boolean; hasFailed: boolean} {
-    const {bankAccount} = useOnboardingFlow();
-    const sendRead = useBackgroundRequest(request);
-    const key = getRequestKey(request.name, bankAccount);
+    const data = useFlowData();
+    const key = getRequestKey(request.name, data.bankAccount);
     const {status} = useRequestKeyState(key);
-    const hasSkippedReadRef = useRef(false);
 
-    async function read() {
+    /** The read that this page sent last, while it is pending or after it succeeded. Empty when the page still owes a read. */
+    const ownReadRef = useRef<Promise<RequestOutcome> | undefined>(undefined);
+
+    function read() {
         if (getIsOffline()) {
-            hasSkippedReadRef.current = true;
+            ownReadRef.current = undefined;
             return;
         }
-        const outcome = await sendRead();
-        hasSkippedReadRef.current = outcome.status === 'skipped';
+        const ownRead = sendTrackedRequest(key, request.build(data));
+        ownReadRef.current = ownRead;
+
+        ownRead.then((outcome) => {
+            // A newer read of this page replaced this one, so only the newer one says whether the page still owes a read
+            if (ownReadRef.current !== ownRead || outcome.status === 'succeeded') {
+                return;
+            }
+            ownReadRef.current = undefined;
+        });
     }
 
     const readOnOpen = useEffectEvent(read);
@@ -47,8 +57,7 @@ function useReadOnOpen(request: OnboardingRequest, {isEnabled = true}: {isEnable
 
     useNetwork({
         onReconnect: () => {
-            const hasReadSucceeded = status === 'succeeded' && !hasSkippedReadRef.current;
-            if (!isEnabled || status === 'pending' || hasReadSucceeded) {
+            if (!isEnabled || ownReadRef.current) {
                 return;
             }
             read();

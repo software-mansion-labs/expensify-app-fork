@@ -6,8 +6,10 @@
  * What it hides:
  * - the request key `name:policy-<id>` or `name:bankAccount-<id>` (a request of a bank account never shows on another one)
  * - the requestID of each attempt, so the answer of an older attempt never settles a newer one or replaces its status
- * - the four status updates (optimistic pending, success, failure, finally `hasResponse`) added to the data of the caller
- * - the bridge from Onyx data to a Promise, and an answer that applied neither success nor failure data (settled as failed)
+ * - the status updates: the pending status joins the optimistic data of the caller, and the answer is first recorded
+ *   under the requestID and becomes the status only while the key still waits for that attempt
+ * - the bridge from Onyx data to a Promise, and the attempts that count as failed: an answer that applied no success
+ *   data, and a request that could not be built, for which nothing is sent
  * - offline reads (not sent, nothing written) and offline writes (queued by the mock API, and their Promise with them)
  * - the account error mirror (`account.errors`) and its lifetime: it uses the error key of the attempt, and it is cleared
  *   with the page error when the last user of the request key unmounts, or as soon as a failure arrives with no user
@@ -19,7 +21,7 @@ import {getLatestErrorMessage, getMicroSecondOnyxErrorWithTranslationKey} from '
 import {getIsOffline} from '@libs/NetworkState';
 import {rand64} from '@libs/NumberUtils';
 
-import type {OnboardingRequests, RequestState} from '@pages/SimplifiedBankOnboarding/contract/onyx';
+import type {OnboardingRequests, RequestAnswer, RequestState} from '@pages/SimplifiedBankOnboarding/contract/onyx';
 import {read, write} from '@pages/SimplifiedBankOnboarding/mockBackend/mockApi';
 
 import ONYXKEYS from '@src/ONYXKEYS';
@@ -64,7 +66,7 @@ const seenRequestIDs = new Set<string>();
 /** The requestID of the attempt that wrote the account error mirror, per key */
 const mirroredRequestIDs = new Map<RequestKey, string>();
 
-let latestRequests: OnyxEntry<OnboardingRequests>;
+let latestRequests: OnboardingRequests['byKey'];
 let latestAccountErrors: Errors | null | undefined;
 
 function getRequestKey(name: RequestName, scope?: RequestScope): RequestKey {
@@ -81,7 +83,16 @@ function buildStatusUpdate(key: RequestKey, value: Partial<RequestState> | null)
     return {
         onyxMethod: Onyx.METHOD.MERGE,
         key: ONYXKEYS.RAM_ONLY_SIMPLIFIED_BANK_ONBOARDING_REQUESTS,
-        value: {[key]: value},
+        value: {byKey: {[key]: value}},
+    };
+}
+
+/** An answer is recorded under the requestID of its attempt, so it cannot replace the status of a newer attempt */
+function buildAnswerUpdate(requestID: string, answer: RequestAnswer | null): OnyxUpdate<typeof ONYXKEYS.RAM_ONLY_SIMPLIFIED_BANK_ONBOARDING_REQUESTS> {
+    return {
+        onyxMethod: Onyx.METHOD.MERGE,
+        key: ONYXKEYS.RAM_ONLY_SIMPLIFIED_BANK_ONBOARDING_REQUESTS,
+        value: {answers: {[requestID]: answer}},
     };
 }
 
@@ -107,19 +118,18 @@ function buildPendingUpdates(key: RequestKey, {requestID, shouldShowErrorOutside
         requestID,
         status: 'pending',
         errors: null,
-        hasResponse: false,
     });
     return shouldShowErrorOutsideFlow ? [statusUpdate, buildAccountErrorsUpdate(null)] : [statusUpdate];
 }
 
 function addStatusUpdates(key: RequestKey, waiter: Waiter, onyxData: OnyxData<RequestOnyxKey>): OnyxData<RequestOnyxKey> {
-    const {requestID, errors, shouldShowErrorOutsideFlow} = waiter;
+    const {requestID} = waiter;
+
     return {
         ...onyxData,
         optimisticData: [...(onyxData.optimisticData ?? []), ...buildPendingUpdates(key, waiter)],
-        successData: [...(onyxData.successData ?? []), buildStatusUpdate(key, {requestID, status: 'succeeded', errors: null})],
-        failureData: [...(onyxData.failureData ?? []), ...buildFailureUpdates(key, requestID, errors, shouldShowErrorOutsideFlow)],
-        finallyData: [...(onyxData.finallyData ?? []), buildStatusUpdate(key, {requestID, hasResponse: true})],
+        successData: [...(onyxData.successData ?? []), buildAnswerUpdate(requestID, {hasSucceeded: true})],
+        finallyData: [...(onyxData.finallyData ?? []), buildAnswerUpdate(requestID, {key})],
     };
 }
 
@@ -161,36 +171,57 @@ function updateWaiter(key: RequestKey, waiter: Waiter) {
         return;
     }
     if (entry.requestID !== waiter.requestID) {
-        // The answer of an attempt that this one replaced overwrote the entry, so the entry shows this attempt again
-        if (seenRequestIDs.has(waiter.requestID)) {
-            Onyx.update(buildPendingUpdates(key, waiter));
-        }
         return;
     }
 
     seenRequestIDs.add(waiter.requestID);
-    if (!entry.hasResponse) {
-        return;
+    if (entry.status !== 'pending') {
+        settleWaiter(key, waiter, {status: entry.status});
+    }
+}
+
+/**
+ * Turns each complete answer into the status of its key and removes the answer. The answer of an attempt that a newer
+ * one replaced writes no status, also when the newer attempt has already ended.
+ */
+function applyAnswers(answers: OnboardingRequests['answers']) {
+    const updates: Array<OnyxUpdate<RequestOnyxKey>> = [];
+    for (const [requestID, answer] of Object.entries(answers ?? {})) {
+        // Only the success data has arrived. The final update names the key, so the answer waits for it.
+        if (!answer.key) {
+            continue;
+        }
+        updates.push(buildAnswerUpdate(requestID, null));
+
+        const waiter = waiters.get(answer.key);
+        if (waiter?.requestID !== requestID) {
+            continue;
+        }
+        // An answer without the success data is a failure. The real API also applies no failure data when the command needs an admin.
+        if (answer.hasSucceeded) {
+            updates.push(buildStatusUpdate(answer.key, {requestID, status: 'succeeded', errors: null}));
+        } else {
+            updates.push(...buildFailureUpdates(answer.key, requestID, waiter.errors, waiter.shouldShowErrorOutsideFlow));
+        }
     }
 
-    // The answer applied neither the success nor the failure data, which the real API does when the command needs an admin
-    if (entry.status === 'pending') {
-        Onyx.update(buildFailureUpdates(key, waiter.requestID, waiter.errors, waiter.shouldShowErrorOutsideFlow));
-        return;
+    if (updates.length) {
+        Onyx.update(updates);
     }
-    settleWaiter(key, waiter, {status: entry.status});
 }
 
 // The request layer runs outside render: a handler awaits the answer of a request, and a failure that arrives after its
 // page unmounted is cleared here. No component is there to subscribe with useOnyx, so the module listens to the request
-// key to settle the Promises and to know the current state of each entry when it clears one.
+// key to write the status of each answer, to settle the Promises and to know the current state of each entry when it
+// clears one.
 Onyx.connectWithoutView({
     key: ONYXKEYS.RAM_ONLY_SIMPLIFIED_BANK_ONBOARDING_REQUESTS,
     callback: (requests) => {
-        latestRequests = requests;
+        latestRequests = requests?.byKey;
         for (const [key, waiter] of [...waiters]) {
             updateWaiter(key, waiter);
         }
+        applyAnswers(requests?.answers);
     },
 });
 
@@ -243,20 +274,26 @@ function startAttempt(key: RequestKey, options: AttemptOptions): {waiter: Waiter
     };
 }
 
-/** Sends a request under a key. The Promise resolves when Onyx holds the answer. */
-function sendTrackedRequest(key: RequestKey, spec: RequestSpec): Promise<RequestOutcome> {
+/** Records a failed attempt that sent nothing, for a request that could not be built */
+function failUnsentRequest(key: RequestKey): Promise<RequestOutcome> {
+    const {waiter, outcome} = startAttempt(key, {});
+    Onyx.update(buildFailureUpdates(key, waiter.requestID, waiter.errors, waiter.shouldShowErrorOutsideFlow));
+    return outcome;
+}
+
+/**
+ * Sends a request under a key. The Promise resolves when Onyx holds the answer. Without a spec the request could not be
+ * built, so nothing is sent and the attempt counts as failed with the generic error.
+ */
+function sendTrackedRequest(key: RequestKey, spec: RequestSpec | undefined): Promise<RequestOutcome> {
+    if (!spec) {
+        return failUnsentRequest(key);
+    }
     if (spec.type === 'read' && getIsOffline()) {
         return Promise.resolve(SKIPPED);
     }
     const {waiter, outcome} = startAttempt(key, spec);
     sendMockRequest(spec, addStatusUpdates(key, waiter, spec.onyxData ?? {}));
-    return outcome;
-}
-
-/** Records a failed attempt that sent nothing, for a request that could not be built */
-function failUnsentRequest(key: RequestKey, options: AttemptOptions): Promise<RequestOutcome> {
-    const {waiter, outcome} = startAttempt(key, options);
-    Onyx.update([...buildFailureUpdates(key, waiter.requestID, waiter.errors, waiter.shouldShowErrorOutsideFlow), buildStatusUpdate(key, {requestID: waiter.requestID, hasResponse: true})]);
     return outcome;
 }
 
@@ -288,7 +325,7 @@ function runRequest({
  * Without a key (a block with no request) it reports nothing.
  */
 function useRequestKeyState(key: RequestKey | undefined): RequestKeyState {
-    const selectEntry = (requests: OnyxEntry<OnboardingRequests>) => (key ? requests?.[key] : undefined);
+    const selectEntry = (requests: OnyxEntry<OnboardingRequests>) => (key ? requests?.byKey?.[key] : undefined);
     const [entry] = useOnyx(ONYXKEYS.RAM_ONLY_SIMPLIFIED_BANK_ONBOARDING_REQUESTS, {selector: selectEntry});
 
     useEffect(() => {
@@ -328,5 +365,5 @@ function clearRequestState(): Promise<void> {
     return Onyx.set(ONYXKEYS.RAM_ONLY_SIMPLIFIED_BANK_ONBOARDING_REQUESTS, null);
 }
 
-export {clearAccountErrorMirror, clearRequestState, failUnsentRequest, getRequestKey, retainRequestKey, runRequest, sendTrackedRequest, useRequestKeyState};
+export {clearAccountErrorMirror, clearRequestState, getRequestKey, retainRequestKey, runRequest, sendTrackedRequest, useRequestKeyState};
 export type {RequestKey};

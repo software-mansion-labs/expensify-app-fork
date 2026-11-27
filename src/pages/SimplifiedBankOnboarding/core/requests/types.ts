@@ -61,9 +61,9 @@ type RequestScope = {
 
 /**
  * What a page sends. The name says which user action it is, and it is the start of the request key. `build` says what
- * is sent, from the data that Onyx holds at the send. Blocks save the draft first, so `data.draft` has the submitted
- * values. It returns undefined when the request cannot be built (for example no policyID). The attempt then counts as
- * failed with the generic error, and nothing is sent.
+ * is sent, from the data that Onyx holds at the send (a read on open uses the data of the last render). Blocks save
+ * the draft first, so `data.draft` has the submitted values. It returns undefined when the request cannot be built (for
+ * example no policyID). The attempt then counts as failed with the generic error, and nothing is sent.
  */
 type OnboardingRequest<TInput = void> = {
     name: RequestName;

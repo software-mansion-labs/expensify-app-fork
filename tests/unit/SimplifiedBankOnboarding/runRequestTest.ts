@@ -1,6 +1,6 @@
 import {getIsOffline} from '@libs/NetworkState';
 
-import {clearAccountErrorMirror, clearRequestState, getRequestKey, retainRequestKey, runRequest} from '@pages/SimplifiedBankOnboarding/core/requests/runRequest';
+import {clearAccountErrorMirror, clearRequestState, getRequestKey, retainRequestKey, runRequest, sendTrackedRequest} from '@pages/SimplifiedBankOnboarding/core/requests/runRequest';
 import type {RequestOutcome} from '@pages/SimplifiedBankOnboarding/core/requests/types';
 import {READ_COMMANDS, WRITE_COMMANDS} from '@pages/SimplifiedBankOnboarding/mockBackend/commands';
 import {read, write} from '@pages/SimplifiedBankOnboarding/mockBackend/mockApi';
@@ -57,7 +57,7 @@ function sendValidateUser(shouldShowErrorOutsideFlow = false): Promise<RequestOu
 
 async function getRequestState() {
     const requests = await getOnyxValue(ONYXKEYS.RAM_ONLY_SIMPLIFIED_BANK_ONBOARDING_REQUESTS);
-    return requests?.[getRequestKey(VALIDATE_NAME)];
+    return requests?.byKey?.[getRequestKey(VALIDATE_NAME)];
 }
 
 describe('runRequest', () => {
@@ -135,6 +135,27 @@ describe('runRequest', () => {
         // Then its handler goes on with the answer of its own attempt
         expect(await newerOutcome).toEqual({status: 'succeeded'});
         expect((await getRequestState())?.status).toBe('succeeded');
+    });
+
+    it('keeps a newer local failure when an earlier request later succeeds', async () => {
+        // Given a mounted page with a request awaiting its server response
+        const key = getRequestKey(VALIDATE_NAME);
+        const release = retainRequestKey(key);
+        answerRequests('none');
+        const older = sendValidateUser();
+        await waitForBatchedUpdates();
+
+        // When the next attempt cannot be built and the server then accepts the older request
+        expect(await sendTrackedRequest(key, undefined)).toEqual({status: 'failed'});
+        const data = jest.mocked(write).mock.calls.at(0)?.[2];
+        await Onyx.update(data?.successData ?? []);
+        await Onyx.update(data?.finallyData ?? []);
+        await waitForBatchedUpdates();
+
+        // Then the page still shows its latest failure
+        expect(await older).toEqual({status: 'skipped'});
+        expect((await getRequestState())?.status).toBe('failed');
+        release();
     });
 
     it('keeps the error of a failed request while a component uses its key', async () => {

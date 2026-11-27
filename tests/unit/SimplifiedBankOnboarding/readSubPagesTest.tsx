@@ -1,5 +1,5 @@
 import type {PageID} from '@pages/SimplifiedBankOnboarding/contract/ids';
-import {getNextPage, getPreviousPage, getStartPage, NEXT_STEP, PREVIOUS_STEP, readSubPages} from '@pages/SimplifiedBankOnboarding/core/step/readSubPages';
+import {getDefaultEditReturnPage, getNextPage, getPreviousPage, getStartPage, NEXT_STEP, PREVIOUS_STEP, readSubPages} from '@pages/SimplifiedBankOnboarding/core/step/readSubPages';
 import type {SubPageEntry} from '@pages/SimplifiedBankOnboarding/core/step/readSubPages';
 import SubPage from '@pages/SimplifiedBankOnboarding/core/step/SubPage';
 
@@ -125,6 +125,31 @@ describe('readSubPages', () => {
         expect(urlPage?.name).toBe('date-of-birth');
         expect(startAtPage?.name).toBe('ssn');
         expect(lastPage?.name).toBe('confirmation');
+    });
+
+    it('returns an edit without a return page to the next confirmation, else to the last page', () => {
+        // Given a step with a waiting page after its confirmation, and a step without a confirmation
+        const {pages: signerPages} = readSubPages(
+            <>
+                <SubPage name="job-title">Job title</SubPage>
+                <SubPage name="confirmation">Confirmation</SubPage>
+                <SubPage name="hang-tight">Waiting</SubPage>
+            </>,
+        );
+        const {pages: pagesWithoutConfirmation} = readSubPages(
+            <>
+                <SubPage name="full-name">Name</SubPage>
+                <SubPage name="ssn">SSN</SubPage>
+            </>,
+        );
+
+        // When an edit link that names no return page is left on a page of each step
+        const signerReturnPage = getDefaultEditReturnPage(signerPages, findPage(signerPages, 'job-title'));
+        const returnPageWithoutConfirmation = getDefaultEditReturnPage(pagesWithoutConfirmation, findPage(pagesWithoutConfirmation, 'full-name'));
+
+        // Then the user reviews the edit on the confirmation, not on the waiting page after it, and the last page is the fallback
+        expect(signerReturnPage?.name).toBe('confirmation');
+        expect(returnPageWithoutConfirmation?.name).toBe('ssn');
     });
 
     it('treats children without names as the content of a single page step', () => {

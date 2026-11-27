@@ -15,8 +15,8 @@ import type {FlowNavigationState} from '@pages/SimplifiedBankOnboarding/core/flo
 import {clearRequestState} from '@pages/SimplifiedBankOnboarding/core/requests/runRequest';
 import PAGES from '@pages/SimplifiedBankOnboarding/flows/usd/bankAccount/bankAccountPages';
 import BankAccountStep from '@pages/SimplifiedBankOnboarding/flows/usd/bankAccount/BankAccountStep';
-import {WRITE_COMMANDS} from '@pages/SimplifiedBankOnboarding/mockBackend/commands';
-import {write} from '@pages/SimplifiedBankOnboarding/mockBackend/mockApi';
+import {READ_COMMANDS, WRITE_COMMANDS} from '@pages/SimplifiedBankOnboarding/mockBackend/commands';
+import {read, write} from '@pages/SimplifiedBankOnboarding/mockBackend/mockApi';
 
 import ONYXKEYS from '@src/ONYXKEYS';
 import SCREENS from '@src/SCREENS';
@@ -133,6 +133,30 @@ describe('USD ManualBankPage', () => {
         expect(screen.getByText('bankAccount.manuallyAdd')).toBeOnTheScreen();
         expect(screen.queryByText('[mock] Log in to the bank')).not.toBeOnTheScreen();
         expect(Navigation.setParams).toHaveBeenCalledWith({subPage: PAGES.MANUAL}, ROUTE_KEY);
+    });
+
+    it('waits for the new Plaid token when the previous visit left one behind', async () => {
+        // Given a previous login that ended before the user chose a bank account
+        await Onyx.set(ONYXKEYS.RAM_ONLY_SIMPLIFIED_BANK_ONBOARDING_PLAID_LINK_TOKEN, 'previous-token');
+        await Onyx.set(ONYXKEYS.FORMS.SIMPLIFIED_BANK_ONBOARDING_FORM_DRAFT, {
+            setupType: SBO_CONST.SETUP_TYPE.PLAID,
+        });
+        jest.mocked(read).mockImplementationOnce((_command, _params, data) => {
+            Onyx.update(data?.optimisticData ?? []);
+        });
+
+        // When the bank step opens and the new token request is still pending
+        await renderBankAccountStep(undefined);
+
+        // Then the login button appears only after the current request succeeds
+        expect(read).toHaveBeenCalledWith(READ_COMMANDS.OPEN_PLAID_BANK_LOGIN, {}, expect.anything());
+        expect(screen.queryByText('[mock] Log in to the bank')).not.toBeOnTheScreen();
+        const data = jest.mocked(read).mock.calls.at(0)?.[2];
+        await Onyx.set(ONYXKEYS.RAM_ONLY_SIMPLIFIED_BANK_ONBOARDING_PLAID_LINK_TOKEN, 'new-token');
+        await Onyx.update(data?.successData ?? []);
+        await Onyx.update(data?.finallyData ?? []);
+        await waitForBatchedUpdatesWithAct();
+        expect(screen.getByText('[mock] Log in to the bank')).toBeOnTheScreen();
     });
 
     it('connects the typed numbers trimmed and opens the personal info step', async () => {

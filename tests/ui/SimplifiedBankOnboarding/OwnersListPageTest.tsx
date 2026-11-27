@@ -177,7 +177,9 @@ describe('OwnersListPage', () => {
     });
 
     it('saves the pressed owner into the buffer and then opens the first details page', async () => {
-        // Given the row of another owner
+        // Given an owner whose draft save is still pending
+        const pendingSave = Promise.withResolvers<void>();
+        jest.mocked(saveDraft).mockReturnValueOnce(pendingSave.promise);
         await renderOwnersList([OWNER_ROW]);
 
         // When the user presses it
@@ -185,17 +187,19 @@ describe('OwnersListPage', () => {
         fireEvent.press(screen.getByText('Alan Turing'), PRESS_EVENT);
         await waitForBatchedUpdatesWithAct();
 
-        // Then the buffer update reaches the draft before the details page opens, not in edit mode
+        // Then the list stays on screen until the buffer has been saved
         expect(saveDraft).toHaveBeenCalledWith({
             ownerBeingModifiedID: OWNER_ROW.id,
         });
+        expect(Navigation.navigate).not.toHaveBeenCalled();
+        pendingSave.resolve();
+        await waitForBatchedUpdatesWithAct();
         expect(Navigation.navigate).toHaveBeenCalledWith(
             getFlowRoute(TARGET, {
                 step: PAGE_NAMES.BENEFICIAL_OWNERS,
                 page: PAGES.LEGAL_NAME,
             }),
         );
-        expect(jest.mocked(saveDraft).mock.invocationCallOrder[0]).toBeLessThan(jest.mocked(Navigation.navigate).mock.invocationCallOrder[0]);
     });
 
     it('opens nothing from a read only row', async () => {

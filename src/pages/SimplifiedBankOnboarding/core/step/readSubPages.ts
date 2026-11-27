@@ -1,6 +1,6 @@
 /**
- * Reads the sub page children of OnboardingStep and answers the questions about the page order: the start page and the
- * pages that Next and Back open.
+ * Reads the sub page children of OnboardingStep and answers the questions about the page order: the start page, the
+ * pages that Next and Back open, and the page that an edit link without a return page returns to.
  *
  * What it hides: the flattening of fragments and arrays, the runtime check of the element props and the start page rule.
  */
@@ -61,6 +61,12 @@ type StartPageInput = {
     /** The user came by Next from the previous step */
     hasArrivedByNext: boolean;
 };
+
+/**
+ * The name of the confirmation page in every step that has one. The steps define their page names themselves, so this
+ * is a convention, and it is used only for an edit link that names no return page.
+ */
+const CONFIRMATION_PAGE_NAME = 'confirmation';
 
 function isPageTarget(value: unknown): value is PageTarget {
     return value === NEXT_STEP || typeof value === 'string';
@@ -147,5 +153,14 @@ function getPreviousPage(pages: SubPageEntry[], current: SubPageEntry): SubPageE
     return currentIndex > 0 ? pages.at(currentIndex - 1) : undefined;
 }
 
-export {getNextPage, getPreviousPage, getStartPage, NEXT_STEP, PREVIOUS_STEP, readSubPages};
+/**
+ * The page that edit mode of `current` returns to when the URL names none: the first confirmation after it, else the
+ * last page. Only a link made before the edit route had the `returnTo` param names none.
+ */
+function getDefaultEditReturnPage(pages: SubPageEntry[], current: SubPageEntry): SubPageEntry | undefined {
+    const currentIndex = pages.indexOf(current);
+    return pages.slice(currentIndex + 1).find((page) => page.name === CONFIRMATION_PAGE_NAME) ?? pages.at(-1);
+}
+
+export {getDefaultEditReturnPage, getNextPage, getPreviousPage, getStartPage, NEXT_STEP, PREVIOUS_STEP, readSubPages};
 export type {BackTarget, PageTarget, SubPageElementProps, SubPageEntry, SubPagePlan};

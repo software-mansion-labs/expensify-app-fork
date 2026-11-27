@@ -397,14 +397,14 @@ describe('OnboardingStep', () => {
             expect(Navigation.navigate).not.toHaveBeenCalled();
         });
 
-        it('returns to the last page on Back when the URL names no page that opened edit mode', async () => {
+        it('returns to the confirmation on Back when the URL names no page that opened edit mode', async () => {
             // Given an edit page whose URL was typed by hand without the page that opened it
             await renderPersonalInfoStep({page: 'ssn', isEditing: true});
 
             // When the user presses Back
             pressBack();
 
-            // Then Back returns to the last page, the confirmation, instead of the previous page
+            // Then Back returns to the confirmation, where the user reviews the edit, instead of the previous page
             expect(Navigation.goBack).toHaveBeenCalledWith(getStepRoute('personal-info', 'confirmation'));
         });
     });

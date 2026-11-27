@@ -203,16 +203,27 @@ type RequestState = {
     requestID: string;
     status: 'pending' | 'succeeded' | 'failed';
     errors?: OnyxCommon.Errors | null;
-
-    /**
-     * The server answered. An answer may apply neither the success nor the failure data, so only this tells such an
-     * answer from a request that still waits.
-     */
-    hasResponse?: boolean;
 };
 
-/** One entry per request key: the request name plus the workspace or the bank account it is about */
-type OnboardingRequests = Record<string, RequestState>;
+/**
+ * What the data of one answer says about its attempt. The request layer reads it and then writes the status, so the
+ * answer of an older attempt never becomes the status that a page shows.
+ */
+type RequestAnswer = {
+    /** The request key of the attempt. The final update writes it, so an answer with a key is complete. */
+    key?: string;
+
+    /** Written by the success data. An answer may apply neither the success nor the failure data, and that is a failure. */
+    hasSucceeded?: boolean;
+};
+
+type OnboardingRequests = {
+    /** One entry per request key: the request name plus the workspace or the bank account it is about */
+    byKey?: Record<string, RequestState>;
+
+    /** One entry per requestID, until the request layer has read the answer */
+    answers?: Record<string, RequestAnswer>;
+};
 
 type OnboardingPicklists = {
     picklists?: {
@@ -236,6 +247,7 @@ export type {
     OnboardingUser,
     PlaidBankAccount,
     PlaidData,
+    RequestAnswer,
     RequestState,
     SetupType,
     USDStep,

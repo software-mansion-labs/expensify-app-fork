@@ -242,7 +242,7 @@ describe('useOnboardingRequest', () => {
 
         // Then the entry and the Payments page do not show the error of a page that is gone
         expect(await getAccountErrors()).toBeFalsy();
-        expect(await getOnyxValue(ONYXKEYS.RAM_ONLY_SIMPLIFIED_BANK_ONBOARDING_REQUESTS)).toEqual({});
+        expect((await getOnyxValue(ONYXKEYS.RAM_ONLY_SIMPLIFIED_BANK_ONBOARDING_REQUESTS))?.byKey).toEqual({});
     });
 
     it('keeps the account error when it belongs to another request', async () => {
