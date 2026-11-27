@@ -1,10 +1,9 @@
 /**
- * The gate for a user whose account is not validated yet. The entry point sends the user here with the picked option
- * stored in Onyx. After the code is accepted, this page replaces itself with the first step of the flow, and the entry
- * point that is mounted beneath prepares the data for the stored option.
+ * The gate for a user whose account is not validated yet. The setup options send the user here with the picked option
+ * stored in Onyx. After the code is accepted, this page replaces itself with the first step of the flow, and the setup
+ * options that are mounted beneath prepare the data for the stored option.
  * It mirrors `DynamicReimbursementAccountVerifyAccountPage` and `VerifyAccountPageBase`.
  */
-
 import Button from '@components/Button';
 import FormHelpMessage from '@components/FormHelpMessage';
 import FullScreenLoadingIndicator from '@components/FullscreenLoadingIndicator';
@@ -23,16 +22,18 @@ import Navigation from '@libs/Navigation/Navigation';
 import type BankOnboardingLabParamList from '@libs/Navigation/paramLists/BankOnboardingLabParamList';
 import type {PlatformStackScreenProps} from '@libs/Navigation/PlatformStackNavigation/types';
 
-import {clearValidateUserErrors, validateUser} from '@pages/SimplifiedBankOnboarding/actions/OnboardingPage';
-import SBO_CONST from '@pages/SimplifiedBankOnboarding/SBO_CONST';
+import {isNonUSDCurrency} from '@pages/SimplifiedBankOnboarding/contract/currency';
+import SBO_CONST from '@pages/SimplifiedBankOnboarding/contract/SBO_CONST';
 
 import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';
-import ROUTES from '@src/ROUTES';
 import type SCREENS from '@src/SCREENS';
 
 import React, {useEffect, useEffectEvent, useRef, useState} from 'react';
 import {View} from 'react-native';
+
+import {openFirstFlowStep} from './entryNavigation';
+import {clearValidateUserErrors, validateUser} from './requests/validateUser';
 
 type VerifyAccountPageProps = PlatformStackScreenProps<BankOnboardingLabParamList, typeof SCREENS.SETTINGS.BANK_ONBOARDING_LAB.VERIFY_ACCOUNT>;
 
@@ -46,34 +47,36 @@ function VerifyAccountPage({route}: VerifyAccountPageProps) {
     const policyID = route.params?.policyID;
     const backTo = route.params?.backTo;
     const workspace = policyID ? workspaces?.[policyID] : undefined;
-    const isNonUSDWorkspace = !!workspace && workspace.outputCurrency !== SBO_CONST.CURRENCY.USD;
+    const isNonUSD = isNonUSDCurrency(workspace?.outputCurrency);
     const isUserValidated = !!user?.validated;
+    const isCodeEmpty = validateCode.trim() === '';
 
     // The validated flag stays true after the navigation started, so this keeps the page from navigating twice.
     const hasNavigatedForwardRef = useRef(false);
 
-    const navigateToFirstStep = useEffectEvent(() => {
+    const openFirstStep = useEffectEvent(() => {
         if (hasNavigatedForwardRef.current) {
             return;
         }
         hasNavigatedForwardRef.current = true;
 
-        const forwardRoute = isNonUSDWorkspace
-            ? ROUTES.SETTINGS_BANK_ONBOARDING_LAB_NON_USD_SETUP.getRoute({policyID, page: SBO_CONST.NON_USD.PAGE_NAMES.COUNTRY, backTo})
-            : ROUTES.SETTINGS_BANK_ONBOARDING_LAB_USD_SETUP.getRoute({policyID, page: SBO_CONST.USD.PAGE_NAMES.COUNTRY, backTo});
-
-        // The page replaces itself, so the back button of the first step returns to the entry point and not to this form.
-        Navigation.navigate(forwardRoute, {forceReplace: true});
+        // The page replaces itself, so the Back of the first step returns to the setup options and not to this form.
+        openFirstFlowStep({policyID, backTo, isNonUSD, shouldReplace: true});
     });
 
     useEffect(() => {
         if (!isUserValidated) {
             return;
         }
-        navigateToFirstStep();
+        openFirstStep();
     }, [isUserValidated]);
 
-    useEffect(() => clearValidateUserErrors, []);
+    useEffect(
+        () => () => {
+            clearValidateUserErrors();
+        },
+        [],
+    );
 
     const updateValidateCode = (code: string) => {
         setValidateCode(code);
@@ -82,8 +85,15 @@ function VerifyAccountPage({route}: VerifyAccountPageProps) {
         }
     };
 
+    const submitCode = () => {
+        if (isCodeEmpty) {
+            return;
+        }
+        validateUser(validateCode);
+    };
+
     if (isUserValidated) {
-        return <FullScreenLoadingIndicator />;
+        return <FullScreenLoadingIndicator shouldUseGoBackButton />;
     }
 
     return (
@@ -91,6 +101,7 @@ function VerifyAccountPage({route}: VerifyAccountPageProps) {
             testID="SimplifiedBankOnboardingVerifyAccountPage"
             includeSafeAreaPaddingBottom
         >
+            {/* Back ignores backTo and keeps the stored option, as the real page does (ENTRY-AND-SHARED-68) */}
             <HeaderWithBackButtonAndTitle
                 title={translate('contacts.validateAccount')}
                 onBackButtonPress={() => Navigation.goBack()}
@@ -111,7 +122,8 @@ function VerifyAccountPage({route}: VerifyAccountPageProps) {
                         maxLength={CONST.VALIDATE_CODE_LENGTH}
                         value={validateCode}
                         onChangeText={updateValidateCode}
-                        onSubmitEditing={() => validateUser(validateCode)}
+                        onSubmitEditing={submitCode}
+                        sentryLabel={CONST.SENTRY_LABEL.BANK_ONBOARDING_LAB.EDIT_INPUT}
                         autoFocus
                     />
                     <FormHelpMessage
@@ -124,8 +136,8 @@ function VerifyAccountPage({route}: VerifyAccountPageProps) {
                     variant={CONST.BUTTON_VARIANT.SUCCESS}
                     size={CONST.BUTTON_SIZE.LARGE}
                     isLoading={!!user?.isLoading}
-                    isDisabled={validateCode.trim() === ''}
-                    onPress={() => validateUser(validateCode)}
+                    isDisabled={isCodeEmpty}
+                    onPress={submitCode}
                     sentryLabel={CONST.SENTRY_LABEL.BANK_ONBOARDING_LAB.SUBMIT_STEP}
                 >
                     <Button.Text>{translate('common.verify')}</Button.Text>

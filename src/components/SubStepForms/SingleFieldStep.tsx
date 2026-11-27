@@ -22,7 +22,8 @@ import type {InputModeOptions} from 'react-native';
 import React from 'react';
 import {View} from 'react-native';
 
-type SingleFieldStepProps<TFormID extends keyof OnyxFormValuesMapping> = SubPageProps &
+type SingleFieldStepProps<TFormID extends keyof OnyxFormValuesMapping> = Pick<SubPageProps, 'isEditing'> &
+    Partial<Pick<SubPageProps, 'onNext' | 'onMove'>> &
     ForwardedFSClassProps & {
         formID: TFormID;
         formTitle: string;

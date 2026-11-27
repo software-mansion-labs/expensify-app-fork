@@ -1,0 +1,245 @@
+import {fireEvent, screen} from '@testing-library/react-native';
+
+import type InteractiveStepWrapperModule from '@components/InteractiveStepWrapper';
+import Text from '@components/Text';
+
+import Navigation from '@libs/Navigation/Navigation';
+
+import type {OnboardingDraft} from '@pages/SimplifiedBankOnboarding/contract/form';
+import SBO_CONST from '@pages/SimplifiedBankOnboarding/contract/SBO_CONST';
+import {NEXT_STEP} from '@pages/SimplifiedBankOnboarding/core';
+import type {OnboardingRequest} from '@pages/SimplifiedBankOnboarding/core';
+import type {FlowStepPosition, FlowTarget} from '@pages/SimplifiedBankOnboarding/core/flow/flowContext';
+import {getFlowRoute} from '@pages/SimplifiedBankOnboarding/core/flow/flowRoutes';
+import type {FlowNavigationState} from '@pages/SimplifiedBankOnboarding/core/flow/flowRoutes';
+import {clearRequestState} from '@pages/SimplifiedBankOnboarding/core/requests/runRequest';
+import OnboardingStep from '@pages/SimplifiedBankOnboarding/core/step/OnboardingStep';
+import OwnersListPage from '@pages/SimplifiedBankOnboarding/flows/shared/owners/OwnersListPage';
+import type {OwnerRow} from '@pages/SimplifiedBankOnboarding/flows/shared/owners/OwnersListPage';
+import PAGES from '@pages/SimplifiedBankOnboarding/flows/usd/beneficialOwners/ownersPages';
+import {WRITE_COMMANDS} from '@pages/SimplifiedBankOnboarding/mockBackend/commands';
+import {write} from '@pages/SimplifiedBankOnboarding/mockBackend/mockApi';
+
+import ONYXKEYS from '@src/ONYXKEYS';
+
+import type * as NativeNavigation from '@react-navigation/native';
+import type ReactNative from 'react-native';
+
+import React from 'react';
+import Onyx from 'react-native-onyx';
+
+import {answerWrites, createTestFlowActions, renderInFlow} from '../../utils/BankOnboardingLabStepTestUtils';
+import waitForBatchedUpdatesWithAct from '../../utils/waitForBatchedUpdatesWithAct';
+
+const POLICY_ID = '1';
+const TARGET: FlowTarget = {
+    kind: 'usd',
+    policyID: POLICY_ID,
+    backTo: undefined,
+};
+const {PAGE_NAMES} = SBO_CONST.USD;
+
+const mockNavigationState: FlowNavigationState = {routes: []};
+
+jest.mock('@react-navigation/native', () => ({
+    ...jest.requireActual<typeof NativeNavigation>('@react-navigation/native'),
+    useIsFocused: () => true,
+    useRoute: () => ({key: 'current-route', name: 'CurrentScreen'}),
+    useNavigation: () => ({
+        getState: () => mockNavigationState,
+        isFocused: () => true,
+        addListener: () => () => {},
+    }),
+    useNavigationState: <TResult,>(selector: (state: FlowNavigationState) => TResult) => selector(mockNavigationState),
+}));
+
+jest.mock('@libs/Navigation/Navigation', () => ({
+    navigate: jest.fn(),
+    goBack: jest.fn(),
+    setParams: jest.fn(),
+    dismissModal: jest.fn(),
+}));
+
+jest.mock('@pages/SimplifiedBankOnboarding/mockBackend/mockApi', () => ({
+    read: jest.fn(),
+    write: jest.fn(),
+}));
+
+jest.mock('@hooks/useLocalize', () => jest.fn(() => ({translate: (key: string) => key})));
+
+// The real wrapper needs the whole screen stack, and the list only needs to be rendered inside a step.
+jest.mock('@components/InteractiveStepWrapper', () => {
+    const RN = jest.requireActual<typeof ReactNative>('react-native');
+    return ({children}: React.ComponentProps<typeof InteractiveStepWrapperModule>) => <RN.View>{children}</RN.View>;
+});
+
+const OWNERS_REQUEST: OnboardingRequest = {
+    name: 'usd.ownersListTest.confirm',
+    build: ({bankAccount}) => ({
+        type: 'write',
+        command: WRITE_COMMANDS.UPDATE_BENEFICIAL_OWNERS,
+        params: {
+            ...bankAccount,
+            ownsMoreThan25Percent: false,
+            beneficialOwners: '[]',
+            beneficialOwnerKeys: [],
+        },
+    }),
+};
+
+const USER_ROW: OwnerRow = {
+    id: 'requestor',
+    title: 'Ada Lovelace',
+    description: '1990-01-01',
+    isReadOnly: true,
+};
+const OWNER_ROW: OwnerRow = {
+    id: 'alan',
+    title: 'Alan Turing',
+    description: '1991-02-02',
+};
+
+const PRESS_EVENT = {nativeEvent: {}};
+
+const flowActions = createTestFlowActions();
+const {saveDraft} = flowActions;
+const getEditUpdate = jest.fn((id: string): OnboardingDraft => ({ownerBeingModifiedID: id}));
+
+async function renderOwnersList(rows: OwnerRow[]) {
+    const position: FlowStepPosition = {
+        step: PAGE_NAMES.BENEFICIAL_OWNERS,
+        previousStep: PAGE_NAMES.COMPANY,
+        nextStep: PAGE_NAMES.ACH_CONTRACT,
+        counterIndex: 4,
+        counterNames: [],
+        page: PAGES.UBOS_LIST,
+        isEditing: false,
+    };
+
+    await renderInFlow(
+        <OnboardingStep
+            title="Owners"
+            wrapperID="OwnersListTestStep"
+            pages={[
+                {
+                    name: PAGES.UBOS_LIST,
+                    next: NEXT_STEP,
+                    content: (
+                        <OwnersListPage
+                            rows={rows}
+                            request={OWNERS_REQUEST}
+                            detailsStartPage={PAGES.LEGAL_NAME}
+                            getEditUpdate={getEditUpdate}
+                        />
+                    ),
+                },
+                {name: PAGES.LEGAL_NAME, content: <Text>Name page</Text>},
+            ]}
+        />,
+        {target: TARGET, position, flowActions},
+    );
+}
+
+describe('OwnersListPage', () => {
+    beforeAll(() => {
+        Onyx.init({keys: ONYXKEYS});
+    });
+
+    beforeEach(async () => {
+        jest.clearAllMocks();
+        jest.mocked(write).mockReset();
+        await clearRequestState();
+        await Onyx.clear();
+        await waitForBatchedUpdatesWithAct();
+    });
+
+    it('shows every owner under the owners label', async () => {
+        // Given the read only row of the user and the row of another owner
+        // When the list renders
+        await renderOwnersList([USER_ROW, OWNER_ROW]);
+
+        // Then both rows are shown with their details under the label
+        expect(screen.getByText('beneficialOwnerInfoStep.owners:')).toBeOnTheScreen();
+        expect(screen.getByText('Ada Lovelace')).toBeOnTheScreen();
+        expect(screen.getByText('1990-01-01')).toBeOnTheScreen();
+        expect(screen.getByText('Alan Turing')).toBeOnTheScreen();
+    });
+
+    it('hides the owners label without owners', async () => {
+        // Given no owner rows, as after "nobody owns 25%"
+        // When the list renders
+        await renderOwnersList([]);
+
+        // Then only the headline, the text and Confirm are shown
+        expect(screen.getByText('beneficialOwnerInfoStep.letsDoubleCheck')).toBeOnTheScreen();
+        expect(screen.queryByText('beneficialOwnerInfoStep.owners:')).not.toBeOnTheScreen();
+    });
+
+    it('saves the pressed owner into the buffer and then opens the first details page', async () => {
+        // Given an owner whose draft save is still pending
+        const pendingSave = Promise.withResolvers<void>();
+        jest.mocked(saveDraft).mockReturnValueOnce(pendingSave.promise);
+        await renderOwnersList([OWNER_ROW]);
+
+        // When the user presses it
+        // The row ignores a press without an event, so the test passes one as a real press does
+        fireEvent.press(screen.getByText('Alan Turing'), PRESS_EVENT);
+        await waitForBatchedUpdatesWithAct();
+
+        // Then the list stays on screen until the buffer has been saved
+        expect(saveDraft).toHaveBeenCalledWith({
+            ownerBeingModifiedID: OWNER_ROW.id,
+        });
+        expect(Navigation.navigate).not.toHaveBeenCalled();
+        pendingSave.resolve();
+        await waitForBatchedUpdatesWithAct();
+        expect(Navigation.navigate).toHaveBeenCalledWith(
+            getFlowRoute(TARGET, {
+                step: PAGE_NAMES.BENEFICIAL_OWNERS,
+                page: PAGES.LEGAL_NAME,
+            }),
+        );
+    });
+
+    it('opens nothing from a read only row', async () => {
+        // Given the read only row of the user, whose details belong to the personal info step
+        await renderOwnersList([USER_ROW]);
+
+        // When the user presses it
+        fireEvent.press(screen.getByText('Ada Lovelace'), PRESS_EVENT);
+        await waitForBatchedUpdatesWithAct();
+
+        // Then nothing is saved and no page opens
+        expect(saveDraft).not.toHaveBeenCalled();
+        expect(Navigation.navigate).not.toHaveBeenCalled();
+    });
+
+    it('sends the request on Confirm and opens the next step after a success', async () => {
+        // Given a server that accepts the owners
+        answerWrites('success');
+        await renderOwnersList([OWNER_ROW]);
+
+        // When the user confirms
+        fireEvent.press(screen.getByText('common.confirm'));
+        await waitForBatchedUpdatesWithAct();
+
+        // Then the request is sent once and the next step opens
+        expect(write).toHaveBeenCalledTimes(1);
+        expect(write).toHaveBeenCalledWith(WRITE_COMMANDS.UPDATE_BENEFICIAL_OWNERS, expect.objectContaining({policyID: POLICY_ID, beneficialOwners: '[]'}), expect.anything());
+        expect(Navigation.navigate).toHaveBeenCalledWith(getFlowRoute(TARGET, {step: PAGE_NAMES.ACH_CONTRACT}));
+    });
+
+    it('shows the error above Confirm and stays after a failure', async () => {
+        // Given a server that refuses the owners
+        answerWrites('failure');
+        await renderOwnersList([OWNER_ROW]);
+
+        // When the user confirms
+        fireEvent.press(screen.getByText('common.confirm'));
+        await waitForBatchedUpdatesWithAct();
+
+        // Then the generic error is shown and the step does not move on
+        expect(screen.getByText('common.genericErrorMessage')).toBeOnTheScreen();
+        expect(Navigation.navigate).not.toHaveBeenCalled();
+    });
+});

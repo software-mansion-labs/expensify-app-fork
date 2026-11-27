@@ -119,7 +119,8 @@ type SummaryGroup = {
     rows: SummaryGroupRow[];
 };
 
-type ConfirmationStepProps = SubPageProps &
+type ConfirmationStepProps = Pick<SubPageProps, 'onNext'> &
+    Partial<Pick<SubPageProps, 'isEditing' | 'onMove'>> &
     ForwardedFSClassProps & {
         pageTitle: string;
 

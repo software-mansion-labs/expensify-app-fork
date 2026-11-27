@@ -1,0 +1,432 @@
+import {fireEvent, render, screen} from '@testing-library/react-native';
+
+import type InteractiveStepWrapperModule from '@components/InteractiveStepWrapper';
+import {PressableWithoutFeedback} from '@components/Pressable';
+import Text from '@components/Text';
+
+import Navigation from '@libs/Navigation/Navigation';
+
+import type {PageID, StepID} from '@pages/SimplifiedBankOnboarding/contract/ids';
+import type {FlowStepPosition, FlowTarget} from '@pages/SimplifiedBankOnboarding/core/flow/flowContext';
+import {getFlowRoute} from '@pages/SimplifiedBankOnboarding/core/flow/flowRoutes';
+import type {FlowNavigationState} from '@pages/SimplifiedBankOnboarding/core/flow/flowRoutes';
+import OnboardingStep from '@pages/SimplifiedBankOnboarding/core/step/OnboardingStep';
+import {usePageNavigation} from '@pages/SimplifiedBankOnboarding/core/step/pageNavigation';
+
+import CONST from '@src/CONST';
+import ONYXKEYS from '@src/ONYXKEYS';
+import SCREENS from '@src/SCREENS';
+
+import type * as NativeNavigation from '@react-navigation/native';
+import type ReactNative from 'react-native';
+
+import React from 'react';
+import Onyx from 'react-native-onyx';
+
+import {createTestFlowActions, wrapInFlow} from '../../utils/BankOnboardingLabStepTestUtils';
+import getOnyxValue from '../../utils/getOnyxValue';
+import waitForBatchedUpdatesWithAct from '../../utils/waitForBatchedUpdatesWithAct';
+
+const ROUTE_KEY = 'current-route';
+const SCREEN_NAME = SCREENS.SETTINGS.BANK_ONBOARDING_LAB.USD_SETUP;
+const POLICY_ID = '1';
+const TARGET: FlowTarget = {kind: 'usd', policyID: POLICY_ID, backTo: undefined};
+
+let mockNavigationState: FlowNavigationState = {routes: []};
+
+jest.mock('@react-navigation/native', () => ({
+    ...jest.requireActual<typeof NativeNavigation>('@react-navigation/native'),
+    useIsFocused: () => true,
+    useRoute: () => ({key: 'current-route', name: 'CurrentScreen'}),
+    useNavigation: () => ({getState: () => mockNavigationState}),
+    useNavigationState: <TResult,>(selector: (state: FlowNavigationState) => TResult) => selector(mockNavigationState),
+}));
+
+jest.mock('@libs/Navigation/Navigation', () => ({
+    navigate: jest.fn(),
+    goBack: jest.fn(),
+    setParams: jest.fn(),
+    dismissModal: jest.fn(),
+}));
+
+jest.mock('@hooks/useLocalize', () => jest.fn(() => ({translate: (key: string) => key})));
+
+// The real wrapper needs the whole screen stack. The test keeps its two inputs that the step drives: the content and Back.
+jest.mock('@components/InteractiveStepWrapper', () => {
+    const RN = jest.requireActual<typeof ReactNative>('react-native');
+    return ({children, handleBackButtonPress}: React.ComponentProps<typeof InteractiveStepWrapperModule>) => (
+        <RN.View>
+            <RN.Pressable
+                accessibilityRole="button"
+                accessibilityLabel="Back"
+                onPress={handleBackButtonPress}
+            />
+            {children}
+        </RN.View>
+    );
+});
+
+type TestPageName = 'full-name' | 'ssn' | 'confirmation';
+
+/**
+ * A sub page with its label, whether Next ends the step, a Next button and an edit button for the name page, so a test
+ * can move on or edit
+ */
+function TestPage({label}: {label: string}) {
+    const {goNext, endsStep, openPage} = usePageNavigation();
+    return (
+        <>
+            <Text>{label}</Text>
+            <Text>{endsStep() ? 'Next ends the step' : 'Next stays in the step'}</Text>
+            <PressableWithoutFeedback
+                accessibilityRole="button"
+                accessibilityLabel="Next"
+                sentryLabel={CONST.SENTRY_LABEL.BANK_ONBOARDING_LAB.SUBMIT_STEP}
+                onPress={() => goNext()}
+            />
+            <PressableWithoutFeedback
+                accessibilityRole="button"
+                accessibilityLabel="Edit name"
+                sentryLabel={CONST.SENTRY_LABEL.BANK_ONBOARDING_LAB.OPEN_SUMMARY_ITEM}
+                onPress={() => openPage('full-name', {isEditing: true})}
+            />
+        </>
+    );
+}
+
+type RenderOptions = {
+    page?: PageID;
+    isEditing?: boolean;
+    editReturnPage?: PageID;
+    previousStep?: StepID;
+    nextStep?: StepID;
+    answered?: TestPageName[];
+    startAt?: TestPageName;
+    stepToWrite?: StepID;
+};
+
+const flowActions = createTestFlowActions(() => Promise.resolve());
+
+function getStepRoute(step: StepID, page?: PageID, isEditing?: boolean, editReturnPage?: PageID) {
+    return getFlowRoute(TARGET, {step, page, isEditing, editReturnPage});
+}
+
+function createRoute(key: string, step: StepID, page?: PageID) {
+    return {key, name: SCREEN_NAME, params: {policyID: POLICY_ID, page: step, subPage: page}};
+}
+
+/** The stack with the current route on top. `below` lists the routes under it, the oldest first. */
+function setNavigationStack(below: Array<ReturnType<typeof createRoute>>) {
+    mockNavigationState = {routes: [...below, createRoute(ROUTE_KEY, 'personal-info')]};
+}
+
+function buildPersonalInfoStep(options: RenderOptions = {}) {
+    // A spread, not parameter defaults, so a test can pass `undefined` for the first or the last step
+    const {
+        page,
+        isEditing = false,
+        editReturnPage,
+        previousStep,
+        nextStep,
+        answered = [],
+        startAt,
+        stepToWrite,
+    }: RenderOptions = {
+        previousStep: 'bank-account',
+        nextStep: 'business-info',
+        ...options,
+    };
+    const position: FlowStepPosition = {step: 'personal-info', previousStep, nextStep, counterIndex: 1, counterNames: ['1', '2', '3'], page, isEditing, editReturnPage, stepToWrite};
+
+    return wrapInFlow(
+        <OnboardingStep
+            title="Personal info"
+            wrapperID="PersonalInfoTestStep"
+            startAt={startAt}
+            pages={[
+                {name: 'full-name', isAnswered: answered.includes('full-name'), content: <TestPage label="Name page" />},
+                {name: 'ssn', isAnswered: answered.includes('ssn'), content: <TestPage label="SSN page" />},
+                {name: 'confirmation', isAnswered: answered.includes('confirmation'), content: <TestPage label="Confirmation page" />},
+            ]}
+        />,
+        {target: TARGET, position, flowActions},
+    );
+}
+
+async function renderPersonalInfoStep(options?: RenderOptions) {
+    render(buildPersonalInfoStep(options));
+    await waitForBatchedUpdatesWithAct();
+}
+
+function pressBack() {
+    fireEvent.press(screen.getByLabelText('Back'));
+}
+
+function pressNext() {
+    fireEvent.press(screen.getByLabelText('Next'));
+}
+
+describe('OnboardingStep', () => {
+    beforeAll(() => {
+        Onyx.init({keys: ONYXKEYS});
+    });
+
+    beforeEach(async () => {
+        jest.clearAllMocks();
+        setNavigationStack([]);
+        await Onyx.clear();
+        await waitForBatchedUpdatesWithAct();
+    });
+
+    describe('the start page', () => {
+        it('opens the first page after Next even when it is answered', async () => {
+            // Given the user pressed Next on the previous step, so its route lies directly under this one
+            setNavigationStack([createRoute('previous-route', 'bank-account', 'confirmation')]);
+
+            // When the step opens without a page in the URL and its first page is answered
+            await renderPersonalInfoStep({answered: ['full-name']});
+
+            // Then the step starts at its first page, because Next means "continue in order", and the URL gets that page
+            expect(screen.getByText('Name page')).toBeOnTheScreen();
+            expect(Navigation.setParams).toHaveBeenCalledWith({subPage: 'full-name'}, ROUTE_KEY);
+        });
+
+        it('opens startAt on Next', async () => {
+            // Given the user pressed Next on the previous step
+            setNavigationStack([createRoute('previous-route', 'bank-account')]);
+
+            // When the step names the page it starts at
+            await renderPersonalInfoStep({startAt: 'ssn'});
+
+            // Then startAt wins over the first page
+            expect(screen.getByText('SSN page')).toBeOnTheScreen();
+            expect(Navigation.setParams).toHaveBeenCalledWith({subPage: 'ssn'}, ROUTE_KEY);
+        });
+
+        it('opens the first page that is not answered on a resume or a deep link', async () => {
+            // Given no route of the previous step under this one, as after a resume or a deep link
+            setNavigationStack([]);
+
+            // When the step opens and its first page is answered
+            await renderPersonalInfoStep({answered: ['full-name']});
+
+            // Then the user continues where the answers stop
+            expect(screen.getByText('SSN page')).toBeOnTheScreen();
+            expect(Navigation.setParams).toHaveBeenCalledWith({subPage: 'ssn'}, ROUTE_KEY);
+        });
+
+        it('shows the page in the first frame and writes the URL exactly once', async () => {
+            // Given a URL without a sub page
+            // When the step renders for the first time
+            const {rerender} = render(buildPersonalInfoStep());
+
+            // Then the resolved page is on the screen in that first frame, before the URL write lands, so no loader flashes
+            expect(screen.getByText('Name page')).toBeOnTheScreen();
+
+            // When the step renders again with the same position
+            await waitForBatchedUpdatesWithAct();
+            rerender(buildPersonalInfoStep());
+            await waitForBatchedUpdatesWithAct();
+
+            // Then the URL write is not repeated per render
+            expect(Navigation.setParams).toHaveBeenCalledTimes(1);
+            expect(Navigation.setParams).toHaveBeenCalledWith({subPage: 'full-name'}, ROUTE_KEY);
+        });
+
+        it('treats a URL page that is not in the pages of the step as no sub page', async () => {
+            // Given a URL that names a page that is not in the pages of this step
+            // When the step opens
+            await renderPersonalInfoStep({page: 'date-of-birth', answered: ['full-name', 'ssn']});
+
+            // Then the start rule picks the page and writes it over the unknown one
+            expect(screen.getByText('Confirmation page')).toBeOnTheScreen();
+            expect(Navigation.setParams).toHaveBeenCalledWith({subPage: 'confirmation'}, ROUTE_KEY);
+        });
+
+        it('writes the step and its start page in one write when the URL named another step', async () => {
+            // Given a flow that shows this step for a URL that named no step, an unknown one or a skipped one
+            // When the step opens
+            await renderPersonalInfoStep({stepToWrite: 'personal-info', answered: ['full-name']});
+
+            // Then one write puts the step and the start page into the URL and drops the edit mode of the other step,
+            // so no second write can overwrite the first one
+            expect(screen.getByText('SSN page')).toBeOnTheScreen();
+            expect(Navigation.setParams).toHaveBeenCalledTimes(1);
+            expect(Navigation.setParams).toHaveBeenCalledWith({page: 'personal-info', subPage: 'ssn', action: undefined, returnTo: undefined}, ROUTE_KEY);
+        });
+
+        it('does not write the URL when it already names a page of the step', async () => {
+            // Given a URL that names a page of the step
+            // When the step opens
+            await renderPersonalInfoStep({page: 'ssn'});
+
+            // Then the page is shown and the URL stays as it is
+            expect(screen.getByText('SSN page')).toBeOnTheScreen();
+            expect(Navigation.setParams).not.toHaveBeenCalled();
+        });
+    });
+
+    describe('Next', () => {
+        it('opens the next page and then the next step', async () => {
+            // Given the first page of the step
+            await renderPersonalInfoStep({page: 'full-name'});
+
+            // When the user presses Next
+            pressNext();
+
+            // Then the next page opens as a new route of the same step
+            expect(Navigation.navigate).toHaveBeenCalledWith(getStepRoute('personal-info', 'ssn'));
+        });
+
+        it('opens the next step from the last page', async () => {
+            // Given the last page of the step
+            await renderPersonalInfoStep({page: 'confirmation'});
+
+            // When the user presses Next
+            pressNext();
+
+            // Then the next step of the flow opens
+            expect(Navigation.navigate).toHaveBeenCalledWith(getStepRoute('business-info'));
+        });
+
+        it('returns to the entry from the last page of the last step', async () => {
+            // Given the last page of the last step
+            await renderPersonalInfoStep({page: 'confirmation', nextStep: undefined});
+
+            // When the user presses Next
+            pressNext();
+
+            // Then the flow hands control back to the entry
+            expect(flowActions.returnToEntry).toHaveBeenCalledTimes(1);
+            expect(Navigation.navigate).not.toHaveBeenCalled();
+        });
+    });
+
+    describe('Back', () => {
+        it('opens the previous page', async () => {
+            // Given the second page of the step
+            await renderPersonalInfoStep({page: 'ssn'});
+
+            // When the user presses Back
+            pressBack();
+
+            // Then the previous page of the step opens
+            expect(Navigation.goBack).toHaveBeenCalledWith(getStepRoute('personal-info', 'full-name'));
+        });
+
+        it('returns to the page the user saw last on the previous step', async () => {
+            // Given the user came from the confirmation of the previous step, with an older route of it below
+            setNavigationStack([createRoute('older-route', 'bank-account', 'manual'), createRoute('previous-route', 'bank-account', 'confirmation')]);
+            await renderPersonalInfoStep({page: 'full-name'});
+
+            // When the user presses Back on the first page
+            pressBack();
+
+            // Then the latest route of the previous step opens, so the history is not rebuilt
+            expect(Navigation.goBack).toHaveBeenCalledWith(getStepRoute('bank-account', 'confirmation'));
+        });
+
+        it('opens the previous step without history', async () => {
+            // Given a step that opened by a deep link, with no route of the previous step below
+            await renderPersonalInfoStep({page: 'full-name'});
+
+            // When the user presses Back on the first page
+            pressBack();
+
+            // Then the previous step opens by its route, which Navigation replaces when it is not in the history
+            expect(Navigation.goBack).toHaveBeenCalledWith(getStepRoute('bank-account'));
+        });
+
+        it('returns to the entry from the first step', async () => {
+            // Given the first page of the first step
+            await renderPersonalInfoStep({page: 'full-name', previousStep: undefined});
+
+            // When the user presses Back
+            pressBack();
+
+            // Then the flow hands control back to the entry
+            expect(flowActions.returnToEntry).toHaveBeenCalledTimes(1);
+        });
+
+        it('keeps an account error that no request of the flow wrote', async () => {
+            // Given an account error that came from outside the flow, like the error of a failed bank account reset
+            const resetError = {failedReset: 'Something failed'};
+            await Onyx.merge(ONYXKEYS.SIMPLIFIED_BANK_ONBOARDING_ACCOUNT, {errors: resetError});
+            await renderPersonalInfoStep({page: 'ssn'});
+
+            // When the user presses Back
+            pressBack();
+            await waitForBatchedUpdatesWithAct();
+
+            // Then the error stays, because Back only removes the mirror of an error that a page of the flow showed
+            const account = await getOnyxValue(ONYXKEYS.SIMPLIFIED_BANK_ONBOARDING_ACCOUNT);
+            expect(account?.errors).toEqual(resetError);
+        });
+    });
+
+    describe('endsStep', () => {
+        it('is false on a page that has a page after it', async () => {
+            // Given a page in the middle of the step
+            await renderPersonalInfoStep({page: 'ssn'});
+
+            // When the page asks whether Next ends the step
+            // Then it does not, because Next opens the confirmation
+            expect(screen.getByText('Next stays in the step')).toBeOnTheScreen();
+        });
+
+        it('is true on the last page', async () => {
+            // Given the last page of the step
+            await renderPersonalInfoStep({page: 'confirmation'});
+
+            // When the page asks whether Next ends the step
+            // Then it does, so a block can send the request that belongs to the end of the step
+            expect(screen.getByText('Next ends the step')).toBeOnTheScreen();
+        });
+
+        it('is false on the last page in edit mode', async () => {
+            // Given the last page opened in edit mode
+            await renderPersonalInfoStep({page: 'confirmation', isEditing: true, editReturnPage: 'ssn'});
+
+            // When the page asks whether Next ends the step
+            // Then it does not, because Next in edit mode returns to the page that opened it
+            expect(screen.getByText('Next stays in the step')).toBeOnTheScreen();
+        });
+    });
+
+    describe('edit mode', () => {
+        it('names the page that opened edit mode in the URL of the edited page', async () => {
+            // Given the confirmation page
+            await renderPersonalInfoStep({page: 'confirmation'});
+
+            // When the user opens the name page in edit mode from it
+            fireEvent.press(screen.getByLabelText('Edit name'));
+
+            // Then the URL of the name page names the confirmation, so the edit returns there even after a reload
+            expect(Navigation.navigate).toHaveBeenCalledWith(getStepRoute('personal-info', 'full-name', true, 'confirmation'));
+        });
+
+        it('returns on Next to the page that opened edit mode, even when it is not the last page', async () => {
+            // Given the name page in edit mode, opened from the SSN page that the URL names
+            setNavigationStack([createRoute('ssn-route', 'personal-info', 'ssn')]);
+            await renderPersonalInfoStep({page: 'full-name', isEditing: true, editReturnPage: 'ssn'});
+
+            // When the user presses Next
+            pressNext();
+
+            // Then the SSN page opens again by going back to it, because the URL names the page where the edit started
+            expect(Navigation.goBack).toHaveBeenCalledWith(getStepRoute('personal-info', 'ssn'));
+            expect(Navigation.navigate).not.toHaveBeenCalled();
+        });
+
+        it('returns to the confirmation on Back when the URL names no page that opened edit mode', async () => {
+            // Given an edit page whose URL was typed by hand without the page that opened it
+            await renderPersonalInfoStep({page: 'ssn', isEditing: true});
+
+            // When the user presses Back
+            pressBack();
+
+            // Then Back returns to the confirmation, where the user reviews the edit, instead of the previous page
+            expect(Navigation.goBack).toHaveBeenCalledWith(getStepRoute('personal-info', 'confirmation'));
+        });
+    });
+});

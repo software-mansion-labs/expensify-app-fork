@@ -58,6 +58,8 @@ import type {
     WorkspacesDomainModalNavigatorParamList,
 } from '@navigation/types';
 
+import type * as BankOnboardingLab from '@pages/SimplifiedBankOnboarding';
+
 import type {Screen} from '@src/SCREENS';
 import SCREENS from '@src/SCREENS';
 import ObjectUtils from '@src/types/utils/ObjectUtils';
@@ -71,6 +73,9 @@ import {View} from 'react-native';
 import useModalStackScreenOptions from './useModalStackScreenOptions';
 
 const loadAttachmentModalScreen = () => require<ReactComponentModule>('../../../../pages/media/AttachmentModalScreen').default;
+
+/** The bank onboarding lab exposes its screens through one index, so the app does not depend on its folder layout */
+const loadBankOnboardingLab = () => require<Record<keyof typeof BankOnboardingLab, React.ComponentType>>('../../../../pages/SimplifiedBankOnboarding');
 
 type Screens = Partial<Record<Screen, () => React.ComponentType>>;
 
@@ -541,12 +546,12 @@ const SettingsModalStackNavigator = createModalStackNavigator<SettingsNavigatorP
         require<ReactComponentModule>('../../../../pages/settings/Wallet/InternationalDepositAccount/subPages/AccountFlowEntryPoint').default,
     [SCREENS.SETTINGS.UPDATE_PERSONAL_BANK_ACCOUNT]: () => require<ReactComponentModule>('../../../../pages/settings/Wallet/UpdatePersonalBankAccountPage').default,
     [SCREENS.SETTINGS.BANK_ACCOUNT_PURPOSE]: () => require<ReactComponentModule>('../../../../pages/settings/Wallet/BankAccountPurposePage').default,
-    [SCREENS.SETTINGS.BANK_ONBOARDING_LAB.ENTRY]: () => require<ReactComponentModule>('../../../../pages/SimplifiedBankOnboarding/entry/OnboardingEntryPage').default,
-    [SCREENS.SETTINGS.BANK_ONBOARDING_LAB.USD_SETUP]: () => require<ReactComponentModule>('../../../../pages/SimplifiedBankOnboarding/usd/USDFlowPage').default,
-    [SCREENS.SETTINGS.BANK_ONBOARDING_LAB.NON_USD_SETUP]: () => require<ReactComponentModule>('../../../../pages/SimplifiedBankOnboarding/nonUSD/NonUSDFlowPage').default,
-    [SCREENS.SETTINGS.BANK_ONBOARDING_LAB.VERIFY_ACCOUNT]: () => require<ReactComponentModule>('../../../../pages/SimplifiedBankOnboarding/entry/VerifyAccountPage').default,
-    [SCREENS.SETTINGS.BANK_ONBOARDING_LAB.ENTER_SIGNER_INFO]: () => require<ReactComponentModule>('../../../../pages/SimplifiedBankOnboarding/enterSignerInfo/EnterSignerInfoPage').default,
-    [SCREENS.SETTINGS.BANK_ONBOARDING_LAB.WORKSPACE_PAYMENTS]: () => require<ReactComponentModule>('../../../../pages/SimplifiedBankOnboarding/landing/WorkspacePaymentsPage').default,
+    [SCREENS.SETTINGS.BANK_ONBOARDING_LAB.ENTRY]: () => loadBankOnboardingLab().OnboardingEntryPage,
+    [SCREENS.SETTINGS.BANK_ONBOARDING_LAB.USD_SETUP]: () => loadBankOnboardingLab().USDFlowPage,
+    [SCREENS.SETTINGS.BANK_ONBOARDING_LAB.NON_USD_SETUP]: () => loadBankOnboardingLab().NonUSDFlowPage,
+    [SCREENS.SETTINGS.BANK_ONBOARDING_LAB.VERIFY_ACCOUNT]: () => loadBankOnboardingLab().VerifyAccountPage,
+    [SCREENS.SETTINGS.BANK_ONBOARDING_LAB.ENTER_SIGNER_INFO]: () => loadBankOnboardingLab().EnterSignerInfoPage,
+    [SCREENS.SETTINGS.BANK_ONBOARDING_LAB.WORKSPACE_PAYMENTS]: () => loadBankOnboardingLab().WorkspacePaymentsPage,
     [SCREENS.SETTINGS.RULES.ROOT]: () => require<ReactComponentModule>('../../../../pages/settings/Rules/ExpenseRulesPage').default,
     [SCREENS.SETTINGS.AGENTS.DYNAMIC_NEW]: withAgentAccessDenied(() => require<ReactComponentModule>('../../../../pages/settings/Agents/DynamicNewAgentPage').default),
     [SCREENS.SETTINGS.AGENTS.DYNAMIC_ADD]: withAgentAccessDenied(() => require<ReactComponentModule>('../../../../pages/settings/Agents/DynamicAddAgentPage').default),

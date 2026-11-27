@@ -1,0 +1,50 @@
+/**
+ * The block of a sub page with the legal first and last name. It wraps the shared FullNameStep, whose own check
+ * requires both names and rejects invalid characters.
+ */
+import FullNameStep from '@components/SubStepForms/FullNameStep';
+
+import type {OnboardingDraft, TextInputID} from '@pages/SimplifiedBankOnboarding/contract/form';
+import {useOnboardingFlow} from '@pages/SimplifiedBankOnboarding/core/flow/flowContext';
+import {usePageNavigation} from '@pages/SimplifiedBankOnboarding/core/step/pageNavigation';
+
+import React from 'react';
+
+import useSubPageSubmit from './useSubPageSubmit';
+
+type FullNameSubPageProps = {
+    firstNameInputID: TextInputID;
+    lastNameInputID: TextInputID;
+    title: string;
+    subtitle?: string;
+    defaultValues: {firstName: string; lastName: string};
+};
+
+function FullNameSubPage({firstNameInputID, lastNameInputID, title, subtitle, defaultValues}: FullNameSubPageProps) {
+    const {formID} = useOnboardingFlow();
+    const {isEditing} = usePageNavigation();
+    const {submit} = useSubPageSubmit({});
+
+    return (
+        <FullNameStep
+            isEditing={isEditing}
+            formID={formID}
+            formTitle={title}
+            formSubtitle={subtitle}
+            onSubmit={(values: OnboardingDraft) =>
+                submit({
+                    [firstNameInputID]: values[firstNameInputID],
+                    [lastNameInputID]: values[lastNameInputID],
+                })
+            }
+            stepFields={[]}
+            firstNameInputID={firstNameInputID}
+            lastNameInputID={lastNameInputID}
+            defaultValues={defaultValues}
+            shouldShowHelpLinks={false}
+        />
+    );
+}
+
+export default FullNameSubPage;
+export type {FullNameSubPageProps};

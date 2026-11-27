@@ -7,6 +7,7 @@ import useLocalize from '@hooks/useLocalize';
 import useThemeStyles from '@hooks/useThemeStyles';
 
 import ONYXKEYS from '@src/ONYXKEYS';
+import type {OnyxFormKey} from '@src/ONYXKEYS';
 
 import type {StyleProp, ViewStyle} from 'react-native';
 
@@ -36,9 +37,27 @@ type YesNoStepProps = {
 
     /** Optional callback fired when the radio selection changes */
     onValueChange?: () => void;
+
+    /** The form that holds the question. Defaults to the reimbursement account form of the bank account flow. */
+    formID?: OnyxFormKey;
+
+    /** Whether the submit button stays enabled while offline */
+    enabledWhenOffline?: boolean;
 };
 
-function YesNoStep({title, description, defaultValue, onSelectedValue, submitButtonStyles, submitFlexEnabled, isLoading = false, children, onValueChange}: YesNoStepProps) {
+function YesNoStep({
+    title,
+    description,
+    defaultValue,
+    onSelectedValue,
+    submitButtonStyles,
+    submitFlexEnabled,
+    isLoading = false,
+    children,
+    onValueChange,
+    formID = ONYXKEYS.FORMS.REIMBURSEMENT_ACCOUNT_FORM,
+    enabledWhenOffline,
+}: YesNoStepProps) {
     const {translate} = useLocalize();
     const styles = useThemeStyles();
     const [value, setValue] = useState(defaultValue);
@@ -65,13 +84,14 @@ function YesNoStep({title, description, defaultValue, onSelectedValue, submitBut
 
     return (
         <FormProvider
-            formID={ONYXKEYS.FORMS.REIMBURSEMENT_ACCOUNT_FORM}
+            formID={formID}
             submitButtonText={translate('common.confirm')}
             onSubmit={handleSubmit}
             style={styles.flexGrow1}
             submitButtonStyles={[submitButtonStyles, styles.mh5]}
             submitFlexEnabled={submitFlexEnabled}
             isLoading={isLoading}
+            enabledWhenOffline={enabledWhenOffline}
             shouldHideFixErrorsAlert
         >
             <Text style={[styles.textHeadlineLineHeightXXL, styles.mh5]}>{title}</Text>

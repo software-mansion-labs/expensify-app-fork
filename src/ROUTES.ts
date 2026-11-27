@@ -2696,20 +2696,20 @@ const ROUTES = {
     },
     SETTINGS_BANK_ONBOARDING_LAB_USD_SETUP: {
         route: 'settings/bank-onboarding-lab/new/us/:page?/:subPage?/:action?',
-        getRoute: ({policyID, page, subPage, action, backTo}: {policyID?: string; page?: string; subPage?: string; action?: 'edit'; backTo?: string}) => {
+        getRoute: ({policyID, page, subPage, action, returnTo, backTo}: {policyID?: string; page?: string; subPage?: string; action?: 'edit'; returnTo?: string; backTo?: string}) => {
             const pagePart = page ? `/${page}` : '';
             const subPagePart = subPage ? `/${subPage}` : '';
             const actionPart = action ? `/${action}` : '';
-            return getUrlWithParams(`settings/bank-onboarding-lab/new/us${pagePart}${subPagePart}${actionPart}`, {policyID, backTo});
+            return getUrlWithParams(`settings/bank-onboarding-lab/new/us${pagePart}${subPagePart}${actionPart}`, {policyID, returnTo, backTo});
         },
     },
     SETTINGS_BANK_ONBOARDING_LAB_NON_USD_SETUP: {
         route: 'settings/bank-onboarding-lab/new/global/:page?/:subPage?/:action?',
-        getRoute: ({policyID, page, subPage, action, backTo}: {policyID?: string; page?: string; subPage?: string; action?: 'edit'; backTo?: string}) => {
+        getRoute: ({policyID, page, subPage, action, returnTo, backTo}: {policyID?: string; page?: string; subPage?: string; action?: 'edit'; returnTo?: string; backTo?: string}) => {
             const pagePart = page ? `/${page}` : '';
             const subPagePart = subPage ? `/${subPage}` : '';
             const actionPart = action ? `/${action}` : '';
-            return getUrlWithParams(`settings/bank-onboarding-lab/new/global${pagePart}${subPagePart}${actionPart}`, {policyID, backTo});
+            return getUrlWithParams(`settings/bank-onboarding-lab/new/global${pagePart}${subPagePart}${actionPart}`, {policyID, returnTo, backTo});
         },
     },
     SETTINGS_BANK_ONBOARDING_LAB_VERIFY_ACCOUNT: {
@@ -2721,14 +2721,14 @@ const ROUTES = {
         getRoute: (policyID: string) => `settings/bank-onboarding-lab/workspace/${policyID}/payments` as const,
     },
     SETTINGS_BANK_ONBOARDING_LAB_ENTER_SIGNER_INFO: {
-        route: 'settings/bank-onboarding-lab/enter-signer-info/:subPage?/:action?',
-        getRoute: ({policyID, bankAccountID, isCompleted, subPage, action}: {policyID?: string; bankAccountID?: number; isCompleted?: boolean; subPage?: string; action?: 'edit'}) => {
+        route: 'settings/bank-onboarding-lab/enter-director-info/:subPage?/:action?',
+        getRoute: ({policyID, bankAccountID, subPage, action, returnTo}: {policyID?: string; bankAccountID?: number; subPage?: string; action?: 'edit'; returnTo?: string}) => {
             const subPagePart = subPage ? `/${subPage}` : '';
             const actionPart = action ? `/${action}` : '';
-            return getUrlWithParams(`settings/bank-onboarding-lab/enter-signer-info${subPagePart}${actionPart}`, {
+            return getUrlWithParams(`settings/bank-onboarding-lab/enter-director-info${subPagePart}${actionPart}`, {
                 policyID,
                 bankAccountID,
-                isCompleted: isCompleted ? 'true' : undefined,
+                returnTo,
             });
         },
     },

@@ -1,8 +1,8 @@
 /**
  * Types of the mock backend: its database, its settings and the shape of a command handler.
  */
-import type SBO_CONST from '@pages/SimplifiedBankOnboarding/SBO_CONST';
-import type {ACHData, Workspaces} from '@pages/SimplifiedBankOnboarding/types/onyx';
+import type {ACHData, Workspaces} from '@pages/SimplifiedBankOnboarding/contract/onyx';
+import type SBO_CONST from '@pages/SimplifiedBankOnboarding/contract/SBO_CONST';
 
 import type {AnyOnyxUpdate} from '@src/types/onyx/Request';
 

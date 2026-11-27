@@ -7,17 +7,19 @@ import type {OnboardingFeatureMapItem} from './libs/actions/Welcome/OnboardingFe
 import type {OnboardingCompanySize} from './libs/actions/Welcome/OnboardingFlow';
 import type Platform from './libs/getPlatform/types';
 import type {TransactionThreadNavigationDescriptor} from './libs/TransactionThreadNavigationUtils';
-import type {MockServerDatabase} from './pages/SimplifiedBankOnboarding/mockBackend/types';
-import type {EnterSignerInfoForm as SimplifiedBankOnboardingEnterSignerInfoForm, OnboardingForm as SimplifiedBankOnboardingForm} from './pages/SimplifiedBankOnboarding/types/form';
 import type {
     BankFields as SimplifiedBankOnboardingBankFields,
+    EnterSignerInfoForm as SimplifiedBankOnboardingEnterSignerInfoForm,
+    MockServerDatabase,
     OnboardingAccount as SimplifiedBankOnboardingOnboardingAccount,
+    OnboardingForm as SimplifiedBankOnboardingForm,
     OnboardingPicklists as SimplifiedBankOnboardingOnboardingPicklists,
+    OnboardingRequests as SimplifiedBankOnboardingOnboardingRequests,
     OnboardingUser as SimplifiedBankOnboardingOnboardingUser,
     PlaidData as SimplifiedBankOnboardingPlaidData,
     SetupType as SimplifiedBankOnboardingSetupType,
     Workspaces as SimplifiedBankOnboardingWorkspaces,
-} from './pages/SimplifiedBankOnboarding/types/onyx';
+} from './pages/SimplifiedBankOnboarding';
 import type * as FormTypes from './types/form';
 import type * as OnyxTypes from './types/onyx';
 import type DefaultP2PMileageRate from './types/onyx/DefaultP2PMileageRate';
@@ -527,6 +529,9 @@ const ONYXKEYS = {
 
     /** Simplified bank onboarding: token of the mock Plaid widget, never persisted */
     RAM_ONLY_SIMPLIFIED_BANK_ONBOARDING_PLAID_LINK_TOKEN: 'simplifiedBankOnboardingPlaidLinkToken',
+
+    /** Simplified bank onboarding: the state of each request by request key, never persisted */
+    RAM_ONLY_SIMPLIFIED_BANK_ONBOARDING_REQUESTS: 'simplifiedBankOnboardingRequests',
 
     /** Simplified bank onboarding: token of the mock identity check */
     SIMPLIFIED_BANK_ONBOARDING_ONFIDO_TOKEN: 'simplifiedBankOnboardingOnfidoToken',
@@ -1410,8 +1415,8 @@ const ONYXKEYS = {
         REIMBURSEMENT_ACCOUNT_FORM_DRAFT: 'reimbursementAccountDraft',
         ENTER_SINGER_INFO_FORM: 'enterSignerInfoForm',
         ENTER_SINGER_INFO_FORM_DRAFT: 'enterSignerInfoFormDraft',
-        SIMPLIFIED_BANK_ONBOARDING_FORM: 'simplifiedBankOnboardingAccount',
-        SIMPLIFIED_BANK_ONBOARDING_FORM_DRAFT: 'simplifiedBankOnboardingAccountDraft',
+        SIMPLIFIED_BANK_ONBOARDING_FORM: 'simplifiedBankOnboardingForm',
+        SIMPLIFIED_BANK_ONBOARDING_FORM_DRAFT: 'simplifiedBankOnboardingFormDraft',
         SIMPLIFIED_BANK_ONBOARDING_SIGNER_FORM: 'simplifiedBankOnboardingSignerForm',
         SIMPLIFIED_BANK_ONBOARDING_SIGNER_FORM_DRAFT: 'simplifiedBankOnboardingSignerFormDraft',
         PERSONAL_BANK_ACCOUNT_FORM: 'personalBankAccount',
@@ -2000,6 +2005,7 @@ type OnyxValuesMapping = {
     [ONYXKEYS.SIMPLIFIED_BANK_ONBOARDING_USER]: SimplifiedBankOnboardingOnboardingUser;
     [ONYXKEYS.SIMPLIFIED_BANK_ONBOARDING_PLAID_DATA]: SimplifiedBankOnboardingPlaidData;
     [ONYXKEYS.RAM_ONLY_SIMPLIFIED_BANK_ONBOARDING_PLAID_LINK_TOKEN]: string;
+    [ONYXKEYS.RAM_ONLY_SIMPLIFIED_BANK_ONBOARDING_REQUESTS]: SimplifiedBankOnboardingOnboardingRequests;
     [ONYXKEYS.SIMPLIFIED_BANK_ONBOARDING_ONFIDO_TOKEN]: string;
     [ONYXKEYS.SIMPLIFIED_BANK_ONBOARDING_BANK_FIELDS]: SimplifiedBankOnboardingBankFields;
     [ONYXKEYS.SIMPLIFIED_BANK_ONBOARDING_PICKLISTS]: SimplifiedBankOnboardingOnboardingPicklists;

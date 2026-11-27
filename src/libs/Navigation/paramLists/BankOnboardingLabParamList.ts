@@ -6,6 +6,7 @@ type FlowPageParams = {
     page?: string;
     subPage?: string;
     action?: 'edit';
+    returnTo?: string;
     // eslint-disable-next-line no-restricted-syntax -- The lab reproduces the backTo threading of the real bank account flow on purpose
     backTo?: Routes;
 };
@@ -34,6 +35,7 @@ type BankOnboardingLabParamList = {
         isCompleted?: 'true';
         subPage?: string;
         action?: 'edit';
+        returnTo?: string;
     };
 };
 

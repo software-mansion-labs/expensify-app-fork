@@ -2,10 +2,10 @@
  * Helpers that build the responses of the mock backend, including the Onyx updates that a response carries.
  */
 /* eslint-disable no-param-reassign -- The mock server keeps its database in memory and the handlers change it in place */
+import type {ACHData} from '@pages/SimplifiedBankOnboarding/contract/onyx';
+import SBO_CONST from '@pages/SimplifiedBankOnboarding/contract/SBO_CONST';
 import type {BankAccountParams} from '@pages/SimplifiedBankOnboarding/mockBackend/commands';
 import type {MockServerDatabase, MockServerResponse, ServerBankAccount} from '@pages/SimplifiedBankOnboarding/mockBackend/types';
-import SBO_CONST from '@pages/SimplifiedBankOnboarding/SBO_CONST';
-import type {ACHData} from '@pages/SimplifiedBankOnboarding/types/onyx';
 
 import ONYXKEYS from '@src/ONYXKEYS';
 import type {AnyOnyxUpdate} from '@src/types/onyx/Request';
