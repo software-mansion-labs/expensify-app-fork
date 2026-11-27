@@ -169,17 +169,19 @@ describe('steps made of one form', () => {
             expect(Navigation.navigate).not.toHaveBeenCalled();
         });
 
-        it('keeps the country in the draft and opens the bank step without a request', async () => {
-            // Given a EUR setup with a country in the draft
-            await setSavedData(CURRENCY.EUR, {country: 'DE'});
+        it('saves the shown country in the draft and opens the bank step without a request', async () => {
+            // Given a EUR setup whose country comes only from the saved account, so the draft starts without one
+            await setSavedData(CURRENCY.EUR);
+            await Onyx.merge(ONYXKEYS.SIMPLIFIED_BANK_ONBOARDING_ACCOUNT, {achData: {country: 'FR'}});
             await renderStep(GLOBAL_COUNTRY);
 
             // When the user confirms
             await press('common.confirm');
 
-            // Then the step moves on with nothing sent, because the bank step sends the country with the bank data
+            // Then the submit saves the country in the draft and the step moves on with nothing sent, because the bank
+            // step sends the country with the bank data
             const draft = await getOnyxValue(ONYXKEYS.FORMS.SIMPLIFIED_BANK_ONBOARDING_FORM_DRAFT);
-            expect(draft?.country).toBe('DE');
+            expect(draft?.country).toBe('FR');
             expect(write).not.toHaveBeenCalled();
             expectStepOpened(GLOBAL_COUNTRY);
         });
