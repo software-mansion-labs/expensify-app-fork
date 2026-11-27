@@ -22,16 +22,13 @@ import getResumePosition from '@pages/SimplifiedBankOnboarding/core/plan/positio
 import {getEditReturnPosition, getNextStepPosition, getPositionAfterSubmit, getPreviousPosition, getStepFirstPosition} from '@pages/SimplifiedBankOnboarding/core/plan/position/transitions';
 import type {FlowPlan, FlowVocabulary, PageConfig, PlanContext, StepConfig} from '@pages/SimplifiedBankOnboarding/core/plan/types';
 import clearRequestState from '@pages/SimplifiedBankOnboarding/core/requests/clearRequestState';
-import type {RequestKey} from '@pages/SimplifiedBankOnboarding/core/requests/requestKey';
 import useReadOnOpen from '@pages/SimplifiedBankOnboarding/core/requests/useReadOnOpen';
 import useRequestState from '@pages/SimplifiedBankOnboarding/core/requests/useRequestState';
 
-import ONYXKEYS from '@src/ONYXKEYS';
 import {isEmptyObject} from '@src/types/utils/EmptyObject';
 
 import {useIsFocused} from '@react-navigation/native';
 import {useEffect, useEffectEvent, useRef} from 'react';
-import Onyx from 'react-native-onyx';
 
 import type {FlowDataSource, FlowDataStatus, FlowDescriptor} from './types';
 
@@ -61,7 +58,7 @@ type OnboardingFlow<TData, TVocabulary extends FlowVocabulary> = {
     /** The request that the open page sends is running */
     isSubmitting: boolean;
 
-    /** The open page sends no request, so its submit only writes the draft and works without a connection */
+    /** The open page sends no request, neither through the controller nor on its own, so its submit only writes the draft and works without a connection */
     canSubmitOffline: boolean;
 
     /** The error of the request that the open page sends */
@@ -102,6 +99,10 @@ function useOnboardingFlow<TData, TVocabulary extends FlowVocabulary>({
     const page = step && position ? findPage(step, position.pageID) : undefined;
     const pageRequestKey = getPageRequestKey(step, page);
     const requestState = useRequestState(pageRequestKey);
+
+    // A custom page shows the state of its own request, and the controller only ends the visit that saw it fail
+    const customPageRequestKey = page?.kind === 'custom' ? page.request?.key : undefined;
+    const customPageRequestState = useRequestState(customPageRequestKey);
     const isDataReady = dataStatus === 'ready';
 
     // A read built from data that is not there yet could ask for the wrong thing, such as the bank inputs of no country
@@ -120,13 +121,6 @@ function useOnboardingFlow<TData, TVocabulary extends FlowVocabulary>({
 
     // After a draft write or a request the plan of the last render is stale, so handlers rebuild it from what Onyx holds now
     const rebuildPlan = async () => flow.buildPlan(await readData(), context);
-
-    // The status of the last render belongs to the request of the open page, which may not be the request the handler
-    // sends, and it may be stale. A handler reads the status of its own request before it sends it again.
-    const isRequestPending = async (key: RequestKey) => {
-        const requests = await Onyx.get(ONYXKEYS.RAM_ONLY_SIMPLIFIED_BANK_ONBOARDING_REQUESTS);
-        return requests?.[key]?.status === 'pending';
-    };
 
     /** Navigates away from the page that started the handler, unless the user already left it while the handler waited */
     const leavePosition = (from: FlowPosition, navigate: () => void) => {
@@ -150,17 +144,14 @@ function useOnboardingFlow<TData, TVocabulary extends FlowVocabulary>({
 
     /**
      * Sends the request of a page that saves in the middle of its step. Returns the plan after it, or undefined when the
-     * flow stays on the page: while the request is pending or after it failed.
+     * flow stays on the page: while the request is still in flight from an earlier submit, or after it failed.
      */
     const runPageRequest = async (from: FlowPosition, currentPlan: FlowPlan<TVocabulary>): Promise<FlowPlan<TVocabulary> | undefined> => {
         const currentStep = findStep(currentPlan, from.stepID);
         const submittedPage = currentStep ? findPage(currentStep, from.pageID) : undefined;
-        const request = submittedPage?.request;
-        if (!request?.send) {
+        const request = submittedPage?.kind === 'custom' ? undefined : submittedPage?.request;
+        if (!request) {
             return currentPlan;
-        }
-        if (await isRequestPending(request.key)) {
-            return undefined;
         }
         const outcome = await request.send();
         if (outcome.status !== 'succeeded') {
@@ -176,10 +167,7 @@ function useOnboardingFlow<TData, TVocabulary extends FlowVocabulary>({
             return;
         }
         const request = finishedStep.request;
-        if (request?.send) {
-            if (await isRequestPending(request.key)) {
-                return;
-            }
+        if (request) {
             const outcome = await request.send();
             if (outcome.status !== 'succeeded') {
                 return;
@@ -225,10 +213,12 @@ function useOnboardingFlow<TData, TVocabulary extends FlowVocabulary>({
     // The error of a failed request belongs to the visit that saw it fail. The status entry outlives the page, so without
     // this the user who leaves to correct an answer would find the old error on the page when they come back.
     const clearShownRequestError = () => {
-        if (!pageRequestKey || !requestState.errors) {
-            return;
+        if (pageRequestKey && requestState.errors) {
+            clearRequestState(pageRequestKey);
         }
-        clearRequestState(pageRequestKey);
+        if (customPageRequestKey && customPageRequestState.errors) {
+            clearRequestState(customPageRequestKey);
+        }
     };
 
     const goBack = () => {
@@ -334,7 +324,7 @@ function useOnboardingFlow<TData, TVocabulary extends FlowVocabulary>({
         step,
         page,
         isSubmitting: requestState.isPending,
-        canSubmitOffline: !pageRequestKey,
+        canSubmitOffline: !pageRequestKey && !customPageRequestKey,
         errorText: getLatestErrorMessage({errors: requestState.errors}),
         isWaitingForRead,
         hasReadFailed: isWaitingForRead && readState.hasFailed,

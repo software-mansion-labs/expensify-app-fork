@@ -2,8 +2,8 @@ import REQUEST_NAMES from '@pages/SimplifiedBankOnboarding/contract/REQUEST_NAME
 import getRequestKey from '@pages/SimplifiedBankOnboarding/core/requests/requestKey';
 import runRequest from '@pages/SimplifiedBankOnboarding/core/requests/runRequest';
 import type {RequestOutcome} from '@pages/SimplifiedBankOnboarding/core/requests/types';
-import {WRITE_COMMANDS} from '@pages/SimplifiedBankOnboarding/mockBackend/commands';
-import {write} from '@pages/SimplifiedBankOnboarding/mockBackend/mockApi';
+import {READ_COMMANDS, WRITE_COMMANDS} from '@pages/SimplifiedBankOnboarding/mockBackend/commands';
+import {read, write} from '@pages/SimplifiedBankOnboarding/mockBackend/mockApi';
 
 import ONYXKEYS from '@src/ONYXKEYS';
 import type {OnyxData} from '@src/types/onyx/Request';
@@ -111,5 +111,51 @@ describe('runRequest', () => {
         // Then the old mark does not fail the new attempt, which still waits for its own answer
         expect(hasSettled).toBe(false);
         expect((await getRequestState())?.status).toBe('pending');
+    });
+
+    it('sends a write once when it is sent again before the first send settled', async () => {
+        // Given a server that has not answered yet, like a slow connection during a double press
+        jest.mocked(write).mockClear();
+        answerWrites('none');
+        sendValidateUser();
+
+        // When the same write is sent again while the first one is in flight
+        const secondOutcome = await sendValidateUser();
+
+        // Then only one call reaches the server, because a second one could apply the same change twice
+        expect(secondOutcome).toEqual({status: 'skipped'});
+        expect(write).toHaveBeenCalledTimes(1);
+    });
+
+    it('sends a write again once the earlier send settled', async () => {
+        // Given a write that the server rejected
+        jest.mocked(write).mockClear();
+        answerWrites('failure');
+        await sendValidateUser();
+        await waitForBatchedUpdates();
+
+        // When the user tries again
+        answerWrites('success');
+        const outcome = await sendValidateUser();
+
+        // Then the retry reaches the server, because the guard only holds while a write is in flight
+        expect(outcome).toEqual({status: 'succeeded'});
+        expect(write).toHaveBeenCalledTimes(2);
+    });
+
+    it('sends a read again while an earlier read with the same key is in flight', async () => {
+        // Given a read that the server has not answered yet
+        jest.mocked(read).mockClear();
+        jest.mocked(read).mockImplementation((_command, _params, onyxData: OnyxData<OnyxKey> = {}) => {
+            Onyx.update(onyxData.optimisticData ?? []);
+        });
+        const sendLinkTokenRead = () => runRequest({name: REQUEST_NAMES.OPEN_PLAID_BANK_LOGIN, type: 'read', command: READ_COMMANDS.OPEN_PLAID_BANK_LOGIN, params: {}});
+        sendLinkTokenRead();
+
+        // When the same read is sent again
+        sendLinkTokenRead();
+
+        // Then both reach the server, because reads with one key may ask for different data and change nothing there
+        expect(read).toHaveBeenCalledTimes(2);
     });
 });

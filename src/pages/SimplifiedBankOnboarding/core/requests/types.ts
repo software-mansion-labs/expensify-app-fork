@@ -20,25 +20,27 @@ type RequestState = {
 /** One entry per request key, so a page reads the state of its own request and nothing else */
 type OnboardingRequests = Record<RequestKey, RequestState>;
 
-/** `skipped`: the request was not sent (a read made offline), or a newer request or a reset replaced its status entry */
+/**
+ * `skipped`: the request was not sent (a read made offline, or a write whose key is still in flight), or a newer request
+ * or a reset replaced its status entry
+ */
 type RequestOutcome = {status: 'succeeded'} | {status: 'failed'} | {status: 'skipped'};
 
 /**
- * A request that a plan names before the user submits. The page reads its status by the key, and the controller sends
- * it once the answers are saved.
+ * A request that a plan names before the user submits. The page reads its status by the key. The controller sends the
+ * request of a step or a form page once the answers are saved, and a custom page sends its own with the input that only
+ * the page has, such as the amounts of the test deposits.
  */
-type PlannedRequest = {
+type PlannedRequest<TInput = void> = {
     key: RequestKey;
-
-    /** Missing for a request that the page sends on its own, such as the test deposits of the validation step */
-    send?: () => Promise<RequestOutcome>;
+    send: (input: TInput) => Promise<RequestOutcome>;
 };
 
 /**
  * A read that a page needs before it can show anything, such as the bank inputs of a country. The controller sends it
  * when the page opens and again after each reconnect until it succeeds.
  */
-type PlannedRead = Required<PlannedRequest> & {
+type PlannedRead = PlannedRequest & {
     /** The data that the read brings is there, so the page can show. Until then the page shows a loader, or the not found view once the read failed. */
     isLoaded: boolean;
 };

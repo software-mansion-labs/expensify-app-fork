@@ -6,13 +6,36 @@
 import type {PageID, StepID} from '@pages/SimplifiedBankOnboarding/contract/ids';
 import type * as Core from '@pages/SimplifiedBankOnboarding/core';
 
-/** The pages that are not forms. Each one is a screen in the `customSteps/` of its flow, picked by name. */
-type CustomStepName = 'plaid' | 'onfido' | 'hangTight' | 'validation' | 'finish';
+/**
+ * The pages that are not forms. Each one is a screen in the `customSteps/` of its flow, picked by name, and a page that
+ * sends a request itself gets it from the plan with the type of the input that the page passes to it.
+ */
+type CustomPage =
+    | {
+          component: 'plaid';
+
+          /** Exchanges the public token that the Plaid widget returns after the bank login for the list of accounts */
+          request: Core.PlannedRequest<string>;
+      }
+    | {component: 'onfido'}
+    | {
+          component: 'hangTight';
+
+          /** Reminds the invited directors to fill in their details */
+          request: Core.PlannedRequest;
+      }
+    | {
+          component: 'validation';
+
+          /** Sends the amounts of the test deposits */
+          request: Core.PlannedRequest<string[]>;
+      }
+    | {component: 'finish'};
 
 type OnboardingVocabulary = {
     stepID: StepID;
     pageID: PageID;
-    customStep: CustomStepName;
+    customPage: CustomPage;
 };
 
 type FlowPlan = Core.FlowPlan<OnboardingVocabulary>;
@@ -29,7 +52,7 @@ type FlowDescriptor<TData> = Core.FlowDescriptor<TData, OnboardingVocabulary>;
 
 export type {
     ConfirmationPageConfig,
-    CustomStepName,
+    CustomPage,
     CustomStepProps,
     FlowDescriptor,
     FlowPlan,

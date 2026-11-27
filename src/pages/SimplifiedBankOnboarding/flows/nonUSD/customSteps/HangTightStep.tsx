@@ -12,14 +12,10 @@ import useLocalize from '@hooks/useLocalize';
 import useOnyx from '@hooks/useOnyx';
 import useThemeStyles from '@hooks/useThemeStyles';
 
-import {getLatestErrorMessage} from '@libs/ErrorUtils';
-
 import type {OnboardingAccount} from '@pages/SimplifiedBankOnboarding/contract/onyx';
-import REQUEST_NAMES from '@pages/SimplifiedBankOnboarding/contract/REQUEST_NAMES';
-import {getRequestKey, useRequestState} from '@pages/SimplifiedBankOnboarding/core';
-import getBankAccountParams from '@pages/SimplifiedBankOnboarding/flows/shared/getBankAccountParams';
+import type {PlannedRequest} from '@pages/SimplifiedBankOnboarding/core';
+import {useRequest} from '@pages/SimplifiedBankOnboarding/core';
 import type {CustomStepProps} from '@pages/SimplifiedBankOnboarding/flows/shared/plan/types';
-import {sendSignerReminder} from '@pages/SimplifiedBankOnboarding/flows/shared/signerDetails/signerInfo';
 
 import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';
@@ -30,6 +26,9 @@ import React from 'react';
 import {View} from 'react-native';
 
 type HangTightStepProps = Pick<CustomStepProps, 'policyID' | 'onComplete'> & {
+    /** Reminds the invited directors to fill in their details */
+    reminderRequest: PlannedRequest;
+
     /** The directors filled in their details, so the flow can go on */
     canContinue: boolean;
 
@@ -39,16 +38,11 @@ type HangTightStepProps = Pick<CustomStepProps, 'policyID' | 'onComplete'> & {
 
 const bankAccountIDSelector = (account: OnyxEntry<OnboardingAccount>) => account?.achData?.bankAccountID;
 
-function HangTightStep({policyID, canContinue, openSignerForm, onComplete}: HangTightStepProps) {
+function HangTightStep({reminderRequest, policyID, canContinue, openSignerForm, onComplete}: HangTightStepProps) {
     const {translate} = useLocalize();
     const styles = useThemeStyles();
     const [bankAccountID] = useOnyx(ONYXKEYS.SIMPLIFIED_BANK_ONBOARDING_ACCOUNT, {selector: bankAccountIDSelector});
-    const bankAccount = getBankAccountParams(policyID, {bankAccountID});
-    const reminderState = useRequestState(getRequestKey(REQUEST_NAMES.SEND_SIGNER_REMINDER, bankAccount));
-
-    const sendReminder = () => {
-        sendSignerReminder(bankAccount);
-    };
+    const {send: sendReminder, isPending: isSendingReminder, errorMessage: reminderErrorMessage} = useRequest(reminderRequest);
 
     return (
         <ScrollView contentContainerStyle={[styles.flexGrow1, styles.pb5]}>
@@ -57,7 +51,7 @@ function HangTightStep({policyID, canContinue, openSignerForm, onComplete}: Hang
                 <Text style={[styles.textAlignCenter, styles.mutedTextLabel, styles.mh5]}>{translate('signerInfoStep.weAreWaiting')}</Text>
             </View>
             <View style={[styles.ph5, styles.gap3]}>
-                <FormHelpMessage message={getLatestErrorMessage({errors: reminderState.errors})} />
+                <FormHelpMessage message={reminderErrorMessage} />
                 <Button
                     onPress={() => openSignerForm(policyID, bankAccountID)}
                     sentryLabel={CONST.SENTRY_LABEL.BANK_ONBOARDING_LAB.OPEN_SIGNER_FORM}
@@ -65,8 +59,10 @@ function HangTightStep({policyID, canContinue, openSignerForm, onComplete}: Hang
                     <Button.Text>[mock] Open the form that the director received</Button.Text>
                 </Button>
                 <Button
-                    onPress={sendReminder}
-                    isLoading={reminderState.isPending}
+                    onPress={() => {
+                        sendReminder();
+                    }}
+                    isLoading={isSendingReminder}
                     sentryLabel={CONST.SENTRY_LABEL.BANK_ONBOARDING_LAB.SEND_REMINDER}
                 >
                     <Button.Text>{translate('signerInfoStep.sendReminder')}</Button.Text>

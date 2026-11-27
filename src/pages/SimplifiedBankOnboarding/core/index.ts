@@ -28,6 +28,7 @@ export {default as getResumePosition} from './plan/position/resume';
 export type {
     ConfirmationPageConfig,
     CustomPageConfig,
+    CustomPageContent,
     FlowPlan,
     FlowVocabulary,
     FormPageConfig,
@@ -42,6 +43,7 @@ export type {
 export {default as clearRequestState} from './requests/clearRequestState';
 export {default as planFailedRequest} from './requests/planFailedRequest';
 export {default as getRequestKey} from './requests/requestKey';
-export {default as runRequest, planRead, planRequest} from './requests/runRequest';
+export {default as runRequest, planRead, planRequest, planRequestWithInput} from './requests/runRequest';
 export type {BankAccountParams, OnboardingRequests, PlannedRead, PlannedRequest, RequestOutcome} from './requests/types';
+export {default as useRequest} from './requests/useRequest';
 export {default as useRequestState} from './requests/useRequestState';

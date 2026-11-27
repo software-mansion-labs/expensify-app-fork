@@ -1,31 +1,20 @@
-import {act, render, screen} from '@testing-library/react-native';
+import {act, screen} from '@testing-library/react-native';
 
-import OnyxListItemProvider from '@components/OnyxListItemProvider';
-
-import navigationRef from '@libs/Navigation/navigationRef';
-import type BankOnboardingLabParamList from '@libs/Navigation/paramLists/BankOnboardingLabParamList';
-import createPlatformStackNavigator from '@libs/Navigation/PlatformStackNavigation/createPlatformStackNavigator';
 import {setForceOffline} from '@libs/NetworkState';
 
-import type {OnboardingDraft} from '@pages/SimplifiedBankOnboarding/contract/form';
-import type {ACHData} from '@pages/SimplifiedBankOnboarding/contract/onyx';
 import SBO_CONST from '@pages/SimplifiedBankOnboarding/contract/SBO_CONST';
-import NonUSDSetupPage from '@pages/SimplifiedBankOnboarding/flows/nonUSD/NonUSDSetupPage';
-import type {SetupFlowParams} from '@pages/SimplifiedBankOnboarding/flows/shared/setupScreen/useSetupFlow';
-import USDSetupPage from '@pages/SimplifiedBankOnboarding/flows/usd/USDSetupPage';
 import {read} from '@pages/SimplifiedBankOnboarding/mockBackend/mockApi';
 import {getBankFormFields} from '@pages/SimplifiedBankOnboarding/mockBackend/serverCatalog';
 
 import ONYXKEYS from '@src/ONYXKEYS';
-import SCREENS from '@src/SCREENS';
 import type {OnyxData} from '@src/types/onyx/Request';
 
+import type React from 'react';
 import type {OnyxKey, OnyxUpdate} from 'react-native-onyx';
 
-import {NavigationContainer} from '@react-navigation/native';
-import React from 'react';
 import Onyx from 'react-native-onyx';
 
+import {EUR_POLICY_ID, openFlowPage, USD_POLICY_ID} from '../../utils/SimplifiedBankOnboardingTestUtils';
 import waitForBatchedUpdatesWithAct from '../../utils/waitForBatchedUpdatesWithAct';
 
 jest.mock('@hooks/useLocalize', () => jest.fn(() => ({translate: (key: string) => key})));
@@ -41,8 +30,6 @@ const LOADER_TEST_ID = 'ActivityIndicator';
 const NOT_FOUND_TEST_ID = 'NotFoundPage';
 
 const {NON_USD, USD} = SBO_CONST;
-const EUR_POLICY_ID = 'eur';
-const USD_POLICY_ID = 'usd';
 
 type ServerAnswer = {
     /** The data that the server sends with its answer */
@@ -71,51 +58,6 @@ async function answerHeldReads() {
     await act(async () => {
         await Promise.all(answers.map((answer) => answer()));
     });
-    await waitForBatchedUpdatesWithAct();
-}
-
-const Stack = createPlatformStackNavigator<BankOnboardingLabParamList>();
-
-type FlowScreenTarget = {
-    kind: 'usd' | 'nonUSD';
-    params: SetupFlowParams;
-};
-
-type StoredData = {
-    achData: ACHData;
-    draft?: OnboardingDraft;
-};
-
-async function openFlowPage({kind, params}: FlowScreenTarget, {achData, draft}: StoredData) {
-    await Onyx.multiSet({
-        [ONYXKEYS.SIMPLIFIED_BANK_ONBOARDING_ACCOUNT]: {achData},
-        [ONYXKEYS.SIMPLIFIED_BANK_ONBOARDING_WORKSPACES]: {
-            [EUR_POLICY_ID]: {id: EUR_POLICY_ID, name: 'Acme EU', outputCurrency: SBO_CONST.CURRENCY.EUR, role: SBO_CONST.WORKSPACE_ROLE.ADMIN},
-            [USD_POLICY_ID]: {id: USD_POLICY_ID, name: 'Acme US', outputCurrency: SBO_CONST.CURRENCY.USD, role: SBO_CONST.WORKSPACE_ROLE.ADMIN},
-        },
-        [ONYXKEYS.FORMS.SIMPLIFIED_BANK_ONBOARDING_FORM_DRAFT]: draft ?? {},
-    });
-    render(
-        <OnyxListItemProvider>
-            <NavigationContainer ref={navigationRef}>
-                <Stack.Navigator>
-                    {kind === 'usd' ? (
-                        <Stack.Screen
-                            name={SCREENS.SETTINGS.BANK_ONBOARDING_LAB.USD_SETUP}
-                            component={USDSetupPage}
-                            initialParams={params}
-                        />
-                    ) : (
-                        <Stack.Screen
-                            name={SCREENS.SETTINGS.BANK_ONBOARDING_LAB.NON_USD_SETUP}
-                            component={NonUSDSetupPage}
-                            initialParams={params}
-                        />
-                    )}
-                </Stack.Navigator>
-            </NavigationContainer>
-        </OnyxListItemProvider>,
-    );
     await waitForBatchedUpdatesWithAct();
 }
 

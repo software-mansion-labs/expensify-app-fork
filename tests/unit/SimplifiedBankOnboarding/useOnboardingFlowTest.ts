@@ -5,7 +5,7 @@ import useOnboardingFlow from '@pages/SimplifiedBankOnboarding/core/controller/u
 import type {FlowRoutes} from '@pages/SimplifiedBankOnboarding/core/navigation/flowNavigation';
 import type {FlowPosition} from '@pages/SimplifiedBankOnboarding/core/plan/position/position';
 import type {FlowPlan} from '@pages/SimplifiedBankOnboarding/core/plan/types';
-import type {RequestState} from '@pages/SimplifiedBankOnboarding/core/requests/types';
+import type {RequestOutcome, RequestState} from '@pages/SimplifiedBankOnboarding/core/requests/types';
 
 import ONYXKEYS from '@src/ONYXKEYS';
 import ROUTES from '@src/ROUTES';
@@ -22,6 +22,8 @@ jest.mock('@libs/Navigation/Navigation', () => ({navigate: jest.fn(), goBack: je
 const STEP_ID = 'company';
 const NAME_PAGE_ID = 'name';
 const CONFIRMATION_PAGE_ID = 'confirmation';
+const CUSTOM_PAGE_ID = 'deposits';
+const CUSTOM_PAGE_REQUEST_KEY = 'validate:policy-1';
 const REQUEST_KEY = 'saveCompany:policy-1';
 const ERROR_MESSAGE = 'The server rejected the tax ID';
 
@@ -140,5 +142,39 @@ describe('useOnboardingFlow', () => {
 
         // Then the status entry stays, because the handler that sent the request still listens for its outcome
         expect(await getRequestState()).toEqual(pendingState);
+    });
+
+    it('leaves the request of a custom page to the page', async () => {
+        // Given a step whose only page is a custom page with its own request, like the test deposits
+        const sendPageRequest = jest.fn((): Promise<RequestOutcome> => Promise.resolve({status: 'succeeded'}));
+        const customPagePlan: FlowPlan = {
+            answers: {},
+            steps: [
+                {
+                    id: STEP_ID,
+                    title: 'Validation',
+                    isComplete: false,
+                    pages: [{kind: 'custom', id: CUSTOM_PAGE_ID, component: 'deposits', isComplete: false, request: {key: CUSTOM_PAGE_REQUEST_KEY, send: sendPageRequest}}],
+                },
+            ],
+        };
+        const {result} = renderHook(() =>
+            useOnboardingFlow({
+                flow: {...flow, buildPlan: () => customPagePlan},
+                routes,
+                urlPosition: {stepID: STEP_ID, pageID: CUSTOM_PAGE_ID, isEditing: false},
+                policyID: '1',
+                dataSource: {data: undefined, readData: () => Promise.resolve(undefined)},
+                dataStatus: 'ready',
+            }),
+        );
+        await waitForBatchedUpdatesWithAct();
+
+        // When the page reports that it is done
+        act(() => result.current.submitPage({}));
+        await waitForBatchedUpdatesWithAct();
+
+        // Then the controller does not send the request again, because only the page has its input and already sent it
+        expect(sendPageRequest).not.toHaveBeenCalled();
     });
 });

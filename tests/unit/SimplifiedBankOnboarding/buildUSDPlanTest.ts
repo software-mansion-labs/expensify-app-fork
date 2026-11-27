@@ -367,6 +367,17 @@ describe('buildUSDPlan', () => {
             expect(plaidPage?.read?.isLoaded).toBe(expectedIsLoaded);
         });
 
+        it('gives the Plaid page the read of the bank accounts', () => {
+            // Given a Plaid setup
+            const plan = buildPlan(createServer({setupType: PLAID}).readAccount(), {country: SBO_CONST.COUNTRY.US, setupType: PLAID});
+
+            // When the Plaid page is read from the plan
+            const plaidPage = findStep(plan, PAGE_NAMES.BANK_ACCOUNT)?.pages.at(0);
+
+            // Then the page sends the read with the token of the bank login, which only the widget returns
+            expect(plaidPage).toMatchObject({request: {key: getRequestKey(REQUEST_NAMES.OPEN_PLAID_BANK_ACCOUNT_SELECTOR)}});
+        });
+
         it('reads nothing on the manual page', () => {
             // Given a manual setup
             const plan = buildPlan(createServer().readAccount(), STARTED_DRAFT);
@@ -537,6 +548,18 @@ describe('buildUSDPlan', () => {
 
             // Then only a pending account leaves, because the entry page would send it straight back to this page
             expect(validationPage?.shouldExitOnBack).toBe(expectedShouldExit);
+        });
+
+        it('lets the deposits page send the validation of its workspace, and not the step', () => {
+            // Given a manual account that waits for the test deposits
+            const plan = buildPlan(createServer().advanceTo('agreements').readAccount(), STARTED_DRAFT);
+
+            // When the validation step is read from the plan
+            const validationStep = findStep(plan, PAGE_NAMES.VALIDATION);
+
+            // Then the page carries the request, because only the page has the amounts, and the controller has nothing to send
+            expect(validationStep?.request).toBeUndefined();
+            expect(validationStep?.pages.at(0)).toMatchObject({request: {key: getRequestKey(REQUEST_NAMES.VALIDATE_BANK_ACCOUNT, {policyID: POLICY_ID})}});
         });
     });
 

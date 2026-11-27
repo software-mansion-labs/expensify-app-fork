@@ -1,7 +1,7 @@
 /**
- * The test deposit form of the last USD step. It sends the three amounts itself and does not move on: a right answer
- * changes the bank account state, which swaps this form for the connected screen, and a wrong one shows the error or,
- * after too many tries, the block message.
+ * The test deposit form of the last USD step. It sends the three amounts itself, with the request that the plan gives the
+ * page, and does not move on: a right answer changes the bank account state, which swaps this form for the connected
+ * screen, and a wrong one shows the error or, after too many tries, the block message.
  */
 import FormProvider from '@components/Form/FormProvider';
 import InputWrapper from '@components/Form/InputWrapper';
@@ -14,11 +14,9 @@ import useLocalize from '@hooks/useLocalize';
 import useThemeStyles from '@hooks/useThemeStyles';
 
 import INPUT_IDS from '@pages/SimplifiedBankOnboarding/contract/form';
-import type {ACHData} from '@pages/SimplifiedBankOnboarding/contract/onyx';
 import SBO_CONST from '@pages/SimplifiedBankOnboarding/contract/SBO_CONST';
-import getBankAccountParams from '@pages/SimplifiedBankOnboarding/flows/shared/getBankAccountParams';
-import type {CustomStepProps} from '@pages/SimplifiedBankOnboarding/flows/shared/plan/types';
-import validateBankAccount from '@pages/SimplifiedBankOnboarding/flows/usd/requests/validateBankAccount';
+import type {PlannedRequest} from '@pages/SimplifiedBankOnboarding/core';
+import {useRequest} from '@pages/SimplifiedBankOnboarding/core';
 
 import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';
@@ -30,8 +28,9 @@ type AmountInputID = typeof INPUT_IDS.AMOUNT_1 | typeof INPUT_IDS.AMOUNT_2 | typ
 
 type DepositsFormValues = FormOnyxValues<typeof ONYXKEYS.FORMS.SIMPLIFIED_BANK_ONBOARDING_FORM>;
 
-type DepositsFormProps = Pick<CustomStepProps, 'policyID' | 'isSubmitting' | 'errorText'> & {
-    achData: ACHData | undefined;
+type DepositsFormProps = {
+    /** Sends the amounts of the test deposits */
+    validateRequest: PlannedRequest<string[]>;
 };
 
 const AMOUNT_INPUT_IDS: AmountInputID[] = [INPUT_IDS.AMOUNT_1, INPUT_IDS.AMOUNT_2, INPUT_IDS.AMOUNT_3];
@@ -41,9 +40,10 @@ function isValidAmount(amount: string | undefined): boolean {
     return trimmedAmount !== '' && !Number.isNaN(Number(trimmedAmount)) && Number(trimmedAmount) > 0;
 }
 
-function DepositsForm({policyID, achData, isSubmitting, errorText}: DepositsFormProps) {
+function DepositsForm({validateRequest}: DepositsFormProps) {
     const {translate} = useLocalize();
     const styles = useThemeStyles();
+    const {send: validateBankAccount, isPending, errorMessage} = useRequest(validateRequest);
 
     const validate = (values: DepositsFormValues): FormInputErrors<typeof ONYXKEYS.FORMS.SIMPLIFIED_BANK_ONBOARDING_FORM> => {
         const errors: FormInputErrors<typeof ONYXKEYS.FORMS.SIMPLIFIED_BANK_ONBOARDING_FORM> = {};
@@ -57,7 +57,7 @@ function DepositsForm({policyID, achData, isSubmitting, errorText}: DepositsForm
 
     const submit = (values: DepositsFormValues) => {
         const amounts = AMOUNT_INPUT_IDS.map((inputID) => values[inputID]?.trim() ?? '');
-        validateBankAccount(getBankAccountParams(policyID, achData), amounts);
+        validateBankAccount(amounts);
     };
 
     return (
@@ -67,7 +67,7 @@ function DepositsForm({policyID, achData, isSubmitting, errorText}: DepositsForm
             onSubmit={submit}
             validate={validate}
             style={[styles.mh5, styles.flexGrow1]}
-            isLoading={isSubmitting}
+            isLoading={isPending}
             sentryLabel={CONST.SENTRY_LABEL.BANK_ONBOARDING_LAB.SUBMIT_STEP}
         >
             <Text>{translate('connectBankAccountStep.description')}</Text>
@@ -89,7 +89,7 @@ function DepositsForm({policyID, achData, isSubmitting, errorText}: DepositsForm
                     />
                 ))}
             </View>
-            <FormHelpMessage message={errorText} />
+            <FormHelpMessage message={errorMessage} />
         </FormProvider>
     );
 }

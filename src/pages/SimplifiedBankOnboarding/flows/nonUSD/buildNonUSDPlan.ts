@@ -33,7 +33,7 @@ import {GLOBAL_OWNER_DRAFT} from '@pages/SimplifiedBankOnboarding/flows/shared/o
 import {findOwner, removeOwner} from '@pages/SimplifiedBankOnboarding/flows/shared/owners/ownerList';
 import type {FlowPlan, FormPageDefinition, PageConfig, StepConfig} from '@pages/SimplifiedBankOnboarding/flows/shared/plan/types';
 import getSignerDetailsPages from '@pages/SimplifiedBankOnboarding/flows/shared/signerDetails/getSignerDetailsPages';
-import {getDirectorInfoRequest, getSignerInvitationRequest} from '@pages/SimplifiedBankOnboarding/flows/shared/signerDetails/signerInfo';
+import {getDirectorInfoRequest, getSignerInvitationRequest, getSignerReminderRequest} from '@pages/SimplifiedBankOnboarding/flows/shared/signerDetails/signerInfo';
 
 import CONST from '@src/CONST';
 
@@ -390,7 +390,14 @@ function buildNonUSDPlan(data: FlowData, {translate, policyID: urlPolicyID}: Pla
                         : {signerEmail: answers.signerEmail, secondSignerEmail: isAUD ? answers.secondSignerEmail : undefined},
                 ),
             }),
-            {kind: 'custom', id: SIGNER.HANG_TIGHT, component: 'hangTight', isComplete: areSignersKnown, canComplete: areSignersKnown},
+            {
+                kind: 'custom',
+                id: SIGNER.HANG_TIGHT,
+                component: 'hangTight',
+                isComplete: areSignersKnown,
+                canComplete: areSignersKnown,
+                request: getSignerReminderRequest(bankAccount),
+            },
         );
     }
 

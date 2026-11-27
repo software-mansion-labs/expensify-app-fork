@@ -1,11 +1,12 @@
 /**
  * The requests of the NonUSD signer: the save of the director details, the invitation of other directors and the
  * reminder sent to them. The invited director saves the same details from their own page under its own request name.
- * The plans name the first three as the requests of their pages, and the hang tight page sends the reminder itself.
+ * The plans name all four as the requests of their pages. The controller sends the first three, and the hang tight page
+ * sends the reminder itself.
  */
 import REQUEST_NAMES from '@pages/SimplifiedBankOnboarding/contract/REQUEST_NAMES';
-import type {PlannedRequest, RequestOutcome} from '@pages/SimplifiedBankOnboarding/core';
-import {planRequest, runRequest} from '@pages/SimplifiedBankOnboarding/core';
+import type {PlannedRequest} from '@pages/SimplifiedBankOnboarding/core';
+import {planRequest} from '@pages/SimplifiedBankOnboarding/core';
 import getAccountErrorOnyxData from '@pages/SimplifiedBankOnboarding/flows/shared/getAccountErrorOnyxData';
 import {WRITE_COMMANDS} from '@pages/SimplifiedBankOnboarding/mockBackend/commands';
 import type {BankAccountParams, WriteCommandParams} from '@pages/SimplifiedBankOnboarding/mockBackend/commands';
@@ -56,8 +57,8 @@ function getSignerInvitationRequest(bankAccount: BankAccountParams, {signerEmail
     });
 }
 
-function sendSignerReminder(bankAccount: BankAccountParams): Promise<RequestOutcome> {
-    return runRequest({
+function getSignerReminderRequest(bankAccount: BankAccountParams): PlannedRequest {
+    return planRequest({
         name: REQUEST_NAMES.SEND_SIGNER_REMINDER,
         scope: bankAccount,
         type: 'write',
@@ -67,5 +68,5 @@ function sendSignerReminder(bankAccount: BankAccountParams): Promise<RequestOutc
     });
 }
 
-export {getDirectorInfoRequest, getSignerInfoRequest, getSignerInvitationRequest, sendSignerReminder};
+export {getDirectorInfoRequest, getSignerInfoRequest, getSignerInvitationRequest, getSignerReminderRequest};
 export type {DirectorInfo, SignerEmails};

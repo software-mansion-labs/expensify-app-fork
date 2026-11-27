@@ -9,6 +9,7 @@ import useOnyx from '@hooks/useOnyx';
 import type {ACHData, OnboardingAccount} from '@pages/SimplifiedBankOnboarding/contract/onyx';
 import SBO_CONST from '@pages/SimplifiedBankOnboarding/contract/SBO_CONST';
 import {isPendingValidation, isVerifying} from '@pages/SimplifiedBankOnboarding/contract/setupStatus';
+import type {PlannedRequest} from '@pages/SimplifiedBankOnboarding/core';
 import type {CustomStepProps} from '@pages/SimplifiedBankOnboarding/flows/shared/plan/types';
 
 import ONYXKEYS from '@src/ONYXKEYS';
@@ -22,20 +23,23 @@ import DepositsForm from './DepositsForm';
 import FinishReviewCard from './FinishReviewCard';
 import MaxAttemptsReachedMessage from './MaxAttemptsReachedMessage';
 
-type ValidationStepProps = Pick<CustomStepProps, 'policyID' | 'isSubmitting' | 'errorText' | 'onComplete' | 'goToStep'>;
+type ValidationStepProps = Pick<CustomStepProps, 'policyID' | 'onComplete' | 'goToStep'> & {
+    /** Sends the amounts of the test deposits */
+    validateRequest: PlannedRequest<string[]>;
+};
 
 type ValidationState = {
-    /** The state picks the screen and the bank account ID goes with the deposit amounts */
-    achData: Pick<ACHData, 'state' | 'bankAccountID'>;
+    /** The state picks the screen */
+    achData: Pick<ACHData, 'state'>;
     hasReachedMaxAttempts: boolean;
 };
 
 const validationStateSelector = (account: OnyxEntry<OnboardingAccount>): ValidationState => ({
-    achData: {state: account?.achData?.state, bankAccountID: account?.achData?.bankAccountID},
+    achData: {state: account?.achData?.state},
     hasReachedMaxAttempts: !!account?.maxAttemptsReached,
 });
 
-function ValidationStep({policyID, isSubmitting, errorText, onComplete, goToStep}: ValidationStepProps) {
+function ValidationStep({validateRequest, policyID, onComplete, goToStep}: ValidationStepProps) {
     const [validationState] = useOnyx(ONYXKEYS.SIMPLIFIED_BANK_ONBOARDING_ACCOUNT, {selector: validationStateSelector});
     const achData = validationState?.achData;
 
@@ -46,14 +50,7 @@ function ValidationStep({policyID, isSubmitting, errorText, onComplete, goToStep
         return <MaxAttemptsReachedMessage />;
     }
     if (isPendingValidation(achData)) {
-        return (
-            <DepositsForm
-                policyID={policyID}
-                achData={achData}
-                isSubmitting={isSubmitting}
-                errorText={errorText}
-            />
-        );
+        return <DepositsForm validateRequest={validateRequest} />;
     }
     if (isVerifying(achData)) {
         return (

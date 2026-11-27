@@ -5,7 +5,8 @@
  * The status comes from the optimistic, success and failure data of the request, like any other server result, so the
  * Promise only tells the handler when Onyx holds the result. The status entry carries a request ID, so the result of an
  * older request with the same key never settles a newer one. The finally data marks the entry as answered, so a request
- * whose answer applied neither the success nor the failure data still settles, as failed.
+ * whose answer applied neither the success nor the failure data still settles, as failed. A write is never in flight
+ * twice under one key, whoever sends it, so a double press or a page and the controller sending the same write make one call.
  */
 import {getMicroSecondOnyxErrorWithTranslationKey} from '@libs/ErrorUtils';
 import {getIsOffline} from '@libs/NetworkState';
@@ -40,19 +41,30 @@ type RequestOnyxKey =
     | typeof ONYXKEYS.FORMS.SIMPLIFIED_BANK_ONBOARDING_FORM_DRAFT
     | typeof ONYXKEYS.FORMS.SIMPLIFIED_BANK_ONBOARDING_SIGNER_FORM_DRAFT;
 
-type RunRequestArgs = MockRequest & {
+type RequestIdentity = {
     /** The name of the user action. Each name is one entry of the request status key. */
     name: string;
 
     /** The bank account that the request is about. Readers of the status pass the same scope to `getRequestKey`. */
     scope?: RequestScope;
+};
 
+type RequestOptions = {
     /** The updates of the request itself. The status updates are added to them. */
     onyxData?: OnyxData<RequestOnyxKey>;
 
     /** The message that the status entry shows when the request fails */
     errorKey?: TranslationPaths;
 };
+
+type RunRequestArgs = MockRequest & RequestIdentity & RequestOptions;
+
+/**
+ * The keys of the writes that have not settled yet. A key is added before the write goes out, so a second send in the
+ * same tick finds it. Reads are not guarded: two reads with one key may ask for different countries, and a read sent
+ * twice changes nothing on the server.
+ */
+const writesInFlight = new Set<RequestKey>();
 
 function buildStatusUpdate(key: RequestKey, value: Partial<RequestState>): OnyxUpdate<RequestsKey> {
     return {onyxMethod: Onyx.METHOD.MERGE, key: ONYXKEYS.RAM_ONLY_SIMPLIFIED_BANK_ONBOARDING_REQUESTS, value: {[key]: value}};
@@ -119,23 +131,41 @@ function waitForRequestToSettle(key: RequestKey, requestID: string, errorKey: Tr
 
 /**
  * Reads made offline are dropped by the transport, so they are not sent at all. Writes made offline wait in a queue,
- * and so does their Promise, until the connection returns.
+ * and so does their Promise, until the connection returns. A write whose key is still in flight is skipped.
  */
 function runRequest(args: RunRequestArgs): Promise<RequestOutcome> {
     if (args.type === 'read' && getIsOffline()) {
         return Promise.resolve({status: 'skipped'});
     }
     const key = getRequestKey(args.name, args.scope);
+    const isWrite = args.type === 'write';
+    if (isWrite && writesInFlight.has(key)) {
+        return Promise.resolve({status: 'skipped'});
+    }
+    if (isWrite) {
+        writesInFlight.add(key);
+    }
     const requestID = rand64();
     const errorKey = args.errorKey ?? 'common.genericErrorMessage';
     const settled = waitForRequestToSettle(key, requestID, errorKey);
     sendRequest(args, addStatusUpdates(key, requestID, errorKey, args.onyxData ?? {}));
-    return settled;
+    if (!isWrite) {
+        return settled;
+    }
+    return settled.finally(() => writesInFlight.delete(key));
 }
 
 /** Describes a request without sending it, so a plan can name the request of a step and show its status */
-function planRequest(args: RunRequestArgs): Required<PlannedRequest> {
+function planRequest(args: RunRequestArgs): PlannedRequest {
     return {key: getRequestKey(args.name, args.scope), send: () => runRequest(args)};
+}
+
+/**
+ * Describes a request whose params come from the page that sends it, such as the amounts of the test deposits. The key
+ * comes from the name and the scope alone, so the page shows the status of the request before it sends anything.
+ */
+function planRequestWithInput<TInput>(identity: RequestIdentity, getRequest: (input: TInput) => MockRequest & RequestOptions): PlannedRequest<TInput> {
+    return {key: getRequestKey(identity.name, identity.scope), send: (input) => runRequest({...getRequest(input), ...identity})};
 }
 
 /** Describes the read that a page needs, so the controller sends it when the page opens */
@@ -144,5 +174,5 @@ function planRead(args: RunRequestArgs & ReadRequest, isLoaded: boolean): Planne
 }
 
 export default runRequest;
-export {planRead, planRequest};
+export {planRead, planRequest, planRequestWithInput};
 export type {RequestOnyxKey};

@@ -9,8 +9,20 @@ import type {OnboardingDraft} from '@pages/SimplifiedBankOnboarding/contract/for
 import type {Field, SummaryRow} from '@pages/SimplifiedBankOnboarding/core/form/fields/types';
 import type {PlannedRead, PlannedRequest} from '@pages/SimplifiedBankOnboarding/core/requests/types';
 
+/** What a custom page holds besides what every page holds */
+type CustomPageContent = {
+    /** The name of the page. The flow picks the screen of the page by it. */
+    component: string;
+
+    /**
+     * The request that the page sends itself through `useRequest`, such as the test deposits. The controller never sends
+     * it, so the engine sees no input type here and only the flow, which types the input per page, can call `send`.
+     */
+    request?: PlannedRequest<never>;
+};
+
 /**
- * The names that a flow gives to its steps, its pages and its custom steps. A flow passes closed unions of its own names,
+ * The names that a flow gives to its steps, its pages and its custom pages. A flow passes closed unions of its own names,
  * so its plan cannot point at a page that does not exist. The engine only compares the names, so its own code takes any
  * vocabulary.
  */
@@ -21,8 +33,8 @@ type FlowVocabulary = {
     /** The name of a page of a step, which the URL holds */
     pageID: string;
 
-    /** The name of a page that is not a form. The flow picks the screen of the page by it. */
-    customStep: string;
+    /** A union with one member per custom page of the flow, which ties the name of the page to the input of its request */
+    customPage: CustomPageContent;
 };
 
 /** What happens after a page: the draft values to save and the page to show next */
@@ -57,7 +69,10 @@ type PageBase<TVocabulary extends FlowVocabulary> = {
 
     /** The server data that the page needs, such as the bank inputs of a country. The controller reads it when the page opens. */
     read?: PlannedRead;
+};
 
+/** What the controller sends when a form, confirmation or list page is submitted. A custom page sends its own request instead. */
+type SubmitRequest = {
     /**
      * A request that saves the answers of the page before the next page opens, for a step that talks to the server in
      * the middle, such as the director details before the emails of the other directors. It runs after the draft write.
@@ -65,17 +80,18 @@ type PageBase<TVocabulary extends FlowVocabulary> = {
     request?: PlannedRequest;
 };
 
-type FormPageConfig<TVocabulary extends FlowVocabulary = FlowVocabulary> = PageBase<TVocabulary> & {
-    kind: 'form';
-    title: string;
-    description?: string;
+type FormPageConfig<TVocabulary extends FlowVocabulary = FlowVocabulary> = PageBase<TVocabulary> &
+    SubmitRequest & {
+        kind: 'form';
+        title: string;
+        description?: string;
 
-    /** The page renders, validates and submits them, and the plan counts the page as complete when the answers pass them */
-    fields: Field[];
+        /** The page renders, validates and submits them, and the plan counts the page as complete when the answers pass them */
+        fields: Field[];
 
-    /** Defaults to "Next", or to "Confirm" in edit mode */
-    submitLabel?: string;
-};
+        /** Defaults to "Next", or to "Confirm" in edit mode */
+        submitLabel?: string;
+    };
 
 /** A row of a confirmation page, which opens the page that edits its value */
 type ConfirmationRow = SummaryRow & {
@@ -83,10 +99,11 @@ type ConfirmationRow = SummaryRow & {
 };
 
 /** Sums up the form pages that precede it in its step, so it lists no rows of its own */
-type ConfirmationPageConfig<TVocabulary extends FlowVocabulary = FlowVocabulary> = PageBase<TVocabulary> & {
-    kind: 'confirmation';
-    title: string;
-};
+type ConfirmationPageConfig<TVocabulary extends FlowVocabulary = FlowVocabulary> = PageBase<TVocabulary> &
+    SubmitRequest & {
+        kind: 'confirmation';
+        title: string;
+    };
 
 type ListRow = {
     id: string;
@@ -97,27 +114,28 @@ type ListRow = {
     isReadOnly?: boolean;
 };
 
-type ListPageConfig<TVocabulary extends FlowVocabulary = FlowVocabulary> = PageBase<TVocabulary> & {
-    kind: 'list';
-    title: string;
-    description?: string;
+type ListPageConfig<TVocabulary extends FlowVocabulary = FlowVocabulary> = PageBase<TVocabulary> &
+    SubmitRequest & {
+        kind: 'list';
+        title: string;
+        description?: string;
 
-    /** The heading above the rows */
-    rowsTitle?: string;
-    rows: ListRow[];
+        /** The heading above the rows */
+        rowsTitle?: string;
+        rows: ListRow[];
 
-    /** Decides where a row press leads */
-    onRowPress?: (rowID: string) => PageTransition<TVocabulary>;
-};
+        /** Decides where a row press leads */
+        onRowPress?: (rowID: string) => PageTransition<TVocabulary>;
+    };
 
 /** A page that is not a form. It is a screen in the `customSteps/` of its flow, picked by name. */
-type CustomPageConfig<TVocabulary extends FlowVocabulary = FlowVocabulary> = PageBase<TVocabulary> & {
-    kind: 'custom';
-    component: TVocabulary['customStep'];
+type CustomPageConfig<TVocabulary extends FlowVocabulary = FlowVocabulary> = PageBase<TVocabulary> &
+    TVocabulary['customPage'] & {
+        kind: 'custom';
 
-    /** False while the page waits for an input it does not have yet, such as the account picked in Plaid or the other directors. Defaults to true. */
-    canComplete?: boolean;
-};
+        /** False while the page waits for an input it does not have yet, such as the account picked in Plaid or the other directors. Defaults to true. */
+        canComplete?: boolean;
+    };
 
 type PageConfig<TVocabulary extends FlowVocabulary = FlowVocabulary> =
     | FormPageConfig<TVocabulary>
@@ -161,6 +179,7 @@ export type {
     ConfirmationPageConfig,
     ConfirmationRow,
     CustomPageConfig,
+    CustomPageContent,
     FlowPlan,
     FlowVocabulary,
     FormPageConfig,

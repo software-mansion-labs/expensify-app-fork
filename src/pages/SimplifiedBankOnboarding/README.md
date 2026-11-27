@@ -82,7 +82,7 @@ the lower its level.
 | `core/plan/` | The shape of a plan (`types.ts`) and the pure helpers over it: positions, the resume position, reachability and the moves between positions (`position/`) |
 | `core/form/pages/` | The generic renderer: a form page, and one page for confirmations and lists, which both render through the shared `ConfirmationStep`. The rows of a confirmation come from the fields of its step (`getConfirmationRows.ts`), and `confirmationStepRows.ts` shapes the rows of both for the shared step |
 | `core/form/fields/` | The fields of a form page, one file per kind: text, legal name, date of birth, picklist, checkbox, yes or no question, file, read-only row. A `createXField` factory returns a `Field` (`types.ts`): the inputs it owns, their rules, its rows on the confirmation of the step and how it renders. `fieldSet.ts` answers what the page, the plan and the controller ask of the fields of a page |
-| `core/requests/` | `runRequest` and `planRead`, the key of a request status, the request status hook `useRequestState` and `useReadOnOpen`, which sends the read of the open page |
+| `core/requests/` | `runRequest`, `planRequest`, `planRequestWithInput` and `planRead`, the key of a request status, the request status hook `useRequestState`, `useRequest`, which a custom page sends its request with, and `useReadOnOpen`, which sends the read of the open page |
 | `core/navigation/` | The moves of a flow along the routes that the flow passes in (`flowNavigation.ts`). The mapping between a position and a route belongs to the flows (`flows/shared/routes/flowRoutes.ts`). With `entry/entryNavigation.ts` it is the only code that calls `Navigation` |
 | `contract/` | The data that every folder shares: the draft type, the Onyx types, step and page IDs, request names, mock values (`contract/SBO_CONST.ts`) and pure checks on the server data (`setupStatus.ts`) |
 | `mockBackend/` | The server: database, command handlers, queue |
@@ -121,6 +121,12 @@ A step or a page names its request as `request: getCompanyRequest(bankAccount, a
 values it sends and holds its guards, so the plan has no request code. A form page works offline exactly when its submit
 sends no request, so a plan never says so itself.
 
+A custom page names its request the same way, as `request: getValidateBankAccountRequest(bankAccount)`, but the
+controller never sends it. The page sends it with `useRequest(page.request)`, which returns `send`, `isPending` and
+`errorMessage`, and passes the input that only the page has, such as the amounts of the test deposits
+(`planRequestWithInput`). The vocabulary of the flows types the input per custom page, so the Plaid page sends a token and
+the deposits page sends amounts. No custom page calls a request function directly.
+
 A new kind of field is one new file in `core/form/fields/`. Nothing else has a list of field kinds to extend.
 
 A page that needs server data names its read as `read: getBankFieldsRead(country, currency, isLoaded)`. The builder
@@ -150,6 +156,11 @@ the outcome to this very request, so an older request never settles a newer one.
 answered. The real API applies neither the success nor the failure data of an answer that needs an admin (460), and
 such a request settles as failed instead of staying pending.
 
+A write is never in flight twice under one key. `runRequest` keeps the keys of the writes that have not settled, and a
+second send of the same key settles at once as `skipped` without a call. The guard sits in `runRequest`, so it holds for a
+double press on a custom page and for a page and the controller that send the same write. Reads are not guarded: two
+reads with one key may ask for different countries, and a read sent twice changes nothing on the server.
+
 A status entry is keyed by the request name and the workspace, or the bank account when there is no workspace
 (`core/requests/requestKey.ts`). The writer and the reader build the key from the same bank account params, so the error or
 the spinner of one workspace never shows on another, and a request of one workspace never replaces the status of
@@ -157,7 +168,8 @@ another. The key is RAM-only because the offline queue of the mock lives in memo
 reload would never settle.
 
 A write made offline is queued, and the page shows it as pending until the connection returns and the request settles.
-Reads made offline are not sent. The button spinner and the error come from `useRequestState(key)`. Requests keep the
+Reads made offline are not sent. The button spinner and the error come from `useRequestState(key)`, which `useRequest`
+wraps for custom pages. Requests keep the
 account `errors` that the frozen landing page shows, and write no other flags to the account key. The entry page clears
 those errors when the lab closes, so an error of the flow does not stay on the Payments page.
 
@@ -166,7 +178,8 @@ those errors when the lab closes, so an error of the flow does not stay on the P
 A flow is a `FlowDescriptor`: its form ID, its draft writes, its plan builder, its step names and the component of its
 custom steps (`CustomStep`), which the controller renders as an element keyed by the page ID. The
 controller knows nothing else about a flow, so the USD flow, the NonUSD flow and the invited director page share it.
-Custom steps never navigate: they report through `onComplete` and `goToStep`.
+Custom steps never navigate: they report through `onComplete` and `goToStep`. The controller still clears the error of
+the request of a custom page when the user leaves the page, and blocks the page offline like a form page with a request.
 
 ### Dependency direction
 

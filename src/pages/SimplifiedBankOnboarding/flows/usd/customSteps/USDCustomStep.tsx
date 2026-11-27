@@ -15,6 +15,7 @@ function USDCustomStep({page, policyID, isSubmitting, errorText, onComplete, goT
         case 'plaid':
             return (
                 <PlaidStep
+                    bankAccountsRequest={page.request}
                     canComplete={page.canComplete ?? true}
                     isSubmitting={isSubmitting}
                     errorText={errorText}
@@ -32,9 +33,8 @@ function USDCustomStep({page, policyID, isSubmitting, errorText, onComplete, goT
         case 'validation':
             return (
                 <ValidationStep
+                    validateRequest={page.request}
                     policyID={policyID}
-                    isSubmitting={isSubmitting}
-                    errorText={errorText}
                     onComplete={onComplete}
                     goToStep={goToStep}
                 />

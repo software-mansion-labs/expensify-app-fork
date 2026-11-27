@@ -509,6 +509,17 @@ describe('buildNonUSDPlan', () => {
             // Then the pages follow the director answer
             expect(pageIDs).toEqual(expectedPageIDs);
         });
+
+        it('gives the hang tight page the reminder of its workspace', () => {
+            // Given an invited director who has not answered yet
+            const server = createServer('eur').createAccount().saveCompany().saveOwners().askForSigners({signerEmail: 'director@acme.com'});
+
+            // When the hang tight page is read from the plan
+            const hangTightPage = findStep(buildPlan('eur', server), PAGE_NAMES.SIGNER_INFO)?.pages.find((page) => page.id === SIGNER_INFO_SUB_PAGES.HANG_TIGHT);
+
+            // Then the page sends the reminder that the plan names, so its button shares the guard and the status of that write
+            expect(hangTightPage).toMatchObject({request: {key: getRequestKey(REQUEST_NAMES.SEND_SIGNER_REMINDER, {policyID: 'eur'})}});
+        });
     });
 
     describe('own 25% answer of the draft against the saved one', () => {

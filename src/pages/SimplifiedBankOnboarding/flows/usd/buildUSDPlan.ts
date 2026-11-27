@@ -1,27 +1,18 @@
 /**
  * The whole USD flow as a plan, built from the draft and the server data. It is the one place that decides which steps
  * and pages the USD flow has, so the controller never skips a step on its own. A form page only lists its fields from
- * `core/form/fields`, a step names the request that saves it, and a widget page names the read of its token.
+ * `core/form/fields`, a step names the request that saves it, a widget page names the read of its token, and a custom
+ * page names the request that it sends itself.
  */
 import {isValidCompanyName, isValidSSNLastFour, isValidTaxID} from '@libs/ValidationUtils';
 
 import INPUT_IDS from '@pages/SimplifiedBankOnboarding/contract/form';
 import type {ACHData, USDStep} from '@pages/SimplifiedBankOnboarding/contract/onyx';
 import {getOwnerFullName} from '@pages/SimplifiedBankOnboarding/contract/ownerNames';
-import REQUEST_NAMES from '@pages/SimplifiedBankOnboarding/contract/REQUEST_NAMES';
 import SBO_CONST from '@pages/SimplifiedBankOnboarding/contract/SBO_CONST';
 import {areCompanyDetailsLocked, isPendingValidation} from '@pages/SimplifiedBankOnboarding/contract/setupStatus';
 import type {PlanContext} from '@pages/SimplifiedBankOnboarding/core';
-import {
-    createCheckboxField,
-    createDateOfBirthField,
-    createFileField,
-    createLegalNameField,
-    createPicklistField,
-    createTextField,
-    getFormPage,
-    getRequestKey,
-} from '@pages/SimplifiedBankOnboarding/core';
+import {createCheckboxField, createDateOfBirthField, createFileField, createLegalNameField, createPicklistField, createTextField, getFormPage} from '@pages/SimplifiedBankOnboarding/core';
 import type FlowData from '@pages/SimplifiedBankOnboarding/flows/shared/flowData/types';
 import getBaseStepInput from '@pages/SimplifiedBankOnboarding/flows/shared/getBaseStepInput';
 import {canAddMoreUSDOwners} from '@pages/SimplifiedBankOnboarding/flows/shared/owners/canAddMoreOwners';
@@ -38,8 +29,9 @@ import getCompanyRequest from './requests/getCompanyRequest';
 import getKYBDocumentsRequest from './requests/getKYBDocumentsRequest';
 import getOwnersRequest from './requests/getOwnersRequest';
 import getPersonalInfoRequest from './requests/getPersonalInfoRequest';
+import getValidateBankAccountRequest from './requests/getValidateBankAccountRequest';
 import {getIdentityCheckRead, getVerifyIdentityRequest} from './requests/identityCheck';
-import {getPlaidLinkTokenRead} from './requests/plaid';
+import {getPlaidBankAccountsRequest, getPlaidLinkTokenRead} from './requests/plaid';
 
 const {PAGE_NAMES, STEP, STEP_INDEX} = SBO_CONST.USD;
 const SERVER_STEP_ORDER: USDStep[] = [STEP.COUNTRY, STEP.BANK_ACCOUNT, STEP.REQUESTOR, STEP.COMPANY, STEP.BENEFICIAL_OWNERS, STEP.ACH_CONTRACT, STEP.KYB_DOCS, STEP.VALIDATION, STEP.ENABLE];
@@ -124,6 +116,7 @@ function buildUSDPlan({draft, account, plaidLinkToken, onfidoToken}: FlowData, {
                       isComplete: hasServerBankAccount,
                       canComplete: !!answers.plaidAccountID,
                       read: getPlaidLinkTokenRead(!!plaidLinkToken),
+                      request: getPlaidBankAccountsRequest(),
                   }
                 : buildFormPage({
                       id: SBO_CONST.USD.BANK_INFO_SUB_PAGES.MANUAL,
@@ -413,9 +406,9 @@ function buildUSDPlan({draft, account, plaidLinkToken, onfidoToken}: FlowData, {
         });
     }
 
-    // The review, the test deposits and the connected account. Its custom page sends its own requests, so the step only
-    // names the request whose state the page shows. While the account waits for the deposits, Back leaves the flow,
-    // because the earlier steps are sent.
+    // The review, the test deposits and the connected account. The custom page sends the amounts of the deposits itself,
+    // so the step has no request. While the account waits for the deposits, Back leaves the flow, because the earlier
+    // steps are sent.
     const isPendingDeposits = isPendingValidation(achData);
 
     steps.push({
@@ -424,8 +417,16 @@ function buildUSDPlan({draft, account, plaidLinkToken, onfidoToken}: FlowData, {
         counterIndex: STEP_INDEX.VALIDATION,
         isComplete: hasPassedServerStep(achData, STEP.VALIDATION),
 
-        pages: [{kind: 'custom', id: SBO_CONST.USD.VALIDATION_SUB_PAGES.VALIDATE, component: 'validation', isComplete: false, shouldExitOnBack: isPendingDeposits}],
-        request: {key: getRequestKey(REQUEST_NAMES.VALIDATE_BANK_ACCOUNT, bankAccount)},
+        pages: [
+            {
+                kind: 'custom',
+                id: SBO_CONST.USD.VALIDATION_SUB_PAGES.VALIDATE,
+                component: 'validation',
+                isComplete: false,
+                shouldExitOnBack: isPendingDeposits,
+                request: getValidateBankAccountRequest(bankAccount),
+            },
+        ],
     });
 
     return {steps, answers};

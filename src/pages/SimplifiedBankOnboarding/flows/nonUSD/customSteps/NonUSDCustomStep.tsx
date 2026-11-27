@@ -15,6 +15,7 @@ function NonUSDCustomStep({page, policyID, onComplete}: CustomStepProps) {
         case 'hangTight':
             return (
                 <HangTightStep
+                    reminderRequest={page.request}
                     policyID={policyID}
                     canContinue={page.canComplete ?? true}
                     openSignerForm={openEnterSignerInfo}
