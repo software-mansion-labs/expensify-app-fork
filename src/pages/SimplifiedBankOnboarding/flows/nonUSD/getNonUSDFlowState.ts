@@ -1,6 +1,6 @@
 /**
- * The NonUSD values that several layers derive from the same data: the workspace of the flow, its currency and the
- * answers. One helper keeps the plan, the step counter and the server list reads on the same country and currency.
+ * The NonUSD values that every step of the plan builds on: the workspace of the flow, its currency and the answers. The
+ * builder derives them once, so the steps and the reads of the server lists ask for the same country and currency.
  */
 import getNonUSDCurrency from '@pages/SimplifiedBankOnboarding/contract/getNonUSDCurrency';
 import getFlowPolicyID from '@pages/SimplifiedBankOnboarding/flows/shared/flowData/getFlowPolicyID';

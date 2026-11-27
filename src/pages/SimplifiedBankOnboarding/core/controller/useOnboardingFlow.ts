@@ -3,8 +3,9 @@
  * that the URL names from the screen and gives the page its handlers. Every move happens in a handler: it writes the draft, rebuilds the plan
  * from fresh Onyx data, runs the request of the page or, at the end of a step, the step request and only then navigates.
  * A request made offline waits in the queue and the page shows it as pending until it settles. A handler navigates
- * after a request only if the user is still on the page that sent it. The one effect redirects a URL that names no
- * reachable position, once the data of the plan is there. The read that the open page needs is sent when it opens.
+ * after a request only if the user is still on the page that sent it. The only effect that navigates redirects a URL that
+ * names no reachable position, once the data of the plan is there. The read that the open page needs is sent when it
+ * opens, again when its data disappears and after a reconnect until it succeeds.
  */
 import useLocalize from '@hooks/useLocalize';
 

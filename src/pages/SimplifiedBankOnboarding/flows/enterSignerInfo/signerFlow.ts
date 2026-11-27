@@ -1,6 +1,6 @@
 /**
  * The flow of the page that an invited director opens from the email: one step with the signer details pages that the
- * NonUSD signer step also uses, saved by the request of the invited director. It has no custom steps and no counter.
+ * NonUSD signer step also uses, saved by the request of the invited director. It has no custom pages and no counter.
  */
 import SBO_CONST from '@pages/SimplifiedBankOnboarding/contract/SBO_CONST';
 import type {PlanContext} from '@pages/SimplifiedBankOnboarding/core';

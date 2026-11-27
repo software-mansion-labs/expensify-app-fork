@@ -65,30 +65,30 @@ a generic error in the UI, like the real flow, and the specific reason only in t
 
 Everything is under `src/pages/SimplifiedBankOnboarding/`. The module is a tree that starts at `index.ts`. The split that
 matters most is between `core/`, the generic engine that knows no flow, and `flows/`, where each flow is a configuration
-for that engine. A folder imports only from the folders below it in this table, and the deeper a file sits in a folder,
-the lower its level.
+for that engine.
 
 | Folder | Content |
 | --- | --- |
 | `index.ts` | The entry of the module: the screens that the navigators register and the types of the Onyx keys. The app imports nothing else |
 | `lab/` | The lab page: workspace list, the other entry points, the Payments page stand-in, the reads of these pages (`labActions.ts`) and the panel of the mock server (`mockServerPanel/`) |
-| `entry/` | The entry page: the account reference, the pure screen state, one view per state, the start over modal, the verify-account page, its moves (`entryNavigation.ts`) and its requests (`requests/`) |
-| `flows/` | **The flow configurations.** `index.ts` is what the entry page and the app import, and `openFlowAtResume.ts` picks the flow of a workspace |
-| `flows/usd/`, `flows/nonUSD/` | One flow each. The top holds the route screen, the flow descriptor, the plan builder, the answers built from the draft and the server data (`getUSDAnswers.ts`, `getNonUSDAnswers.ts`) and, in the USD flow, the Onyx data that every write shares (`getUSDOnyxData.ts`). Next to them is one folder per step of the builder, named like its step function, such as `bankAccount/` for `buildBankAccountStep`. It holds what the step needs: the requests and reads that the plan names (each a `PlannedRequest` or a `PlannedRead`), the screen of its custom page and, in the NonUSD bank and business steps, the pure helpers for the bank fields and picklists that the server sends. A step that needs no code of its own, such as the country step, has no folder. The NonUSD request that sends the agreements (`agreements/getFinishOnboardingRequest.ts`) sits with the agreements step, and the docusign step sends it again with the signed form |
+| `entry/` | The entry page: the account reference, the pure screen state, one view per state (`views/`), the start over modal (`reset/`), the verify-account page, its moves (`entryNavigation.ts`) and its requests (`requests/`) |
+| `flows/` | **The flow configurations.** `index.ts` is what the entry page and the app import, and `openFlowAtResume.ts` opens the flow of a workspace where it resumes |
+| `flows/usd/`, `flows/nonUSD/` | One flow each. The top holds the route screen (such as `USDSetupPage.tsx`), the flow descriptor (`usdFlow.ts`), the plan builder, the answers built from the draft and the server data (`getUSDAnswers.ts`) and what every step of the flow shares, such as the Onyx data of every USD write (`getUSDOnyxData.ts`). Next to them is one folder per step of the builder, named like its step function, such as `bankAccount/` for `buildBankAccountStep`. It holds the requests and reads of the step, the screen of its custom page and its pure helpers, such as the bank fields that the NonUSD server sends. A step that needs no code of its own, such as the country step, has no folder |
 | `flows/enterSignerInfo/` | The separate flow that a director opens from an email, on the same controller with its own form |
-| `flows/shared/` | What more than one flow uses, so that no flow folder imports another: the screen body of the USD and NonUSD flows (`setupScreen/`), the `FlowData` type and its reads (`flowData/`), the account read of a screen and the gate of a cold deep link (`accountRead/`), the owner step (`owners/`), the signer pages (`signerDetails/`) and the draft writes |
+| `flows/shared/` | What more than one flow uses, so that no flow folder imports another: the screen body of the USD and NonUSD flows (`setupScreen/`), the `FlowData` type and its reads (`flowData/`), the account read of a screen and the gate of a cold deep link (`accountRead/`), the plan types with the step and page names of the lab (`plan/`), the routes and the navigation calls of the flows (`routes/`), the owner step (`owners/`), the signer pages (`signerDetails/`) and the draft writes (`draft.ts`) |
 | `core/` | **The generic engine.** `index.ts` is the only path that `flows/` and `entry/` import |
 | `core/controller/` | The generic flow screen (`OnboardingFlowPage`), its hook (`useOnboardingFlow`) and the `FlowDescriptor` type |
-| `core/plan/` | The shape of a plan (`types.ts`), the builders of a form page (`getFormPage.ts`) and of a custom page (`createCustomPage.tsx`), and the pure helpers over a plan: positions, the resume position, reachability and the moves between positions (`position/`) |
-| `core/form/pages/` | The generic renderer: a form page, and one page for confirmations and lists, which both render through the shared `ConfirmationStep`. The rows of a confirmation come from the fields of its step (`getConfirmationRows.ts`), and `confirmationStepRows.ts` shapes the rows of both for the shared step |
-| `core/form/fields/` | The fields of a form page, one file per kind: text, legal name, date of birth, picklist, checkbox, yes or no question, file, read-only row. A `createXField` factory returns a `Field` (`types.ts`): the inputs it owns, their rules, its rows on the confirmation of the step and how it renders. `fieldSet.ts` answers what the page, the plan and the controller ask of the fields of a page |
-| `core/requests/` | `runRequest`, `planRequest`, `planRequestWithInput` and `planRead`, the key of a request status, the request status hook `useRequestState`, `useRequest`, which a custom page sends its request with, and `useReadOnOpen`, which sends the read of the open page |
-| `core/navigation/` | The moves of a flow along the routes that the flow passes in (`flowNavigation.ts`). The mapping between a position and a route belongs to the flows (`flows/shared/routes/flowRoutes.ts`). With `entry/entryNavigation.ts` it is the only code that calls `Navigation` |
+| `core/plan/` | The shape of a plan (`types.ts`), the builders of a form page (`getFormPage.ts`) and of a custom page (`createCustomPage.tsx`), the step counter (`getStepCounter.ts`), the inputs that a saved step drops from the draft, and the pure helpers over positions: the resume position, reachability and the moves between positions (`position/`) |
+| `core/form/pages/` | The renderer of the generic pages (`PageRenderer.tsx`): a form page, and one page for confirmations and lists, which both render through the shared `ConfirmationStep`. The rows of a confirmation come from the fields of its step (`getConfirmationRows.ts`) |
+| `core/form/fields/` | The fields of a form page, one file per kind, such as text, picklist, file and read-only row. A `createXField` factory returns a `Field` (`types.ts`): the inputs it owns, their rules, its rows on the confirmation of the step and how it renders. `fieldSet.ts` answers what the page, the plan and the controller ask of the fields of a page |
+| `core/requests/` | `runRequest` with `planRequest`, `planRequestWithInput` and `planRead`, the key of a request status, `useRequest`, which a page sends its own request with, and `useReadOnOpen`, which sends the read of the open page. `useRequestState` reads a status and is not exported from `core` |
+| `core/navigation/` | The moves of a flow along the routes that the flow passes in (`flowNavigation.ts`) |
 | `contract/` | The data that every folder shares: the draft type, the Onyx types, step and page IDs, request names, mock values (`contract/SBO_CONST.ts`) and pure checks on the server data (`setupStatus.ts`) |
 | `mockBackend/` | The server: database, command handlers, queue |
 
 The files outside the module only register it: Onyx keys, routes, screens, the navigator entries, one menu item, one
-translation key and the Sentry labels.
+translation key and the Sentry labels. The tests are in `tests/unit/SimplifiedBankOnboarding/`,
+`tests/ui/SimplifiedBankOnboarding/` and `tests/navigation/SimplifiedBankOnboarding/`.
 
 ## Architecture
 
@@ -97,32 +97,45 @@ translation key and the Sentry labels.
 The position of a flow is the route: `page` is the step ID, `subPage` is the page ID and `action=edit` marks a page that
 the confirmation of its step opened. Nothing else stores it: no `currentStep` written by the client, no `subStep`, no
 numeric index. The invited director page has one step, so its URL holds the page alone. Step and page IDs are closed
-unions of the constants in `contract/SBO_CONST.ts` (`contract/ids.ts`), and a URL value that is not one of them names no position.
+unions of the constants in `contract/SBO_CONST.ts` (`contract/ids.ts`), and a URL value that is not one of them names no
+position.
 
 The plan is built in render from the draft and the server data, so it always matches the data. Skipped pages are not in
 the plan. `getResumePosition` finds the first page that still needs an answer, and `isPositionReachable` rejects a URL
 that names a page the plan does not have or a page after the resume position. A URL without a reachable position is
-redirected to the resume position by the only effect of the controller, and the redirect waits until the data of the plan
-is there.
+redirected to the resume position. This is the only navigation of the controller outside a handler, and it waits until
+the data of the plan is there.
 
-### One builder per flow
+### How to read a builder
 
 Each flow has one plan builder (`flows/usd/buildUSDPlan.ts`, `flows/nonUSD/buildNonUSDPlan.ts`), and it is the one file
-that says which inputs the flow shows and in which order. Read it from the top:
+that says which inputs the flow shows and in which order. Its header comment says what else a new input needs, such as
+its ID in `contract/form.ts` and its value in the answers.
 
-- The builder function derives the values that several steps share once and puts them in one input object, such as
-  the answers, the bank account params and the currency.
-- It returns the steps as a list with one line per step, in the order of the flow. A step that only some setups get
-  sits in its place with its condition, such as `...(requiresDocusignStep(currency) ? [buildDocusignStep(input)] : [])`.
-- Below the builder, in the same order, each step has its own function. It takes the input object and returns the step
-  with its pages and fields, top to bottom. A value that only this step needs is computed inside the function.
-
-The order of the list is also the order of the step counter, so a step that shares the number of the step before it,
-such as the USD identity check, stays right after that step.
+- **The step list.** The builder function derives the values that several steps share once, such as the answers and
+  the currency, and returns the steps as a list with one line per step, in the order of the flow. A step that only some
+  setups get sits in its place behind its condition, such as `...(input.hasDocusignStep ? [buildDocusignStep(input)] : [])`.
+- **The step functions.** Below the builder, in the same order, each step has its own function that returns the step
+  with its pages, top to bottom. The code that only this step uses is in the step folder named like the function.
+- **Fields.** A form page is a list of fields, such as `createTextField(INPUT_IDS.COMPANY_NAME, {label, validate})`.
+  Every input is required unless its field is marked `isOptional`. See [A form page is a list of fields](#a-form-page-is-a-list-of-fields).
+- **Custom pages.** A page that is not a form names its screen component and the props that only this screen needs,
+  such as `createCustomPage(ValidationPage, {id, isComplete: false}, {request: getValidateBankAccountRequest(bankAccount)})`.
+  See [Custom pages](#custom-pages).
+- **Reads.** A page that needs server data names its read, such as `read: getBankFieldsRead(country, currency, isLoaded)`.
+  See [Reads of a page](#reads-of-a-page).
+- **Requests.** The `request` of a step saves the step, and the controller sends it on the submit of the last page of
+  the step (`StepConfig.request` in `core/plan/types.ts` says when exactly). The `request` of a form or confirmation page
+  is sent on the submit of that page, such as the director details before the emails of the other directors. A custom
+  page gets its request as a prop and sends it itself through `useRequest`. The request module picks the values it
+  sends and holds its guards, so the builder has no request code.
+- **The step counter.** The header numbers the steps in the order of the list (`core/plan/getStepCounter.ts`). A step
+  only says how it counts: `counter: 'own'` (the default) takes the next number, `'shared'` shows the number of the step
+  before it, like the USD identity check after the personal info step, and `'none'` hides the counter, like the USD
+  documents step. A step that the plan leaves out takes no number, so the NonUSD docusign step adds a number only for AUD.
 
 ### A form page is a list of fields
 
-A plan describes a form page as `fields: [createTextField(INPUT_IDS.COMPANY_NAME, {label, validate})]` and nothing else.
 A field is a plain object, so everything that needs to know a page reads it without rendering the page:
 
 - `FormPage` renders the fields, validates them and submits only the values of their inputs.
@@ -135,37 +148,39 @@ A field is a plain object, so everything that needs to know a page reads it with
   the account number, and a step that sends no request would never clear it from the draft. A locked picklist still
   submits its option, because confirming the only country of a flow is the answer of its page.
 
-A step or a page names its request as `request: getCompanyRequest(bankAccount, answers)`. The request module picks the
-values it sends and holds its guards, so the plan has no request code. A form page works offline exactly when its submit
-sends no request, so a plan never says so itself.
+A form page works offline exactly when its submit sends no request, so a plan never says so itself. A new kind of field
+is one new file in `core/form/fields/`. Nothing else has a list of field kinds to extend.
 
-A page that is not a form is a custom page. The plan names its screen and the props that only this screen needs, the
-same way a form page names its fields:
+### Custom pages
 
-```ts
-createCustomPage(ValidationPage, {id, isComplete: false}, {request: getValidateBankAccountRequest(bankAccount)});
-```
+`createCustomPage` (`core/plan/createCustomPage.tsx`) wraps the screen in a render function, so the builder stays a
+plain `.ts` file and no flow keeps a list of its screens. The controller renders the page keyed by its ID and passes what
+every custom screen may use (`CustomPageProps`): the workspace, the state and the error of the step request, `onComplete`
+and `goToStep`. The props type of each screen picks the part that it uses, and it also decides what the plan must pass,
+so a request with the wrong input, such as amounts for the Plaid page, does not compile.
 
-A reader of the plan jumps from the page straight to its screen, and no flow keeps a list of its screens. The builder
-stays a plain `.ts` file, because the page holds the screen and renders it only when the controller asks (`render`).
+A screen takes its request as `request` and its readiness as `canComplete`. The page copies the key of the request and
+the readiness out as plain data, because the controller needs them without rendering the screen: it ignores a submit
+while the page cannot complete, clears the error of the request when the user leaves the page and shows the offline
+indicator for it. The controller never sends that request. The screen sends it with `useRequest(request)`, which returns
+`send`, `isPending` and `errorMessage`, and adds the input that only the screen has, such as the amounts of the test
+deposits (`planRequestWithInput`).
 
-The props type of the screen decides what the plan must pass, so a request with the wrong input, such as amounts for
-the Plaid page that sends a token, does not compile. The controller still sends no request of a custom page. The screen
-sends it with `useRequest(request)`, which returns `send`, `isPending` and `errorMessage`, and passes the input that only
-the screen has, such as the amounts of the test deposits (`planRequestWithInput`). No custom page calls a request function
-directly. A screen takes its request as `request` and its readiness as `canComplete`, and the page copies the key of the
-request and the readiness out of these props as plain data, because the controller needs them without rendering the
-screen.
+Custom pages never navigate on their own. They report through `onComplete` and `goToStep`, and a screen that opens
+another page, such as the form of an invited director from the page that waits for the directors, gets that navigation
+from the plan. A screen that cannot work offline blocks itself, such as the Plaid and Onfido pages.
 
-A new kind of field is one new file in `core/form/fields/`. Nothing else has a list of field kinds to extend.
+### Reads of a page
 
-A page that needs server data names its read as `read: getBankFieldsRead(country, currency, isLoaded)`. The builder
-computes `isLoaded` from the data, such as the stored bank inputs of the right country. The controller sends the read
-when the page opens, again when its data disappears, such as the Plaid or Onfido token that a failed write clears, and
-again after each reconnect until the read succeeded, because a read made offline is not sent. The page shows a loader
-while its data is not there, and the not found view when its own read failed before the data came. A failure that an
-earlier visit of the page saw does not count.
-The read is sent on every open, also when the data is stored, because a key such as the picklists names no country.
+A page that needs server data names its read (`PlannedRead`), and the builder computes `isLoaded` from the data, such as
+the stored bank inputs of the right country. The controller sends the read through `core/requests/useReadOnOpen.ts`
+when the page opens, also when the data is stored, because a key such as the picklists names no country. It sends it
+again when the data disappears, such as the Plaid or Onfido token that a failed write clears, and after each reconnect
+until the read succeeded, because a read made offline is not sent.
+
+The page shows a loader while its data is not there, and the not found view when its own read failed before the data
+came. A failure that an earlier visit of the page saw does not count, so a page opened again offline waits for the
+reconnect.
 
 ### Every move happens in a handler
 
@@ -180,60 +195,56 @@ in edit mode. After a step request succeeds, the draft drops the inputs of that 
 so the answers come from the server again and an old draft value cannot hide a newer server value. Files and the owner
 lists stay in the draft, because the server never sends them back in a form the flow can show.
 
-Each request goes through `runRequest`. It writes `{requestID, status, errors}` to one RAM-only status key and returns a
-Promise of the outcome (`succeeded`, `failed` or `skipped`). The status is written by the optimistic, success and
-failure data of the request, so the Promise only tells the handler when Onyx holds the result. The real `API.write`
-resolves when the request is queued, not when the server answers, so the flow needs this bridge. The request ID ties
-the outcome to this very request, so an older request never settles a newer one. The finally data names the request
-that got its answer. The real API applies neither the success nor the failure data of an answer that needs an admin
-(460), and such a request settles as failed instead of staying pending. The finally data never writes the request ID:
-the handler goes on once the success or the failure data landed, so a retry sent at once may own the entry already.
+### Requests
+
+Each request goes through `runRequest` (`core/requests/runRequest.ts`). It writes `{requestID, status, errors}` to one
+RAM-only status key and returns a Promise of the outcome (`succeeded`, `failed` or `skipped`). The status is written by
+the optimistic, success and failure data of the request, so the Promise only tells the handler when Onyx holds the
+result. The real `API.write` resolves when the request is queued, not when the server answers, so the flow needs this
+bridge.
+
+The request ID ties the outcome to this very request, so an older request never settles a newer one. The finally data
+records the request that got its answer in its own field (`answeredRequestID`) and never takes over the entry. So a
+request settles as failed when the real API applies neither its success nor its failure data, such as an answer that
+needs an admin (460), and a retry keeps its entry when the late answer of the earlier attempt lands.
 
 A write is never in flight twice under one key. `runRequest` keeps the keys of the writes that have not settled, and a
-second send of the same key settles at once as `skipped` without a call. The guard sits in `runRequest`, so it holds for a
-double press on a custom page and for a page and the controller that send the same write. Reads are not guarded: two
-reads with one key may ask for different countries, and a read sent twice changes nothing on the server.
+second send of the same key settles at once as `skipped` without a call. This one guard covers a double press on a
+custom page and a page and the controller that send the same write. Reads are not guarded, because two reads with one
+key may ask for different countries, and a read sent twice changes nothing on the server.
 
 A status entry is keyed by the request name and the workspace, or the bank account when there is no workspace
-(`core/requests/requestKey.ts`). The writer and the reader build the key from the same bank account params, so the error or
-the spinner of one workspace never shows on another, and a request of one workspace never replaces the status of
+(`core/requests/requestKey.ts`). The writer and the reader build the key from the same bank account params, so the error
+or the spinner of one workspace never shows on another, and a request of one workspace never replaces the status of
 another. The key is RAM-only because the offline queue of the mock lives in memory, so a pending status kept over a
 reload would never settle.
 
 A write made offline is queued, and the page shows it as pending until the connection returns and the request settles.
-Reads made offline are not sent. The button spinner and the error come from `useRequestState(key)`, which `useRequest`
-wraps for every page that sends its own request: the custom pages, the verify account page and the account read
-(`useAccountRead`) of the entry page and of a flow opened by a deep link. No code outside `core/` pairs a status with a
-send by hand. Requests keep the
-account `errors` that the frozen landing page shows, and write no other flags to the account key. The entry page clears
+Reads made offline are not sent. No code outside `core/` reads a request status by hand: the controller shows the state
+of the requests it sends, and a page that sends its own request uses `useRequest`, such as the custom pages, the verify
+account page and the account read of the entry page (`flows/shared/accountRead/useAccountRead.ts`). Requests keep the
+account `errors` that the frozen Payments page shows, and write no other flags to the account key. The entry page clears
 those errors when the lab closes, so an error of the flow does not stay on the Payments page.
 
 ### One generic controller
 
-A flow is a `FlowDescriptor`: its form ID, its draft writes and its plan builder. The controller renders a custom page
-through the `render` of the page, keyed by the page ID, and passes what every custom screen may use (`CustomPageProps`):
-the workspace, the state and the error of the step request, `onComplete` and `goToStep`. The props type of each screen
-picks the part that it uses. The controller knows nothing else about a flow, so the USD flow, the NonUSD flow and the
-invited director page share it. Custom pages never navigate on their own: they report through `onComplete` and `goToStep`, and a
-screen that opens another page, such as the form of an invited director from the page that waits for the directors, gets
-that navigation from the plan. The controller still clears the error of the request of a custom page when the user leaves
-the page, and shows the offline indicator for it like for a form page with a request. It does not block the page: a
-screen that cannot work offline blocks itself, such as the Plaid and Onfido pages.
-
-The step counter of the header comes from the order of the steps in the plan (`core/plan/getStepCounter.ts`). A step
-only says how it counts: `counter: 'own'` (the default) takes the next number, `'shared'` shows the number of the step
-before it, like the USD identity check that belongs to the personal info step, and `'none'` hides the counter, like the
-USD documents step and the NonUSD finish page. A step that the plan leaves out takes no number, so the NonUSD docusign
-step adds the seventh position only for AUD.
+A flow is a `FlowDescriptor`: its form ID, its draft writes and its plan builder. The controller (`useOnboardingFlow`,
+rendered by `OnboardingFlowPage`) knows nothing else about a flow, so the USD flow, the NonUSD flow and the invited
+director page share it. It renders a form, confirmation or list page through `PageRenderer` and a custom page through
+the `render` of the page.
 
 ### Dependency direction
 
-`contract` <- `mockBackend` <- `core` <- `flows` <- `entry`, `lab` <- `index.ts`. `core` imports nothing from `flows`. `flows`
-and `entry` import the engine only through `core/index.ts`, and `entry` imports the flows only through `flows/index.ts`.
-Inside `flows`, a flow folder imports `shared` and never another flow. Inside a flow, the builder imports the step
-folders, and a step folder imports nothing from another step folder. It may import the files at the top of its flow that
-every step shares, such as `getUSDOnyxData.ts`. Inside `core`: `requests`, `form/fields` <- `plan` <- `form/pages`,
-`navigation` <- `controller`.
+`contract` <- `mockBackend` <- `core` <- `flows` <- `entry`, `lab` <- `index.ts`. `core` imports nothing from `flows`.
+`flows` and `entry` import the engine only through `core/index.ts`, and `entry` imports the flows only through
+`flows/index.ts`. Inside `flows`, a flow folder imports `shared` and never another flow. Inside a flow, the builder
+imports the step folders, and a step folder imports nothing from another step folder. It may import the files at the
+top of its flow that every step shares, such as `getUSDOnyxData.ts`. Inside `core`: `requests`, `form/fields` <- `plan`
+<- `form/pages`, `navigation` <- `controller`.
+
+Outside `lab/`, only three files call `Navigation`: `core/navigation/flowNavigation.ts` moves along the routes that a
+flow passes in, `flows/shared/routes/flowNavigation.ts` knows the lab routes of the flows, and `entry/entryNavigation.ts`
+holds the moves of the entry page.
 
 `core` is not generic yet. It shares the draft type, the step and page IDs and the request names of `contract` with the
 flows, so a flow with another draft needs these types to become parameters of the engine first.
@@ -242,13 +253,38 @@ flows, so a flow with another draft needs these types to become parameters of th
 
 `getEntryState` is a pure function of the account, the workspaces, the draft, the network and the route. It returns a
 discriminated union (offline, loading, not found, throttled, unsupported currency, connected, pending validation,
-resume setup, new setup), and the page renders one view per state with a `switch`. The page keeps no mirrored state and no navigation
-refs. `getAccountRef` turns `policyID` and `bankAccountID` into one account reference, so both entries resolve the same
-account. The page reads the account on every focus and on reconnect.
+resume setup, new setup), and the page renders one view per state with a `switch`. The page keeps no mirrored state and
+no navigation refs. `getAccountRef` turns `policyID` and `bankAccountID` into one account reference, so both entries
+resolve the same account. The page reads the account on every focus and on reconnect.
 
 An option saves `setupType` to the draft and awaits the write, then opens the verify-account page or the flow at the
 resume position. The verify-account page awaits the validation and replaces itself with the flow. The start over modal
 opens by a direct call that passes what happens after the reset, not through a flag on the account object.
+
+## Behaviour changes since commit `87da10e9e7d`
+
+The later commits mostly moved code, renamed it or added tests. These are the changes that a user of the lab can see:
+
+- **The bank step of a USD account that the server created sends nothing.** Before, Next on the bank page sent it again,
+  which moved the server back to the personal info step, and the manual setup stored the masked number as the real one.
+- **The Plaid choice is locked on a connected account.** The Plaid page gives way to a form page with one read-only row
+  for the account of the server. It sends and reads nothing, so it also works offline.
+- **Locked fields do not write to the draft.** The masked numbers of the locked manual bank page no longer stay in the
+  draft. A locked picklist still submits its option.
+- **The lab route of the invited director is `enter-director-info`.** The old suffix `enter-signer-info` also matched the
+  real dynamic route, so every lab URL opened the real signer screen.
+- **A failed read ends in the not found view.** A failed picklists read and a failed Onfido token read left an endless
+  loader before.
+- **A page reads again after a reconnect and when its data disappears.** An identity check opened offline loads after the
+  reconnect, and the Plaid and Onfido pages no longer show a loader forever after a failed write cleared their token.
+  A failure that an earlier visit of the page saw no longer shows the not found view.
+- **One write guard for all senders.** `runRequest` skips a write that is still in flight, whether a double press, the
+  page or the controller sends it again. The controller no longer checks a pending status before it sends.
+- **A retry keeps its status entry.** A retry sent right after a failure no longer settles as `skipped` when the late
+  answer of the earlier attempt lands.
+- **The NonUSD agreements step follows the docusign rule.** It decides with `requiresDocusignStep`, like the step list,
+  whether it collects the bank statement and sends the final request, so no currency can send that request from both
+  steps.
 
 ## Rules for an experiment
 
@@ -288,9 +324,10 @@ These are the expected results from reading the code. None of them was walked in
    is still split once.
 2. **Failed requests.** The three request styles are gone: every page and step awaits the outcome of its request. A
    failure keeps the user on the page with the error of the request status, and a new submit runs the request again.
-3. **Double submit and back.** A running handler ignores a second submit, and the controller navigates only when the
-   request it awaits succeeded and the user is still on the page that sent it. An older request cannot settle a newer
-   one, because the outcome is matched by request ID.
+3. **Double submit and back.** A running handler ignores a second submit, and `runRequest` never sends a write twice
+   while it is in flight, also when a custom page sends it. The controller navigates only when the request it awaits
+   succeeded and the user is still on the page that sent it. An older request cannot settle a newer one, because the
+   outcome is matched by request ID.
 4. **Start over.** The modal opens by a direct call with the next screen as `onReset`. A failed reset reads the account
    again, so the entry page shows what the server holds. Where the reset leads still depends on `backTo`.
 5. **Change bank account.** A second instance of the entry page, marked by the route, prepares a new setup and keeps
@@ -298,9 +335,10 @@ These are the expected results from reading the code. None of them was walked in
 6. **The 25% answer.** The draft holds the new answer, and the draft wins over the server value, so the change is kept.
    The signer step takes the name of the owner when the user is a saved owner, and asks for the name otherwise, including
    when the "I own 25%" answer is still only in the draft. So it cannot skip the name page with no name to send.
-7. **Reconnect with the Payments page mounted.** The entry page reads again on reconnect unless a reset is on its way.
-   Requests write no `isLoading` to the account key, so the read of the Payments page and the requests of the flow do not
-   share a flag. A submit made offline waits in the queue with a spinner and moves on once the request succeeds.
+7. **Reconnect with the Payments page mounted.** The entry page reads again on reconnect unless a reset is on its way, and
+   an open page of the flow sends its read again until it succeeds. Requests write no `isLoading` to the account key, so
+   the read of the Payments page and the requests of the flow do not share a flag. A submit made offline waits in the
+   queue with a spinner and moves on once the request succeeds.
 8. **`bankAccountID` and workspace entry.** `getAccountRef` resolves both entries to the same account reference, so the
    two entries show the same screen state. The request status is keyed by workspace, so a request still running for
    another workspace does not show here.
@@ -338,7 +376,7 @@ pattern.
 | USD: the server keeps `currentStep`, a dictionary turns it into a page name | `R/ReimbursementAccountPage.tsx` (`stepToPageName`) | Gone: `core/plan/position/resume.ts` finds the first incomplete page of the plan |
 | NonUSD: the client works out the first unfinished page | `R/NonUSD/utils/getStartPageForContinueSetup.ts` | `core/plan/position/resume.ts`, the same rule for both flows |
 | `draftStep`: an effect copies the server values of a step into the draft | `R/ReimbursementAccountPage.tsx` | Gone: the answers of each flow (`flows/usd/getUSDAnswers.ts`, `flows/nonUSD/getNonUSDAnswers.ts`) merge the draft and the server data in render |
-| Lossy prefill: the server returns a masked account number | `achData` of a resumed setup | `flows/usd/buildUSDPlan.ts`: once the account exists, the bank step sends nothing, the manual numbers are locked and stay out of the draft, and the Plaid page shows the connected account instead of the list |
+| Lossy prefill: the server returns a masked account number | `achData` of a resumed setup | `flows/usd/buildUSDPlan.ts`: once the account exists, the bank step sends nothing, the manual numbers are locked and stay out of the draft, and a read-only row of the connected account replaces the Plaid page |
 | Lossy round trip of the owner name | `R/NonUSD/utils/getDraftValuesForBeneficialOwners.ts` | `flows/shared/owners/` (owners are a list in the draft, a name from the server is split once) |
 | The client writes the server-owned `currentStep` and `subStep` | `goToWithdrawalAccountSetupStep`, `setBankAccountSubStep` | Gone: the URL is the position |
 | Start page of a step computed from which values exist | `R/USD/utils/getInitialSubStepForPersonalInfo.ts` and its siblings | `isComplete` of each page in the plan builders of `flows/`, read by `core/plan/position/resume.ts` |
@@ -365,8 +403,9 @@ pattern.
 | Pattern | Real flow | This module |
 | --- | --- | --- |
 | Style 1: shared `isLoading` and `errors` on the account, a hook moves on when the request ends | `src/hooks/useReimbursementAccountSubmitCallback.ts` | `core/requests/runRequest.ts`: the handler awaits the outcome |
-| Style 2: a flag per request, the shared `isSuccess`, a ref, a `clear...` call in the cleanup of an effect | `R/NonUSD/BusinessInfo/BusinessInfo.tsx` and the other NonUSD steps | The same as style 1, with one status entry per request and workspace read by `core/requests/useRequestState.ts` |
+| Style 2: a flag per request, the shared `isSuccess`, a ref, a `clear...` call in the cleanup of an effect | `R/NonUSD/BusinessInfo/BusinessInfo.tsx` and the other NonUSD steps | The same as style 1, with one status entry per request and workspace (`core/requests/requestKey.ts`) |
 | Style 3: send and move on without waiting | `R/USD/Requestor/VerifyIdentity/VerifyIdentity.tsx` | The same as style 1: the identity step awaits its request |
+| Server data read in a mount effect of the step | `R/NonUSD/BankInfo/BankInfo.tsx`, `R/NonUSD/BusinessInfo/BusinessInfo.tsx` | The `read` of a page in the plan builders, sent by `core/requests/useReadOnOpen.ts` |
 | State-driven screen: the next screen follows the account state | `R/USD/ConnectBankAccount/*` | `flows/usd/validation/ValidationPage.tsx` |
 | One action that writes the account key and the workspace key, and restores the second on a failure | `src/libs/actions/ReimbursementAccount/resetUSDBankAccount.ts` | `entry/requests/resetBankAccount.ts` |
 | A key that is never persisted | `RAM_ONLY_*` keys, the Plaid link token | `RAM_ONLY_SIMPLIFIED_BANK_ONBOARDING_PLAID_LINK_TOKEN`, `flows/usd/bankAccount/plaid.ts` |
@@ -463,10 +502,23 @@ The server follows the rules of the real backend that the client depends on:
 
 ## Verification status
 
-The module passes `npm run typecheck`, the React Compiler check and the spelling check, and `npm run lint-changed`
-reports nothing inside the module. Neither the baseline nor this version has been walked through in a browser yet.
-Walk the eight scenarios of [Rules for an experiment](#rules-for-an-experiment) on both, and write down what breaks,
-because an experiment can only be compared with a baseline that was measured.
+**Automated tests.** When this section was last updated, the lab had 23 Jest suites with 304 tests, and all of them
+passed. Run them with `npm test -- tests/unit/SimplifiedBankOnboarding tests/ui/SimplifiedBankOnboarding tests/navigation/SimplifiedBankOnboarding`.
+
+- `tests/unit/SimplifiedBankOnboarding/` covers the pure parts and the hooks, such as both plan builders, the positions,
+  the step counter, the answers, the owner loop, the entry state, `runRequest` with its write guard, `useRequest`,
+  `useReadOnOpen` and the controller hook.
+- `tests/ui/SimplifiedBankOnboarding/` renders pages, such as the flow page with its controller, the reads of a page, the
+  USD bank step, the test deposits form, the verify account page and a custom page. The controller tests run on a small
+  flow from `tests/utils/SimplifiedBankOnboarding/createTestFlow.ts`.
+- `tests/navigation/SimplifiedBankOnboarding/` checks the lab route of the invited director.
+
+The module also passes `npm run typecheck`, the React Compiler check and the spelling check, and the linter reports no
+new error inside the module.
+
+**Not walked in a browser.** Neither the baseline nor this version has been walked through in a browser yet, so the
+eight scenarios of [Rules for an experiment](#rules-for-an-experiment) are still unchecked. Walk them on both and write
+down what breaks, because an experiment can only be compared with a baseline that was measured.
 
 Gaps to check on the first walk:
 

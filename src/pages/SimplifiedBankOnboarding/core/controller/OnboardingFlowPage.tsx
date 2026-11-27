@@ -34,7 +34,7 @@ type OnboardingFlowPageProps<TData, TVocabulary extends FlowVocabulary> = {
     /** The position that the URL names. Undefined when it names no full and known position, so the flow opens the position where it resumes. */
     urlPosition: FlowPosition<TVocabulary> | undefined;
 
-    /** The workspace of the URL, which the plan builders and the custom steps get */
+    /** The workspace of the URL, which the plan builders and the custom pages get */
     policyID: string | undefined;
     dataSource: FlowDataSource<TData>;
 

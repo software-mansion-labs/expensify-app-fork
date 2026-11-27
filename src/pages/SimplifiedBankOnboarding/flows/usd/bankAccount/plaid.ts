@@ -1,6 +1,6 @@
 /**
- * The reads of the mock Plaid widget. The link token lives in a RAM-only key, like in the real flow, and the Plaid page
- * reads it when it opens. The list of accounts is the request that the Plaid page sends itself after the bank login.
+ * The reads of the mock Plaid widget. The link token lives in a RAM-only key, like in the real flow, and the controller
+ * reads it when the Plaid page opens. The list of accounts is the request that the Plaid page sends itself after the bank login.
  */
 /* eslint-disable rulesdir/prefer-actions-set-data -- This file is the action layer of an isolated research module, so it lives outside src/libs/actions */
 import REQUEST_NAMES from '@pages/SimplifiedBankOnboarding/contract/REQUEST_NAMES';
