@@ -7,12 +7,14 @@ import useLocalize from '@hooks/useLocalize';
 
 import {requiresSecondDirector} from '@pages/SimplifiedBankOnboarding/contract/currency';
 import INPUT_IDS from '@pages/SimplifiedBankOnboarding/contract/form';
-import {NEXT_STEP, OnboardingStep, PREVIOUS_STEP, SubPage, YesNoSubPage, useFlowData} from '@pages/SimplifiedBankOnboarding/core';
+import {NEXT_STEP, OnboardingStep, PREVIOUS_STEP, YesNoSubPage, useFlowData} from '@pages/SimplifiedBankOnboarding/core';
 import type {PageTarget} from '@pages/SimplifiedBankOnboarding/core';
 import getBusinessInfoAnswers from '@pages/SimplifiedBankOnboarding/flows/nonUSD/businessInfo/getBusinessInfoAnswers';
-import renderSignerDetailsPages from '@pages/SimplifiedBankOnboarding/flows/shared/signerDetails/renderSignerDetailsPages';
+import getSignerDetailsPages from '@pages/SimplifiedBankOnboarding/flows/shared/signerDetails/getSignerDetailsPages';
 
 import React from 'react';
+
+import type {SignerPageName} from './signerPages';
 
 import getSignerAnswers from './getSignerAnswers';
 import getSignerStartPage from './getSignerStartPage';
@@ -43,39 +45,44 @@ function SignerStep() {
             title={translate('signerInfoStep.signerInfo')}
             wrapperID="SimplifiedBankOnboardingSignerInfo"
             startAt={getSignerStartPage(data.account?.achData?.corpay, currency)}
-        >
-            <YesNoSubPage
-                name={PAGES.IS_DIRECTOR}
-                inputID={INPUT_IDS.IS_USER_DIRECTOR}
-                title={translate('signerInfoStep.areYouDirector', companyName)}
-                description={translate('signerInfoStep.regulationRequiresUs')}
-                defaultValue={answers.isUserDirector ?? false}
-                getNext={getDirectorAnswerPage}
-            />
-            {renderSignerDetailsPages(translate, {
-                askForName,
-                values: {signerFullName: getSignerFullName(data), signerJobTitle: answers.signerJobTitle},
-                request: signerDetailsRequest,
-                next: requiresSecondDirector(currency) ? PAGES.ENTER_EMAIL : NEXT_STEP,
-                firstPageBack: PAGES.IS_DIRECTOR,
-            })}
-            <SubPage
-                name={PAGES.ENTER_EMAIL}
-                back={answers.isUserDirector ? PAGES.CONFIRMATION : PAGES.IS_DIRECTOR}
-                next={PAGES.HANG_TIGHT}
-            >
-                <SignerEmailPage
-                    mode={getSignerEmailMode(answers.isUserDirector, currency)}
-                    companyName={companyName}
-                />
-            </SubPage>
-            <SubPage
-                name={PAGES.HANG_TIGHT}
-                back={PREVIOUS_STEP}
-            >
-                <HangTightPage currency={currency} />
-            </SubPage>
-        </OnboardingStep>
+            pages={[
+                {
+                    name: PAGES.IS_DIRECTOR,
+                    content: (
+                        <YesNoSubPage
+                            inputID={INPUT_IDS.IS_USER_DIRECTOR}
+                            title={translate('signerInfoStep.areYouDirector', companyName)}
+                            description={translate('signerInfoStep.regulationRequiresUs')}
+                            defaultValue={answers.isUserDirector ?? false}
+                            getNext={getDirectorAnswerPage}
+                        />
+                    ),
+                },
+                ...getSignerDetailsPages<SignerPageName>(translate, {
+                    askForName,
+                    values: {signerFullName: getSignerFullName(data), signerJobTitle: answers.signerJobTitle},
+                    request: signerDetailsRequest,
+                    next: requiresSecondDirector(currency) ? PAGES.ENTER_EMAIL : NEXT_STEP,
+                    firstPageBack: PAGES.IS_DIRECTOR,
+                }),
+                {
+                    name: PAGES.ENTER_EMAIL,
+                    back: answers.isUserDirector ? PAGES.CONFIRMATION : PAGES.IS_DIRECTOR,
+                    next: PAGES.HANG_TIGHT,
+                    content: (
+                        <SignerEmailPage
+                            mode={getSignerEmailMode(answers.isUserDirector, currency)}
+                            companyName={companyName}
+                        />
+                    ),
+                },
+                {
+                    name: PAGES.HANG_TIGHT,
+                    back: PREVIOUS_STEP,
+                    content: <HangTightPage currency={currency} />,
+                },
+            ]}
+        />
     );
 }
 

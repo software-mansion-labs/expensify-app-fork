@@ -13,7 +13,6 @@ import type {OnboardingAccount} from '@pages/SimplifiedBankOnboarding/contract/o
 import openOnboardingPage from '@pages/SimplifiedBankOnboarding/core/accountRead/openOnboardingPage';
 import {useFlowStepPosition} from '@pages/SimplifiedBankOnboarding/core/flow/flowContext';
 import type {FlowTarget} from '@pages/SimplifiedBankOnboarding/core/flow/flowContext';
-import FlowStep from '@pages/SimplifiedBankOnboarding/core/flow/FlowStep';
 import OnboardingFlow from '@pages/SimplifiedBankOnboarding/core/flow/OnboardingFlow';
 import type {RequestOutcome} from '@pages/SimplifiedBankOnboarding/core/requests/types';
 
@@ -108,27 +107,12 @@ function getFlow({target = USD_TARGET, urlStep, urlPage, isEditing = false, edit
         <OnboardingFlow
             target={target}
             params={{page: urlStep, subPage: urlPage, action: isEditing ? 'edit' : undefined, returnTo: editReturnPage}}
-        >
-            <FlowStep
-                id="country"
-                isComplete={completeSteps.includes('country')}
-            >
-                <ShownStep />
-            </FlowStep>
-            <FlowStep
-                id="bank-account"
-                isComplete={completeSteps.includes('bank-account')}
-                skip={isBankAccountSkipped}
-            >
-                <ShownStep />
-            </FlowStep>
-            <FlowStep
-                id="personal-info"
-                isComplete={completeSteps.includes('personal-info')}
-            >
-                <ShownStep />
-            </FlowStep>
-        </OnboardingFlow>
+            steps={[
+                {id: 'country', isComplete: completeSteps.includes('country'), content: <ShownStep />},
+                {id: 'bank-account', isComplete: completeSteps.includes('bank-account'), skip: isBankAccountSkipped, content: <ShownStep />},
+                {id: 'personal-info', isComplete: completeSteps.includes('personal-info'), content: <ShownStep />},
+            ]}
+        />
     );
 }
 

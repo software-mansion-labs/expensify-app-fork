@@ -12,17 +12,7 @@ import {isValidCompanyName} from '@libs/ValidationUtils';
 
 import NotFoundPage from '@pages/ErrorPage/NotFoundPage';
 import INPUT_IDS from '@pages/SimplifiedBankOnboarding/contract/form';
-import {
-    ConfirmationSubPage,
-    FormSubPage,
-    OnboardingStep,
-    PageLoadingIndicator,
-    SingleFieldSubPage,
-    SubPage,
-    SubPageInput,
-    useReadOnOpen,
-    useFlowData,
-} from '@pages/SimplifiedBankOnboarding/core';
+import {ConfirmationSubPage, FormSubPage, OnboardingStep, PageLoadingIndicator, SingleFieldSubPage, SubPageInput, useReadOnOpen, useFlowData} from '@pages/SimplifiedBankOnboarding/core';
 
 import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';
@@ -52,62 +42,69 @@ function BusinessInfoStep() {
         <OnboardingStep
             title={translate('businessInfoStep.businessInfoTitle')}
             wrapperID="SimplifiedBankOnboardingBusinessInfo"
-        >
-            <SingleFieldSubPage
-                name={PAGES.NAME}
-                isAnswered={!!companyName}
-                inputID={INPUT_IDS.COMPANY_NAME}
-                title={translate('businessInfoStep.whatsTheBusinessName')}
-                label={translate('businessInfoStep.legalBusinessName')}
-                inputMode={CONST.INPUT_MODE.TEXT}
-                validate={(value) => (isValidCompanyName(value) ? undefined : 'bankAccount.error.companyName')}
-                defaultValue={companyName}
-            />
-            {isPending || !picklists?.picklists ? (
-                <SubPage
-                    name={PAGES.BUSINESS_TYPE}
-                    isAnswered={!!businessType}
-                >
-                    <PageLoadingIndicator />
-                </SubPage>
-            ) : (
-                <FormSubPage
-                    name={PAGES.BUSINESS_TYPE}
-                    isAnswered={!!businessType}
-                    title={translate('businessInfoStep.whatTypeOfBusinessIsIt')}
-                    inputIDs={[INPUT_IDS.BUSINESS_TYPE]}
-                >
-                    <View style={[styles.mhn5, styles.mt3]}>
-                        <SubPageInput
-                            InputComponent={PushRowWithModal}
-                            inputID={INPUT_IDS.BUSINESS_TYPE}
-                            optionsList={Object.fromEntries(businessTypes.map((option) => [option.id, option.name]))}
-                            description={translate('businessInfoStep.businessType')}
-                            modalHeaderTitle={translate('businessInfoStep.selectBusinessType')}
-                            searchInputTitle={translate('businessInfoStep.findBusinessType')}
-                            defaultValue={businessType}
+            pages={[
+                {
+                    name: PAGES.NAME,
+                    isAnswered: !!companyName,
+                    content: (
+                        <SingleFieldSubPage
+                            inputID={INPUT_IDS.COMPANY_NAME}
+                            title={translate('businessInfoStep.whatsTheBusinessName')}
+                            label={translate('businessInfoStep.legalBusinessName')}
+                            inputMode={CONST.INPUT_MODE.TEXT}
+                            validate={(value) => (isValidCompanyName(value) ? undefined : 'bankAccount.error.companyName')}
+                            defaultValue={companyName}
                         />
-                    </View>
-                </FormSubPage>
-            )}
-            <ConfirmationSubPage
-                name={PAGES.CONFIRMATION}
-                title={translate('businessInfoStep.letsDoubleCheck')}
-                request={companyDetailsRequest}
-                rows={[
-                    {
-                        label: translate('businessInfoStep.legalBusinessName'),
-                        value: companyName,
-                        page: PAGES.NAME,
-                    },
-                    {
-                        label: translate('businessInfoStep.businessType'),
-                        value: businessTypeName,
-                        page: PAGES.BUSINESS_TYPE,
-                    },
-                ]}
-            />
-        </OnboardingStep>
+                    ),
+                },
+                {
+                    name: PAGES.BUSINESS_TYPE,
+                    isAnswered: !!businessType,
+                    content:
+                        isPending || !picklists?.picklists ? (
+                            <PageLoadingIndicator />
+                        ) : (
+                            <FormSubPage
+                                title={translate('businessInfoStep.whatTypeOfBusinessIsIt')}
+                                inputIDs={[INPUT_IDS.BUSINESS_TYPE]}
+                            >
+                                <View style={[styles.mhn5, styles.mt3]}>
+                                    <SubPageInput
+                                        InputComponent={PushRowWithModal}
+                                        inputID={INPUT_IDS.BUSINESS_TYPE}
+                                        optionsList={Object.fromEntries(businessTypes.map((option) => [option.id, option.name]))}
+                                        description={translate('businessInfoStep.businessType')}
+                                        modalHeaderTitle={translate('businessInfoStep.selectBusinessType')}
+                                        searchInputTitle={translate('businessInfoStep.findBusinessType')}
+                                        defaultValue={businessType}
+                                    />
+                                </View>
+                            </FormSubPage>
+                        ),
+                },
+                {
+                    name: PAGES.CONFIRMATION,
+                    content: (
+                        <ConfirmationSubPage
+                            title={translate('businessInfoStep.letsDoubleCheck')}
+                            request={companyDetailsRequest}
+                            rows={[
+                                {
+                                    label: translate('businessInfoStep.legalBusinessName'),
+                                    value: companyName,
+                                    page: PAGES.NAME,
+                                },
+                                {
+                                    label: translate('businessInfoStep.businessType'),
+                                    value: businessTypeName,
+                                    page: PAGES.BUSINESS_TYPE,
+                                },
+                            ]}
+                        />
+                    ),
+                },
+            ]}
+        />
     );
 }
 

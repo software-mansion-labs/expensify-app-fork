@@ -7,15 +7,15 @@ import YesNoStep from '@components/SubStepForms/YesNoStep';
 import type {BooleanInputID, OnboardingDraft} from '@pages/SimplifiedBankOnboarding/contract/form';
 import {useOnboardingFlow} from '@pages/SimplifiedBankOnboarding/core/flow/flowContext';
 import type {OnboardingRequest} from '@pages/SimplifiedBankOnboarding/core/requests/types';
-import {NEXT_STEP} from '@pages/SimplifiedBankOnboarding/core/step/readSubPages';
-import type {PageTarget, SubPageElementProps} from '@pages/SimplifiedBankOnboarding/core/step/readSubPages';
+import {usePageNavigation} from '@pages/SimplifiedBankOnboarding/core/step/pageNavigation';
+import type {PageTarget} from '@pages/SimplifiedBankOnboarding/core/step/subPages';
 
 import React from 'react';
 
 import RequestErrorMessage from './RequestErrorMessage';
 import useSubPageSubmit from './useSubPageSubmit';
 
-type YesNoSubPageProps = SubPageElementProps & {
+type YesNoSubPageProps = {
     /** Where the answer is saved. Left out for a question whose answer only decides where to go */
     inputID?: BooleanInputID;
 
@@ -23,23 +23,24 @@ type YesNoSubPageProps = SubPageElementProps & {
     description?: string;
     defaultValue: boolean;
 
-    /** Where each answer leads. Default: `next` or the next page in order. */
+    /** Where each answer leads. Default: the `next` of the page config or the next page in order. */
     getNext?: (answer: boolean) => PageTarget;
 
     /** Values saved to the draft together with the answer (for example the owner list without the user) */
     getDraftUpdate?: (answer: boolean) => OnboardingDraft;
 
-    /** Sent before the step ends, for the answers whose `getNext` or `next` is NEXT_STEP */
+    /** Sent before the step ends, for the answers that end the step */
     request?: OnboardingRequest;
 };
 
-function YesNoSubPage({inputID, title, description, defaultValue, getNext, getDraftUpdate, request, next}: YesNoSubPageProps) {
+function YesNoSubPage({inputID, title, description, defaultValue, getNext, getDraftUpdate, request}: YesNoSubPageProps) {
     const {formID} = useOnboardingFlow();
+    const {endsStep} = usePageNavigation();
     const {submit, isPending, errorMessage} = useSubPageSubmit({request});
 
     const submitAnswer = (answer: boolean) => {
-        const target = getNext?.(answer) ?? next;
-        submit({...(inputID ? {[inputID]: answer} : {}), ...getDraftUpdate?.(answer)}, target, {shouldSend: target === NEXT_STEP});
+        const target = getNext?.(answer);
+        submit({...(inputID ? {[inputID]: answer} : {}), ...getDraftUpdate?.(answer)}, target, {shouldSend: endsStep(target)});
     };
 
     return (

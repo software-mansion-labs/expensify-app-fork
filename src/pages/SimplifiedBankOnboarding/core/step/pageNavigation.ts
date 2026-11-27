@@ -7,7 +7,7 @@ import type {RequestOutcome} from '@pages/SimplifiedBankOnboarding/core/requests
 
 import {createContext, useContext} from 'react';
 
-import type {PageTarget} from './readSubPages';
+import type {PageTarget} from './subPages';
 
 /** For the content of a sub page or a single page step. Works only inside OnboardingStep. */
 type PageNavigation = {
@@ -15,7 +15,7 @@ type PageNavigation = {
     page: PageID | undefined;
     isEditing: boolean;
 
-    /** Opens `target`, or the next page by the rules of OnboardingStep */
+    /** Opens `target`, else the `next` of the page config, else the next page in order */
     goNext: (target?: PageTarget) => void;
 
     /**
@@ -23,6 +23,9 @@ type PageNavigation = {
      * resolves with nothing counts as a success. A second call while one waits is ignored.
      */
     goNextAfter: (outcome: Promise<RequestOutcome | void>, target?: PageTarget) => void;
+
+    /** Whether goNext(target) ends the step by the rules of OnboardingStep. It never does in edit mode, and always in a single page step. */
+    endsStep: (target?: PageTarget) => boolean;
 
     /** Back by the rules of OnboardingStep */
     goBack: () => void;

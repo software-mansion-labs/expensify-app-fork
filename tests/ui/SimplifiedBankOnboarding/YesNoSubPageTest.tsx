@@ -5,8 +5,8 @@ import {clearRequestState} from '@pages/SimplifiedBankOnboarding/core/requests/r
 import type {OnboardingRequest, RequestOutcome} from '@pages/SimplifiedBankOnboarding/core/requests/types';
 import {PageNavigationActionsContext, PageNavigationStateContext} from '@pages/SimplifiedBankOnboarding/core/step/pageNavigation';
 import type {PageNavigationActions, PageNavigationState} from '@pages/SimplifiedBankOnboarding/core/step/pageNavigation';
-import {NEXT_STEP} from '@pages/SimplifiedBankOnboarding/core/step/readSubPages';
-import type {PageTarget} from '@pages/SimplifiedBankOnboarding/core/step/readSubPages';
+import {NEXT_STEP} from '@pages/SimplifiedBankOnboarding/core/step/subPages';
+import type {PageTarget} from '@pages/SimplifiedBankOnboarding/core/step/subPages';
 import YesNoSubPage from '@pages/SimplifiedBankOnboarding/core/subPageForms/YesNoSubPage';
 import {WRITE_COMMANDS} from '@pages/SimplifiedBankOnboarding/mockBackend/commands';
 import {write} from '@pages/SimplifiedBankOnboarding/mockBackend/mockApi';
@@ -62,6 +62,8 @@ async function renderQuestion({request, isEditing = false, isAnswerSaved = true}
         goNextAfter: (outcome, target) => {
             navigatedPage = outcome.then((result) => ({outcome: result, target}));
         },
+        // As for a question with pages after it: only NEXT_STEP ends the step, and nothing does in edit mode
+        endsStep: (target) => !isEditing && target === NEXT_STEP,
         goBack: jest.fn(),
         openPage: jest.fn(),
     };
@@ -70,7 +72,6 @@ async function renderQuestion({request, isEditing = false, isAnswerSaved = true}
         <PageNavigationStateContext.Provider value={pageState}>
             <PageNavigationActionsContext.Provider value={pageActions}>
                 <YesNoSubPage
-                    name="is-user-ubo"
                     inputID={isAnswerSaved ? 'ownsMoreThan25Percent' : undefined}
                     title={QUESTION}
                     defaultValue={false}

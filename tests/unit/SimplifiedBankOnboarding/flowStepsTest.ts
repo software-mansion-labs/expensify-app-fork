@@ -1,100 +1,21 @@
 import type {StepID} from '@pages/SimplifiedBankOnboarding/contract/ids';
-import FlowStep from '@pages/SimplifiedBankOnboarding/core/flow/FlowStep';
-import type {FlowStepCounter} from '@pages/SimplifiedBankOnboarding/core/flow/FlowStep';
-import {getAdjacentSteps, getStepCounter, readFlowSteps, resolveFlowStep} from '@pages/SimplifiedBankOnboarding/core/flow/readFlowSteps';
-
-import React from 'react';
-
-function StepContent() {
-    return null;
-}
+import {getAdjacentSteps, getStepCounter, resolveFlowStep} from '@pages/SimplifiedBankOnboarding/core/flow/flowSteps';
+import type {FlowStepConfig, FlowStepCounter} from '@pages/SimplifiedBankOnboarding/core/flow/flowSteps';
 
 type TestStep = {id: StepID; isComplete?: boolean; skip?: boolean; counter?: FlowStepCounter};
 
-function buildSteps(steps: TestStep[]) {
-    return readFlowSteps(
-        steps.map(({id, isComplete = false, skip, counter}) => (
-            <FlowStep
-                key={id}
-                id={id}
-                isComplete={isComplete}
-                skip={skip}
-                counter={counter}
-            >
-                <StepContent />
-            </FlowStep>
-        )),
-    );
+function buildSteps(steps: TestStep[]): FlowStepConfig[] {
+    return steps.map(({id, isComplete = false, skip, counter}) => ({id, isComplete, skip, counter, content: null}));
 }
 
-describe('readFlowSteps', () => {
-    it('keeps the order of the children through fragments and conditions', () => {
-        // Given steps written in a fragment and behind a false condition
-        const isBusinessStepShown = false;
-        const steps = readFlowSteps(
-            <>
-                <FlowStep
-                    id="country"
-                    isComplete={false}
-                >
-                    <StepContent />
-                </FlowStep>
-                {isBusinessStepShown && (
-                    <FlowStep
-                        id="business-info"
-                        isComplete={false}
-                    >
-                        <StepContent />
-                    </FlowStep>
-                )}
-                <>
-                    <FlowStep
-                        id="bank-account"
-                        isComplete={false}
-                    >
-                        <StepContent />
-                    </FlowStep>
-                    <FlowStep
-                        id="personal-info"
-                        isComplete={false}
-                    >
-                        <StepContent />
-                    </FlowStep>
-                </>
-            </>,
-        );
-
-        // When the flow reads its steps
-        const stepIDs = steps.map((step) => step.id);
-
-        // Then only the rendered FlowStep elements count, in the order they are written
-        expect(stepIDs).toEqual(['country', 'bank-account', 'personal-info']);
-    });
-
-    it('throws in development for a child that is not a step', () => {
-        // Given a flow page that puts another element between its steps
-        const children = (
-            <>
-                <FlowStep
-                    id="country"
-                    isComplete={false}
-                >
-                    <StepContent />
-                </FlowStep>
-                <StepContent />
-            </>
-        );
-
-        // When the flow reads its steps
-        // Then it throws, because the flow would never show that element and nothing else would say so
-        expect(() => readFlowSteps(children)).toThrow('every child has to be a FlowStep');
-    });
-
+describe('flowSteps', () => {
     it('throws in development for a last step that is skipped', () => {
         // Given a flow whose last step is skipped
-        // When the flow reads its steps
+        const steps = buildSteps([{id: 'country'}, {id: 'bank-account', skip: true}]);
+
+        // When the flow resolves the step to show
         // Then it throws, because Next of the step before it would open a URL that shows no step after it
-        expect(() => buildSteps([{id: 'country'}, {id: 'bank-account', skip: true}])).toThrow('the last step cannot be skipped');
+        expect(() => resolveFlowStep(steps, undefined)).toThrow('the last step cannot be skipped');
     });
 
     it('opens the next shown step for a skipped step in the URL', () => {

@@ -8,7 +8,7 @@ import {useOnboardingFlow} from '@pages/SimplifiedBankOnboarding/core/flow/flowC
 import type {OnboardingRequest} from '@pages/SimplifiedBankOnboarding/core/requests/types';
 import useOnboardingRequest from '@pages/SimplifiedBankOnboarding/core/requests/useOnboardingRequest';
 import {usePageNavigation} from '@pages/SimplifiedBankOnboarding/core/step/pageNavigation';
-import type {PageTarget} from '@pages/SimplifiedBankOnboarding/core/step/readSubPages';
+import type {PageTarget} from '@pages/SimplifiedBankOnboarding/core/step/subPages';
 
 type SubmitOptions = {
     /** False saves and moves on without the request (default: true) */
@@ -16,7 +16,7 @@ type SubmitOptions = {
 };
 
 function useSubPageSubmit({request}: {request?: OnboardingRequest}): {
-    submit: (draftValues: OnboardingDraft, next?: PageTarget, options?: SubmitOptions) => void;
+    submit: (draftValues: OnboardingDraft, target?: PageTarget, options?: SubmitOptions) => void;
     isPending: boolean;
     errorMessage: string | undefined;
 } {
@@ -24,15 +24,15 @@ function useSubPageSubmit({request}: {request?: OnboardingRequest}): {
     const {isEditing, goNextAfter} = usePageNavigation();
     const {send, isPending, errorMessage} = useOnboardingRequest(request);
 
-    function submit(draftValues: OnboardingDraft, next?: PageTarget, {shouldSend = true}: SubmitOptions = {}) {
+    function submit(draftValues: OnboardingDraft, target?: PageTarget, {shouldSend = true}: SubmitOptions = {}) {
         const saved = saveDraft(draftValues);
         if (isEditing || !request || !shouldSend) {
-            goNextAfter(saved, next);
+            goNextAfter(saved, target);
             return;
         }
         goNextAfter(
             saved.then(() => send()),
-            next,
+            target,
         );
     }
 

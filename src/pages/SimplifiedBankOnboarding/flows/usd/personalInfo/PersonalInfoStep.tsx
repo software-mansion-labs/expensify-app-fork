@@ -38,45 +38,62 @@ function PersonalInfoStep() {
             saveAfterEachPage={personalInfoProgressRequest}
             shouldEnableMaxHeight
             shouldEnablePickerAvoiding={false}
-        >
-            <FullNameSubPage
-                name={PAGES.FULL_NAME}
-                isAnswered={!!answers.firstName && !!answers.lastName}
-                title={translate('personalInfoStep.enterYourLegalFirstAndLast')}
-                firstNameInputID={INPUT_IDS.FIRST_NAME}
-                lastNameInputID={INPUT_IDS.LAST_NAME}
-                defaultValues={{firstName: answers.firstName, lastName: answers.lastName}}
-            />
-            <DateOfBirthSubPage
-                name={PAGES.DATE_OF_BIRTH}
-                isAnswered={!!answers.dob}
-                title={translate('personalInfoStep.enterYourDateOfBirth')}
-                inputID={INPUT_IDS.DOB}
-                defaultValue={answers.dob}
-            />
-            <SingleFieldSubPage
-                name={PAGES.SSN}
-                isAnswered={!!answers.ssnLast4}
-                title={translate('personalInfoStep.enterTheLast4')}
-                label={translate('personalInfoStep.last4SSN')}
-                hint={`The mock server rejects ${SBO_CONST.MOCK.REJECTED_SSN_LAST_4}.`}
-                inputID={INPUT_IDS.SSN_LAST_4}
-                inputMode={CONST.INPUT_MODE.NUMERIC}
-                maxLength={SBO_CONST.SSN_LAST_4_LENGTH}
-                validate={validateSSNLastFour}
-                defaultValue={answers.ssnLast4}
-            />
-            <ConfirmationSubPage
-                name={PAGES.CONFIRMATION}
-                title={translate('personalInfoStep.letsDoubleCheck')}
-                request={personalInfoRequest}
-                rows={[
-                    {label: translate('personalInfoStep.legalName'), value: `${answers.firstName} ${answers.lastName}`, page: PAGES.FULL_NAME},
-                    {label: translate('common.dob'), value: answers.dob, page: PAGES.DATE_OF_BIRTH},
-                    {label: translate('personalInfoStep.last4SSN'), value: answers.ssnLast4, page: PAGES.SSN},
-                ]}
-            />
-        </OnboardingStep>
+            pages={[
+                {
+                    name: PAGES.FULL_NAME,
+                    isAnswered: !!answers.firstName && !!answers.lastName,
+                    content: (
+                        <FullNameSubPage
+                            title={translate('personalInfoStep.enterYourLegalFirstAndLast')}
+                            firstNameInputID={INPUT_IDS.FIRST_NAME}
+                            lastNameInputID={INPUT_IDS.LAST_NAME}
+                            defaultValues={{firstName: answers.firstName, lastName: answers.lastName}}
+                        />
+                    ),
+                },
+                {
+                    name: PAGES.DATE_OF_BIRTH,
+                    isAnswered: !!answers.dob,
+                    content: (
+                        <DateOfBirthSubPage
+                            title={translate('personalInfoStep.enterYourDateOfBirth')}
+                            inputID={INPUT_IDS.DOB}
+                            defaultValue={answers.dob}
+                        />
+                    ),
+                },
+                {
+                    name: PAGES.SSN,
+                    isAnswered: !!answers.ssnLast4,
+                    content: (
+                        <SingleFieldSubPage
+                            title={translate('personalInfoStep.enterTheLast4')}
+                            label={translate('personalInfoStep.last4SSN')}
+                            hint={`The mock server rejects ${SBO_CONST.MOCK.REJECTED_SSN_LAST_4}.`}
+                            inputID={INPUT_IDS.SSN_LAST_4}
+                            inputMode={CONST.INPUT_MODE.NUMERIC}
+                            maxLength={SBO_CONST.SSN_LAST_4_LENGTH}
+                            validate={validateSSNLastFour}
+                            defaultValue={answers.ssnLast4}
+                        />
+                    ),
+                },
+                {
+                    name: PAGES.CONFIRMATION,
+                    content: (
+                        <ConfirmationSubPage
+                            title={translate('personalInfoStep.letsDoubleCheck')}
+                            request={personalInfoRequest}
+                            rows={[
+                                {label: translate('personalInfoStep.legalName'), value: `${answers.firstName} ${answers.lastName}`, page: PAGES.FULL_NAME},
+                                {label: translate('common.dob'), value: answers.dob, page: PAGES.DATE_OF_BIRTH},
+                                {label: translate('personalInfoStep.last4SSN'), value: answers.ssnLast4, page: PAGES.SSN},
+                            ]}
+                        />
+                    ),
+                },
+            ]}
+        />
     );
 }
 

@@ -14,7 +14,6 @@ import {getFlowRoute} from '@pages/SimplifiedBankOnboarding/core/flow/flowRoutes
 import type {FlowNavigationState} from '@pages/SimplifiedBankOnboarding/core/flow/flowRoutes';
 import {clearRequestState} from '@pages/SimplifiedBankOnboarding/core/requests/runRequest';
 import OnboardingStep from '@pages/SimplifiedBankOnboarding/core/step/OnboardingStep';
-import SubPage from '@pages/SimplifiedBankOnboarding/core/step/SubPage';
 import OwnersListPage from '@pages/SimplifiedBankOnboarding/flows/shared/owners/OwnersListPage';
 import type {OwnerRow} from '@pages/SimplifiedBankOnboarding/flows/shared/owners/OwnersListPage';
 import PAGES from '@pages/SimplifiedBankOnboarding/flows/usd/beneficialOwners/ownersPages';
@@ -121,22 +120,22 @@ async function renderOwnersList(rows: OwnerRow[]) {
         <OnboardingStep
             title="Owners"
             wrapperID="OwnersListTestStep"
-        >
-            <SubPage
-                name={PAGES.UBOS_LIST}
-                next={NEXT_STEP}
-            >
-                <OwnersListPage
-                    rows={rows}
-                    request={OWNERS_REQUEST}
-                    detailsStartPage={PAGES.LEGAL_NAME}
-                    getEditUpdate={getEditUpdate}
-                />
-            </SubPage>
-            <SubPage name={PAGES.LEGAL_NAME}>
-                <Text>Name page</Text>
-            </SubPage>
-        </OnboardingStep>,
+            pages={[
+                {
+                    name: PAGES.UBOS_LIST,
+                    next: NEXT_STEP,
+                    content: (
+                        <OwnersListPage
+                            rows={rows}
+                            request={OWNERS_REQUEST}
+                            detailsStartPage={PAGES.LEGAL_NAME}
+                            getEditUpdate={getEditUpdate}
+                        />
+                    ),
+                },
+                {name: PAGES.LEGAL_NAME, content: <Text>Name page</Text>},
+            ]}
+        />,
         {target: TARGET, position, flowActions},
     );
 }

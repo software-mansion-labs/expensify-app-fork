@@ -12,7 +12,7 @@ import type BankOnboardingLabParamList from '@libs/Navigation/paramLists/BankOnb
 import type {PlatformStackScreenProps} from '@libs/Navigation/PlatformStackNavigation/types';
 
 import SBO_CONST from '@pages/SimplifiedBankOnboarding/contract/SBO_CONST';
-import {FlowStep, OnboardingFlow} from '@pages/SimplifiedBankOnboarding/core';
+import {OnboardingFlow} from '@pages/SimplifiedBankOnboarding/core';
 import type {FlowTarget} from '@pages/SimplifiedBankOnboarding/core';
 
 import ONYXKEYS from '@src/ONYXKEYS';
@@ -43,66 +43,58 @@ function USDFlowPage({route}: USDFlowPageProps) {
         <OnboardingFlow
             target={target}
             params={route.params}
-        >
-            <FlowStep
-                id={PAGE_NAMES.COUNTRY}
-                isComplete={isPastServerStep(achData, STEP.COUNTRY)}
-            >
-                <CountryStep />
-            </FlowStep>
-            <FlowStep
-                id={PAGE_NAMES.BANK_ACCOUNT}
-                isComplete={isPastServerStep(achData, STEP.BANK_ACCOUNT)}
-            >
-                <BankAccountStep />
-            </FlowStep>
-            <FlowStep
-                id={PAGE_NAMES.REQUESTOR}
-                isComplete={isPastServerStep(achData, STEP.REQUESTOR)}
-            >
-                <PersonalInfoStep />
-            </FlowStep>
-            <FlowStep
-                id={PAGE_NAMES.VERIFY_IDENTITY}
-                isComplete={isPastServerStep(achData, STEP.REQUESTOR)}
-                skip={!!achData?.isOnfidoSetupComplete}
-                counter="shared"
-            >
-                <VerifyIdentityStep />
-            </FlowStep>
-            <FlowStep
-                id={PAGE_NAMES.COMPANY}
-                isComplete={isPastServerStep(achData, STEP.COMPANY)}
-            >
-                <BusinessInfoStep />
-            </FlowStep>
-            <FlowStep
-                id={PAGE_NAMES.BENEFICIAL_OWNERS}
-                isComplete={isPastServerStep(achData, STEP.BENEFICIAL_OWNERS)}
-            >
-                <BeneficialOwnersStep />
-            </FlowStep>
-            <FlowStep
-                id={PAGE_NAMES.ACH_CONTRACT}
-                isComplete={isPastServerStep(achData, STEP.ACH_CONTRACT)}
-            >
-                <CompleteVerificationStep />
-            </FlowStep>
-            <FlowStep
-                id={PAGE_NAMES.KYB_DOCS}
-                isComplete={isPastServerStep(achData, STEP.KYB_DOCS)}
-                skip={!achData?.requiredKYBDocuments?.length}
-                counter="none"
-            >
-                <KYBDocumentsStep />
-            </FlowStep>
-            <FlowStep
-                id={PAGE_NAMES.VALIDATION}
-                isComplete={false}
-            >
-                <ValidationStep />
-            </FlowStep>
-        </OnboardingFlow>
+            steps={[
+                {
+                    id: PAGE_NAMES.COUNTRY,
+                    isComplete: isPastServerStep(achData, STEP.COUNTRY),
+                    content: <CountryStep />,
+                },
+                {
+                    id: PAGE_NAMES.BANK_ACCOUNT,
+                    isComplete: isPastServerStep(achData, STEP.BANK_ACCOUNT),
+                    content: <BankAccountStep />,
+                },
+                {
+                    id: PAGE_NAMES.REQUESTOR,
+                    isComplete: isPastServerStep(achData, STEP.REQUESTOR),
+                    content: <PersonalInfoStep />,
+                },
+                {
+                    id: PAGE_NAMES.VERIFY_IDENTITY,
+                    isComplete: isPastServerStep(achData, STEP.REQUESTOR),
+                    skip: !!achData?.isOnfidoSetupComplete,
+                    counter: 'shared',
+                    content: <VerifyIdentityStep />,
+                },
+                {
+                    id: PAGE_NAMES.COMPANY,
+                    isComplete: isPastServerStep(achData, STEP.COMPANY),
+                    content: <BusinessInfoStep />,
+                },
+                {
+                    id: PAGE_NAMES.BENEFICIAL_OWNERS,
+                    isComplete: isPastServerStep(achData, STEP.BENEFICIAL_OWNERS),
+                    content: <BeneficialOwnersStep />,
+                },
+                {
+                    id: PAGE_NAMES.ACH_CONTRACT,
+                    isComplete: isPastServerStep(achData, STEP.ACH_CONTRACT),
+                    content: <CompleteVerificationStep />,
+                },
+                {
+                    id: PAGE_NAMES.KYB_DOCS,
+                    isComplete: isPastServerStep(achData, STEP.KYB_DOCS),
+                    skip: !achData?.requiredKYBDocuments?.length,
+                    counter: 'none',
+                    content: <KYBDocumentsStep />,
+                },
+                {
+                    id: PAGE_NAMES.VALIDATION,
+                    isComplete: false,
+                    content: <ValidationStep />,
+                },
+            ]}
+        />
     );
 }
 

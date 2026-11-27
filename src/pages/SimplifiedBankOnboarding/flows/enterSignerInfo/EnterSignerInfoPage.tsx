@@ -6,7 +6,7 @@ import type BankOnboardingLabParamList from '@libs/Navigation/paramLists/BankOnb
 import type {PlatformStackScreenProps} from '@libs/Navigation/PlatformStackNavigation/types';
 
 import {ENTER_SIGNER_INFO_STEP_ID} from '@pages/SimplifiedBankOnboarding/contract/ids';
-import {FlowStep, OnboardingFlow} from '@pages/SimplifiedBankOnboarding/core';
+import {OnboardingFlow} from '@pages/SimplifiedBankOnboarding/core';
 
 import type SCREENS from '@src/SCREENS';
 
@@ -27,15 +27,15 @@ function EnterSignerInfoPage({route}: EnterSignerInfoPageProps) {
                 bankAccountID: bankAccountIDParam ? Number(bankAccountIDParam) : undefined,
             }}
             params={route.params}
-        >
-            <FlowStep
-                id={ENTER_SIGNER_INFO_STEP_ID}
-                isComplete={false}
-                counter="none"
-            >
-                <InvitedSignerStep isCompleted={route.params?.isCompleted === 'true'} />
-            </FlowStep>
-        </OnboardingFlow>
+            steps={[
+                {
+                    id: ENTER_SIGNER_INFO_STEP_ID,
+                    isComplete: false,
+                    counter: 'none',
+                    content: <InvitedSignerStep isCompleted={route.params?.isCompleted === 'true'} />,
+                },
+            ]}
+        />
     );
 }
 

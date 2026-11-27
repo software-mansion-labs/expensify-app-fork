@@ -12,7 +12,6 @@ import {getFlowRoute} from '@pages/SimplifiedBankOnboarding/core/flow/flowRoutes
 import type {FlowNavigationState} from '@pages/SimplifiedBankOnboarding/core/flow/flowRoutes';
 import OnboardingStep from '@pages/SimplifiedBankOnboarding/core/step/OnboardingStep';
 import {usePageNavigation} from '@pages/SimplifiedBankOnboarding/core/step/pageNavigation';
-import type {SubPageElementProps} from '@pages/SimplifiedBankOnboarding/core/step/readSubPages';
 
 import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';
@@ -67,14 +66,18 @@ jest.mock('@components/InteractiveStepWrapper', () => {
     );
 });
 
-type TestPageProps = SubPageElementProps & {label: string};
+type TestPageName = 'full-name' | 'ssn' | 'confirmation';
 
-/** A sub page with its label, a Next button and an edit button for the name page, so a test can move on or edit */
-function TestPage({label}: TestPageProps) {
-    const {goNext, openPage} = usePageNavigation();
+/**
+ * A sub page with its label, whether Next ends the step, a Next button and an edit button for the name page, so a test
+ * can move on or edit
+ */
+function TestPage({label}: {label: string}) {
+    const {goNext, endsStep, openPage} = usePageNavigation();
     return (
         <>
             <Text>{label}</Text>
+            <Text>{endsStep() ? 'Next ends the step' : 'Next stays in the step'}</Text>
             <PressableWithoutFeedback
                 accessibilityRole="button"
                 accessibilityLabel="Next"
@@ -97,8 +100,8 @@ type RenderOptions = {
     editReturnPage?: PageID;
     previousStep?: StepID;
     nextStep?: StepID;
-    answered?: PageID[];
-    startAt?: PageID;
+    answered?: TestPageName[];
+    startAt?: TestPageName;
     stepToWrite?: StepID;
 };
 
@@ -140,23 +143,12 @@ function buildPersonalInfoStep(options: RenderOptions = {}) {
             title="Personal info"
             wrapperID="PersonalInfoTestStep"
             startAt={startAt}
-        >
-            <TestPage
-                name="full-name"
-                label="Name page"
-                isAnswered={answered.includes('full-name')}
-            />
-            <TestPage
-                name="ssn"
-                label="SSN page"
-                isAnswered={answered.includes('ssn')}
-            />
-            <TestPage
-                name="confirmation"
-                label="Confirmation page"
-                isAnswered={answered.includes('confirmation')}
-            />
-        </OnboardingStep>,
+            pages={[
+                {name: 'full-name', isAnswered: answered.includes('full-name'), content: <TestPage label="Name page" />},
+                {name: 'ssn', isAnswered: answered.includes('ssn'), content: <TestPage label="SSN page" />},
+                {name: 'confirmation', isAnswered: answered.includes('confirmation'), content: <TestPage label="Confirmation page" />},
+            ]}
+        />,
         {target: TARGET, position, flowActions},
     );
 }
@@ -187,7 +179,7 @@ describe('OnboardingStep', () => {
     });
 
     describe('the start page', () => {
-        it('opens the first rendered page after Next even when it is answered', async () => {
+        it('opens the first page after Next even when it is answered', async () => {
             // Given the user pressed Next on the previous step, so its route lies directly under this one
             setNavigationStack([createRoute('previous-route', 'bank-account', 'confirmation')]);
 
@@ -241,8 +233,8 @@ describe('OnboardingStep', () => {
             expect(Navigation.setParams).toHaveBeenCalledWith({subPage: 'full-name'}, ROUTE_KEY);
         });
 
-        it('treats a sub page that is not rendered as no sub page', async () => {
-            // Given a URL that names a page this step does not render
+        it('treats a URL page that is not in the pages of the step as no sub page', async () => {
+            // Given a URL that names a page that is not in the pages of this step
             // When the step opens
             await renderPersonalInfoStep({page: 'date-of-birth', answered: ['full-name', 'ssn']});
 
@@ -263,8 +255,8 @@ describe('OnboardingStep', () => {
             expect(Navigation.setParams).toHaveBeenCalledWith({page: 'personal-info', subPage: 'ssn', action: undefined, returnTo: undefined}, ROUTE_KEY);
         });
 
-        it('does not write the URL when it already names a rendered page', async () => {
-            // Given a URL that names a rendered page
+        it('does not write the URL when it already names a page of the step', async () => {
+            // Given a URL that names a page of the step
             // When the step opens
             await renderPersonalInfoStep({page: 'ssn'});
 
@@ -369,6 +361,35 @@ describe('OnboardingStep', () => {
             // Then the error stays, because Back only removes the mirror of an error that a page of the flow showed
             const account = await getOnyxValue(ONYXKEYS.SIMPLIFIED_BANK_ONBOARDING_ACCOUNT);
             expect(account?.errors).toEqual(resetError);
+        });
+    });
+
+    describe('endsStep', () => {
+        it('is false on a page that has a page after it', async () => {
+            // Given a page in the middle of the step
+            await renderPersonalInfoStep({page: 'ssn'});
+
+            // When the page asks whether Next ends the step
+            // Then it does not, because Next opens the confirmation
+            expect(screen.getByText('Next stays in the step')).toBeOnTheScreen();
+        });
+
+        it('is true on the last page', async () => {
+            // Given the last page of the step
+            await renderPersonalInfoStep({page: 'confirmation'});
+
+            // When the page asks whether Next ends the step
+            // Then it does, so a block can send the request that belongs to the end of the step
+            expect(screen.getByText('Next ends the step')).toBeOnTheScreen();
+        });
+
+        it('is false on the last page in edit mode', async () => {
+            // Given the last page opened in edit mode
+            await renderPersonalInfoStep({page: 'confirmation', isEditing: true, editReturnPage: 'ssn'});
+
+            // When the page asks whether Next ends the step
+            // Then it does not, because Next in edit mode returns to the page that opened it
+            expect(screen.getByText('Next stays in the step')).toBeOnTheScreen();
         });
     });
 

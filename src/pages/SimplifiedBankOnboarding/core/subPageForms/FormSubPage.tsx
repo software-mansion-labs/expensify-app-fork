@@ -15,7 +15,7 @@ import type {InputID, OnboardingDraft} from '@pages/SimplifiedBankOnboarding/con
 import {useOnboardingFlow} from '@pages/SimplifiedBankOnboarding/core/flow/flowContext';
 import type {OnboardingRequest} from '@pages/SimplifiedBankOnboarding/core/requests/types';
 import {usePageNavigation} from '@pages/SimplifiedBankOnboarding/core/step/pageNavigation';
-import type {PageTarget, SubPageElementProps} from '@pages/SimplifiedBankOnboarding/core/step/readSubPages';
+import type {PageTarget} from '@pages/SimplifiedBankOnboarding/core/step/subPages';
 
 import CONST from '@src/CONST';
 import type ONYXKEYS from '@src/ONYXKEYS';
@@ -33,7 +33,7 @@ import useSubPageSubmit from './useSubPageSubmit';
  */
 type SubPageFormErrors = FormInputErrors<typeof ONYXKEYS.FORMS.SIMPLIFIED_BANK_ONBOARDING_FORM>;
 
-type FormSubPageProps = SubPageElementProps & {
+type FormSubPageProps = {
     title: string;
 
     /** The inputs of this page. They go to the draft on submit. */
@@ -53,7 +53,7 @@ type FormSubPageProps = SubPageElementProps & {
     /** Values added to the draft update on submit (control values that are not inputs) */
     getDraftUpdate?: (values: OnboardingDraft) => OnboardingDraft;
 
-    /** Decides the next page from the submitted values. Default: `next` or the next page in order. */
+    /** Decides the next page from the submitted values. Default: the `next` of the page config or the next page in order. */
     getNext?: (values: OnboardingDraft) => PageTarget;
     submitButtonText?: string;
 
@@ -97,7 +97,6 @@ function FormSubPage({
     request,
     getDraftUpdate,
     getNext,
-    next,
     submitButtonText,
     isSubmitDisabled = false,
     submitButtonStyles,
@@ -126,7 +125,7 @@ function FormSubPage({
     };
 
     const submitPage = (values: OnboardingDraft) => {
-        submit({...pickInputValues(values, inputIDs), ...getDraftUpdate?.(values)}, getNext?.(values) ?? next);
+        submit({...pickInputValues(values, inputIDs), ...getDraftUpdate?.(values)}, getNext?.(values));
     };
 
     return (

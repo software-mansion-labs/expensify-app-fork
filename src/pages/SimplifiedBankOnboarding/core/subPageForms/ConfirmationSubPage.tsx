@@ -8,7 +8,6 @@ import type {OnboardingDraft} from '@pages/SimplifiedBankOnboarding/contract/for
 import type {PageID} from '@pages/SimplifiedBankOnboarding/contract/ids';
 import type {OnboardingRequest} from '@pages/SimplifiedBankOnboarding/core/requests/types';
 import {usePageNavigation} from '@pages/SimplifiedBankOnboarding/core/step/pageNavigation';
-import type {SubPageElementProps} from '@pages/SimplifiedBankOnboarding/core/step/readSubPages';
 
 import React from 'react';
 
@@ -22,7 +21,7 @@ type ConfirmationRow = {
     page?: PageID;
 };
 
-type ConfirmationSubPageProps = SubPageElementProps & {
+type ConfirmationSubPageProps = {
     title: string;
     rows: ConfirmationRow[];
 
@@ -39,7 +38,7 @@ type ConfirmationSubPageProps = SubPageElementProps & {
     children?: React.ReactNode;
 };
 
-function ConfirmationSubPage({title, rows, request, getDraftUpdate, children, next}: ConfirmationSubPageProps) {
+function ConfirmationSubPage({title, rows, request, getDraftUpdate, children}: ConfirmationSubPageProps) {
     const {openPage} = usePageNavigation();
     const {submit, isPending, errorMessage} = useSubPageSubmit({request});
 
@@ -59,7 +58,7 @@ function ConfirmationSubPage({title, rows, request, getDraftUpdate, children, ne
 
     return (
         <ConfirmationStep
-            onNext={() => submit(getDraftUpdate?.() ?? {}, next)}
+            onNext={() => submit(getDraftUpdate?.() ?? {})}
             pageTitle={title}
             summaryItems={summaryItems}
             showOnfidoLinks={false}

@@ -10,7 +10,7 @@ import type {PlatformStackScreenProps} from '@libs/Navigation/PlatformStackNavig
 import {requiresDocusignStep} from '@pages/SimplifiedBankOnboarding/contract/currency';
 import SBO_CONST from '@pages/SimplifiedBankOnboarding/contract/SBO_CONST';
 import {isGlobalAccountCreated, isVerifying} from '@pages/SimplifiedBankOnboarding/contract/setupStatus';
-import {FlowStep, OnboardingFlow, useFlowDataOf} from '@pages/SimplifiedBankOnboarding/core';
+import {OnboardingFlow, useFlowDataOf} from '@pages/SimplifiedBankOnboarding/core';
 import type {FlowTarget} from '@pages/SimplifiedBankOnboarding/core';
 
 import type SCREENS from '@src/SCREENS';
@@ -44,58 +44,51 @@ function NonUSDFlowPage({route}: NonUSDFlowPageProps) {
         <OnboardingFlow
             target={target}
             params={route.params}
-        >
-            <FlowStep
-                id={PAGE_NAMES.COUNTRY}
-                isComplete={isCountryComplete(data)}
-            >
-                <CountryStep />
-            </FlowStep>
-            <FlowStep
-                id={PAGE_NAMES.BANK_INFO}
-                isComplete={isGlobalAccountCreated(achData)}
-            >
-                <BankInfoStep />
-            </FlowStep>
-            <FlowStep
-                id={PAGE_NAMES.BUSINESS_INFO}
-                isComplete={isBusinessInfoComplete(data)}
-            >
-                <BusinessInfoStep />
-            </FlowStep>
-            <FlowStep
-                id={PAGE_NAMES.BENEFICIAL_OWNER_INFO}
-                isComplete={areOwnersComplete(data)}
-            >
-                <BeneficialOwnersStep />
-            </FlowStep>
-            <FlowStep
-                id={PAGE_NAMES.SIGNER_INFO}
-                isComplete={isSignerStepComplete(data)}
-            >
-                <SignerStep />
-            </FlowStep>
-            <FlowStep
-                id={PAGE_NAMES.AGREEMENTS}
-                isComplete={areAgreementsComplete(data)}
-            >
-                <AgreementsStep />
-            </FlowStep>
-            <FlowStep
-                id={PAGE_NAMES.DOCUSIGN}
-                isComplete={isVerifying(achData)}
-                skip={!requiresDocusignStep(data.currency)}
-            >
-                <DocusignStep />
-            </FlowStep>
-            <FlowStep
-                id={PAGE_NAMES.FINISH}
-                isComplete={false}
-                counter="none"
-            >
-                <FinishStep />
-            </FlowStep>
-        </OnboardingFlow>
+            steps={[
+                {
+                    id: PAGE_NAMES.COUNTRY,
+                    isComplete: isCountryComplete(data),
+                    content: <CountryStep />,
+                },
+                {
+                    id: PAGE_NAMES.BANK_INFO,
+                    isComplete: isGlobalAccountCreated(achData),
+                    content: <BankInfoStep />,
+                },
+                {
+                    id: PAGE_NAMES.BUSINESS_INFO,
+                    isComplete: isBusinessInfoComplete(data),
+                    content: <BusinessInfoStep />,
+                },
+                {
+                    id: PAGE_NAMES.BENEFICIAL_OWNER_INFO,
+                    isComplete: areOwnersComplete(data),
+                    content: <BeneficialOwnersStep />,
+                },
+                {
+                    id: PAGE_NAMES.SIGNER_INFO,
+                    isComplete: isSignerStepComplete(data),
+                    content: <SignerStep />,
+                },
+                {
+                    id: PAGE_NAMES.AGREEMENTS,
+                    isComplete: areAgreementsComplete(data),
+                    content: <AgreementsStep />,
+                },
+                {
+                    id: PAGE_NAMES.DOCUSIGN,
+                    isComplete: isVerifying(achData),
+                    skip: !requiresDocusignStep(data.currency),
+                    content: <DocusignStep />,
+                },
+                {
+                    id: PAGE_NAMES.FINISH,
+                    isComplete: false,
+                    counter: 'none',
+                    content: <FinishStep />,
+                },
+            ]}
+        />
     );
 }
 

@@ -7,13 +7,12 @@ import FullNameStep from '@components/SubStepForms/FullNameStep';
 import type {OnboardingDraft, TextInputID} from '@pages/SimplifiedBankOnboarding/contract/form';
 import {useOnboardingFlow} from '@pages/SimplifiedBankOnboarding/core/flow/flowContext';
 import {usePageNavigation} from '@pages/SimplifiedBankOnboarding/core/step/pageNavigation';
-import type {SubPageElementProps} from '@pages/SimplifiedBankOnboarding/core/step/readSubPages';
 
 import React from 'react';
 
 import useSubPageSubmit from './useSubPageSubmit';
 
-type FullNameSubPageProps = SubPageElementProps & {
+type FullNameSubPageProps = {
     firstNameInputID: TextInputID;
     lastNameInputID: TextInputID;
     title: string;
@@ -21,7 +20,7 @@ type FullNameSubPageProps = SubPageElementProps & {
     defaultValues: {firstName: string; lastName: string};
 };
 
-function FullNameSubPage({firstNameInputID, lastNameInputID, title, subtitle, defaultValues, next}: FullNameSubPageProps) {
+function FullNameSubPage({firstNameInputID, lastNameInputID, title, subtitle, defaultValues}: FullNameSubPageProps) {
     const {formID} = useOnboardingFlow();
     const {isEditing} = usePageNavigation();
     const {submit} = useSubPageSubmit({});
@@ -33,13 +32,10 @@ function FullNameSubPage({firstNameInputID, lastNameInputID, title, subtitle, de
             formTitle={title}
             formSubtitle={subtitle}
             onSubmit={(values: OnboardingDraft) =>
-                submit(
-                    {
-                        [firstNameInputID]: values[firstNameInputID],
-                        [lastNameInputID]: values[lastNameInputID],
-                    },
-                    next,
-                )
+                submit({
+                    [firstNameInputID]: values[firstNameInputID],
+                    [lastNameInputID]: values[lastNameInputID],
+                })
             }
             stepFields={[]}
             firstNameInputID={firstNameInputID}

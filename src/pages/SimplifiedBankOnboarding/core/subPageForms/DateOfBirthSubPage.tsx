@@ -7,7 +7,6 @@ import DateOfBirthStep from '@components/SubStepForms/DateOfBirthStep';
 import type {OnboardingDraft, TextInputID} from '@pages/SimplifiedBankOnboarding/contract/form';
 import {useOnboardingFlow} from '@pages/SimplifiedBankOnboarding/core/flow/flowContext';
 import {usePageNavigation} from '@pages/SimplifiedBankOnboarding/core/step/pageNavigation';
-import type {SubPageElementProps} from '@pages/SimplifiedBankOnboarding/core/step/readSubPages';
 
 import ONYXKEYS from '@src/ONYXKEYS';
 
@@ -15,13 +14,13 @@ import React from 'react';
 
 import useSubPageSubmit from './useSubPageSubmit';
 
-type DateOfBirthSubPageProps = SubPageElementProps & {
+type DateOfBirthSubPageProps = {
     inputID: TextInputID;
     title: string;
     defaultValue: string;
 };
 
-function DateOfBirthSubPage({inputID, title, defaultValue, next}: DateOfBirthSubPageProps) {
+function DateOfBirthSubPage({inputID, title, defaultValue}: DateOfBirthSubPageProps) {
     const {formID} = useOnboardingFlow();
     const {isEditing} = usePageNavigation();
     const {submit} = useSubPageSubmit({});
@@ -35,7 +34,7 @@ function DateOfBirthSubPage({inputID, title, defaultValue, next}: DateOfBirthSub
             isEditing={isEditing}
             formID={formID}
             formTitle={title}
-            onSubmit={(values: OnboardingDraft) => submit({[inputID]: values[inputID]}, next)}
+            onSubmit={(values: OnboardingDraft) => submit({[inputID]: values[inputID]})}
             stepFields={[inputID]}
             dobInputID={inputID}
             dobDefaultValue={defaultValue}

@@ -3,7 +3,7 @@
  * to show, because the server keeps the director of the bank account and not the input of this form.
  */
 import type {FlowData} from '@pages/SimplifiedBankOnboarding/core';
-import type {SignerDetailsValues} from '@pages/SimplifiedBankOnboarding/flows/shared/signerDetails/renderSignerDetailsPages';
+import type {SignerDetailsValues} from '@pages/SimplifiedBankOnboarding/flows/shared/signerDetails/getSignerDetailsPages';
 
 type InvitedSignerAnswers = SignerDetailsValues;
 

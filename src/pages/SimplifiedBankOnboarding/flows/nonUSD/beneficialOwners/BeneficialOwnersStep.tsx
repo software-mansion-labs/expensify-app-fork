@@ -7,7 +7,7 @@
 import useLocalize from '@hooks/useLocalize';
 
 import INPUT_IDS from '@pages/SimplifiedBankOnboarding/contract/form';
-import {NEXT_STEP, OnboardingStep, SubPage, YesNoSubPage, useFlowData} from '@pages/SimplifiedBankOnboarding/core';
+import {NEXT_STEP, OnboardingStep, YesNoSubPage, useFlowData} from '@pages/SimplifiedBankOnboarding/core';
 import type {PageTarget} from '@pages/SimplifiedBankOnboarding/core';
 import getBusinessInfoAnswers from '@pages/SimplifiedBankOnboarding/flows/nonUSD/businessInfo/getBusinessInfoAnswers';
 import {CURRENT_USER_OWNER_ID} from '@pages/SimplifiedBankOnboarding/flows/shared/owners/ownerList';
@@ -17,10 +17,10 @@ import {getOwnerFullName} from '@pages/SimplifiedBankOnboarding/flows/shared/own
 
 import React from 'react';
 
+import getOwnerDetailsPages from './getOwnerDetailsPages';
 import getOwnersAnswers from './getOwnersAnswers';
 import globalOwnersRequest from './globalOwnersRequest';
 import PAGES from './ownersPages';
-import renderOwnerDetailsPages from './renderOwnerDetailsPages';
 
 function BeneficialOwnersStep() {
     const {translate} = useLocalize();
@@ -52,56 +52,70 @@ function BeneficialOwnersStep() {
         <OnboardingStep
             title={translate('ownershipInfoStep.ownerInfo')}
             wrapperID="SimplifiedBankOnboardingBeneficialOwnerInfo"
-        >
-            <YesNoSubPage
-                name={PAGES.IS_USER_BENEFICIAL_OWNER}
-                isAnswered={areOwnersKnown}
-                inputID={INPUT_IDS.OWNS_MORE_THAN_25_PERCENT}
-                title={translate('ownershipInfoStep.doYouOwn', companyName)}
-                description={description}
-                defaultValue={isUserOwner}
-                getDraftUpdate={(isOwner) => (isOwner ? loop.getStartUserUpdate() : loop.getRemoveUpdate(CURRENT_USER_OWNER_ID))}
-                getNext={(isOwner) => (isOwner ? PAGES.NAME : PAGES.IS_ANYONE_ELSE_BENEFICIAL_OWNER)}
-            />
-            <YesNoSubPage
-                name={PAGES.IS_ANYONE_ELSE_BENEFICIAL_OWNER}
-                isAnswered={areOwnersKnown}
-                inputID={INPUT_IDS.ANY_INDIVIDUAL_OWN_25_PERCENT_OR_MORE}
-                title={translate('ownershipInfoStep.doesAnyoneOwn', companyName)}
-                description={description}
-                defaultValue={answers.anyIndividualOwn25PercentOrMore ?? false}
-                getDraftUpdate={getAnyoneElseDraftUpdate}
-                getNext={getAnyoneElseNext}
-                request={globalOwnersRequest}
-            />
-            <YesNoSubPage
-                name={PAGES.ARE_THERE_MORE_BENEFICIAL_OWNERS}
-                isAnswered={areOwnersKnown}
-                title={translate('ownershipInfoStep.areThereOther', companyName)}
-                description={description}
-                defaultValue={false}
-                getDraftUpdate={(hasMore) => (hasMore && loop.canAddMore ? loop.getStartUpdate() : {})}
-                getNext={(hasMore) => (hasMore && loop.canAddMore ? PAGES.NAME : PAGES.BENEFICIAL_OWNERS_LIST)}
-            />
-            <SubPage
-                name={PAGES.BENEFICIAL_OWNERS_LIST}
-                // Not to the confirmation of the last owner as before: that owner is listed now, so its name page would lead back here
-                back={loop.canAddMore && hasOtherOwners ? PAGES.ARE_THERE_MORE_BENEFICIAL_OWNERS : PAGES.IS_ANYONE_ELSE_BENEFICIAL_OWNER}
-                next={NEXT_STEP}
-            >
-                <OwnersListPage
-                    rows={loop.owners.map((owner) => ({
-                        id: owner.id,
-                        title: getOwnerFullName(owner),
-                        description: `${owner.ownershipPercentage}%`,
-                    }))}
-                    request={globalOwnersRequest}
-                    detailsStartPage={PAGES.NAME}
-                    getEditUpdate={loop.getEditUpdate}
-                />
-            </SubPage>
-            {renderOwnerDetailsPages(translate, loop)}
-        </OnboardingStep>
+            pages={[
+                {
+                    name: PAGES.IS_USER_BENEFICIAL_OWNER,
+                    isAnswered: areOwnersKnown,
+                    content: (
+                        <YesNoSubPage
+                            inputID={INPUT_IDS.OWNS_MORE_THAN_25_PERCENT}
+                            title={translate('ownershipInfoStep.doYouOwn', companyName)}
+                            description={description}
+                            defaultValue={isUserOwner}
+                            getDraftUpdate={(isOwner) => (isOwner ? loop.getStartUserUpdate() : loop.getRemoveUpdate(CURRENT_USER_OWNER_ID))}
+                            getNext={(isOwner) => (isOwner ? PAGES.NAME : PAGES.IS_ANYONE_ELSE_BENEFICIAL_OWNER)}
+                        />
+                    ),
+                },
+                {
+                    name: PAGES.IS_ANYONE_ELSE_BENEFICIAL_OWNER,
+                    isAnswered: areOwnersKnown,
+                    content: (
+                        <YesNoSubPage
+                            inputID={INPUT_IDS.ANY_INDIVIDUAL_OWN_25_PERCENT_OR_MORE}
+                            title={translate('ownershipInfoStep.doesAnyoneOwn', companyName)}
+                            description={description}
+                            defaultValue={answers.anyIndividualOwn25PercentOrMore ?? false}
+                            getDraftUpdate={getAnyoneElseDraftUpdate}
+                            getNext={getAnyoneElseNext}
+                            request={globalOwnersRequest}
+                        />
+                    ),
+                },
+                {
+                    name: PAGES.ARE_THERE_MORE_BENEFICIAL_OWNERS,
+                    isAnswered: areOwnersKnown,
+                    content: (
+                        <YesNoSubPage
+                            title={translate('ownershipInfoStep.areThereOther', companyName)}
+                            description={description}
+                            defaultValue={false}
+                            getDraftUpdate={(hasMore) => (hasMore && loop.canAddMore ? loop.getStartUpdate() : {})}
+                            getNext={(hasMore) => (hasMore && loop.canAddMore ? PAGES.NAME : PAGES.BENEFICIAL_OWNERS_LIST)}
+                        />
+                    ),
+                },
+                {
+                    name: PAGES.BENEFICIAL_OWNERS_LIST,
+                    // Not to the confirmation of the last owner as before: that owner is listed now, so its name page would lead back here
+                    back: loop.canAddMore && hasOtherOwners ? PAGES.ARE_THERE_MORE_BENEFICIAL_OWNERS : PAGES.IS_ANYONE_ELSE_BENEFICIAL_OWNER,
+                    next: NEXT_STEP,
+                    content: (
+                        <OwnersListPage
+                            rows={loop.owners.map((owner) => ({
+                                id: owner.id,
+                                title: getOwnerFullName(owner),
+                                description: `${owner.ownershipPercentage}%`,
+                            }))}
+                            request={globalOwnersRequest}
+                            detailsStartPage={PAGES.NAME}
+                            getEditUpdate={loop.getEditUpdate}
+                        />
+                    ),
+                },
+                ...getOwnerDetailsPages(translate, loop),
+            ]}
+        />
     );
 }
 

@@ -30,29 +30,36 @@ import {useNavigation, useNavigationState, useRoute} from '@react-navigation/nat
 import React, {Fragment, useEffect} from 'react';
 
 import type {PageNavigationActions, PageNavigationState} from './pageNavigation';
-import type {PageTarget} from './readSubPages';
+import type {PageTarget, SubPageConfig} from './subPages';
 
 import {PageNavigationActionsContext, PageNavigationStateContext} from './pageNavigation';
-import {getDefaultEditReturnPage, getNextPage, getPreviousPage, getStartPage, NEXT_STEP, readSubPages} from './readSubPages';
+import {getDefaultEditReturnPage, getNextPage, getPreviousPage, getStartPage, NEXT_STEP} from './subPages';
 
-type OnboardingStepProps = {
+type MultiPageStepProps<TPageName extends string> = {
+    /** The sub pages in order. A sub page that is not in the list does not exist for the step. */
+    pages: Array<SubPageConfig<TPageName>>;
+
+    /**
+     * The sub page that opens when the URL names none, or names one that is not in `pages`, on every way into the step.
+     * Without it the first sub page opens when the user arrived by Next from the previous step, and else the first sub
+     * page whose `isAnswered` is not true (the last one when every sub page is answered).
+     */
+    startAt?: NoInfer<TPageName>;
+    children?: never;
+};
+
+type SinglePageStepProps = {
+    /** The content of a step without sub pages */
+    children: React.ReactNode;
+    pages?: never;
+    startAt?: never;
+};
+
+type OnboardingStepProps<TPageName extends string> = (MultiPageStepProps<TPageName> | SinglePageStepProps) & {
     title: string;
 
     /** The test ID of the screen. Keep the value of today's step (see FEATURES.md). */
     wrapperID: string;
-
-    /**
-     * Sub page elements in order (blocks, SubPage, or arrays of them from render functions), or the content of a single
-     * page step. A sub page that is not rendered does not exist for the step.
-     */
-    children: React.ReactNode;
-
-    /**
-     * The sub page that opens when the URL names none, or names one that is not rendered, on every way into the step.
-     * Without it the first rendered sub page opens when the user arrived by Next from the previous step, and else the
-     * first sub page whose `isAnswered` is not true (the last one when every sub page is answered).
-     */
-    startAt?: PageID;
 
     /** Sent after each sub page except the last, outside edit mode, without waiting and without showing its state */
     saveAfterEachPage?: OnboardingRequest;
@@ -71,7 +78,17 @@ function hasAccountErrors(account: OnyxEntry<OnboardingAccount>): boolean {
     return !!account?.errors && Object.keys(account.errors).length > 0;
 }
 
-function OnboardingStep({title, wrapperID, children, startAt, saveAfterEachPage, onBackFromStart, shouldEnableMaxHeight, shouldEnablePickerAvoiding}: OnboardingStepProps) {
+function OnboardingStep<TPageName extends string>({
+    title,
+    wrapperID,
+    pages = [],
+    children,
+    startAt,
+    saveAfterEachPage,
+    onBackFromStart,
+    shouldEnableMaxHeight,
+    shouldEnablePickerAvoiding,
+}: OnboardingStepProps<TPageName>) {
     const {target, returnToEntry} = useOnboardingFlow();
     const {step, previousStep, nextStep, counterIndex, counterNames, page: urlPage, isEditing: isEditingInURL, editReturnPage, stepToWrite} = useFlowStepPosition();
     const route = useRoute();
@@ -80,7 +97,6 @@ function OnboardingStep({title, wrapperID, children, startAt, saveAfterEachPage,
     const [doesAccountHoldErrors] = useOnyx(ONYXKEYS.SIMPLIFIED_BANK_ONBOARDING_ACCOUNT, {selector: hasAccountErrors});
     const sendProgressSave = useBackgroundRequest(saveAfterEachPage);
 
-    const {pages, content} = readSubPages(children);
     const hasArrivedByNext = !!previousStep && stepBelow === previousStep;
     const currentPage = getStartPage(pages, {urlPage, startAt, hasArrivedByNext});
     const isEditing = isEditingInURL && !!currentPage && currentPage.name === urlPage;
@@ -137,6 +153,14 @@ function OnboardingStep({title, wrapperID, children, startAt, saveAfterEachPage,
         Navigation.navigate(getFlowRoute(target, {step, page: destination.name}));
     }
 
+    /** Whether goNext(pageTarget) would end the step */
+    function endsStep(pageTarget?: PageTarget): boolean {
+        if (!currentPage) {
+            return true;
+        }
+        return !isEditing && getNextPage(pages, currentPage, pageTarget) === NEXT_STEP;
+    }
+
     function goNextAfter(outcome: Promise<RequestOutcome | void>, pageTarget?: PageTarget) {
         navigateAfterOutcome(outcome, () => goNext(pageTarget));
     }
@@ -166,8 +190,8 @@ function OnboardingStep({title, wrapperID, children, startAt, saveAfterEachPage,
     }
 
     const navigationState: PageNavigationState = {page: currentPage?.name, isEditing};
-    const navigationActions: PageNavigationActions = {goNext, goNextAfter, goBack, openPage};
-    const pageContent = currentPage ? <Fragment key={currentPage.name}>{currentPage.element}</Fragment> : content;
+    const navigationActions: PageNavigationActions = {goNext, goNextAfter, endsStep, goBack, openPage};
+    const pageContent = currentPage ? <Fragment key={currentPage.name}>{currentPage.content}</Fragment> : children;
 
     return (
         <InteractiveStepWrapper

@@ -7,7 +7,7 @@ import useLocalize from '@hooks/useLocalize';
 import useOnyx from '@hooks/useOnyx';
 
 import NotFoundPage from '@pages/ErrorPage/NotFoundPage';
-import {ConfirmationSubPage, OnboardingStep, PageLoadingIndicator, SubPage, useReadOnOpen, useFlowData} from '@pages/SimplifiedBankOnboarding/core';
+import {ConfirmationSubPage, OnboardingStep, PageLoadingIndicator, useReadOnOpen, useFlowData} from '@pages/SimplifiedBankOnboarding/core';
 import getCountryAnswers from '@pages/SimplifiedBankOnboarding/flows/nonUSD/country/getCountryAnswers';
 
 import ONYXKEYS from '@src/ONYXKEYS';
@@ -19,6 +19,8 @@ import PAGES from './bankInfoPages';
 import {bankFieldsRead, getCreateBankAccountRequest} from './bankInfoRequests';
 import getBankInfoAnswers from './getBankInfoAnswers';
 import ServerDrivenFields from './ServerDrivenFields';
+
+const WRAPPER_ID = 'SimplifiedBankOnboardingBankInfo';
 
 function BankInfoStep() {
     const {translate} = useLocalize();
@@ -40,46 +42,60 @@ function BankInfoStep() {
         return <NotFoundPage />;
     }
 
+    const title = translate('bankAccount.bankInfo');
+
+    if (!isLoaded) {
+        return (
+            <OnboardingStep
+                title={title}
+                wrapperID={WRAPPER_ID}
+            >
+                <PageLoadingIndicator />
+            </OnboardingStep>
+        );
+    }
+
     return (
         <OnboardingStep
-            title={translate('bankAccount.bankInfo')}
-            wrapperID="SimplifiedBankOnboardingBankInfo"
-        >
-            {isLoaded ? (
-                <>
-                    <SubPage
-                        name={PAGES.BANK_ACCOUNT_DETAILS}
-                        isAnswered={areBankFieldsAnswered(bankAccountFields, bankFieldValues)}
-                    >
+            title={title}
+            wrapperID={WRAPPER_ID}
+            pages={[
+                {
+                    name: PAGES.BANK_ACCOUNT_DETAILS,
+                    isAnswered: areBankFieldsAnswered(bankAccountFields, bankFieldValues),
+                    content: (
                         <ServerDrivenFields
                             title={translate('bankInfoStep.whatAreYour')}
                             fields={bankAccountFields}
                         />
-                    </SubPage>
-                    <SubPage
-                        name={PAGES.ACCOUNT_HOLDER_DETAILS}
-                        isAnswered={areBankFieldsAnswered(accountHolderFields, bankFieldValues)}
-                    >
+                    ),
+                },
+                {
+                    name: PAGES.ACCOUNT_HOLDER_DETAILS,
+                    isAnswered: areBankFieldsAnswered(accountHolderFields, bankFieldValues),
+                    content: (
                         <ServerDrivenFields
                             title={translate('addPersonalBankAccount.accountHolderInformationStepHeader')}
                             fields={accountHolderFields}
                         />
-                    </SubPage>
-                    <ConfirmationSubPage
-                        name={PAGES.CONFIRMATION}
-                        title={translate('bankInfoStep.letsDoubleCheck')}
-                        request={getCreateBankAccountRequest(formFields.map((field) => field.id))}
-                        rows={formFields.map((field) => ({
-                            label: field.label,
-                            value: getBankFieldDisplayValue(field, bankFieldValues[field.id]),
-                            page: isAccountHolderField(field) ? PAGES.ACCOUNT_HOLDER_DETAILS : PAGES.BANK_ACCOUNT_DETAILS,
-                        }))}
-                    />
-                </>
-            ) : (
-                <PageLoadingIndicator />
-            )}
-        </OnboardingStep>
+                    ),
+                },
+                {
+                    name: PAGES.CONFIRMATION,
+                    content: (
+                        <ConfirmationSubPage
+                            title={translate('bankInfoStep.letsDoubleCheck')}
+                            request={getCreateBankAccountRequest(formFields.map((field) => field.id))}
+                            rows={formFields.map((field) => ({
+                                label: field.label,
+                                value: getBankFieldDisplayValue(field, bankFieldValues[field.id]),
+                                page: isAccountHolderField(field) ? PAGES.ACCOUNT_HOLDER_DETAILS : PAGES.BANK_ACCOUNT_DETAILS,
+                            }))}
+                        />
+                    ),
+                },
+            ]}
+        />
     );
 }
 

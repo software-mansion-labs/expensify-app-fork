@@ -1,3 +1,5 @@
+import type {ValueOf} from 'type-fest';
+
 /** The pages of the NonUSD owners step. The values are the `subPage` param of the URL. */
 const OWNERS_PAGES = {
     IS_USER_BENEFICIAL_OWNER: 'is-user-beneficial-owner',
@@ -9,4 +11,7 @@ const OWNERS_PAGES = {
     BENEFICIAL_OWNERS_LIST: 'beneficial-owners-list',
 } as const;
 
+type OwnersPageName = ValueOf<typeof OWNERS_PAGES>;
+
 export default OWNERS_PAGES;
+export type {OwnersPageName};

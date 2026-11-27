@@ -11,7 +11,6 @@ import {isRequiredFulfilled} from '@libs/ValidationUtils';
 import type {OnboardingDraft, TextInputID} from '@pages/SimplifiedBankOnboarding/contract/form';
 import {useOnboardingFlow} from '@pages/SimplifiedBankOnboarding/core/flow/flowContext';
 import {usePageNavigation} from '@pages/SimplifiedBankOnboarding/core/step/pageNavigation';
-import type {SubPageElementProps} from '@pages/SimplifiedBankOnboarding/core/step/readSubPages';
 
 import type {TranslationPaths} from '@src/languages/types';
 
@@ -23,7 +22,7 @@ import type {SubPageFormErrors} from './FormSubPage';
 
 import useSubPageSubmit from './useSubPageSubmit';
 
-type SingleFieldSubPageProps = SubPageElementProps & {
+type SingleFieldSubPageProps = {
     inputID: TextInputID;
     title: string;
     label: string;
@@ -42,7 +41,7 @@ type SingleFieldSubPageProps = SubPageElementProps & {
     isLocked?: boolean;
 };
 
-function SingleFieldSubPage({inputID, title, label, defaultValue, validate, inputMode, maxLength, placeholder, hint, isLocked = false, next}: SingleFieldSubPageProps) {
+function SingleFieldSubPage({inputID, title, label, defaultValue, validate, inputMode, maxLength, placeholder, hint, isLocked = false}: SingleFieldSubPageProps) {
     const {translate} = useLocalize();
     const {formID} = useOnboardingFlow();
     const {isEditing} = usePageNavigation();
@@ -64,7 +63,7 @@ function SingleFieldSubPage({inputID, title, label, defaultValue, validate, inpu
             formTitle={title}
             formDisclaimer={hint}
             validate={validateField}
-            onSubmit={(values: OnboardingDraft) => submit({[inputID]: values[inputID]}, next)}
+            onSubmit={(values: OnboardingDraft) => submit({[inputID]: values[inputID]})}
             inputId={inputID}
             inputLabel={label}
             inputMode={inputMode}

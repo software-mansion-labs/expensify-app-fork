@@ -32,12 +32,13 @@ import React, {useEffect, useRef, useState} from 'react';
 import {View} from 'react-native';
 
 import type {FlowStepPosition, FlowTarget, OnboardingFlowActions, OnboardingFlowState} from './flowContext';
+import type {FlowStepConfig} from './flowSteps';
 
 import {FlowStepPositionContext, getFlowBankAccount, OnboardingFlowActionsContext, OnboardingFlowStateContext} from './flowContext';
 import {getFlowFormID} from './flowData';
 import {getFlowRoute, leaveOnboarding, parseFlowPosition} from './flowRoutes';
+import {getAdjacentSteps, getStepCounter, resolveFlowStep} from './flowSteps';
 import PageLoadingIndicator from './PageLoadingIndicator';
-import {getAdjacentSteps, getStepCounter, readFlowSteps, resolveFlowStep} from './readFlowSteps';
 
 type OnboardingFlowProps = {
     target: FlowTarget;
@@ -45,8 +46,8 @@ type OnboardingFlowProps = {
     /** The route params as they are. The shell narrows the step with isStepID, and the step that renders checks the page. */
     params: {page?: string; subPage?: string; action?: string; returnTo?: string} | undefined;
 
-    /** FlowStep elements in flow order. Fragments and arrays are flattened. */
-    children: React.ReactNode;
+    /** The steps in flow order */
+    steps: FlowStepConfig[];
 };
 
 type AccountReadStatus = 'idle' | 'pending' | 'succeeded' | 'failed';
@@ -141,18 +142,17 @@ function useAccountGate(target: FlowTarget): AccountGateView {
  * Runs one flow on one screen.
  *
  * - Account gate (BC-25), USD and NonUSD only, see useAccountGate.
- * - It renders the FlowStep named in the URL. A skipped step opens the next step that is not skipped. A missing or
+ * - It renders the content of the step named in the URL. A skipped step opens the next step that is not skipped. A missing or
  *   unknown step opens the first step that is neither skipped nor complete. Such a step is shown in the same
  *   render, and its step shell corrects the URL in place, so the route and the screen under it stay as they are.
  * - It gives the step shell the steps around the shown one, the counter and the parsed position.
  */
-function OnboardingFlow({target, params, children}: OnboardingFlowProps) {
+function OnboardingFlow({target, params, steps}: OnboardingFlowProps) {
     const styles = useThemeStyles();
     const [achData] = useOnyx(ONYXKEYS.SIMPLIFIED_BANK_ONBOARDING_ACCOUNT, {selector: (account) => account?.achData});
     const gateView = useAccountGate(target);
 
     const formID = getFlowFormID(target);
-    const steps = readFlowSteps(children);
     const urlPosition = parseFlowPosition(target, params);
     const shownStep = resolveFlowStep(steps, urlPosition.step);
     const isURLStepShown = shownStep?.id === urlPosition.step;
@@ -210,7 +210,7 @@ function OnboardingFlow({target, params, children}: OnboardingFlowProps) {
                 <FlowStepPositionContext.Provider value={stepPosition}>
                     <View style={[styles.flex1, styles.appBG]}>
                         {/* Two steps can render the same component, so the key mounts a new step instead of keeping the state of the one before */}
-                        <React.Fragment key={shownStep.id}>{shownStep.element}</React.Fragment>
+                        <React.Fragment key={shownStep.id}>{shownStep.content}</React.Fragment>
                     </View>
                 </FlowStepPositionContext.Provider>
             </OnboardingFlowActionsContext.Provider>

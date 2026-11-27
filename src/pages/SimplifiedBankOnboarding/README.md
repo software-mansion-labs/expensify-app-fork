@@ -5,8 +5,8 @@ real flow and cuts the number of variants: where the real flow has nine sub page
 mock server that runs in the app, so no backend account is needed.
 
 The module exists to try other architectures on something that is small enough to rewrite, but still shows the same
-problems as the real flow. This version is the **wrapper flow** experiment: the steps declare their sub pages as JSX
-children of a few shared wrappers, and a small core owns navigation, defaults, requests and errors. The baseline, which
+problems as the real flow. This version is the **wrapper flow** experiment: the steps declare their sub pages as typed
+arrays passed to a few shared wrappers, and a small core owns navigation, defaults, requests and errors. The baseline, which
 reproduces the weak patterns of the real flow on purpose, is commit `a513a9853f9`. Every change of behaviour against that
 baseline is listed in [Behaviour changes](#behaviour-changes).
 
@@ -105,18 +105,19 @@ contract  <-  mockBackend  <-  core  <-  { entry, flows }  <-  lab  <-  index.ts
 
 ## Wrappers and how a step declares itself
 
-A flow page lists its steps. A step lists its sub pages. Both lists are JSX children, read in order by the shell.
+A flow page lists its steps in a `steps` array. A step lists its sub pages in a `pages` array. Both arrays are in
+order. A page config names the page and holds its content, so the shell never reads its children.
 
 | Wrapper | Role |
 | --- | --- |
-| `OnboardingFlow` + `FlowStep` | The flow screen. Steps in flow order, each a `FlowStep` around the step component with its `isComplete` rule, an optional `skip` rule and the step `counter` (`own`, `shared`, `none`). Without a step in the URL the flow opens the first step that is neither skipped nor complete. The shell also holds the account gate (BC-25). A URL that names no step, an unknown step or a skipped step is corrected in place, without a new history entry, by the step shell, which writes the step and its start page in one write |
-| `OnboardingStep` | The step shell: header with the counter, the sub page in the URL, the start page (`startAt`, else the first rendered page after Next, else the first page that is not `isAnswered`), edit mode (Next and Back return to the page that opened it, which the URL names, and without it to the next confirmation, else the last page), `saveAfterEachPage`, history-aware Back (BC-14), `onBackFromStart`. A URL that names a page which the step does not render opens the start page |
-| `SubPage` | A named page with custom markup. `back` and `next` take a page, `NEXT_STEP` or `PREVIOUS_STEP` |
-| `FormSubPage` | The general block: a sub page with a form of the flow. Props: `title`, `inputIDs` (required unless listed in `optionalInputIDs`), `validate`, `request`, `getDraftUpdate`, `next` or `getNext`, `submitButtonText`, `isSubmitDisabled`, `submitButtonStyles`, `shouldHideFixErrorsAlert`. It saves the draft, sends the `request`, shows its error and pending state, and moves on. An input that sets its own error (the file input) removes the validation error of its field with `useResetFieldError`. Without a `name` it is the only page of its step |
+| `OnboardingFlow` | The flow screen. `steps` is a `FlowStepConfig[]` in flow order. Each config has the step `id`, the step component as `content`, its `isComplete` rule, an optional `skip` rule and the step `counter` (`own`, `shared`, `none`). Without a step in the URL the flow opens the first step that is neither skipped nor complete. The shell also holds the account gate (BC-25). A URL that names no step, an unknown step or a skipped step is corrected in place, without a new history entry, by the step shell, which writes the step and its start page in one write |
+| `OnboardingStep` | The step shell: header with the counter, the sub page in the URL, the start page (`startAt`, else the first page after Next, else the first page that is not `isAnswered`), edit mode (Next and Back return to the page that opened it, which the URL names, and without it to the next confirmation, else the last page), `saveAfterEachPage`, history-aware Back (BC-14), `onBackFromStart`. A URL that names a page which the step does not have opens the start page. It takes `pages`, a `SubPageConfig[]` (`name`, `isAnswered`, `back`, `next`, `content`), or `children` for a step with one page. The page names are a type parameter inferred from `name`, so a typo in `startAt`, `back` or `next` fails the typecheck |
+| `SubPageConfig` | One page of a step. `back` takes a page of the step or `PREVIOUS_STEP`, `next` takes a page of the step or `NEXT_STEP`. `content` is a block or custom markup |
+| `FormSubPage` | The general block: a sub page with a form of the flow. Props: `title`, `inputIDs` (required unless listed in `optionalInputIDs`), `validate`, `request`, `getDraftUpdate`, `getNext`, `submitButtonText`, `isSubmitDisabled`, `submitButtonStyles`, `shouldHideFixErrorsAlert`. It saves the draft, sends the `request`, shows its error and pending state, and moves on. An input that sets its own error (the file input) removes the validation error of its field with `useResetFieldError`. The blocks have no `name` or `next`: those belong to the page config |
 | `SingleFieldSubPage`, `FullNameSubPage`, `DateOfBirthSubPage`, `YesNoSubPage`, `ConfirmationSubPage` | Blocks for the common pages, with the same submit behaviour as `FormSubPage` |
 | `SubPageInput` | `InputWrapper` that saves the draft on change outside edit mode |
 | `useFlowData`, `useFlowDataOf` | The data of a flow in one shape, `FlowData = {bankAccount, account, draft, currency}`. A step calls `useFlowData()`. The NonUSD flow page, which renders above `OnboardingFlow` and tests its rules on the whole data, calls `useFlowDataOf(target)`. The USD flow page needs only `achData`, so it selects it from the account key |
-| `useSubPageSubmit`, `usePageNavigation` | The submit and the navigation of a custom page (`goNext`, `goNextAfter`, `goBack`, `openPage`) |
+| `useSubPageSubmit`, `usePageNavigation` | The submit and the navigation of a custom page (`goNext`, `goNextAfter`, `endsStep`, `goBack`, `openPage`). Their targets are plain strings, because a block does not know the page names of its step |
 | `RequestErrorMessage`, `PageLoadingIndicator` | The one way to show a request error, and the one full-screen loader of a page |
 
 The rules for a step:
@@ -129,19 +130,19 @@ The rules for a step:
    `build` gets, and its completion rule calls it with the data of the flow page. So the three always agree.
 3. The names of its sub pages are a local `as const` object in `<step>Pages.ts`. The values are the `subPage` param of
    the URL, so they do not change. No central list of pages exists.
-4. It renders `<OnboardingStep title wrapperID>`. A sub page may be left out only on data that cannot change while the
-   step is shown (currency, server data, earlier steps), never on an answer of the same step. A branch inside a step
-   uses `next`, `back` and `getNext` over pages that are always rendered.
+4. It renders `<OnboardingStep title wrapperID pages>`. A sub page may be left out only on data that cannot change
+   while the step is shown (currency, server data, earlier steps), never on an answer of the same step. A branch inside
+   a step uses `next`, `back` and `getNext` over pages that are always in `pages`.
 5. A request is a `const` of type `OnboardingRequest` in a `*Request(s).ts` file of its step, with a literal name
    `<flow>.<step>.<action>`.
 6. Navigation goes through the blocks or `usePageNavigation`. Leaving the flow goes through `useOnboardingFlow()`
    (`returnToEntry`, `leaveFlow`).
-7. A step joins a flow with one `<FlowStep>` element in the flow page. `isComplete` is required: it says from the saved
+7. A step joins a flow with one entry in the `steps` array of the flow page. `isComplete` is required: it says from the saved
    data whether the user finished the step. In the USD flow the server stores the current step, so the rule is
    `isPastServerStep(achData, STEP.X)`. In the NonUSD flow the server stores no step, so each step folder has its own
    rule (`isCountryComplete.ts`, `areOwnersComplete.ts`, ...). The last step of a flow passes `false`.
 
-Adding a step therefore touches the new step folder, one `<FlowStep>` element, and the step ID in
+Adding a step therefore touches the new step folder, one entry of `steps`, and the step ID in
 `contract/SBO_CONST.ts`, which is part of the frozen route contract.
 
 Example, `flows/usd/personalInfo/PersonalInfoStep.tsx` (imports left out):
@@ -158,45 +159,53 @@ function PersonalInfoStep() {
             wrapperID="SimplifiedBankOnboardingPersonalInfo"
             startAt={isVerifying(data.account?.achData) ? PAGES.FULL_NAME : undefined}
             saveAfterEachPage={personalInfoProgressRequest}
-        >
-            <FullNameSubPage
-                name={PAGES.FULL_NAME}
-                isAnswered={!!answers.firstName && !!answers.lastName}
-                title={translate('personalInfoStep.enterYourLegalFirstAndLast')}
-                firstNameInputID={INPUT_IDS.FIRST_NAME}
-                lastNameInputID={INPUT_IDS.LAST_NAME}
-                defaultValues={{firstName: answers.firstName, lastName: answers.lastName}}
-            />
-            {/* DateOfBirthSubPage and SingleFieldSubPage for the SSN in the same shape */}
-            <ConfirmationSubPage
-                name={PAGES.CONFIRMATION}
-                title={translate('personalInfoStep.letsDoubleCheck')}
-                request={personalInfoRequest}
-                rows={[{label: translate('personalInfoStep.legalName'), value: `${answers.firstName} ${answers.lastName}`, page: PAGES.FULL_NAME}]}
-            />
-        </OnboardingStep>
+            pages={[
+                {
+                    name: PAGES.FULL_NAME,
+                    isAnswered: !!answers.firstName && !!answers.lastName,
+                    content: (
+                        <FullNameSubPage
+                            title={translate('personalInfoStep.enterYourLegalFirstAndLast')}
+                            firstNameInputID={INPUT_IDS.FIRST_NAME}
+                            lastNameInputID={INPUT_IDS.LAST_NAME}
+                            defaultValues={{firstName: answers.firstName, lastName: answers.lastName}}
+                        />
+                    ),
+                },
+                // DateOfBirthSubPage and SingleFieldSubPage for the SSN in the same shape
+                {
+                    name: PAGES.CONFIRMATION,
+                    content: (
+                        <ConfirmationSubPage
+                            title={translate('personalInfoStep.letsDoubleCheck')}
+                            request={personalInfoRequest}
+                            rows={[{label: translate('personalInfoStep.legalName'), value: `${answers.firstName} ${answers.lastName}`, page: PAGES.FULL_NAME}]}
+                        />
+                    ),
+                },
+            ]}
+        />
     );
 }
 ```
 
-The flow page adds it with:
+The flow page adds it with one entry of its `steps` array:
 
 ```tsx
-<FlowStep
-    id={PAGE_NAMES.REQUESTOR}
-    isComplete={isPastServerStep(achData, STEP.REQUESTOR)}
->
-    <PersonalInfoStep />
-</FlowStep>
+{
+    id: PAGE_NAMES.REQUESTOR,
+    isComplete: isPastServerStep(achData, STEP.REQUESTOR),
+    content: <PersonalInfoStep />,
+},
 ```
 
-A step with one form is `<OnboardingStep>` around one `FormSubPage` without a name (the country pages, both agreement
-steps, Docusign).
+A step with one form is `<OnboardingStep>` around one `FormSubPage` as `children`, without `pages` (the country pages,
+both agreement steps, Docusign).
 
 Custom pages (Plaid, the identity check, the test deposits, the waiting page, the server-driven bank form, the director
-email page, the owner lists and the invited director) render their own markup inside `SubPage` or `OnboardingStep`. They
-use `FormSubPage` for a form that maps to one block, and `useOnboardingRequest`, `useSubPageSubmit` and
-`usePageNavigation` for everything else.
+email page, the owner lists and the invited director) render their own markup as the `content` of a page config or as
+the `children` of `OnboardingStep`. They use `FormSubPage` for a form that maps to one block, and
+`useOnboardingRequest`, `useSubPageSubmit` and `usePageNavigation` for everything else.
 
 ## Request layer
 
@@ -252,8 +261,8 @@ variants of the baseline.
 
 | Pattern | Real flow | This module |
 | --- | --- | --- |
-| USD: the server keeps `currentStep`, a dictionary turns it into a step | `R/ReimbursementAccountPage.tsx` (`stepToPageName`) | `isComplete` of each `FlowStep` in `flows/usd/USDFlowPage.tsx`, from one rule `flows/usd/isPastServerStep.ts` |
-| NonUSD: the client works out the first unfinished step | `R/NonUSD/utils/getStartPageForContinueSetup.ts` | `isComplete` of each `FlowStep` in `flows/nonUSD/NonUSDFlowPage.tsx`. Each rule lives in its step folder (`isCountryComplete.ts`, `isBusinessInfoComplete.ts`, `areOwnersComplete.ts`, `signerRules.ts`, `areAgreementsComplete.ts`) |
+| USD: the server keeps `currentStep`, a dictionary turns it into a step | `R/ReimbursementAccountPage.tsx` (`stepToPageName`) | `isComplete` of each step config in `flows/usd/USDFlowPage.tsx`, from one rule `flows/usd/isPastServerStep.ts` |
+| NonUSD: the client works out the first unfinished step | `R/NonUSD/utils/getStartPageForContinueSetup.ts` | `isComplete` of each step config in `flows/nonUSD/NonUSDFlowPage.tsx`. Each rule lives in its step folder (`isCountryComplete.ts`, `isBusinessInfoComplete.ts`, `areOwnersComplete.ts`, `signerRules.ts`, `areAgreementsComplete.ts`) |
 | `draftStep`: the server values of a step are copied into the draft | `R/ReimbursementAccountPage.tsx` | Gone. Inputs read server values through the answers (BC-11) |
 | Lossy prefill: the server returns a masked account number | `achData` of a resumed setup | **Kept**: the locked manual bank page shows the masked server numbers (`flows/usd/bankAccount/getBankAccountAnswers.ts`) |
 | Lossy round trip of the owner name | `R/NonUSD/utils/getDraftValuesForBeneficialOwners.ts` | **Kept**: `flows/shared/owners/serverOwners.ts` (`splitFullName`, BC-09) |
@@ -264,10 +273,10 @@ variants of the baseline.
 
 | Pattern | Real flow | This module |
 | --- | --- | --- |
-| Static `pages` array, URL `:page/:subPage/:action`, rules that skip pages | `R/USD/USDVerifiedBankAccountFlowPage.tsx` | `<FlowStep id isComplete skip counter>` children of `OnboardingFlow` in `flows/usd/USDFlowPage.tsx`, `flows/nonUSD/NonUSDFlowPage.tsx`. The URL is **kept** |
-| Three vocabularies for one position: step constant, page name, numeric index | `CONST.BANK_ACCOUNT.STEP`, `PAGE_NAMES`, `startStepIndex` | Step names only, and each step names its own sub pages in `<step>Pages.ts`. The counter comes from the `FlowStep` order (BC-23) |
+| Static `pages` array, URL `:page/:subPage/:action`, rules that skip pages | `R/USD/USDVerifiedBankAccountFlowPage.tsx` | `steps={[{id, isComplete, skip, counter, content}]}` of `OnboardingFlow` in `flows/usd/USDFlowPage.tsx`, `flows/nonUSD/NonUSDFlowPage.tsx`. The URL is **kept** |
+| Three vocabularies for one position: step constant, page name, numeric index | `CONST.BANK_ACCOUNT.STEP`, `PAGE_NAMES`, `startStepIndex` | Step names only, and each step names its own sub pages in `<step>Pages.ts`. The counter comes from the order of `steps` (BC-23) |
 | `goBack` as a switch on `currentStep` | `R/ReimbursementAccountPage.tsx` | **Kept** for the entry loader only: `entry/entryNavigation.ts`. Steps use the shell's Back |
-| `useSubPage` with `action=edit`, `startFrom` and `onPageChange` | `src/hooks/useSubPage` | `OnboardingStep` and `core/step/readSubPages.ts`. `@hooks/useSubPage` is no longer used by the lab |
+| `useSubPage` with `action=edit`, `startFrom` and `onPageChange` | `src/hooks/useSubPage` | `OnboardingStep` and `core/step/subPages.ts`. `@hooks/useSubPage` is no longer used by the lab |
 | Step header with a numeric step counter | `InteractiveStepWrapper` | Inside `OnboardingStep` only |
 
 ### Forms
@@ -307,12 +316,12 @@ variants of the baseline.
 | --- | --- | --- |
 | Owner loop limited by a count, owners under flat draft keys `beneficialOwner_<id>_<field>` | `R/USD/BeneficialOwnerInfo/*` | Owners are a list in the draft (`usdOwners`) plus a buffer: `flows/shared/owners/ownerLoop.ts` (BC-09) |
 | Owner loop limited by the ownership sum | `R/NonUSD/BeneficialOwnerInfo/*` | The same loop with `globalOwners`, limits in `flows/shared/owners/ownerLimits.ts` |
-| A step container that renders question pages itself and hands the rest to a nested `useSubPage` | both owner steps | One `OnboardingStep` with the questions, the list and `renderOwnerDetailsPages` as children |
+| A step container that renders question pages itself and hands the rest to a nested `useSubPage` | both owner steps | One `OnboardingStep` whose `pages` hold the questions, the list and the configs of `getOwnerDetailsPages` |
 | Branch on "are you a director", with an email request and a waiting page | `R/NonUSD/SignerInfo/*` | `flows/nonUSD/signer/SignerStep.tsx` with `getNext`, `back` and `PREVIOUS_STEP` |
-| A step whose pages depend on the answer of another step (the signer skips its name page when an owner gave the name) | `R/NonUSD/SignerInfo/SignerDetailsFormPages.tsx` | **Kept**: `flows/nonUSD/signer/signerRules.ts`, `flows/shared/signerDetails/renderSignerDetailsPages.tsx` |
+| A step whose pages depend on the answer of another step (the signer skips its name page when an owner gave the name) | `R/NonUSD/SignerInfo/SignerDetailsFormPages.tsx` | **Kept**: `flows/nonUSD/signer/signerRules.ts`, `flows/shared/signerDetails/getSignerDetailsPages.tsx` |
 | The current user as an owner, stored under a reserved owner key | `R/NonUSD/BeneficialOwnerInfo/*` (`CURRENT_USER_KEY`) | **Kept**: `SBO_CONST.NON_USD.CURRENT_USER_KEY` |
-| A second flow with its own form key | `R/EnterSignerInfo/*` | **Kept**: `flows/enterSignerInfo/`. It reuses `renderSignerDetailsPages` and has its own answers and request (BC-16) |
-| A step that only some currencies get | Docusign for USD, CAD and AUD | **Kept**: Docusign for AUD, `skip` of its `FlowStep` |
+| A second flow with its own form key | `R/EnterSignerInfo/*` | **Kept**: `flows/enterSignerInfo/`. It reuses `getSignerDetailsPages` and has its own answers and request (BC-16) |
+| A step that only some currencies get | Docusign for USD, CAD and AUD | **Kept**: Docusign for AUD, `skip` of its step config |
 | Third-party widgets: Plaid, Onfido, Docusign | their real SDK wrappers | **Kept**: fake widgets with `[mock]` buttons in `PlaidBankPage.tsx`, `VerifyIdentityStep.tsx`, `DocusignStep.tsx` |
 | A review that ends on the backend and reaches the client as a push | Pusher updates of `reimbursementAccount` | **Kept**: `mockBackend/serverEvents.ts`, `flows/shared/MockReviewButtons.tsx` |
 

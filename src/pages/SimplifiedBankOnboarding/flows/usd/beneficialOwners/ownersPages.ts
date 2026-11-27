@@ -1,3 +1,5 @@
+import type {ValueOf} from 'type-fest';
+
 /** The pages of the USD owners step. The values are the `subPage` param of the URL. */
 const OWNERS_PAGES = {
     IS_USER_UBO: 'is-user-ubo',
@@ -9,4 +11,7 @@ const OWNERS_PAGES = {
     UBOS_LIST: 'ubos-list',
 } as const;
 
+type OwnersPageName = ValueOf<typeof OWNERS_PAGES>;
+
 export default OWNERS_PAGES;
+export type {OwnersPageName};

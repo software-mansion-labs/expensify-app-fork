@@ -9,12 +9,11 @@ import type {StepID, USDStepID} from '@pages/SimplifiedBankOnboarding/contract/i
 import type {ACHData, CorpayData, USDStep} from '@pages/SimplifiedBankOnboarding/contract/onyx';
 import SBO_CONST from '@pages/SimplifiedBankOnboarding/contract/SBO_CONST';
 import type * as CoreModule from '@pages/SimplifiedBankOnboarding/core';
-import {readFlowSteps, resolveFlowStep} from '@pages/SimplifiedBankOnboarding/core/flow/readFlowSteps';
+import {resolveFlowStep} from '@pages/SimplifiedBankOnboarding/core/flow/flowSteps';
+import type {FlowStepConfig} from '@pages/SimplifiedBankOnboarding/core/flow/flowSteps';
 
 import ONYXKEYS from '@src/ONYXKEYS';
 import SCREENS from '@src/SCREENS';
-
-import type {ReactNode} from 'react';
 
 import React from 'react';
 import Onyx from 'react-native-onyx';
@@ -22,14 +21,14 @@ import Onyx from 'react-native-onyx';
 import {TEST_POLICY_ID} from '../../utils/BankOnboardingLabTestUtils';
 import waitForBatchedUpdatesWithAct from '../../utils/waitForBatchedUpdatesWithAct';
 
-const mockReadChildren = jest.fn<void, [ReactNode]>();
+const mockReadSteps = jest.fn<void, [FlowStepConfig[]]>();
 
 // The test asks which step a flow page resumes at for the data that Onyx holds. So the flow shell is a stand-in that only
 // hands over the steps of the page. The real shell and its URL handling have a test of their own.
 jest.mock('@pages/SimplifiedBankOnboarding/core', () => ({
     ...jest.requireActual<typeof CoreModule>('@pages/SimplifiedBankOnboarding/core'),
-    OnboardingFlow: ({children}: {children: ReactNode}) => {
-        mockReadChildren(children);
+    OnboardingFlow: ({steps}: {steps: FlowStepConfig[]}) => {
+        mockReadSteps(steps);
         return null;
     },
 }));
@@ -70,7 +69,7 @@ async function saveFlowData(achData: ACHData | undefined, draft: OnboardingDraft
 
 /** The step that the rendered flow page opens for a URL without a step */
 function getResumedStep(): StepID | undefined {
-    return resolveFlowStep(readFlowSteps(mockReadChildren.mock.calls.at(-1)?.[0]), undefined)?.id;
+    return resolveFlowStep(mockReadSteps.mock.calls.at(-1)?.[0] ?? [], undefined)?.id;
 }
 
 async function getUSDStep(achData: ACHData | undefined): Promise<StepID | undefined> {

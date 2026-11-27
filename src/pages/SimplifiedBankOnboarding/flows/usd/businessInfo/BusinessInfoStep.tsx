@@ -51,60 +51,77 @@ function BusinessInfoStep() {
             startAt={isVerifying(achData) ? PAGES.NAME : undefined}
             shouldEnableMaxHeight
             shouldEnablePickerAvoiding={false}
-        >
-            <SingleFieldSubPage
-                name={PAGES.NAME}
-                isAnswered={!!answers.companyName}
-                title={translate('businessInfoStep.enterTheNameOfYourBusiness')}
-                label={translate('businessInfoStep.businessName')}
-                inputID={INPUT_IDS.COMPANY_NAME}
-                validate={validateCompanyName}
-                defaultValue={answers.companyName}
-                isLocked={areCompanyDetailsLocked(achData)}
-            />
-            <SingleFieldSubPage
-                name={PAGES.TAX_ID}
-                isAnswered={!!answers.companyTaxID}
-                title={translate('businessInfoStep.enterYourCompanyTaxIdNumber')}
-                hint={`The mock server rejects ${SBO_CONST.MOCK.REJECTED_TAX_ID}.`}
-                label={translate('businessInfoStep.taxIDNumber')}
-                placeholder={translate('businessInfoStep.taxIDNumberPlaceholder')}
-                inputID={INPUT_IDS.COMPANY_TAX_ID}
-                inputMode={CONST.INPUT_MODE.NUMERIC}
-                validate={validateTaxID}
-                defaultValue={answers.companyTaxID}
-                isLocked={areCompanyDetailsLocked(achData)}
-            />
-            <FormSubPage
-                name={PAGES.INCORPORATION_TYPE}
-                isAnswered={!!answers.incorporationType}
-                title={translate('businessInfoStep.selectYourCompanyType')}
-                inputIDs={[INPUT_IDS.INCORPORATION_TYPE]}
-                shouldHideFixErrorsAlert
-            >
-                <View style={[styles.mt3, styles.mhn5]}>
-                    <SubPageInput
-                        InputComponent={PushRowWithModal}
-                        optionsList={INCORPORATION_TYPE_OPTIONS}
-                        description={translate('businessInfoStep.companyType')}
-                        modalHeaderTitle={translate('businessInfoStep.companyType')}
-                        searchInputTitle={translate('businessInfoStep.companyType')}
-                        defaultValue={answers.incorporationType}
-                        inputID={INPUT_IDS.INCORPORATION_TYPE}
-                    />
-                </View>
-            </FormSubPage>
-            <ConfirmationSubPage
-                name={PAGES.CONFIRMATION}
-                title={translate('businessInfoStep.letsDoubleCheck')}
-                request={businessInfoRequest}
-                rows={[
-                    {label: translate('businessInfoStep.businessName'), value: answers.companyName, page: PAGES.NAME},
-                    {label: translate('businessInfoStep.taxIDNumber'), value: answers.companyTaxID, page: PAGES.TAX_ID},
-                    {label: translate('businessInfoStep.companyType'), value: answers.incorporationType, page: PAGES.INCORPORATION_TYPE},
-                ]}
-            />
-        </OnboardingStep>
+            pages={[
+                {
+                    name: PAGES.NAME,
+                    isAnswered: !!answers.companyName,
+                    content: (
+                        <SingleFieldSubPage
+                            title={translate('businessInfoStep.enterTheNameOfYourBusiness')}
+                            label={translate('businessInfoStep.businessName')}
+                            inputID={INPUT_IDS.COMPANY_NAME}
+                            validate={validateCompanyName}
+                            defaultValue={answers.companyName}
+                            isLocked={areCompanyDetailsLocked(achData)}
+                        />
+                    ),
+                },
+                {
+                    name: PAGES.TAX_ID,
+                    isAnswered: !!answers.companyTaxID,
+                    content: (
+                        <SingleFieldSubPage
+                            title={translate('businessInfoStep.enterYourCompanyTaxIdNumber')}
+                            hint={`The mock server rejects ${SBO_CONST.MOCK.REJECTED_TAX_ID}.`}
+                            label={translate('businessInfoStep.taxIDNumber')}
+                            placeholder={translate('businessInfoStep.taxIDNumberPlaceholder')}
+                            inputID={INPUT_IDS.COMPANY_TAX_ID}
+                            inputMode={CONST.INPUT_MODE.NUMERIC}
+                            validate={validateTaxID}
+                            defaultValue={answers.companyTaxID}
+                            isLocked={areCompanyDetailsLocked(achData)}
+                        />
+                    ),
+                },
+                {
+                    name: PAGES.INCORPORATION_TYPE,
+                    isAnswered: !!answers.incorporationType,
+                    content: (
+                        <FormSubPage
+                            title={translate('businessInfoStep.selectYourCompanyType')}
+                            inputIDs={[INPUT_IDS.INCORPORATION_TYPE]}
+                            shouldHideFixErrorsAlert
+                        >
+                            <View style={[styles.mt3, styles.mhn5]}>
+                                <SubPageInput
+                                    InputComponent={PushRowWithModal}
+                                    optionsList={INCORPORATION_TYPE_OPTIONS}
+                                    description={translate('businessInfoStep.companyType')}
+                                    modalHeaderTitle={translate('businessInfoStep.companyType')}
+                                    searchInputTitle={translate('businessInfoStep.companyType')}
+                                    defaultValue={answers.incorporationType}
+                                    inputID={INPUT_IDS.INCORPORATION_TYPE}
+                                />
+                            </View>
+                        </FormSubPage>
+                    ),
+                },
+                {
+                    name: PAGES.CONFIRMATION,
+                    content: (
+                        <ConfirmationSubPage
+                            title={translate('businessInfoStep.letsDoubleCheck')}
+                            request={businessInfoRequest}
+                            rows={[
+                                {label: translate('businessInfoStep.businessName'), value: answers.companyName, page: PAGES.NAME},
+                                {label: translate('businessInfoStep.taxIDNumber'), value: answers.companyTaxID, page: PAGES.TAX_ID},
+                                {label: translate('businessInfoStep.companyType'), value: answers.incorporationType, page: PAGES.INCORPORATION_TYPE},
+                            ]}
+                        />
+                    ),
+                },
+            ]}
+        />
     );
 }
 
