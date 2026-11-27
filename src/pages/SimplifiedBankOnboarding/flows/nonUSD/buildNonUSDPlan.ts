@@ -9,7 +9,7 @@ import {isValidCompanyName} from '@libs/ValidationUtils';
 
 import type {GlobalOwnerDraft, TextInputID} from '@pages/SimplifiedBankOnboarding/contract/form';
 import INPUT_IDS from '@pages/SimplifiedBankOnboarding/contract/form';
-import type {ACHData, BankFormField} from '@pages/SimplifiedBankOnboarding/contract/onyx';
+import type {ACHData, BankFormField, CorpayData} from '@pages/SimplifiedBankOnboarding/contract/onyx';
 import {getOwnerFullName} from '@pages/SimplifiedBankOnboarding/contract/ownerNames';
 import SBO_CONST from '@pages/SimplifiedBankOnboarding/contract/SBO_CONST';
 import {isConnected, isGlobalAccountCreated, isVerifying, requiresDocusignStep} from '@pages/SimplifiedBankOnboarding/contract/setupStatus';
@@ -28,11 +28,12 @@ import {
 } from '@pages/SimplifiedBankOnboarding/core';
 import type FlowData from '@pages/SimplifiedBankOnboarding/flows/shared/flowData/types';
 import getBaseStepInput from '@pages/SimplifiedBankOnboarding/flows/shared/getBaseStepInput';
+import type {BaseStepInput} from '@pages/SimplifiedBankOnboarding/flows/shared/getBaseStepInput';
 import {canAddMoreGlobalOwners, isValidGlobalOwnerShare} from '@pages/SimplifiedBankOnboarding/flows/shared/owners/canAddMoreOwners';
 import getOwnerPages from '@pages/SimplifiedBankOnboarding/flows/shared/owners/getOwnerPages';
 import {GLOBAL_OWNER_DRAFT} from '@pages/SimplifiedBankOnboarding/flows/shared/owners/ownerBuffer';
 import {findOwner, removeOwner} from '@pages/SimplifiedBankOnboarding/flows/shared/owners/ownerList';
-import type {FlowPlan, FormPageDefinition, PageConfig, StepConfig} from '@pages/SimplifiedBankOnboarding/flows/shared/plan/types';
+import type {FlowPlan, FormPageConfig, FormPageDefinition, PageConfig, StepConfig} from '@pages/SimplifiedBankOnboarding/flows/shared/plan/types';
 import {openEnterSignerInfo} from '@pages/SimplifiedBankOnboarding/flows/shared/routes/flowNavigation';
 import getSignerDetailsPages from '@pages/SimplifiedBankOnboarding/flows/shared/signerDetails/getSignerDetailsPages';
 import {getDirectorInfoRequest, getSignerInvitationRequest, getSignerReminderRequest} from '@pages/SimplifiedBankOnboarding/flows/shared/signerDetails/signerInfo';
@@ -40,6 +41,8 @@ import {getDirectorInfoRequest, getSignerInvitationRequest, getSignerReminderReq
 import CONST from '@src/CONST';
 
 import {Str} from 'expensify-common';
+
+import type NonUSDAnswers from './answers/types';
 
 import getNonUSDFlowState from './answers/getNonUSDFlowState';
 import FinishStep from './customSteps/FinishStep';
@@ -119,26 +122,65 @@ function createEmailField(inputID: TextInputID, {label, mustDifferFrom}: EmailFi
     });
 }
 
-/** The docusign step is only in the plan for the currencies that need a signed form */
+/** What every step of the NonUSD flow reads, derived once per plan */
+type NonUSDStepInput = BaseStepInput &
+    Pick<FlowData, 'draft' | 'bankFields' | 'picklists'> & {
+        /** The currency of the workspace, which decides the countries, the bank inputs and the second director */
+        currency: string;
+        answers: NonUSDAnswers;
+        buildFormPage: (definition: FormPageDefinition) => FormPageConfig;
+        corpay: CorpayData | undefined;
+        isAUD: boolean;
+        isSent: boolean;
+    };
+
+/**
+ * Lists the steps in the order of the flow, which the step counter of the header follows too. The docusign step is only
+ * in the plan for the currencies that need a signed form.
+ */
 function buildNonUSDPlan(data: FlowData, {translate, policyID: urlPolicyID}: PlanContext): FlowPlan {
     const {draft, account, bankFields, picklists} = data;
-    const {achData, bankAccount} = getBaseStepInput(account, urlPolicyID, translate);
+    const baseStepInput = getBaseStepInput(account, urlPolicyID, translate);
     const {currency, answers} = getNonUSDFlowState(data, urlPolicyID);
-    const buildFormPage = (definition: FormPageDefinition) => getFormPage(definition, answers, translate);
-    const corpay = achData?.corpay;
-    const isAUD = currency === SBO_CONST.CURRENCY.AUD;
-    const isSent = isOnboardingSent(achData);
+    const input: NonUSDStepInput = {
+        ...baseStepInput,
+        draft,
+        bankFields,
+        picklists,
+        currency,
+        answers,
+        buildFormPage: (definition) => getFormPage(definition, answers, translate),
+        corpay: baseStepInput.achData?.corpay,
+        isAUD: currency === SBO_CONST.CURRENCY.AUD,
+        isSent: isOnboardingSent(baseStepInput.achData),
+    };
 
-    const steps: StepConfig[] = [];
+    return {
+        steps: [
+            buildCountryStep(input),
+            buildBankInfoStep(input),
+            buildBusinessInfoStep(input),
+            buildBeneficialOwnersStep(input),
+            buildSignerInfoStep(input),
+            buildAgreementsStep(input),
+            ...(requiresDocusignStep(currency) ? [buildDocusignStep(input)] : []),
+            buildFinishStep(input),
+        ],
+        answers,
+    };
+}
 
-    // The currency of the workspace decides the countries: a EUR workspace picks one of its countries and an AUD
-    // workspace gets its only country locked. The country is locked once the account exists, because the account
-    // belongs to that country. Confirm only keeps the country in the draft, the server receives it with the bank account.
+/**
+ * The currency of the workspace decides the countries: a EUR workspace picks one of its countries and an AUD
+ * workspace gets its only country locked. The country is locked once the account exists, because the account
+ * belongs to that country. Confirm only keeps the country in the draft, the server receives it with the bank account.
+ */
+function buildCountryStep({draft, achData, currency, translate, buildFormPage}: NonUSDStepInput): StepConfig {
     // The default country of AUD does not count, only a country that the user confirmed or the server already has
     const isCountryConfirmed = !!(draft?.country ?? achData?.country);
     const canChangeCountry = currency === SBO_CONST.CURRENCY.EUR && !achData?.created;
 
-    steps.push({
+    return {
         id: PAGE_NAMES.COUNTRY,
         title: translate('countryStep.confirmCurrency'),
         isComplete: isCountryConfirmed,
@@ -162,11 +204,15 @@ function buildNonUSDPlan(data: FlowData, {translate, policyID: urlPolicyID}: Pla
                 ],
             }),
         ],
-    });
+    };
+}
 
-    // The server describes the bank inputs for the country and the currency. Until they arrive, the bank page stands
-    // alone and reads them. Every workspace shares the key of the bank inputs, so the stored inputs may belong to
-    // another country. The request at the end creates the bank account.
+/**
+ * The server describes the bank inputs for the country and the currency. Until they arrive, the bank page stands
+ * alone and reads them. Every workspace shares the key of the bank inputs, so the stored inputs may belong to
+ * another country. The request at the end creates the bank account.
+ */
+function buildBankInfoStep({achData, bankAccount, bankFields, currency, answers, translate, buildFormPage}: NonUSDStepInput): StepConfig {
     const BANK_INFO = SBO_CONST.NON_USD.BANK_INFO_SUB_PAGES;
     const isBankAccountCreated = isGlobalAccountCreated(achData);
     const bankFieldsRead = getBankFieldsRead(answers.country, currency, areBankFieldsLoaded(bankFields, answers.country, currency));
@@ -177,7 +223,7 @@ function buildNonUSDPlan(data: FlowData, {translate, policyID: urlPolicyID}: Pla
         {pageID: BANK_INFO.ACCOUNT_HOLDER_DETAILS, title: translate('addPersonalBankAccount.accountHolderInformationStepHeader'), fields: getAccountHolderDetailsFields(bankFields)},
     ].filter((group) => group.fields.length > 0);
 
-    steps.push({
+    return {
         id: PAGE_NAMES.BANK_INFO,
         title: translate('bankAccount.bankInfo'),
         isComplete: isBankAccountCreated,
@@ -194,16 +240,20 @@ function buildNonUSDPlan(data: FlowData, {translate, policyID: urlPolicyID}: Pla
             currency,
             fields: Object.fromEntries((bankFields?.formFields ?? []).map((field) => [field.id, answers[field.id]])),
         }),
-    });
+    };
+}
 
-    // The business types come from the server picklists of the country. The pages that show them read the picklists
-    // on every open, because the stored picklists name no country. A page waits for them only while it has no
-    // business type to show.
+/**
+ * The business types come from the server picklists of the country. The pages that show them read the picklists
+ * on every open, because the stored picklists name no country. A page waits for them only while it has no
+ * business type to show.
+ */
+function buildBusinessInfoStep({bankAccount, picklists, corpay, answers, translate, buildFormPage}: NonUSDStepInput): StepConfig {
     const BUSINESS_INFO = SBO_CONST.NON_USD.BUSINESS_INFO_SUB_PAGES;
     const businessTypeOptions = (picklists?.picklists?.businessType ?? []).map((businessType) => ({value: businessType.id, label: businessType.name}));
     const picklistsRead = getPicklistsRead(answers.country, arePicklistsLoaded(picklists) || !!answers.businessType);
 
-    steps.push({
+    return {
         id: PAGE_NAMES.BUSINESS_INFO,
         title: translate('businessInfoStep.businessInfoTitle'),
         isComplete: !!corpay?.companyName && !!corpay.businessType,
@@ -240,17 +290,21 @@ function buildNonUSDPlan(data: FlowData, {translate, policyID: urlPolicyID}: Pla
         ],
 
         request: getGlobalCompanyRequest(bankAccount, answers),
-    });
+    };
+}
 
-    // The user is an owner in the list under a fixed ID, so a user who owns 25% or more enters their own name and
-    // share first. The shares of all owners may not exceed 100%.
+/**
+ * The user is an owner in the list under a fixed ID, so a user who owns 25% or more enters their own name and
+ * share first. The shares of all owners may not exceed 100%.
+ */
+function buildBeneficialOwnersStep({bankAccount, corpay, answers, translate}: NonUSDStepInput): StepConfig {
     const OWNERS = SBO_CONST.NON_USD.BENEFICIAL_OWNER_INFO_SUB_PAGES;
     const isUserOwner = answers.ownsMoreThan25Percent ?? false;
     const hasOtherOwners = answers.hasOtherBeneficialOwners;
     const ownersToSend = getOwnersToSend(answers.owners, isUserOwner, hasOtherOwners);
     const isUserEnteringOwnData = answers.ownerBeingModifiedID === CURRENT_USER_KEY;
 
-    steps.push({
+    return {
         id: PAGE_NAMES.BENEFICIAL_OWNER_INFO,
         title: translate('ownershipInfoStep.ownerInfo'),
         isComplete: corpay?.anyIndividualOwn25PercentOrMore !== undefined,
@@ -312,11 +366,15 @@ function buildNonUSDPlan(data: FlowData, {translate, policyID: urlPolicyID}: Pla
         }),
 
         request: getGlobalOwnersRequest(bankAccount, {ownsMoreThan25Percent: isUserOwner, owners: ownersToSend}),
-    });
+    };
+}
 
-    // The pages follow the director answer, so until it is given the step holds only the question. A director gives
-    // their name and job title, an owner only the job title because the owner step has the name. Other directors are
-    // invited by email and the step waits for them on the hang tight page.
+/**
+ * The pages follow the director answer, so until it is given the step holds only the question. A director gives
+ * their name and job title, an owner only the job title because the owner step has the name. Other directors are
+ * invited by email and the step waits for them on the hang tight page.
+ */
+function buildSignerInfoStep({bankAccount, corpay, isAUD, answers, translate, buildFormPage}: NonUSDStepInput): StepConfig {
     const SIGNER = SBO_CONST.NON_USD.SIGNER_INFO_SUB_PAGES;
 
     // Other directors are invited by email. An AUD account always needs a second director, so even a director invites one.
@@ -399,16 +457,20 @@ function buildNonUSDPlan(data: FlowData, {translate, policyID: urlPolicyID}: Pla
         );
     }
 
-    steps.push({
+    return {
         id: PAGE_NAMES.SIGNER_INFO,
         title: translate('signerInfoStep.signerInfo'),
         isComplete: areSignersKnown,
 
         pages: signerPages,
-    });
+    };
+}
 
-    // Without a docusign step after it, the agreements step sends the final request itself. For AUD it also collects
-    // the bank statement, and the docusign step sends both together with the signed form.
+/**
+ * Without a docusign step after it, the agreements step sends the final request itself. For AUD it also collects
+ * the bank statement, and the docusign step sends both together with the signed form.
+ */
+function buildAgreementsStep({bankAccount, isAUD, isSent, answers, translate, buildFormPage}: NonUSDStepInput): StepConfig {
     const agreementFields = [
         createCheckboxField(INPUT_IDS.AUTHORIZED_TO_BIND_CLIENT_TO_AGREEMENT, {
             label: translate('agreementsStep.iAmAuthorized'),
@@ -433,7 +495,7 @@ function buildNonUSDPlan(data: FlowData, {translate, policyID: urlPolicyID}: Pla
     ];
     const areAgreementsComplete = isSent || (isAUD && areFieldsComplete(agreementFields, answers, translate));
 
-    steps.push({
+    return {
         id: PAGE_NAMES.AGREEMENTS,
         title: translate('agreementsStep.agreements'),
         isComplete: areAgreementsComplete,
@@ -449,47 +511,51 @@ function buildNonUSDPlan(data: FlowData, {translate, policyID: urlPolicyID}: Pla
         ],
 
         request: isAUD ? undefined : getFinishOnboardingRequest(bankAccount, answers),
-    });
+    };
+}
 
-    // Only for currencies that need a signed authorization form. It sends the final request with the agreements and
-    // the bank statement of the previous step. The mock server receives only the names of the files.
-    if (requiresDocusignStep(currency)) {
-        steps.push({
-            id: PAGE_NAMES.DOCUSIGN,
-            title: translate('docusignStep.subheader'),
-            isComplete: isSent,
+/**
+ * Only for currencies that need a signed authorization form. It sends the final request with the agreements and
+ * the bank statement of the previous step. The mock server receives only the names of the files.
+ */
+function buildDocusignStep({bankAccount, isSent, answers, translate, buildFormPage}: NonUSDStepInput): StepConfig {
+    return {
+        id: PAGE_NAMES.DOCUSIGN,
+        title: translate('docusignStep.subheader'),
+        isComplete: isSent,
 
-            pages: [
-                buildFormPage({
-                    id: SBO_CONST.NON_USD.DOCUSIGN_SUB_PAGES.UPLOAD,
-                    isComplete: isSent,
-                    title: translate('docusignStep.pleaseCompleteTheBusinessAccount'),
-                    description: translate('docusignStep.pleaseUploadTheDirect'),
-                    submitLabel: translate('common.submit'),
-                    fields: [createFileField(INPUT_IDS.ACH_AUTHORIZATION_FORM, {label: translate('docusignStep.subheader')})],
-                }),
-            ],
-
-            request: getFinishOnboardingRequest(bankAccount, {
-                ...answers,
-                bankStatementName: answers.bankStatement.at(0)?.name,
-                achAuthorizationFormName: answers.achAuthorizationForm.at(0)?.name,
+        pages: [
+            buildFormPage({
+                id: SBO_CONST.NON_USD.DOCUSIGN_SUB_PAGES.UPLOAD,
+                isComplete: isSent,
+                title: translate('docusignStep.pleaseCompleteTheBusinessAccount'),
+                description: translate('docusignStep.pleaseUploadTheDirect'),
+                submitLabel: translate('common.submit'),
+                fields: [createFileField(INPUT_IDS.ACH_AUTHORIZATION_FORM, {label: translate('docusignStep.subheader')})],
             }),
-        });
-    }
+        ],
 
-    // The last page shows the state of the review. It never counts as complete, so the flow resumes there once all is sent.
-    // It is not a step of the setup, so it shows no counter.
-    steps.push({
+        request: getFinishOnboardingRequest(bankAccount, {
+            ...answers,
+            bankStatementName: answers.bankStatement.at(0)?.name,
+            achAuthorizationFormName: answers.achAuthorizationForm.at(0)?.name,
+        }),
+    };
+}
+
+/**
+ * The last page shows the state of the review. It never counts as complete, so the flow resumes there once all is sent.
+ * It is not a step of the setup, so it shows no counter.
+ */
+function buildFinishStep({translate}: NonUSDStepInput): StepConfig {
+    return {
         id: PAGE_NAMES.FINISH,
         title: translate('bankAccount.addBankAccount'),
         counter: 'none',
         isComplete: false,
 
         pages: [createCustomPage(FinishStep, {id: SBO_CONST.NON_USD.FINISH_SUB_PAGES.DONE, isComplete: false, shouldExitOnBack: true}, {})],
-    });
-
-    return {steps, answers};
+    };
 }
 
 export default buildNonUSDPlan;

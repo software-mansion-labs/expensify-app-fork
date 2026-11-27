@@ -24,12 +24,15 @@ import {
 } from '@pages/SimplifiedBankOnboarding/core';
 import type FlowData from '@pages/SimplifiedBankOnboarding/flows/shared/flowData/types';
 import getBaseStepInput from '@pages/SimplifiedBankOnboarding/flows/shared/getBaseStepInput';
+import type {BaseStepInput} from '@pages/SimplifiedBankOnboarding/flows/shared/getBaseStepInput';
 import {canAddMoreUSDOwners} from '@pages/SimplifiedBankOnboarding/flows/shared/owners/canAddMoreOwners';
 import getOwnerPages from '@pages/SimplifiedBankOnboarding/flows/shared/owners/getOwnerPages';
 import {USD_OWNER_DRAFT} from '@pages/SimplifiedBankOnboarding/flows/shared/owners/ownerBuffer';
-import type {FlowPlan, FormPageDefinition, StepConfig} from '@pages/SimplifiedBankOnboarding/flows/shared/plan/types';
+import type {FlowPlan, FormPageConfig, FormPageDefinition, StepConfig} from '@pages/SimplifiedBankOnboarding/flows/shared/plan/types';
 
 import CONST from '@src/CONST';
+
+import type USDAnswers from './answers/types';
 
 import getUSDAnswers from './answers/getUSDAnswers';
 import OnfidoStep from './customSteps/OnfidoStep';
@@ -66,22 +69,52 @@ function isValidAccountNumber(value: string): boolean {
     return CONST.BANK_ACCOUNT.REGEX.US_ACCOUNT_NUMBER.test(accountNumber) || CONST.BANK_ACCOUNT.REGEX.MASKED_US_ACCOUNT_NUMBER.test(accountNumber);
 }
 
+/** What every step of the USD flow reads, derived once per plan */
+type USDStepInput = BaseStepInput &
+    Pick<FlowData, 'plaidLinkToken' | 'onfidoToken'> & {
+        answers: USDAnswers;
+        buildFormPage: (definition: FormPageDefinition) => FormPageConfig;
+    };
+
 /**
- * The identity check and the documents step are only in the plan while the server asks for them, so no transition has
- * to skip them.
+ * Lists the steps in the order of the flow, which the step counter of the header follows too. The identity check and
+ * the documents step are only in the plan while the server asks for them, so no transition has to skip them.
  */
 function buildUSDPlan({draft, account, plaidLinkToken, onfidoToken}: FlowData, {translate, policyID: urlPolicyID}: PlanContext): FlowPlan {
-    const {achData, bankAccount} = getBaseStepInput(account, urlPolicyID, translate);
     const answers = getUSDAnswers(draft, account);
-    const buildFormPage = (definition: FormPageDefinition) => getFormPage(definition, answers, translate);
+    const input: USDStepInput = {
+        ...getBaseStepInput(account, urlPolicyID, translate),
+        plaidLinkToken,
+        onfidoToken,
+        answers,
+        buildFormPage: (definition) => getFormPage(definition, answers, translate),
+    };
 
-    const steps: StepConfig[] = [];
+    const isIdentityCheckPending = !input.achData?.isOnfidoSetupComplete;
+    const areDocumentsRequired = (input.achData?.requiredKYBDocuments ?? []).length > 0;
 
-    // The USD flow only supports the United States, so the step only confirms the country. Nothing is sent to the server.
-    // The country that the row shows before the user confirmed it does not count as an answer.
+    return {
+        steps: [
+            buildCountryStep(input),
+            buildBankAccountStep(input),
+            buildPersonalInfoStep(input),
+            ...(isIdentityCheckPending ? [buildIdentityCheckStep(input)] : []),
+            buildBusinessInfoStep(input),
+            buildBeneficialOwnersStep(input),
+            buildAgreementsStep(input),
+            ...(areDocumentsRequired ? [buildDocumentsStep(input)] : []),
+            buildValidationStep(input),
+        ],
+        answers,
+    };
+}
+
+/** The USD flow only supports the United States, so the step only confirms the country. Nothing is sent to the server. */
+function buildCountryStep({achData, answers, translate, buildFormPage}: USDStepInput): StepConfig {
+    // The country that the row shows before the user confirmed it does not count as an answer
     const isCountryConfirmed = !!answers.country || !!achData?.accountNumber;
 
-    steps.push({
+    return {
         id: PAGE_NAMES.COUNTRY,
         title: translate('countryStep.confirmCurrency'),
         isComplete: isCountryConfirmed,
@@ -104,14 +137,16 @@ function buildUSDPlan({draft, account, plaidLinkToken, onfidoToken}: FlowData, {
                 ],
             }),
         ],
-    });
+    };
+}
 
+function buildBankAccountStep({achData, bankAccount, answers, translate, buildFormPage, plaidLinkToken}: USDStepInput): StepConfig {
     // The setup type that the entry page saved decides between the Plaid page and the manual form
     const isPlaidSetup = answers.setupType === SBO_CONST.SETUP_TYPE.PLAID;
     const hasServerBankAccount = !!achData?.bankAccountID;
     const connectBankAccountRequest = isPlaidSetup ? getPlaidBankAccountRequest(bankAccount, answers.plaidAccountID) : getManualBankAccountRequest(bankAccount, answers);
 
-    steps.push({
+    return {
         id: PAGE_NAMES.BANK_ACCOUNT,
         title: translate('bankAccount.bankInfo'),
         isComplete: hasPassedServerStep(achData, STEP.BANK_ACCOUNT),
@@ -161,13 +196,15 @@ function buildUSDPlan({draft, account, plaidLinkToken, onfidoToken}: FlowData, {
         // Once the server created the account, Next only moves on. A second send would move the server back to the personal
         // info step, and the manual one would also store the masked number from the locked fields as the real number.
         request: hasServerBankAccount ? undefined : connectBankAccountRequest,
-    });
+    };
+}
 
-    // The user's legal name, date of birth and the last four digits of the SSN, sent together after the confirmation
+/** The user's legal name, date of birth and the last four digits of the SSN, sent together after the confirmation */
+function buildPersonalInfoStep({achData, bankAccount, answers, translate, buildFormPage}: USDStepInput): StepConfig {
     const PERSONAL_INFO = SBO_CONST.USD.PERSONAL_INFO_SUB_PAGES;
     const hasServerPersonalInfo = !!achData?.firstName && !!achData.lastName && !!achData.dob && !!achData.ssnLast4;
 
-    steps.push({
+    return {
         id: PAGE_NAMES.REQUESTOR,
         title: translate('personalInfoStep.personalInfo'),
         isComplete: hasPassedServerStep(achData, STEP.REQUESTOR) || hasServerPersonalInfo,
@@ -205,29 +242,32 @@ function buildUSDPlan({draft, account, plaidLinkToken, onfidoToken}: FlowData, {
         ],
 
         request: getPersonalInfoRequest(bankAccount, answers),
-    });
+    };
+}
 
-    // The identity check stays in the plan only while the server has not finished it. The counter shows it as part of the
-    // personal info step.
-    if (!achData?.isOnfidoSetupComplete) {
-        steps.push({
-            id: PAGE_NAMES.VERIFY_IDENTITY,
-            title: translate('onfidoStep.verifyIdentity'),
-            counter: 'shared',
-            isComplete: false,
+/**
+ * The plan keeps the identity check only while the server has not finished it. It must follow the personal info step,
+ * because the counter shows it as a part of that step.
+ */
+function buildIdentityCheckStep({bankAccount, translate, onfidoToken}: USDStepInput): StepConfig {
+    return {
+        id: PAGE_NAMES.VERIFY_IDENTITY,
+        title: translate('onfidoStep.verifyIdentity'),
+        counter: 'shared',
+        isComplete: false,
 
-            pages: [
-                createCustomPage(OnfidoStep, {id: SBO_CONST.USD.VERIFY_IDENTITY_SUB_PAGES.IDENTITY_CHECK, isComplete: false, read: getIdentityCheckRead(bankAccount, !!onfidoToken)}, {}),
-            ],
-            request: getVerifyIdentityRequest(bankAccount, MOCK_ONFIDO_DATA),
-        });
-    }
+        pages: [createCustomPage(OnfidoStep, {id: SBO_CONST.USD.VERIFY_IDENTITY_SUB_PAGES.IDENTITY_CHECK, isComplete: false, read: getIdentityCheckRead(bankAccount, !!onfidoToken)}, {})],
+        request: getVerifyIdentityRequest(bankAccount, MOCK_ONFIDO_DATA),
+    };
+}
+
+function buildBusinessInfoStep({achData, bankAccount, answers, translate, buildFormPage}: USDStepInput): StepConfig {
+    const BUSINESS_INFO = SBO_CONST.USD.BUSINESS_INFO_SUB_PAGES;
 
     // Once the server checked the company, the name and the tax ID are locked
-    const BUSINESS_INFO = SBO_CONST.USD.BUSINESS_INFO_SUB_PAGES;
     const areCompanyNumbersLocked = areCompanyDetailsLocked(achData);
 
-    steps.push({
+    return {
         id: PAGE_NAMES.COMPANY,
         title: translate('businessInfoStep.businessInfo'),
         isComplete: hasPassedServerStep(achData, STEP.COMPANY),
@@ -279,14 +319,16 @@ function buildUSDPlan({draft, account, plaidLinkToken, onfidoToken}: FlowData, {
         ],
 
         request: getCompanyRequest(bankAccount, answers),
-    });
+    };
+}
 
-    // The user is the requestor and stays out of the list, so the owner pages exist only once someone else owns 25% or more
+/** The user is the requestor and stays out of the list, so the owner pages exist only once someone else owns 25% or more */
+function buildBeneficialOwnersStep({achData, bankAccount, answers, translate}: USDStepInput): StepConfig {
     const OWNERS = SBO_CONST.USD.BENEFICIAL_OWNERS_SUB_PAGES;
     const isUserOwner = answers.ownsMoreThan25Percent ?? false;
     const hasOtherOwners = answers.hasOtherBeneficialOwners;
 
-    steps.push({
+    return {
         id: PAGE_NAMES.BENEFICIAL_OWNERS,
         title: translate('beneficialOwnerInfoStep.companyOwner'),
         isComplete: hasPassedServerStep(achData, STEP.BENEFICIAL_OWNERS),
@@ -337,10 +379,12 @@ function buildUSDPlan({draft, account, plaidLinkToken, onfidoToken}: FlowData, {
         }),
 
         request: getOwnersRequest(bankAccount, {ownsMoreThan25Percent: isUserOwner, owners: hasOtherOwners ? answers.owners : []}),
-    });
+    };
+}
 
-    // The three agreements that the user must accept before the server reviews the setup
-    steps.push({
+/** The three agreements that the user must accept before the server reviews the setup */
+function buildAgreementsStep({achData, bankAccount, answers, translate, buildFormPage}: USDStepInput): StepConfig {
+    return {
         id: PAGE_NAMES.ACH_CONTRACT,
         title: translate('completeVerificationStep.completeVerification'),
         isComplete: hasPassedServerStep(achData, STEP.ACH_CONTRACT),
@@ -369,64 +413,68 @@ function buildUSDPlan({draft, account, plaidLinkToken, onfidoToken}: FlowData, {
         ],
 
         request: getACHContractRequest(bankAccount, answers),
-    });
+    };
+}
 
-    // The server asks for documents only when its automatic checks fail, so the step exists only while it lists some.
-    // Like in the real flow, it shows no counter.
+/**
+ * The server asks for documents only when its automatic checks fail, so the plan keeps the step only while the server
+ * lists some. Like in the real flow, it shows no counter.
+ */
+function buildDocumentsStep({achData, bankAccount, answers, translate, buildFormPage}: USDStepInput): StepConfig {
     const requiredDocuments = achData?.requiredKYBDocuments ?? [];
     const needsTaxIDDocument = requiredDocuments.includes(SBO_CONST.USD.KYB_DOCUMENT_TYPES.COMPANY_TAX_ID);
     const needsAddressDocument = requiredDocuments.includes(SBO_CONST.USD.KYB_DOCUMENT_TYPES.COMPANY_ADDRESS);
+    const documentNames = [needsTaxIDDocument ? answers.companyTaxIDDocument.at(0)?.name : undefined, needsAddressDocument ? answers.companyAddressDocument.at(0)?.name : undefined].filter(
+        (documentName): documentName is string => !!documentName,
+    );
 
-    if (requiredDocuments.length > 0) {
-        const documentNames = [
-            needsTaxIDDocument ? answers.companyTaxIDDocument.at(0)?.name : undefined,
-            needsAddressDocument ? answers.companyAddressDocument.at(0)?.name : undefined,
-        ].filter((documentName): documentName is string => !!documentName);
+    return {
+        id: PAGE_NAMES.KYB_DOCS,
+        title: translate('documentsStep.subheader'),
+        counter: 'none',
+        isComplete: hasPassedServerStep(achData, STEP.KYB_DOCS),
 
-        steps.push({
-            id: PAGE_NAMES.KYB_DOCS,
-            title: translate('documentsStep.subheader'),
-            counter: 'none',
-            isComplete: hasPassedServerStep(achData, STEP.KYB_DOCS),
+        pages: [
+            buildFormPage({
+                id: SBO_CONST.USD.KYB_DOCUMENTS_SUB_PAGES.UPLOAD,
+                title: translate('documentsStep.beforeYouGo'),
+                description: translate('documentsStep.verificationFailed'),
+                submitLabel: translate('common.verify'),
 
-            pages: [
-                buildFormPage({
-                    id: SBO_CONST.USD.KYB_DOCUMENTS_SUB_PAGES.UPLOAD,
-                    title: translate('documentsStep.beforeYouGo'),
-                    description: translate('documentsStep.verificationFailed'),
-                    submitLabel: translate('common.verify'),
+                fields: [
+                    ...(needsTaxIDDocument
+                        ? [
+                              createFileField(INPUT_IDS.COMPANY_TAX_ID_DOCUMENT, {
+                                  label: translate('documentsStep.taxIDVerification'),
+                                  description: translate('documentsStep.taxIDVerificationDescription'),
+                              }),
+                          ]
+                        : []),
+                    ...(needsAddressDocument
+                        ? [
+                              createFileField(INPUT_IDS.COMPANY_ADDRESS_DOCUMENT, {
+                                  label: translate('documentsStep.companyAddressVerification'),
+                                  description: translate('documentsStep.companyAddressVerificationDescription'),
+                              }),
+                          ]
+                        : []),
+                ],
+            }),
+        ],
 
-                    fields: [
-                        ...(needsTaxIDDocument
-                            ? [
-                                  createFileField(INPUT_IDS.COMPANY_TAX_ID_DOCUMENT, {
-                                      label: translate('documentsStep.taxIDVerification'),
-                                      description: translate('documentsStep.taxIDVerificationDescription'),
-                                  }),
-                              ]
-                            : []),
-                        ...(needsAddressDocument
-                            ? [
-                                  createFileField(INPUT_IDS.COMPANY_ADDRESS_DOCUMENT, {
-                                      label: translate('documentsStep.companyAddressVerification'),
-                                      description: translate('documentsStep.companyAddressVerificationDescription'),
-                                  }),
-                              ]
-                            : []),
-                    ],
-                }),
-            ],
+        request: getKYBDocumentsRequest(bankAccount, documentNames),
+    };
+}
 
-            request: getKYBDocumentsRequest(bankAccount, documentNames),
-        });
-    }
-
-    // The review, the test deposits and the connected account. The custom page sends the amounts of the deposits itself,
-    // so the step has no request. While the account waits for the deposits, Back leaves the flow, because the earlier
-    // steps are sent.
+/**
+ * The review, the test deposits and the connected account. The custom page sends the amounts of the deposits itself,
+ * so the step has no request. While the account waits for the deposits, Back leaves the flow, because the earlier
+ * steps are sent.
+ */
+function buildValidationStep({achData, bankAccount, translate}: USDStepInput): StepConfig {
     const isPendingDeposits = isPendingValidation(achData);
 
-    steps.push({
+    return {
         id: PAGE_NAMES.VALIDATION,
         title: isPendingDeposits ? translate('connectBankAccountStep.validateYourBankAccount') : translate('bankAccount.addBankAccount'),
         isComplete: hasPassedServerStep(achData, STEP.VALIDATION),
@@ -438,9 +486,7 @@ function buildUSDPlan({draft, account, plaidLinkToken, onfidoToken}: FlowData, {
                 {request: getValidateBankAccountRequest(bankAccount)},
             ),
         ],
-    });
-
-    return {steps, answers};
+    };
 }
 
 export default buildUSDPlan;

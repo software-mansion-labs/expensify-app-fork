@@ -105,6 +105,21 @@ that names a page the plan does not have or a page after the resume position. A 
 redirected to the resume position by the only effect of the controller, and the redirect waits until the data of the plan
 is there.
 
+### One builder per flow
+
+Each flow has one plan builder (`flows/usd/buildUSDPlan.ts`, `flows/nonUSD/buildNonUSDPlan.ts`), and it is the one file
+that says which inputs the flow shows and in which order. Read it from the top:
+
+- The builder function derives the values that several steps share once and puts them in one input object, such as
+  the answers, the bank account params and the currency.
+- It returns the steps as a list with one line per step, in the order of the flow. A step that only some setups get
+  sits in its place with its condition, such as `...(requiresDocusignStep(currency) ? [buildDocusignStep(input)] : [])`.
+- Below the builder, in the same order, each step has its own function. It takes the input object and returns the step
+  with its pages and fields, top to bottom. A value that only this step needs is computed inside the function.
+
+The order of the list is also the order of the step counter, so a step that shares the number of the step before it,
+such as the USD identity check, stays right after that step.
+
 ### A form page is a list of fields
 
 A plan describes a form page as `fields: [createTextField(INPUT_IDS.COMPANY_NAME, {label, validate})]` and nothing else.
