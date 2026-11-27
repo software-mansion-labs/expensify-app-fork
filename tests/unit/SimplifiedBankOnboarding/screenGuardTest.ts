@@ -5,6 +5,8 @@ import type {RequestOutcome} from '@pages/SimplifiedBankOnboarding/core/requests
 
 import {useIsFocused} from '@react-navigation/native';
 
+import {createDeferredOutcome, settle} from '../../utils/BankOnboardingLabTestUtils';
+
 jest.mock('@react-navigation/native', () => ({
     ...jest.requireActual<Record<string, unknown>>('@react-navigation/native'),
     useIsFocused: jest.fn(() => true),
@@ -13,31 +15,8 @@ jest.mock('@react-navigation/native', () => ({
 const SUCCEEDED: RequestOutcome = {status: 'succeeded'};
 const FAILED: RequestOutcome = {status: 'failed'};
 
-type Deferred = {
-    promise: Promise<RequestOutcome>;
-    resolve: (outcome: RequestOutcome) => void;
-    reject: (error: Error) => void;
-};
-
-function createDeferred(): Deferred {
-    let resolve: (outcome: RequestOutcome) => void = () => {};
-    let reject: (error: Error) => void = () => {};
-    const promise = new Promise<RequestOutcome>((onResolve, onReject) => {
-        resolve = onResolve;
-        reject = onReject;
-    });
-    return {promise, resolve, reject};
-}
-
 function renderGuard(positionKey = 'personal-info/full-name/') {
     return renderHook(({position}: {position: string}) => useScreenGuard(position), {initialProps: {position: positionKey}});
-}
-
-async function settle(deferred: Deferred, outcome: RequestOutcome) {
-    await act(async () => {
-        deferred.resolve(outcome);
-        await deferred.promise;
-    });
 }
 
 describe('useScreenGuard', () => {
@@ -48,7 +27,7 @@ describe('useScreenGuard', () => {
     it('navigates when the outcome succeeded and the screen did not change', async () => {
         // Given a screen that waits for a request
         const {result} = renderGuard();
-        const deferred = createDeferred();
+        const deferred = createDeferredOutcome();
         const navigate = jest.fn();
         result.current(deferred.promise, navigate);
 
@@ -78,7 +57,7 @@ describe('useScreenGuard', () => {
     it('does not navigate when the outcome failed', async () => {
         // Given a screen that waits for a request
         const {result} = renderGuard();
-        const deferred = createDeferred();
+        const deferred = createDeferredOutcome();
         const navigate = jest.fn();
         result.current(deferred.promise, navigate);
 
@@ -92,7 +71,7 @@ describe('useScreenGuard', () => {
     it('does not navigate after the screen unmounted', async () => {
         // Given a screen that waits for a request
         const {result, unmount} = renderGuard();
-        const deferred = createDeferred();
+        const deferred = createDeferredOutcome();
         const navigate = jest.fn();
         result.current(deferred.promise, navigate);
 
@@ -107,7 +86,7 @@ describe('useScreenGuard', () => {
     it('does not navigate when the screen shows another position', async () => {
         // Given a screen that waits for a request on one page
         const {result, rerender} = renderGuard('personal-info/full-name/');
-        const deferred = createDeferred();
+        const deferred = createDeferredOutcome();
         const navigate = jest.fn();
         result.current(deferred.promise, navigate);
 
@@ -122,7 +101,7 @@ describe('useScreenGuard', () => {
     it('does not navigate when the screen lost focus', async () => {
         // Given a screen that waits for a request
         const {result, rerender} = renderGuard();
-        const deferred = createDeferred();
+        const deferred = createDeferredOutcome();
         const navigate = jest.fn();
         result.current(deferred.promise, navigate);
 
@@ -138,8 +117,8 @@ describe('useScreenGuard', () => {
     it('ignores a second call while one waits', async () => {
         // Given a screen that waits for a request
         const {result} = renderGuard();
-        const first = createDeferred();
-        const second = createDeferred();
+        const first = createDeferredOutcome();
+        const second = createDeferredOutcome();
         const firstNavigate = jest.fn();
         const secondNavigate = jest.fn();
         result.current(first.promise, firstNavigate);
@@ -157,7 +136,7 @@ describe('useScreenGuard', () => {
     it('accepts a new call after a wait that threw', async () => {
         // Given a screen whose first wait ends with an exception
         const {result} = renderGuard();
-        const broken = createDeferred();
+        const broken = createDeferredOutcome();
         const firstNavigate = jest.fn();
         result.current(broken.promise, firstNavigate);
         await act(async () => {
@@ -166,7 +145,7 @@ describe('useScreenGuard', () => {
         });
 
         // When the user tries again and that request succeeds
-        const retry = createDeferred();
+        const retry = createDeferredOutcome();
         const retryNavigate = jest.fn();
         result.current(retry.promise, retryNavigate);
         await settle(retry, SUCCEEDED);
